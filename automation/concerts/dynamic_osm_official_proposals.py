@@ -19,6 +19,7 @@ import time
 import copy
 import datetime as dt
 import json
+import hashlib
 import re
 import sys
 from collections import Counter, defaultdict, deque
@@ -43,6 +44,7 @@ from scripts import concert_dynamic_existing_venue as verified
 
 SCHEMA = "grossesondes.concert.single-official-osm-proposals.v1"
 MAX_CHECKS = 16  # bounded network rechecks, never a cap on sources or bands
+MAX_REVIEW_MEMORY = 4096
 REVIEW_BUCKETS = frozenset({"genre_tag_review", "genre_unknown"})
 
 
@@ -335,8 +337,42 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
     return approval
 
 
+def _review_key(row):
+    # Exact source identity; private scheduling only, never evidence.
+    return hashlib.sha256(json.dumps(
+        [row[0], row[1], row[2], row[3].get("candidateId")],
+        ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+def _review_memory(prior, selected):
+    if (not isinstance(prior, dict) or prior.get("schema") != SCHEMA
+            or prior.get("publicationAllowed") is not False
+            or prior.get("privateApprovalApplied") is not False):
+        return []
+    active = {_review_key(row) for row in selected}
+    history = prior.get("recentReviewKeys")
+    if isinstance(history, list):
+        return list(dict.fromkeys(k for k in history[-MAX_REVIEW_MEMORY:]
+                                  if isinstance(k, str) and k in active))
+    # Upgrade the previous private report without mistaking truncated IDs
+    # for identities: only an unambiguous prior check can seed memory.
+    index = defaultdict(list)
+    for row in selected:
+        index[(str(row[3].get("candidateId", ""))[:120], row[1], row[2])].append(
+            _review_key(row))
+    result = []
+    for check in prior.get("candidateChecks", []):
+        if not isinstance(check, dict):
+            continue
+        matches = index.get((check.get("candidateId"), check.get("date"),
+                             check.get("venueId")), [])
+        if len(matches) == 1:
+            result.append(matches[0])
+    return list(dict.fromkeys(result))[-MAX_REVIEW_MEMORY:]
+
+
 def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
-          fetch=verified.safe_fetch):
+          fetch=verified.safe_fetch, prior=None):
     require(type(slot) is int and slot in (0, 1, 2)
             and type(limit) is int and 1 <= limit <= 16,
             "invalid bounded scan")
@@ -347,6 +383,17 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
     eligibility_rejections = Counter()
     selected = eligible(registry, catalogue, today,
                         diagnostics=eligibility_rejections)
+    memory = _review_memory(prior, selected)
+    recency = {key: i for i, key in enumerate(memory)}
+
+    def ranked(pool, start):
+        if not pool:
+            return []
+        rotated = pool[start:] + pool[:start]
+        # Unseen first, then least recently checked. The original rotation
+        # breaks ties, and remains identical when there is no memory.
+        return sorted(rotated, key=lambda row: recency.get(_review_key(row), -1))
+
     # Rotate BOTH pools without leaving unvisited holes between scan slots.
     # OpenAgenda receives a proportional share (at most half whenever there
     # are other sources), while first-party venue pages keep the remainder.
@@ -363,7 +410,8 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
             1, min(limit // 2, round(limit * len(fast) / len(selected)))))
         if fast else 0)
     fstart = (tick * reserved) % len(fast) if fast else 0
-    window = [fast[(fstart + i) % len(fast)] for i in range(reserved)]
+    fast_ranked = ranked(fast, fstart)
+    window = fast_ranked[:reserved]
     # A venue with one explicitly labelled first-party metal/punk show
     # should not wait through dozens of unrelated genre-unknown cards.
     # Reserve up to four of the remaining probes for genre-tagged
@@ -377,23 +425,22 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
     tagged_budget = 4 if limit >= 16 else 2
     take_tagged = min(len(tagged), spare if not other else min(tagged_budget, max(1, spare // 3), spare))
     tstart = (tick * take_tagged) % len(tagged) if tagged else 0
-    window.extend(tagged[(tstart + i) % len(tagged)]
-                  for i in range(take_tagged))
+    tagged_ranked = ranked(tagged, tstart)
+    window.extend(tagged_ranked[:take_tagged])
     take_regular = min(len(other), limit - len(window))
     # Rotating by the ACTUAL per-lane number read avoids holes across slots.
     rstart = (tick * take_regular) % len(other) if other else 0
-    window.extend(other[(rstart + i) % len(other)]
-                  for i in range(take_regular))
+    other_ranked = ranked(other, rstart)
+    window.extend(other_ranked[:take_regular])
     # Return any unused capacity to the other pools without repeating a lead.
     # This preserves the existing all-OpenAgenda or all-venue budgets.
     picked = {id(row) for row in window}
-    for pool, start in ((fast, fstart), (tagged, tstart), (other, rstart)):
+    for pool in (fast_ranked, tagged_ranked, other_ranked):
         if len(window) >= min(limit, len(selected)):
             break
-        for i in range(len(pool)):
+        for lead in pool:
             if len(window) >= min(limit, len(selected)):
                 break
-            lead = pool[(start + i) % len(pool)]
             if id(lead) not in picked:
                 window.append(lead)
                 picked.add(id(lead))
@@ -435,8 +482,14 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
                          reason=reason)
             reason_counts[reason] += 1
         checks.append(check)
+    checked_keys = [_review_key(row) for row in window]
+    checked_set = set(checked_keys)
+    next_memory = [k for k in memory if k not in checked_set] + checked_keys
     return output, {
         "schema": SCHEMA,
+        "recentReviewKeys": next_memory[-MAX_REVIEW_MEMORY:],
+        "previouslyReviewed": sum(k in recency for k in checked_keys),
+        "firstReviewInMemory": sum(k not in recency for k in checked_keys),
         "asOf": today.isoformat(),
         "scanSlot": slot,
         "eligibleQueue": len(selected),
@@ -477,7 +530,8 @@ def main():
         data(opts.registry), data(opts.catalogue),
         data(opts.candidate),
         dt.datetime.now(ZoneInfo("Europe/Paris")).date(),
-        slot=opts.scan_slot, limit=opts.limit)
+        slot=opts.scan_slot, limit=opts.limit,
+        prior=data(opts.report) if opts.report.exists() else None)
     opts.output.write_text(json.dumps(
         proposal, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     opts.report.write_text(json.dumps(
