@@ -2481,6 +2481,11 @@
       "id": "kryer",
       "name": "KRØYER",
       "aliases": []
+    },
+    {
+      "id": "klone",
+      "name": "Klone",
+      "aliases": []
     }
   ],
   "venues": [
@@ -15660,6 +15665,35 @@
       ],
       "status": "confirmed",
       "officialUrl": "https://www.letrabendo.net/programmation/witch-club-satan/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Trabendo",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-25",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-25",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270422-paris-klone",
+      "title": "Klone",
+      "date": "2027-04-22",
+      "artistIds": [
+        "klone"
+      ],
+      "venueId": "le-trabendo-paris",
+      "genres": [
+        "Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.letrabendo.net/programmation/klone/",
       "sourceType": "salle",
       "time": null,
       "timeMeaning": "non confirmé",
