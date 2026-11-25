@@ -3,6 +3,7 @@ from unittest.mock import Mock
 from datetime import date
 from ptitesondes_catalogue_geo_proof_batch import research_group, run_batch
 from test_ptitesondes_shared_venue_location_evidence import directory, html, ban, GROUP, URL
+import test_ptitesondes_unnumbered_official_geo_proof as unnumbered
 
 DAY = date(2026, 11, 25)
 
@@ -32,6 +33,40 @@ class CatalogueGeoProofTests(unittest.TestCase):
         result = research_group(group(), DAY, directory_get=lambda _: directory(),
                                 html_get=lambda _: html("Other place"),
                                 ign_get=lambda _: ban())
+        self.assertNotIn("venue_point", result)
+
+    def test_no_number_uses_named_official_point_and_independent_osm(self):
+        g = dict(unnumbered.GROUP, active_ids=["event"], missing_ids=["event"],
+                 source_urls=[unnumbered.URL], point_hints=[dict(lat=0, lng=0)])
+        osm_reader = Mock(return_value=unnumbered.osm())
+        result = research_group(
+            g, DAY, directory_get=lambda _: unnumbered.directory(),
+            html_get=lambda _: unnumbered.html(), ign_get=Mock(side_effect=AssertionError()),
+            osm_get=osm_reader)
+        self.assertEqual(result["status"], "independent_venue_point_found")
+        self.assertIn("named OSM", result["venue_point"]["geo_source"])
+        osm_reader.assert_called_once_with(unnumbered.POINT)
+        self.assertFalse(result["publication_ready"])
+
+    def test_legacy_point_cannot_supply_missing_official_center(self):
+        g = dict(unnumbered.GROUP, active_ids=["event"], missing_ids=["event"],
+                 source_urls=[unnumbered.URL],
+                 point_hints=[dict(lat=44.5, lng=2.25)])
+        osm_reader = Mock(side_effect=AssertionError("unproven center"))
+        result = research_group(
+            g, DAY, directory_get=lambda _: unnumbered.directory(),
+            html_get=lambda _: unnumbered.html(include_geo=False),
+            ign_get=Mock(side_effect=AssertionError()), osm_get=osm_reader)
+        self.assertNotIn("venue_point", result)
+        osm_reader.assert_not_called()
+
+    def test_ambiguous_osm_does_not_prove_location(self):
+        g = dict(unnumbered.GROUP, active_ids=["event"], missing_ids=["event"],
+                 source_urls=[unnumbered.URL])
+        result = research_group(
+            g, DAY, directory_get=lambda _: unnumbered.directory(),
+            html_get=lambda _: unnumbered.html(),
+            osm_get=lambda _: unnumbered.osm(duplicate=True))
         self.assertNotIn("venue_point", result)
 
     def test_batch_bound_and_rotation(self):

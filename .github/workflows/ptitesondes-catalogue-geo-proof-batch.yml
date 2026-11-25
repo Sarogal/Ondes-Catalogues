@@ -17,7 +17,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,7 +28,7 @@ jobs:
       - name: Test independent geographic research
         env:
           PYTHONPATH: scripts:tests
-        run: python -m unittest -v test_ptitesondes_catalogue_geo_proof_batch
+        run: python -m unittest -v test_ptitesondes_catalogue_geo_proof_batch test_ptitesondes_unnumbered_official_geo_proof
       - name: Research actual public catalogue without publication
         if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
         env:
