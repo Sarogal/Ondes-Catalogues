@@ -62,7 +62,8 @@ class NationalOpenAgendaIndexTests(unittest.TestCase):
         got = read_index_page(KEY, [1, 101], size=2, opener=fetch)
         self.assertEqual(got["after"], [1, 103])
         self.assertEqual([x["uid"] for x in got["agendas"]], [102, 103])
-        self.assertEqual(request_urls, [API + "?size=2&after%5B%5D=1&after%5B%5D=101"])
+        self.assertEqual(request_urls, [API + "?size=2&includeFields%5B%5D=uid&includeFields%5B%5D=slug"
+                                 "&includeFields%5B%5D=title&after%5B%5D=1&after%5B%5D=101"])
 
     def test_public_api_index_does_not_depend_on_venue_or_genre_whitelist(self):
         asked = []
@@ -94,7 +95,8 @@ class NationalOpenAgendaIndexTests(unittest.TestCase):
                                  sort="recentlyAddedEvents.desc")
         self.assertEqual(result["after"], [1, 555])
         self.assertEqual(urls, [API +
-            "?size=2&sort=recentlyAddedEvents.desc"])
+            "?size=2&includeFields%5B%5D=uid&includeFields%5B%5D=slug"
+            "&includeFields%5B%5D=title&sort=recentlyAddedEvents.desc"])
         with self.assertRaisesRegex(ValueError, "invalid_oa_index_request"):
             read_index_page(KEY, sort="createdAt.desc", opener=fetch)
 

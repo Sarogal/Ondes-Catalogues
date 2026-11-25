@@ -90,6 +90,31 @@ class NationalShadowObservationTests(unittest.TestCase):
         self.assertEqual(retry.call_args.kwargs["sort"], "recentlyAddedEvents.desc")
         self.assertEqual(result["new_index_census"], 1)
 
+    def test_failed_recent_sort_does_not_freeze_legacy_census(self):
+        self.invoke()
+        self.invoke(batch_id="second")
+        def reader(configured, **kwargs):
+            if kwargs.get("sort") == "recentlyAddedEvents.desc":
+                raise ValueError("invalid_oa_index_cursor")
+            self.assertEqual(kwargs["start_cursor"], [1, 778899])
+            return index_doc(998877)
+        calls = Mock(side_effect=reader)
+        with self.assertRaisesRegex(ValueError, "invalid_oa_index_cursor"):
+            self.invoke(batch_id="fallback", index=calls)
+        self.assertEqual(calls.call_count, 2)
+        index_dir = self.root / "index"
+        self.assertEqual(json.loads((index_dir / "cursor.json").read_text())["after"],
+                         [1, 998877])
+        self.assertFalse((index_dir / "recent-cursor.json").exists())
+        self.assertEqual(len(available_index_reports(index_dir / "reports")), 2)
+        self.assertEqual(controller_read(self.root / "controller.json")["invocations"], 2)
+        # The failed recent census is still due on the next invocation.
+        retry = Mock(return_value=index_doc(998878))
+        self.invoke(batch_id="retry", index=retry)
+        self.assertEqual(retry.call_args.kwargs["sort"], "recentlyAddedEvents.desc")
+        self.assertEqual(json.loads((index_dir / "cursor.json").read_text())["after"],
+                         [1, 998877])
+
     def test_index_diagnostic_never_contains_unknown_error_text(self):
         failed = Mock(side_effect=ValueError("https://private.invalid/?key=SECRET"))
         with self.assertRaises(ValueError):

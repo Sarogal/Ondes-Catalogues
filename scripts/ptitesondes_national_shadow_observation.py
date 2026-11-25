@@ -488,32 +488,42 @@ def run_observation(root, day, batch_id, *,
         mode = ("recent" if (legacy_started and not recent_started)
                 or (legacy_started and turn % 2 == 1)
                 else "legacy")
-        suffix = "-recent" if mode == "recent" else ""
-        name = f"index-{day.isoformat()}-{batch_id}{suffix}.json"
-        new_path = reports_dir / name
-        if not new_path.exists():
-            state_path = _index_cursor_path(index_dir, mode)
-            state = load_index_state(state_path)
-            arguments = {"start_cursor": state["after"],
-                         "public_read_key": key}
-            if mode == "recent":
-                arguments["sort"] = "recentlyAddedEvents.desc"
-            try:
-                result = index_reader([], **arguments)
-                if (not isinstance(result, dict)
-                        or result.get("schema") != "ptitesondes.private_national_oa_index.v1"
-                        or result.get("publication_ready") is not False
-                        or result.get("public_writes") != 0):
-                    raise ValueError("untrusted_national_index_response")
-            except (OSError, ValueError, TypeError, KeyError) as exc:
-                # Keep the failed census due; existing saved campaigns can
-                # nevertheless advance. Never publish raw upstream messages.
-                index_read_failure = exc
-                write_index_read_failure(index_dir, mode, day, exc)
-            else:
-                store_index_batch(index_dir, reports_dir, new_path, result, state,
-                                  mode=mode)
-                index_scanned = True
+        # A failure of one documented sort must not freeze the other
+        # independent census. Only attempt the alternate when an index
+        # already exists, and retain the primary error and its retry due.
+        # Each mode has its own cursor and transaction journal.
+        modes = [mode]
+        if legacy_started or recent_started:
+            modes.append("legacy" if mode == "recent" else "recent")
+        for mode in modes:
+            suffix = "-recent" if mode == "recent" else ""
+            name = f"index-{day.isoformat()}-{batch_id}{suffix}.json"
+            new_path = reports_dir / name
+            if not new_path.exists():
+                state_path = _index_cursor_path(index_dir, mode)
+                state = load_index_state(state_path)
+                arguments = {"start_cursor": state["after"],
+                             "public_read_key": key}
+                if mode == "recent":
+                    arguments["sort"] = "recentlyAddedEvents.desc"
+                try:
+                    result = index_reader([], **arguments)
+                    if (not isinstance(result, dict)
+                            or result.get("schema") != "ptitesondes.private_national_oa_index.v1"
+                            or result.get("publication_ready") is not False
+                            or result.get("public_writes") != 0):
+                        raise ValueError("untrusted_national_index_response")
+                except (OSError, ValueError, TypeError, KeyError) as exc:
+                    # Keep the failed census due; existing saved campaigns can
+                    # nevertheless advance. Never publish raw upstream messages.
+                    if index_read_failure is None:
+                        index_read_failure = exc
+                    write_index_read_failure(index_dir, mode, day, exc)
+                else:
+                    store_index_batch(index_dir, reports_dir, new_path, result, state,
+                                      mode=mode)
+                    index_scanned = True
+                    break
 
     reports = available_index_reports(reports_dir)
     n = len(reports)
