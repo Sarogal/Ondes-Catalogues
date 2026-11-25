@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-24T21:41:55+01:00",
+  "updated_at": "2026-11-25T01:37:05+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -18043,6 +18043,26 @@
       "geo_precision": "venue",
       "lat": 44.213217,
       "lng": -0.918952
+    },
+    {
+      "id": "openagenda-85920835-2027-01-16",
+      "title": "Initiation à l’art du conte",
+      "category": "lecture-jeunesse",
+      "category_label": "Lecture jeunesse",
+      "date_start": "2027-01-16",
+      "date_end": "2027-01-16",
+      "time": "10:00",
+      "city": "Paris",
+      "department": "Paris",
+      "region": "Île-de-France",
+      "venue": "Âge d'Or de France",
+      "source_url": "https://openagenda.com/rncap/events/85920835_initiation-a-lart-du-conte-9133813",
+      "source_label": "Âge d'Or de France — Licence Ouverte 2.0 — données mises à jour le 19/11/2026",
+      "verified_at": "2026-11-25",
+      "geo_verified_at": "2026-11-25",
+      "geo_precision": "venue",
+      "lat": 48.860118,
+      "lng": 2.368214
     }
   ]
 }

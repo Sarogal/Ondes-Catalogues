@@ -1,0 +1,27 @@
+{
+  "schema": "ptitesondes.official_reconciliation.v1",
+  "checked_on": "2026-11-25",
+  "slot": 0,
+  "source_series_checked": 30,
+  "total_source_series": 62,
+  "before_count": 870,
+  "after_count": 871,
+  "source_summary": {
+    "official_new_session_admitted": 1,
+    "official_new_session_on_demand_review": 1,
+    "official_unavailable": 1,
+    "official_unchanged": 27
+  },
+  "catalogue_before_sha256": "5376025ad0c92b98e8d430bd288698278bc918094f64bdab95aac3fe8cbaee8f",
+  "catalogue_after_sha256": "70ef6bb9a735a57d7c7a39bba03199877f518af7b984025bf7c15ee1ec5fad42",
+  "operations": [
+    {
+      "id": "openagenda-85920835-2027-01-16",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/rncap/events/85920835_initiation-a-lart-du-conte-9133813",
+      "new_event_sha256": "ac181ac552c4f08f1234d19290dacfcfceade6e776498a4d980fe88be9bb0ae7"
+    }
+  ],
+  "unrelated_public_records_preserved": true
+}
