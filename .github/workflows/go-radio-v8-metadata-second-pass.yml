@@ -1,0 +1,39 @@
+name: GO v8 metadata targeted second pass
+on:
+  push:
+    branches: [audit/go-radio-v8-metadata-public-20261125]
+    paths:
+      - 'radio-catalog-lab/tools/go_radio_v8_metadata_second_pass.py'
+      - 'radio-catalog-lab/tools/test_go_radio_v8_metadata_second_pass.py'
+      - '.github/workflows/go-radio-v8-metadata-second-pass.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install cryptography
+      - name: Verify conservative format rules
+        run: python -m unittest discover -s radio-catalog-lab/tools -p test_go_radio_v8_metadata_second_pass.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: go-radio-v8-metadata-first-pass
+          run-id: 45565724854
+          github-token: ${{ github.token }}
+          path: /tmp/go-first-pass
+      - name: Compare formats and repeat incomplete observations
+        run: python radio-catalog-lab/tools/go_radio_v8_metadata_second_pass.py --first /tmp/go-first-pass/go-radio-v8-metadata.json --output /tmp/go-radio-v8-metadata-second-pass.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-v8-metadata-second-pass
+          path: /tmp/go-radio-v8-metadata-second-pass.json
+          retention-days: 7
+          if-no-files-found: error
