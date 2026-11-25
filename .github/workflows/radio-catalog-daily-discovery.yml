@@ -36,6 +36,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_baseline_verify.py"
       - "radio-catalog-lab/tools/radio_daily_metadata_preview.py"
       - "radio-catalog-lab/tools/test_radio_daily_metadata_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_artist_research.py"
+      - "radio-catalog-lab/tools/test_radio_daily_artist_research.py"
       - "radio-catalog-lab/schemas/radio_catalog_v1.schema.json"
       - ".github/workflows/radio-catalog-daily-discovery.yml"
   workflow_dispatch:
@@ -113,6 +115,9 @@ jobs:
             cp "$state/genre-hints.json" "$previous/candidates.json"
             if [[ -f "$state/metadata-preview.json" ]]; then
               cp "$state/metadata-preview.json" "$previous/metadata-preview.json"
+            fi
+            if [[ -f "$state/artist-research-preview.json" ]]; then
+              cp "$state/artist-research-preview.json" "$previous/artist-research-preview.json"
             fi
             if [[ -f "$state/logo-preview.json" ]]; then
               cp "$state/logo-preview.json" "$previous/logo-preview.json"
@@ -341,6 +346,19 @@ jobs:
             --discovery "$root/candidates.json" --reconciliation "$root/reconciliation-v8.json" \
             --continuity "$root/continuity-preview.json" --decisions "$root/decision-preview.json" \
             --output "$root/metadata-preview.json" --limit 6 --allow-network "${previous[@]}"
+      - name: Research observed artist names in MusicBrainz (hypotheses only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/artist-research-preview.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/artist-research-preview.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_artist_research.py \
+            --metadata "$root/metadata-preview.json" --output "$root/artist-research-preview.json" \
+            --limit 8 --allow-network "${previous[@]}"
       - name: Generate unsigned additive v9 candidate (artifact only)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
         shell: bash
@@ -410,9 +428,9 @@ jobs:
           src = Path(os.environ["RUNNER_TEMP"]) / "go-radio-state-input"
           dst = Path("radio-discovery-state")
           dst.mkdir(exist_ok=True)
-          for name in ("ledger.json", "genre-hints.json", "stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json", "decision-preview.json", "metadata-preview.json"):
+          for name in ("ledger.json", "genre-hints.json", "stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json", "decision-preview.json", "metadata-preview.json", "artist-research-preview.json"):
               path = src / name
-              if name in ("stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json", "decision-preview.json", "metadata-preview.json") and not path.exists():
+              if name in ("stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json", "decision-preview.json", "metadata-preview.json", "artist-research-preview.json") and not path.exists():
                   continue
               assert path.stat().st_size <= 12 * 1024 * 1024
               data = json.loads(path.read_text())
@@ -429,6 +447,10 @@ jobs:
               if name in ("decision-preview.json", "metadata-preview.json"):
                   assert data.get("approvedCount") == 0
                   assert all(r.get("approved") is False and r.get("publicationAllowed") is False for r in data["records"])
+              if name == "artist-research-preview.json":
+                  assert data.get("approvedCount") == 0
+                  assert isinstance(data.get("entries"), dict)
+                  assert all(r.get("identityVerified") is False and r.get("publicationAllowed") is False for r in data["entries"].values())
               if name == "hls-preview.json":
                   assert data.get("technicallyQualifiedCount") == 0
                   assert all(r.get("technicalQualified") is False and r.get("publicationAllowed") is False for r in data["records"])
