@@ -45,9 +45,9 @@ def select_queue(queue, retained, limit):
                 used.add(item[2])
     return selected
 
-def collect(discovery, reconciliation, continuity, decisions, *, previous=None, limit=0, observe=None):
+def collect(discovery, reconciliation, continuity, decisions, *, previous=None, limit=0, observe=None, transient_titles=None):
     if observe is None:
-        observe=lambda url: observe_url(url, metadata=True)
+        observe=lambda url: observe_url(url, metadata=True, include_title=transient_titles is not None)
     day=parse_day(discovery["scanDate"])
     if not 0 <= limit <= MAX_STATIONS:
         raise ValueError("metadata budget")
@@ -120,10 +120,17 @@ def collect(discovery, reconciliation, continuity, decisions, *, previous=None, 
                            "playlist_requires_separate_validation"}:
             verdict="metadata_connection_review"
         return uid,{"stationuuid":uid,"streamSha256":sha,"observedDate":day,"observedInScan":True,
-                    "approved":False,"publicationAllowed":False,"verdict":verdict,"observations":hints}
+                    "approved":False,"publicationAllowed":False,"verdict":verdict,"observations":hints}, [
+                    {"stationuuid":uid,"streamSha256":sha,"artistHint":h["artistHint"],
+                     "titleSha256":h["titleSha256"],"titleHint":h["titleHint"]}
+                    for h in evidence.get("titleHints",[])[:3]
+                    if valid_hint(h) and isinstance(h.get("titleHint"),str)
+                    and 1 <= len(h["titleHint"]) <= 140 and safe_digest(h["titleHint"]) == h["titleSha256"]]
     with ThreadPoolExecutor(max_workers=2) as pool:
-        for uid,row in pool.map(check,selected):
+        for uid,row,titles in pool.map(check,selected):
             retained[uid]=row
+            if transient_titles is not None:
+                transient_titles.extend(titles)
     records=[retained[k] for k in sorted(retained)]
     return {"schemaVersion":1,"scanDate":day,"publicationAllowed":False,"approvedCount":0,
             "attemptedCount":len(selected),"stationsWithArtistHints":sum(bool(r["observations"]) for r in records),
@@ -135,6 +142,7 @@ def main():
     for k in ("discovery","reconciliation","continuity","decisions","output"):
         p.add_argument("--"+k,type=Path,required=True)
     p.add_argument("--previous",type=Path)
+    p.add_argument("--transient-titles",type=Path)
     p.add_argument("--limit",type=int,default=0)
     p.add_argument("--allow-network",action="store_true")
     a=p.parse_args()
@@ -144,12 +152,15 @@ def main():
         if path.stat().st_size>MAX_INPUT:
             raise ValueError("oversized metadata input")
         return json.loads(path.read_text())
+    transient=[] if a.transient_titles else None
     report=collect(*(load(getattr(a,k)) for k in ("discovery","reconciliation","continuity","decisions")),
-                   previous=load(a.previous) if a.previous else None,limit=a.limit)
+                   previous=load(a.previous) if a.previous else None,limit=a.limit,transient_titles=transient)
     payload=json.dumps(report,ensure_ascii=False,indent=2)+"\n"
     if len(payload.encode())>MAX_INPUT:
         raise ValueError("oversized metadata report")
     a.output.write_text(payload,encoding="utf-8")
+    if a.transient_titles:
+        a.transient_titles.write_text(json.dumps(transient,ensure_ascii=False),encoding="utf-8")
     print("RADIO_ICY_METADATA_PREVIEW_ONLY",{k:v for k,v in report.items() if k!="records"})
 
 if __name__=="__main__":

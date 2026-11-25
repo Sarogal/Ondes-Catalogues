@@ -59,7 +59,7 @@ MAX_METADATA_INTERVAL = 131072
 MAX_METADATA_BLOCKS = 3
 
 
-def read_icy_titles(response, interval, deadline, clock):
+def read_icy_titles(response, interval, deadline, clock, *, include_title=False):
     """Read framed ICY blocks; never interpret the intervening audio as text."""
     if not isinstance(interval, str) or not interval.isascii() or not interval.isdigit() or len(interval) > 6:
         return {"verdict": "metadata_not_advertised", "titleHints": []}
@@ -104,6 +104,8 @@ def read_icy_titles(response, interval, deadline, clock):
             if not (2 <= len(artist) <= 100 and 1 <= len(title) <= 140 and any(c.isalpha() for c in artist)):
                 continue
             item = {"artistHint": artist, "titleSha256": safe_digest(title)}
+            if include_title:
+                item["titleHint"] = title
             if item not in hints:
                 hints.append(item)
     except (EOFError, TimeoutError, OSError, http.client.HTTPException):
@@ -112,7 +114,7 @@ def read_icy_titles(response, interval, deadline, clock):
             "titleHints": hints}
 
 
-def observe_url(raw_url, *, clock=time.monotonic, sleep=time.sleep, metadata=False):
+def observe_url(raw_url, *, clock=time.monotonic, sleep=time.sleep, metadata=False, include_title=False):
     deadline = clock() + MAX_TOTAL_SECONDS
     current = raw_url
     visited = set()
@@ -167,7 +169,7 @@ def observe_url(raw_url, *, clock=time.monotonic, sleep=time.sleep, metadata=Fal
             if metadata:
                 if finite or not (mime.startswith("audio/") or mime == "application/octet-stream"):
                     return {"verdict": "metadata_non_live_response", "titleHints": []}
-                return read_icy_titles(response, response.getheader("icy-metaint"), deadline, clock)
+                return read_icy_titles(response, response.getheader("icy-metaint"), deadline, clock, include_title=include_title)
             if finite:
                 return assess([], finite=True, icy=icy, elapsed=0, ended=False)
             windows = []

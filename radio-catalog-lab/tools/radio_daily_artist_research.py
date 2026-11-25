@@ -49,12 +49,18 @@ class Client:
         self.last = None
 
     def __call__(self, path, params):
+        return self._request(BASE, path, params)
+
+    def recordings(self, params):
+        return self._request("https://musicbrainz.org/ws/2/recording/", "", params)
+
+    def _request(self, base, path, params):
         if path and not valid_id(path):
             raise ValueError("invalid MBID")
         if self.last is not None:
             time.sleep(max(0, 1.2 - (time.monotonic() - self.last)))
         self.last = time.monotonic()
-        req = Request(BASE + path + "?" + urlencode(dict(params, fmt="json")),
+        req = Request(base + path + "?" + urlencode(dict(params, fmt="json")),
                       headers={"User-Agent": "GrossesOndes-RadioPreview/1.0 (https://grosses-ondes.fr/)",
                                "Accept": "application/json", "Accept-Encoding": "identity"})
         with self.opener.open(req, timeout=8) as response:
