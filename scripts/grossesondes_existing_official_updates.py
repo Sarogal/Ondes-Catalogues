@@ -897,12 +897,12 @@ def signed_rotation(published, today, limit=MAX_HOSTS, tick=None,
     batch = (date.fromisoformat(today).toordinal() * 2 if tick is None else tick)
     offset = batch % ceil(len(urls) / limit) * limit
     selected = urls[offset:offset + limit]
-    # A push-triggered catch-up scans up to 48 signed hosts. If the last
-    # slice holds only one host (e.g. 49 sites), fill the unused slots by
-    # wrapping to the beginning. Never repeat one source in the same run,
-    # exceed the configured limit, or change the complementary 24-host
-    # morning/evening scheduled rotation.
-    if limit >= 48 and len(urls) > limit and len(selected) < limit:
+    # Both the regular 24-host budget and the 48-host push catch-up are
+    # full budgets, not just a bound on a partial final slice. Fill unused
+    # slots with the start of the same signed rotation. The original batch
+    # remains the prefix, so every host is still covered within one complete
+    # rotation; overlap between runs is intentional, never within a run.
+    if limit >= 24 and len(urls) > limit and len(selected) < limit:
         selected += urls[:limit - len(selected)]
     # Chromium and HTTPS use different rotations. Process the successfully
     # rendered signed roots in THIS cycle, even when outside the raw batch.
