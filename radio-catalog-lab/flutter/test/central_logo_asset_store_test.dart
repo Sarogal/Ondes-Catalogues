@@ -324,4 +324,42 @@ void main() {
     expect(CentralLogoDescriptor.fromSignedStation(
       {'go_station_id':'go-station-000001','logo':null}), isNull);
   });
+
+  test('decoded memo reuses exact SHA metadata but rejects changed file bytes', () async {
+    final image = bytes(42);
+    final descriptor = spec(image);
+    final memo = CentralLogoDecodedMemo();
+    var calls = 0;
+    Future<CentralDecodedLogo> countDecode(Uint8List raw) async {
+      calls++;
+      return decode(raw);
+    }
+    final first = CentralLogoAssetStore(directory: temp, decoder: countDecode,
+        decodedMemo: memo);
+    final result = await first.ensure(target: descriptor, fetch: (_, __) async => image);
+    expect(result.available, isTrue);
+    expect(calls, 1);
+    final second = CentralLogoAssetStore(directory: temp, decoder: countDecode,
+        decodedMemo: memo);
+    expect(await second.findVerified(descriptor), isNotNull);
+    expect(calls, 1);
+    await result.image!.writeAsBytes(bytes(43), flush: true);
+    expect(await second.findVerified(descriptor), isNull);
+    expect(calls, 1);
+  });
+
+  test('decoded memo still enforces signed dimensions for identical bytes', () async {
+    final image = bytes(44);
+    final descriptor = spec(image);
+    final store = CentralLogoAssetStore(directory: temp, decoder: decode,
+      decodedMemo: CentralLogoDecodedMemo());
+    await store.ensure(target: descriptor, fetch: (_, __) async => image);
+    final mismatched = CentralLogoDescriptor(
+      sha256: descriptor.sha256, byteSize: descriptor.byteSize,
+      revision: descriptor.revision, url: descriptor.url,
+      width: 128, height: 512, mimeType: descriptor.mimeType);
+    expect(await store.findVerified(mismatched), isNull);
+    expect(await store.findVerified(descriptor), isNotNull);
+  });
+
 }
