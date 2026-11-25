@@ -61,10 +61,16 @@ def mixed_umbrella_programme(title, description):
     return bool(arts and other_formats >= 2)
 
 
+PARK_NAMED_ART_FORMAT = re.compile(
+    r"\b(?:musique|musical(?:e|es|s)?|concerts?|spectacles?|"
+    r"marionnettes?|contes?|lectures?|comptines?|chansons?)\b"
+)
+
+
 def park_visit_programme(title, description):
     """Do not turn a park's general visitor hours into concert sessions."""
     main, body = norm(title), norm(description)
-    if NAMED_ART_FORMAT.search(main):
+    if PARK_NAMED_ART_FORMAT.search(main):
         return False
     park = re.search(r"\b(?:parc d attractions?|parc a theme|oenoparc|parc de loisirs)\b", body)
     visit = re.search(r"\b(?:au fil de la visite|parcours de visite|accueillir les visiteurs|horaires d ouverture)\b", body)

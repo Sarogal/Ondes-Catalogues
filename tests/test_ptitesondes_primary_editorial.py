@@ -183,6 +183,33 @@ class PrimaryEditorialTests(unittest.TestCase):
         self.assertIsNone(primary_out_of_scope(
             "Spectacle de marionnettes", desc))
 
+    def test_park_real_source_signals_and_family_title(self):
+        # Public OpenAgenda UID 23913876, French description: short
+        # exact source fragments, not a fabricated event description.
+        desc = ("parc à thème ... accueillir les visiteurs ... "
+                "scénographie féérique ... Au fil de la visite ... "
+                "bonhomme de neige automate")
+        for title in ("Le Hameau Enchanté", "Noël au parc pour enfants"):
+            with self.subTest(title=title):
+                self.assertEqual(primary_out_of_scope(title, desc),
+                                 "park_visit_programme_primary")
+                self.assertIsNone(category_for(title, desc))
+                self.assertIsNone(propose_family_activity(
+                    title, desc)["category_proposal"])
+                source = dict(oa_event(), title={"fr": title},
+                              description={"fr": desc})
+                item, reason = propose_event(
+                    source, {"agenda_uid": AGENDA["uid"],
+                             "agenda_slug": AGENDA["slug"]}, TODAY)
+                self.assertIsNone(item)
+                self.assertEqual(reason, "primary_activity_outside_editorial_scope")
+                candidate, reason = live_case(title, desc, category="concert")
+                self.assertIsNone(candidate)
+                self.assertEqual(reason, "oa_direct_primary_activity_outside_scope")
+        for title in ("Concert pour enfants", "Conte musical de Noël",
+                      "Éveil musical au parc", "Spectacle de marionnettes"):
+            self.assertIsNone(primary_out_of_scope(title, desc))
+
     def test_no_session_count_cap_on_real_youth_workshops(self):
         self.assertIsNone(primary_out_of_scope(
             "Éveil musical pour les tout-petits",
