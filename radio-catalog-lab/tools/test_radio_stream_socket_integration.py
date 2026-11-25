@@ -115,5 +115,26 @@ class SocketIntegrationTests(unittest.TestCase):
         self.assertEqual(len(requests), 1)
 
 
+    def test_real_socket_finite_audio_file_does_not_get_live_hint(self):
+        frame = b"\xff\xfb\x90\x64" + b"\0" * 413
+        body = frame * 3
+        response = (b"HTTP/1.1 200 OK\r\nContent-Type: audio/mpeg\r\n"
+                    b"icy-name: Test\r\nContent-Length: " + str(len(body)).encode()
+                    + b"\r\nConnection: close\r\n\r\n" + body)
+        out, _ = exercise_routes({"/file": response},
+            lambda call, port: probe_url(f"http://radio.example.org:{port}/file", call))
+        self.assertFalse(out["liveTransportHint"])
+        self.assertEqual(out["frameChain"], "mpeg_layer3")
+
+    def test_real_socket_icy_without_length_gets_live_transport_hint(self):
+        frame = b"\xff\xfb\x90\x64" + b"\0" * 413
+        response = (b"ICY 200 OK\r\nContent-Type: audio/mpeg\r\n"
+                    b"icy-name: Test\r\n\r\n" + frame * 3)
+        out, _ = exercise_routes({"/live": response},
+            lambda call, port: probe_url(f"http://radio.example.org:{port}/live", call))
+        self.assertTrue(out["liveTransportHint"])
+        self.assertEqual(out["frameChain"], "mpeg_layer3")
+
+
 if __name__ == "__main__":
     unittest.main()

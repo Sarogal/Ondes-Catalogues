@@ -525,6 +525,7 @@ def main(argv: list[str] | None = None) -> int:
                            encoding="utf-8")
     print(f"STREAM_PROBE_PREVIEW_ONLY samples={report['checkedCount']} "
           f"audio_evidence={report['audioEvidenceCount']} "
+          f"live_frame_evidence={report['liveFrameEvidenceCount']} "
           "technical_verified=0 published=false")
     return 0
 

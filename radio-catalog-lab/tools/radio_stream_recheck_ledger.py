@@ -161,6 +161,7 @@ def main(argv: list[str] | None = None) -> int:
                            encoding="utf-8")
     print("RADIO_STREAM_EVIDENCE_PREVIEW_ONLY "
           f"repeat_sample_candidates={report['repeatAudioCandidateCount']} "
+          f"repeat_live_frame_candidates={report['repeatLiveFrameEvidenceCount']} "
           f"retained_unseen={report['notObservedTodayCount']} "
           "qualified=0 published=false")
     return 0
