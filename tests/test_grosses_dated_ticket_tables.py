@@ -46,6 +46,24 @@ class DatedGridTests(unittest.TestCase):
         self.assertNotIn("officielle ouverte", result)
         self.assertIsNotNone(parse_dated_ticket_summary(result))
 
+    def test_cms_empty_span_attributes_and_split_responsive_tables(self):
+        # Real CMS-style markup: empty spans are not merged cells.
+        def cms(grid):
+            return (grid.replace("<th>", '<th colspan=""><span>')
+                    .replace("</th>", "</span></th>")
+                    .replace("<td>", '<td colspan="" rowspan=""><div><div>')
+                    .replace("</td>", "</div></div></td>"))
+        after = (MOBILE.replace("Prévente</th>", "Après la prévente</th>")
+                 .replace("pas de prevente</td>", "15 €</td>")
+                 .replace("18 €</td>", "25 €</td>"))
+        html = OLD + ANNOUNCE + cms(table()) + cms(MOBILE) + cms(after)
+        self.assertEqual(dated_ticket_table_summary(html, ROW, DAY),
+                         dated_ticket_table_summary(HTML, ROW, DAY))
+        self.assertIsNone(dated_ticket_table_summary(
+            html.replace('colspan=""', 'colspan="2"'), ROW, DAY))
+        self.assertIsNone(dated_ticket_table_summary(
+            html.replace('rowspan=""', 'rowspan="0"'), ROW, DAY))
+
     def test_conflict_wrong_edition_missing_opening_and_partial_grid(self):
         for html in (
             HTML.replace("25 et 26 juin 2027", "26 et 27 juin 2027"),
