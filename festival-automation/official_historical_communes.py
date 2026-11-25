@@ -98,7 +98,17 @@ def historical_parent(city, known_department, text, today=None):
             day = date.fromisoformat(raw_day)
             if day > today:
                 continue
-            if not CODE.fullmatch(before_code) or not CODE.fullmatch(after_code):
+            # Official COG creation (20) has no predecessor; suppression
+            # (30) has no successor. Neither is a valid alias edge. A
+            # suppression must still terminate a chain, not be ignored.
+            if mod == "20" and not any(row[2:8]):
+                if not CODE.fullmatch(after_code) or not after_type or not after_name:
+                    return None
+                continue
+            suppression = mod == "30" and not any(row[8:14])
+            if (not CODE.fullmatch(before_code) or not before_type or not before_name
+                    or (not suppression and
+                        (not CODE.fullmatch(after_code) or not after_type or not after_name))):
                 return None
             before = (before_type, before_code, before_name)
             after = (after_type, after_code, after_name)
