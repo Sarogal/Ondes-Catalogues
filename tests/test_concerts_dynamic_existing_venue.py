@@ -121,6 +121,30 @@ class UnlistedExistingVenueTests(unittest.TestCase):
         self.addCleanup(lambda: publisher.NEW_REFERENCE_GEO_SOURCES.__setitem__(
             VENUE_ID, original))
 
+    def test_structured_event_admission_reports_fixed_rejection_codes(self):
+        from automation.concerts import dynamic_first_party_venue_proposals as proposals
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        for html, reason in (
+                (page(EVENT, genres=False), "relevant_artist_or_event_genre_missing"),
+                (page(EVENT, names=[]), "named_bill_missing_or_ambiguous"),
+                (page(EVENT, venue_name="Different room"), "venue_name_or_location_mismatch"),
+                (page(EVENT, date="2027-03-06"), "event_date_mismatch"),
+                (page(WITNESS), "canonical_url_mismatch"),
+                (page(EVENT, status="EventCancelled"), "cancelled_or_postponed")):
+            with self.subTest(reason=reason):
+                with self.assertRaisesRegex(ValueError, reason):
+                    proposals._individual_event(html, EVENT, "2027-03-05", venue,
+                                                accept_generic=True)
+        html = page(EVENT, genres=False)
+        # A foreign recommendation is rejected before the current event.
+        foreign = page(WITNESS)
+        with self.assertRaisesRegex(ValueError, "relevant_artist_or_event_genre_missing"):
+            proposals._individual_event(foreign + html, EVENT, "2027-03-05",
+                                        venue, accept_generic=True)
+        with self.assertRaisesRegex(ValueError, "multiple_matching_events"):
+            proposals._individual_event(page(EVENT) + page(EVENT), EVENT,
+                                        "2027-03-05", venue, accept_generic=True)
+
     def test_visible_detail_single_source_replayed_with_eight_unknown_artists(self):
         from automation.concerts import dynamic_first_party_venue_proposals as proposals
         signed = signed_approval()
