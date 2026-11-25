@@ -260,6 +260,57 @@ class UnlistedExistingVenueTests(unittest.TestCase):
                 dynamic.validate(signed, venues, artists, TODAY,
                                  fetch=fake_fetch({"primary": changed}))
 
+    def test_venue_linked_biography_reaches_publisher_without_structured_genre(self):
+        from automation.concerts import dynamic_first_party_venue_proposals as proposals
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        target = "https://unknown-musician.example.org/"
+        bio_url = target + "bio"
+        source = page(EVENT, genres=False)
+        primary = source.replace(
+            json.dumps({"@type": "MusicGroup", "name": NAMES[-1]}),
+            json.dumps({"@type": "MusicGroup", "name": NAMES[-1], "url": target}))
+        self.assertNotEqual(primary, source)
+        landing = '<a href="/bio">Biography</a>'
+        biography = ("<title>" + NAMES[-1] + " Biography</title><p>" +
+                     NAMES[-1] + " are a band playing black metal.</p>")
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+        def fetch(url, cache):
+            if url == target:
+                return landing
+            if url == bio_url:
+                return biography
+            return fake_fetch({"primary": primary})(url, cache)
+        self.assertEqual(proposals._individual_event(
+            primary, EVENT, signed["event"]["date"], venue,
+            accept_generic=True, fetch=fetch, cache={}),
+            (NAMES, ["Black Metal"]))
+        with mock.patch.object(dynamic, "safe_fetch", side_effect=fetch):
+            result, counts = publisher.merge(
+                BASE, BASE, {"schema": publisher.SCHEMA, "approvals": [signed]}, TODAY)
+            self.assertEqual(counts["newEvents"], 1)
+        conflicting = ('<script type="application/ld+json">' +
+                       json.dumps({"@type": "MusicGroup", "name": NAMES[-1],
+                                   "genre": "Jazz"}) + '</script>')
+        for bad_landing, bad_bio in (
+            (landing + conflicting, biography),
+            ('<a href="https://other.example.org/bio">Biography</a>', biography),
+            (landing, biography.replace(NAMES[-1], "Another Artist")),
+            (landing, biography.replace("black metal", "jazz")),
+        ):
+            def wrong(url, cache):
+                if url == target:
+                    return bad_landing
+                if url == bio_url:
+                    return bad_bio
+                return fake_fetch({"primary": primary})(url, cache)
+            with self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY, fetch=wrong)
+
     def test_signed_published_osm_api_node_sources_are_rechecked_without_allowlist(self):
         # Five real published venues use the API-node spelling; the old
         # validator rejected these even though it fetches that exact API.

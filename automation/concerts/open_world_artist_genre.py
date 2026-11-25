@@ -87,6 +87,10 @@ def candidate_sources(registry, today):
     return selected, ambiguous
 
 
+class MissingStructuredArtistGenre(ValueError):
+    """No structured musician genre available for an explicit linked biography."""
+
+
 def profile_genres(html, name):
     """Exact MusicGroup / musician Person identity, no event-wide genres."""
     if not isinstance(html, str) or not 0 < len(html) <= MAX_HTML:
@@ -100,6 +104,7 @@ def profile_genres(html, name):
     if not target:
         raise ValueError("Missing artist name")
     found = set()
+    structured_claim = False
     for script in reader.scripts:
         try:
             parsed = json.loads(script)
@@ -113,10 +118,15 @@ def profile_genres(html, name):
                                  "musician", "musicien", "singer", "chanteur"})):
                 continue
             if words(node.get("name")) != target:
+                structured_claim = True
                 continue
+            if node.get("genre") not in (None, "", []):
+                structured_claim = True
             genres = knowledge._genre_labels(node.get("genre"))
             if genres:
                 found.add(tuple(sorted(genres, key=str.casefold)))
+    if not found and not structured_claim:
+        raise MissingStructuredArtistGenre("No structured individual genre")
     if len(found) != 1:
         raise ValueError("Absent or conflicting individual profile genre")
     return list(next(iter(found)))
