@@ -164,6 +164,67 @@ def _performer_names(value):
     return out
 
 
+# Recognize only explicit trailing promotional markers, not arbitrary
+# parenthesized artist names or ordinary words that happen to contain "live".
+_PROMOTIONAL_SUFFIX = re.compile(
+    r"\s+(?:release\s+party|en\s+concert)\s*\Z", re.I)
+_FORMER_MEMBER_SUFFIX = re.compile(r"\s+\(ex[\s-]+[^()]{1,80}\)\s*\Z", re.I)
+
+
+def promotional_artist_candidate(title):
+    """Extract a possible artist name, NEVER a source proof by itself."""
+    if not isinstance(title, str):
+        return None
+    match = _PROMOTIONAL_SUFFIX.search(title)
+    if not match:
+        return None
+    name = title[:match.start()].strip()
+    if normalized(match.group(0)) == "en concert":
+        name = _FORMER_MEMBER_SUFFIX.sub("", name).strip()
+    if not 2 <= len(name) <= 120 or normalized(name) in PLACEHOLDERS:
+        return None
+    return name
+
+
+def _confirmed_promotional_artist(title, record):
+    """Use the original UID-bound announcement's own independent name usage.
+
+    Require a separate, visible occurrence of the proposed name after
+    eliminating repetitions of the full promotional title. No external
+    site, known-band list, or genre inference from a former membership.
+    """
+    candidate = promotional_artist_candidate(title)
+    if candidate is None:
+        return None
+    full = normalized(title)
+    name = normalized(candidate)
+    if not name or name == full:
+        return None
+    for field in ("description", "longDescription"):
+        value = record.get(field)
+        content = (value.get("fr") or value.get("en")) if isinstance(value, dict) else None
+        if not isinstance(content, str) or not 4 <= len(content) <= 20000:
+            continue
+        reader = _VisibleOfficialGenreText()
+        try:
+            reader.feed(content)
+            reader.close()
+        except (TypeError, ValueError):
+            continue
+        visible = normalized(" ".join(reader.parts))
+        # The full headline echoed in the body does not corroborate a name.
+        visible = re.sub(r"(?<!\w)" + re.escape(full) + r"(?!\w)", " ", visible)
+        # A named subject or an explicit group/artist introduction, rather
+        # than an incidental mention (e.g. a tour venue or a former band).
+        subject = r"(?<!\w)" + re.escape(name) + r"(?!\w)"
+        role = r"(?:le groupe|la formation|l artiste|the band|the artist)"
+        verb = r"(?:est|sont|fait|font|joue|jouent|a|ont|propose|proposent|poursuit|poursuivent|façonne|faconne|is|are|has|have|plays|play)"
+        if (re.search(role + r"\s+" + subject, visible)
+                or re.search(subject + r"\s+" + verb + r"(?!\w)", visible)):
+            return candidate
+    return None
+
+
 def _bill(event):
     title = event.get("name")
     if not isinstance(title, str) or not 3 <= len(title) <= 900:
@@ -470,8 +531,23 @@ def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
         genres = []
     if not genres or len(genres) > 20:
         raise ValueError("OpenAgenda: original metal/punk genre evidence missing")
+    # The raw export has no typed performers in many official records.
+    # An explicit promotional suffix is not part of the group's identity.
+    # If the original announcement cannot corroborate the cleaned name,
+    # do not create a false artist from the commercial headline.
     names = _bill({"@type": "MusicEvent", "name": title})
-    return names, genres
+    cleaned = []
+    for name in names:
+        if promotional_artist_candidate(name) is not None:
+            confirmed = _confirmed_promotional_artist(name, record)
+            if confirmed is None:
+                raise ValueError("OpenAgenda: promotional artist name not confirmed")
+            cleaned.append(confirmed)
+        else:
+            cleaned.append(name)
+    if len({normalized(n) for n in cleaned}) != len(cleaned):
+        raise ValueError("OpenAgenda: duplicate normalized performers")
+    return cleaned, genres
 
 
 def verified_bill(html, url, when, venue):
