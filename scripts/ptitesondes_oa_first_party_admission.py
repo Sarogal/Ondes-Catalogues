@@ -85,6 +85,36 @@ def explicit_child_age_text(value):
     return False
 
 
+def explicit_programme_category(title, description):
+    """Recognise a first-party advertised format, after audience validation.
+
+    A short artistic title can omit the format and the description can omit
+    the audience when the official record has a structured child age. Do not
+    turn incidental activities in an exhibition or other main programme into
+    a separate children's performance.
+    """
+    name, body = _norm(title), _norm(description)
+    if primary_out_of_scope(title, description) or re.search(
+            r"\b(?:exposition|vernissage|visite guidee|vide grenier)\b", name):
+        return None
+    for pattern, category, label in (
+        (r"^(?:un |une )?eveil musical\b", "eveil-musical", "Éveil musical"),
+        (r"^(?:un |une )?spectacle musical\b", "spectacle-musical", "Spectacle musical"),
+        (r"^(?:lectures?|histoires?) (?:et )?comptines?\b",
+         "lecture-jeunesse", "Lecture jeunesse"),
+    ):
+        if re.search(pattern, body):
+            return category, label
+    # An explicitly advertised participatory musical experience combines
+    # its central music theme, vocal practice and sound/instrument exploration.
+    # All three signals are required; merely mentioning music is insufficient.
+    if (re.search(r"\b(?:moment|atelier|seance|experience|temps) autour de la musique\b", body)
+            and re.search(r"\b(?:chanter|chantant|chantons|jouer avec la voix|jouant avec la voix)\b", body)
+            and re.search(r"\b(?:instruments?|objets sonores)\b", body)):
+        return "eveil-musical", "Éveil musical"
+    return None
+
+
 def admit_live_openagenda(lead, day_text, agenda, event, baseline, published,
                           today, *, as_of_utc=None):
     """Return (candidate, stable_reason). No network or catalogue writes."""
@@ -225,6 +255,8 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published,
         family = propose_family_activity(title, source_text)
         if family["category_proposal"] in PUBLISHABLE_CHILD_ARTS:
             category = (family["category_proposal"], family["category_label_proposal"])
+    if category is None:
+        category = explicit_programme_category(title, description)
     if category is None:
         return fail("oa_direct_out_of_editorial_scope")
     rights = review_event_rights(event, today)

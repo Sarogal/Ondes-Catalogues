@@ -61,6 +61,47 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
         self.assertEqual(candidate["category"], "eveil-musical")
         self.assertEqual(candidate["date_start"], DAY.isoformat())
 
+    def test_explicit_live_programme_format_with_independent_child_age(self):
+        # Synthetic records: no real event IDs or organiser-specific rules.
+        for title, description, expected in (
+            ("Petits sons", "Éveil musical.", "eveil-musical"),
+            ("Les saisons", "Un spectacle musical, dansé et raconté.", "spectacle-musical"),
+            ("Bébé lit", "Lectures & comptines. Histoires choisies par les bibliothécaires.",
+             "lecture-jeunesse"),
+            ("Voyage sonore", "Un moment autour de la musique en chantant et en explorant des instruments.",
+             "eveil-musical"),
+        ):
+            with self.subTest(title=title):
+                event = dict(oa_event(), title={"fr": title},
+                             description={"fr": description},
+                             age={"min": 0, "max": 6})
+                item = dict(lead(), title=title)
+                reference = base()
+                reference["events"][0]["category"] = expected
+                candidate, reason = admit_live_openagenda(
+                    item, DAY.isoformat(), AGENDA, event, reference, reference, TODAY)
+                self.assertEqual(reason, "oa_direct_live_source_accepted")
+                self.assertEqual(candidate["category"], expected)
+
+    def test_explicit_programme_fallback_preserves_audience_and_primary_activity(self):
+        for title, description, age, reason in (
+            ("Voyage sonore", "Éveil musical.", None, "oa_direct_child_audience_missing"),
+            ("Exposition de photos", "Un spectacle musical.", {"max": 6},
+             "oa_direct_out_of_editorial_scope"),
+            ("Rencontre", "Un moment autour de la musique avec les enfants.",
+             {"max": 6}, "oa_direct_out_of_editorial_scope"),
+            ("Forum associatif", "Éveil musical.", {"max": 6},
+             "oa_direct_primary_activity_outside_scope"),
+        ):
+            with self.subTest(title=title):
+                event = dict(oa_event(), title={"fr": title},
+                             description={"fr": description}, age=age)
+                candidate, status = admit_live_openagenda(
+                    dict(lead(), title=title), DAY.isoformat(), AGENDA,
+                    event, base(), base(), TODAY)
+                self.assertIsNone(candidate)
+                self.assertEqual(status, reason)
+
     def test_generic_youth_age_text_and_invalid_adult_age(self):
         from ptitesondes_oa_first_party_admission import explicit_child_age_text
         for positive in (
