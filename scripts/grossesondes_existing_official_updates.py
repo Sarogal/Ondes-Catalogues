@@ -164,6 +164,128 @@ def signed_programmer_current_city(html, row):
     return re.search(municipal, visible) is not None
 
 
+
+def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
+                                municipal_prover=None):
+    """Reprove a signed municipal event and its explicitly named venue.
+
+    The municipality in the page title is a search selector, not location
+    proof. Require the exact current festival and dates, a venue named in
+    that event's section, a same-origin venue page with the exact heading
+    and a nearby postal address, and fresh Geo/DILA origin attribution.
+    Only the commune can subsequently be resolved to an indicative centre.
+    """
+    from grossesondes_openagenda_linked_edition import (
+        MUNICIPAL_PUBLIC_CONFIDENCE, _municipal_detail_dates,
+        _municipal_heading_matches, municipal_selector, prove_municipal_edition,
+    )
+    from national_municipal_pages_preflight import safe_same_host_article
+    from source_qualification import Anchors
+
+    class MunicipalHeadings(VisibleInstitutionHeadings):
+        # Site-wide navigation and legal/contact footers cannot prove a
+        # particular event or venue address. Keep local content headers.
+        def handle_starttag(self, tag, attrs):
+            if tag in ("nav", "footer") or dict(attrs).get("role") == "contentinfo":
+                attrs = list(attrs) + [("hidden", "")]
+            super().handle_starttag(tag, attrs)
+
+    class MunicipalAnchors(Anchors):
+        # The shared anchor reader handles display:none and hidden;
+        # this proof also excludes visibility:hidden descendants.
+        def handle_starttag(self, tag, attrs):
+            style = dict(attrs).get("style") or ""
+            if re.search(r"visibility\s*:\s*hidden", style, re.I):
+                attrs = list(attrs) + [("hidden", "")]
+            super().handle_starttag(tag, attrs)
+
+    if (not isinstance(row, dict)
+            or row.get("sourceConfidence") != MUNICIPAL_PUBLIC_CONFIDENCE
+            or row.get("source") != row.get("officialSite")
+            or not isinstance(html, str) or not 0 < len(html) <= 650_000):
+        return None
+    site = row.get("officialSite")
+    if not isinstance(site, str) or safe_public_url(site) != site:
+        return None
+    try:
+        name = row["name"]
+        year = int(name.rsplit(" ", 1)[-1])
+        dates = (row["startDate"], row["endDate"])
+        if _municipal_detail_dates(html, name, year, today) != (True, dates):
+            return None
+        title = _EditionTitle()
+        title.feed(html)
+        title.close()
+        match = re.fullmatch(
+            r".{8,180}\s+[-–—]\s+(.{2,80}?),\s*site officiel de la mairie",
+            " ".join(" ".join(title.parts).split()), re.I)
+        if match is None or not municipal_selector(match.group(1)):
+            return None
+        city = match.group(1)
+        if row.get("city") and normal_city(row["city"]) != normal_city(city):
+            return None
+        heading = MunicipalHeadings()
+        heading.feed(html)
+        heading.close()
+        matches = [i for i, label in enumerate(heading.headings)
+                   if _municipal_heading_matches(label, name, year)]
+        if len(matches) != 1:
+            return None
+        index = matches[0]
+        start = heading.heading_starts[index]
+        end = (heading.heading_starts[index + 1]
+               if index + 1 < len(heading.heading_starts) else len(heading.parts))
+        section = fold(" ".join(heading.parts[start:end]))
+        anchors = MunicipalAnchors()
+        anchors.feed(html)
+        anchors.close()
+        root = "https://" + urlsplit(site).netloc + "/"
+        candidates = {}
+        for href, label, _ in anchors.anchors[:500]:
+            venue = fold(label)
+            if not 7 <= len(venue) <= 100:
+                continue
+            bare = re.sub(r"^(?:le|la|les|l)\s+", "", venue)
+            if not re.search(r"\b(?:au|aux|a|a la|a l|dans|dans le|dans la)\s+"
+                             + re.escape(bare) + r"\b", section):
+                continue
+            url = safe_same_host_article(href, site, root)
+            if url and url != site and not urlsplit(url).query:
+                candidates[url] = bare
+        if not 1 <= len(candidates) <= 3 or len(set(candidates.values())) != 1:
+            return None
+        proven = []
+        for url, venue in sorted(candidates.items()):
+            body = fetch(url)
+            if not isinstance(body, str) or not 0 < len(body) <= 650_000:
+                return None
+            parsed = MunicipalHeadings()
+            parsed.feed(body)
+            parsed.close()
+            names = [i for i, label in enumerate(parsed.headings)
+                     if re.sub(r"^(?:le|la|les|l)\s+", "", fold(label)) == venue]
+            if len(names) != 1:
+                continue
+            # Venue title and postal address must be in the same local
+            # region of visible content, not an unrelated global footer.
+            point = parsed.heading_starts[names[0]]
+            nearby = fold(" ".join(parsed.parts[:point])[-800:] + " " +
+                          " ".join(parsed.parts[point:])[:500])
+            if not re.search(r"\b[0-9]{5}\s+" + re.escape(fold(city)) + r"\b",
+                             nearby):
+                continue
+            proven.append(url)
+        if len(proven) != 1:
+            return None
+        recheck = municipal_prover or prove_municipal_edition
+        if recheck(city, name, today, fetch=fetch) != (site, dates):
+            return None
+        return {"slug": row["slug"], "city": city, "source": site,
+                "venue_source": proven[0]}
+    except (OSError, TimeoutError, ValueError, TypeError, UnicodeError, KeyError):
+        return None
+
+
 def current_official_ticket_city(html, row):
     """Exact summer-edition locality printed on a CURRENT first-party ticket page.
 
@@ -1407,6 +1529,8 @@ def apply_independently_verified_updates(
                 claims_city = []
                 for linked_url, html in html_pages:
                     claim = exact_edition_city(html, old)
+                    if claim is None and linked_url == site:
+                        claim = signed_municipal_venue_city(html, old, today, fetch)
                     if claim is None and linked_url != site:
                         city = current_official_ticket_city(html, old)
                         if city:
@@ -1454,6 +1578,8 @@ def apply_independently_verified_updates(
                         })
                         fields.extend(sorted(COMMUNE_FIELDS))
                         sources.append(site)
+                        if claim.get("venue_source"):
+                            sources.append(claim["venue_source"])
             # A published, SIGNED future-edition city is already an accepted
             # municipality, but not proof of this year's exact entrance.
             # When the same official homepage independently reaffirms the
