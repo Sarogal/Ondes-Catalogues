@@ -1,0 +1,35 @@
+{
+  "schema": "ptitesondes.reviewed_retraction_audit.v1",
+  "reviewed_on": "2026-11-25",
+  "applied_at": "2026-11-25T14:17:59+01:00",
+  "before_count": 922,
+  "after_count": 918,
+  "catalogue_before_sha256": "1f3b798548e06de4ad92c41c245abde19886c99aceaf7aff5a56b440891cd409",
+  "catalogue_after_sha256": "7cbf559b5672cbf5bca9315a8878e09aa0e986f5b5695803971f7a605107ebb8",
+  "withdrawn": [
+    {
+      "id": "openagenda-79453559-2026-11-28",
+      "reason_code": "adult_audience_official",
+      "evidence_url": "https://metropole.nantes.fr/que-faire-a-nantes/agenda/79453559_feldup-and-the-showerheads-premiere-parie",
+      "original_source_url": "https://openagenda.com/festival-culture-bar-bars/events/79453559_feldup-and-the-showerheads-premiere-parie"
+    },
+    {
+      "id": "openagenda-54075752-2026-11-29",
+      "reason_code": "adult_audience_official",
+      "evidence_url": "https://metropole.nantes.fr/que-faire-a-nantes/agenda/54075752_jazz-brunch-109741",
+      "original_source_url": "https://openagenda.com/festival-culture-bar-bars/events/54075752_jazz-brunch-109741"
+    },
+    {
+      "id": "openagenda-22739916-2026-11-29",
+      "reason_code": "market_gathering_primary",
+      "evidence_url": "https://www.bienvenue-hautemarne.fr/agenda/joinville-marche-de-saint-nicolas-au-couvent-des-annonciades-celestes-de-joinville-fmacha052v500xz2/",
+      "original_source_url": "https://openagenda.com/adt-haute-marne/events/22739916_marche-de-saint-nicolas-au-couvent-des-annonciades-celestes-de-joinville"
+    },
+    {
+      "id": "openagenda-63026866-2026-12-05",
+      "reason_code": "market_gathering_primary",
+      "evidence_url": "https://www.infolocale.fr/associations/organisme-apel-saint-goulven-609756/evenement-marche-de-noel-de-saint-didier-9036751",
+      "original_source_url": "https://openagenda.com/apel-saint-goulven/events/63026866_marche-de-noel-de-saint-didier"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-25T14:17:08+01:00",
+  "updated_at": "2026-11-25T14:17:59+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -18465,46 +18465,6 @@
       "lng": 3.14511
     },
     {
-      "id": "openagenda-22739916-2026-11-29",
-      "title": "Marché de Saint-Nicolas au Couvent des Annonciades Célestes de Joinville",
-      "category": "lecture-jeunesse",
-      "category_label": "Lecture jeunesse",
-      "date_start": "2026-11-29",
-      "date_end": "2026-11-29",
-      "time": "10:00",
-      "city": "JOINVILLE",
-      "department": "Haute-Marne",
-      "region": "Grand Est",
-      "venue": "Couvent des Annonciades Célestes",
-      "source_url": "https://openagenda.com/adt-haute-marne/events/22739916_marche-de-saint-nicolas-au-couvent-des-annonciades-celestes-de-joinville",
-      "source_label": "ADT Haute-Marne — Licence Ouverte 2.0 — données mises à jour le 12/11/2026",
-      "verified_at": "2026-11-25",
-      "geo_verified_at": "2026-11-25",
-      "geo_precision": "venue",
-      "lat": 48.436266,
-      "lng": 5.137881
-    },
-    {
-      "id": "openagenda-63026866-2026-12-05",
-      "title": "MARCHE DE NOËL DE SAINT-DIDIER",
-      "category": "spectacle-jeunesse",
-      "category_label": "Spectacle jeune public",
-      "date_start": "2026-12-05",
-      "date_end": "2026-12-05",
-      "time": "11:00",
-      "city": "Saint-Didier",
-      "department": "Ille-et-Vilaine",
-      "region": "Bretagne",
-      "venue": "Ecole Saint Goulven",
-      "source_url": "https://openagenda.com/apel-saint-goulven/events/63026866_marche-de-noel-de-saint-didier",
-      "source_label": "APEL SAINT GOULVEN — Licence Ouverte 2.0 — données mises à jour le 10/11/2026",
-      "verified_at": "2026-11-25",
-      "geo_verified_at": "2026-11-25",
-      "geo_precision": "venue",
-      "lat": 48.095104,
-      "lng": -1.372355
-    },
-    {
       "id": "openagenda-23637679-2026-11-27",
       "title": "Spectacle : Rock'N'Lol",
       "category": "spectacle-jeunesse",
@@ -18563,26 +18523,6 @@
       "geo_precision": "venue",
       "lat": 48.441962,
       "lng": 5.139826
-    },
-    {
-      "id": "openagenda-79453559-2026-11-28",
-      "title": "FELDUP & THE SHOWERHEADS + PREMIÈRE PARTIE",
-      "category": "concert",
-      "category_label": "Concert",
-      "date_start": "2026-11-28",
-      "date_end": "2026-11-28",
-      "time": "20:30",
-      "city": "Nantes",
-      "department": "Loire-Atlantique",
-      "region": "Pays de la Loire",
-      "venue": "FERRAILLEUR",
-      "source_url": "https://openagenda.com/festival-culture-bar-bars/events/79453559_feldup-and-the-showerheads-premiere-parie",
-      "source_label": "FESTIVAL CULTURE BAR-BARS — Licence Ouverte 2.0 — données mises à jour le 05/10/2026",
-      "verified_at": "2026-11-25",
-      "geo_verified_at": "2026-11-25",
-      "geo_precision": "venue",
-      "lat": 47.202277,
-      "lng": -1.572656
     },
     {
       "id": "openagenda-24449281-2026-11-28",
@@ -18763,26 +18703,6 @@
       "geo_precision": "venue",
       "lat": 44.835305,
       "lng": -0.586878
-    },
-    {
-      "id": "openagenda-54075752-2026-11-29",
-      "title": "JAZZ BRUNCH AVEC OCEAN DROPS",
-      "category": "concert",
-      "category_label": "Concert",
-      "date_start": "2026-11-29",
-      "date_end": "2026-11-29",
-      "time": "11:30",
-      "city": "Nantes",
-      "department": "Loire-Atlantique",
-      "region": "Pays de la Loire",
-      "venue": "ZAW",
-      "source_url": "https://openagenda.com/festival-culture-bar-bars/events/54075752_jazz-brunch-109741",
-      "source_label": "FESTIVAL CULTURE BAR-BARS — Licence Ouverte 2.0 — données mises à jour le 16/11/2026",
-      "verified_at": "2026-11-25",
-      "geo_verified_at": "2026-11-25",
-      "geo_precision": "venue",
-      "lat": 47.218222,
-      "lng": -1.53927
     },
     {
       "id": "openagenda-6426597-2027-03-19",
