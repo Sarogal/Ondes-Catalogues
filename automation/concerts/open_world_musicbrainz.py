@@ -74,7 +74,15 @@ def exact(value):
             if isinstance(value, str) else "")
 
 
-def candidate_names(registry, today):
+# Exact editorial placeholders, not a name pattern or an artist blacklist.
+# Explicit performer fields remain eligible even for unconventional names.
+FALLBACK_SUPPORT_LABELS = frozenset({
+    "1re partie", "1ere partie", "1 er partie", "1 ere partie", "premiere partie",
+    "premiere partie surprise", "support act", "opening act",
+})
+
+
+def candidate_tasks(registry, today):
     if (not isinstance(registry, dict)
             or registry.get("schema") != "grossesondes.concert.intake.v1"
             or not isinstance(registry.get("items"), dict)):
@@ -90,13 +98,27 @@ def candidate_names(registry, today):
                 or lead.get("cancellationNotice") is True):
             continue
         try:
-            if dt.date.fromisoformat(lead.get("date")) < today:
+            day = dt.date.fromisoformat(lead.get("date"))
+            if day < today:
                 continue
         except (TypeError, ValueError):
             continue
+        explicit = lead.get("officialArtistNames")
+        named = isinstance(explicit, list) and 0 < len(explicit) <= 32
         for name in frontier.observed_artists(lead):
-            names.setdefault(exact(name), name)
+            if not named and frontier.normalized(name) in FALLBACK_SUPPORT_LABELS:
+                continue
+            key = exact(name)
+            # Prefer an actual named performer, then the nearest show;
+            # keep fallback leads eligible, including new or unusual acts.
+            task = (0 if named else 1, day.toordinal(), name)
+            if key not in names or task < names[key]:
+                names[key] = task
     return names
+
+
+def candidate_names(registry, today):
+    return {key: task[2] for key, task in candidate_tasks(registry, today).items()}
 
 
 def research(name, request):
@@ -171,16 +193,16 @@ def build(registry, today, *, prior=None, limit=MAX_NAMES, request=None):
             or not isinstance(prior.get("entries"), dict)):
         raise ValueError("Untrusted MusicBrainz memory")
     entries = dict(prior["entries"])
-    names = candidate_names(registry, today)
+    names = candidate_tasks(registry, today)
     eligible = []
-    for key, name in names.items():
+    for key, (priority, date, name) in names.items():
         entry = entries.get(key, {})
         try:
             age = (today - dt.date.fromisoformat(entry["checkedAt"])).days
         except (TypeError, KeyError, ValueError):
             age = 99999
         if age >= (30 if entry.get("status") == "hypothesis" else 7):
-            eligible.append((-age, key, name))
+            eligible.append((-age, priority, date, key, name))
     counters = Counter()
     request = request if request is not None else Client()
     checked = 0
@@ -189,13 +211,13 @@ def build(registry, today, *, prior=None, limit=MAX_NAMES, request=None):
     # Rotate the next cycle after that name without declaring it researched.
     cursor = prior.get("serviceRetryAfterKey")
     if isinstance(cursor, str):
-        for i, (_, key, _) in enumerate(ordered):
+        for i, (_, _, _, key, _) in enumerate(ordered):
             if key == cursor:
                 ordered = ordered[i + 1:] + ordered[:i + 1]
                 break
     failure = None
     retry_after_key = None
-    for _, key, name in ordered[:limit]:
+    for _, _, _, key, name in ordered[:limit]:
         checked += 1
         try:
             result = research(name, request)

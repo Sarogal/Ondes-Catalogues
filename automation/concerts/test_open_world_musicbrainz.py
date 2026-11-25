@@ -113,6 +113,33 @@ class MusicBrainzResearchTests(unittest.TestCase):
                          request=lambda *a: {"count": 0, "artists": []})
         self.assertEqual(set(final["entries"]), {"act a", "act b", "act c"})
 
+    def test_research_priority_preserves_unknown_names_and_skips_fallback_labels(self):
+        reg = registry()
+        base = reg["items"]["lead"]["candidate"]
+        reg["items"] = {}
+        def add(key, name, date, named):
+            row = {**base, "date": date, "leadArtist": name}
+            row.pop("officialArtistNames", None)
+            if named:
+                row["officialArtistNames"] = [name]
+            reg["items"][key] = {"status": "pending_review", "candidate": row}
+        add("one", "1RE PARTIE", "2026-11-25", False)
+        add("two", "1ère partie", "2026-11-25", False)
+        add("three", "Z New Band", "2026-12-01", True)
+        add("four", "A Solo Artist", "2027-01-01", True)
+        add("five", "3rd Eye", "2026-11-25", False)
+        add("six", "Première Partie", "2027-02-01", True)
+        queried = []
+        def request(path, params):
+            queried.append(params["query"])
+            return {"count": 0, "artists": []}
+        result = mb.build(reg, DAY, limit=2, request=request)
+        self.assertEqual(result["eligibleNames"], 4)
+        self.assertEqual(queried, ['artist:"Z New Band"', 'artist:"A Solo Artist"'])
+        result = mb.build(reg, DAY, prior=result, request=request)
+        self.assertEqual(queried[2:], ['artist:"Première Partie"', 'artist:"3rd Eye"'])
+        self.assertEqual(result["approvalsProposed"], 0)
+
     def test_no_event_data_sent_and_query_escaped(self):
         name = 'Act "OR" \\ Other'
         def request(path, params):
