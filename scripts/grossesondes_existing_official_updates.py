@@ -1228,6 +1228,36 @@ def apply_independently_verified_updates(
                     seasonal_conflict = True
                 seasonal_offers.update(offers)
                 seasonal_sources.append(url)
+            # A successful raw HTTPS response can still contain only the
+            # site's loading placeholder for dynamic ticket availability.
+            # Read the isolated same-root browser evidence in that case only,
+            # not as a way to override a contradictory concrete raw status.
+            rendered_ticket_offers = False
+            raw_visible = VisibleText()
+            raw_visible.feed(root_html)
+            raw_visible.close()
+            raw_words = fold(" ".join(raw_visible.parts))
+            if (not seasonal_offers and not seasonal_conflict and not prices
+                    and old.get("price") is None
+                    and browser_fetch is not None and site in browser_sites
+                    and exact_edition_city(root_html, old)
+                    and re.search(r"\bdisponibilite actualisation\b", raw_words)
+                    and not re.search(
+                        r"\bdisponibilite (?:disponible|epuise|complet|sold out)\b",
+                        raw_words)):
+                try:
+                    rendered = browser_fetch(site)
+                    if (not isinstance(rendered, str)
+                            or not 0 < len(rendered.encode("utf-8")) <= 650_000):
+                        raise ValueError("Invalid rendered ticket evidence")
+                    if rendered != root_html:
+                        offers = seasonal_ticket_card_offers(rendered, old, today)
+                        if offers:
+                            seasonal_offers = offers
+                            seasonal_sources.append(site)
+                            rendered_ticket_offers = True
+                except (OSError, TimeoutError, ValueError, UnicodeError, TypeError, KeyError):
+                    pass
             tier_summary = (seasonal_ticket_summary(seasonal_offers)
                             if not seasonal_conflict else None)
             current_lineup = old.get("lineup")
@@ -1272,6 +1302,7 @@ def apply_independently_verified_updates(
                 new["price"] = tier_summary
                 fields.append("price")
                 sources.extend(seasonal_sources)
+            commune_diagnostic = "not_eligible"
             # The signed current-edition title may explicitly name the town.
             # Publisher re-fetches the site itself, then independently resolves
             # that exact commune through the fixed government geocoding API.
@@ -1299,6 +1330,9 @@ def apply_independently_verified_updates(
                         claims_city.append(claim)
                 distinct_cities = {
                     normal_city(c["city"]) for c in claims_city}
+                commune_diagnostic = ("no_current_city_proof" if not distinct_cities
+                                      else "conflicting_current_cities" if len(distinct_cities) > 1
+                                      else "city_claim_not_accepted")
                 claim = (claims_city[0] if len(distinct_cities) == 1
                          else None)
                 if (claim and claim.get("source") == site
@@ -1309,6 +1343,8 @@ def apply_independently_verified_updates(
                         commune = commune_resolver(claim["city"], old.get("department"))
                     except (OSError, TimeoutError, ValueError, UnicodeError):
                         commune = None
+                    commune_diagnostic = ("admin_resolution_returned" if commune
+                                          else "admin_resolution_unavailable_or_ambiguous")
                     if (commune and normal_city(commune.get("city")) == normal_city(claim["city"])
                             and type(commune.get("lat")) in (float, int)
                             and type(commune.get("lon")) in (float, int)
@@ -1554,6 +1590,11 @@ def apply_independently_verified_updates(
                     "artist_names_claimed": len(claims),
                     "artist_names_new": len(new_names),
                     "open_pass_categories_found": sorted(prices),
+                    "seasonal_ticket_tiers_found": len(seasonal_offers),
+                    "seasonal_ticket_conflict": seasonal_conflict,
+                    "seasonal_ticket_rendered_proof": rendered_ticket_offers,
+                    "commune_diagnostic": ("accepted" if "geoVerification" in fields
+                                           else commune_diagnostic),
                     "fields_proposed": list(fields),
                     "ticket_note_proof": ({
                         "old_note_outdated": (
