@@ -21,7 +21,8 @@ def inputs():
              "identityNameSha256":safe_digest("iron radio"),"streamSha256":SHA,
              "analyzerVersion":ANALYZER_VERSION,"observedDate":DAY,"retrieval":"html_observed",
              "identityNameMatch":True,"signal":"identity_and_target_indication","primaryTargetTerms":["metal"],
-             "declaredStreamLinked":True,"structuredProgrammeEvidence":True},
+             "declaredStreamLinked":True,"structuredProgrammeEvidence":True,
+             "programmeScopeEvidence":True,"programmeScopeSources":["typed_station_genre"],"programmeScopeTerms":["metal"]},
          "streamEvidence":{"streamSha256":SHA,"lastVerdict":"audio_sample_ok","lastObservedDate":DAY},
          "continuityEvidence":{"streamSha256":SHA,"observedDate":DAY,"verdict":"continuous_icy_frame_indication",
                               "positiveObservationDates":["2026-11-24",DAY]}}
@@ -84,6 +85,23 @@ class DecisionTests(unittest.TestCase):
         r["records"][0]["approved"]=True
         with self.assertRaises(ValueError):
             decide(d,r,BASE)
+
+    def test_html_scope_without_jsonld_can_stage(self):
+        d,r=inputs()
+        page=r["records"][0]["homepageEvidence"]
+        page["structuredProgrammeEvidence"]=False
+        page["programmeScopeSources"]=["explicit_html_station_scope"]
+        self.assertEqual(decide(d,r,BASE)["stagingReviewCount"],1)
+
+    def test_structured_description_without_scope_not_enough(self):
+        d,r=inputs()
+        r["records"][0]["homepageEvidence"]["programmeScopeEvidence"]=False
+        self.assertEqual(decide(d,r,BASE)["stagingReviewCount"],0)
+
+    def test_mixed_other_format_needs_review(self):
+        d,r=inputs()
+        r["records"][0]["homepageEvidence"]["otherFormatTerms"]=["indie"]
+        self.assertEqual(decide(d,r,BASE)["stagingReviewCount"],0)
 
 if __name__=="__main__":
     unittest.main()

@@ -17,7 +17,7 @@ from radio_daily_qualification_dossiers import index, safe_digest, MAX_BYTES
 from radio_daily_editorial_preview import homepage_url, normalize, ANALYZER_VERSION
 from radio_stream_recheck_ledger import parse_day, SHA256_RE
 
-POLICY_VERSION = 1
+POLICY_VERSION = 2
 MAX_EDITORIAL_AGE = 7
 MAX_TECHNICAL_AGE = 7
 STRONG_VERDICTS = ("continuous_icy_frame_indication", "advancing_hls_audio_frame_indication")
@@ -90,8 +90,11 @@ def decide(discovery, dossiers, baseline_sha):
         # An isolated target keyword can describe just one show. Require
         # additional station-level programme evidence before staging review.
         structured=bool(editorial_match and homepage.get("structuredProgrammeEvidence") is True)
+        scope=bool(editorial_match and homepage.get("programmeScopeEvidence") is True
+                   and homepage.get("programmeScopeSources") and homepage.get("programmeScopeTerms"))
         mixed=(row.get("editorialSignal") in ("mixed_genre_review","electronic_context_review")
-               or homepage.get("signal") in ("mixed_programme_indication","electronic_indication"))
+               or homepage.get("signal") in ("mixed_programme_indication","electronic_indication")
+               or bool(homepage.get("otherFormatTerms")))
         strong=[]
         for evidence in (cont,hls):
             if (sha and evidence.get("streamSha256")==sha
@@ -123,7 +126,7 @@ def decide(discovery, dossiers, baseline_sha):
                 reasons.append("obtain_station_bound_editorial_evidence")
             if not linked:
                 reasons.append("bind_broadcaster_to_stream")
-            if not structured:
+            if not scope:
                 reasons.append("confirm_station_level_programme_scope")
             if mixed:
                 reasons.append("resolve_mixed_or_electronic_format")
@@ -139,13 +142,14 @@ def decide(discovery, dossiers, baseline_sha):
                 decision="source_recheck"
             elif editorial_match and linked and continuous:
                 decision="advanced_candidate"
-            elif not editorial_match or not linked or not structured or mixed:
+            elif not editorial_match or not linked or not scope or mixed:
                 decision="editorial_review"
             else:
                 decision="technical_review"
         output.append({"stationuuid":uid,"name":row.get("name"),"decision":decision,
                        "streamSha256":sha,"editorialMatch":editorial_match,
                        "broadcasterStreamLink":linked,"structuredProgrammeEvidence":structured,
+                       "programmeScopeEvidence":scope,
                        "continuityIndication":continuous,"positiveContinuityDays":days,
                        "logoDecodedHint":logo_hint,"blockingReasons":reasons,
                        "approved":False,"publicationAllowed":False})

@@ -29,7 +29,7 @@ from radio_daily_qualification_dossiers import index, safe_digest
 MAX_BYTES = 256 * 1024
 MAX_PAGES = 8
 MAX_INPUT = 12 * 1024 * 1024
-ANALYZER_VERSION = 2
+ANALYZER_VERSION = 3
 TARGET = re.compile(r"\b(?:(?:heavy|black|death|thrash|doom|power|folk|pagan|nu|glam|hair|speed|progressive|symphonic|industrial|groove|alternative|extreme|sludge|stoner|gothic|viking|melodic)\s+metal|metal|metalcore|deathcore|grindcore|hard\s+rock|punk(?:\s+rock)?|hardcore\s+punk|punkrock|thrash|djent|nwobhm)\b")
 ELECTRONIC = re.compile(r"\b(?:techno|electronic|edm|gabber|hardstyle|happy hardcore|drum and bass|rave|speedcore|uptempo hardcore|dubstep)\b")
 
@@ -120,6 +120,9 @@ class Page(HTMLParser):
         self.structured = []
         self.jsonld = None
         self.audio_urls = []
+        self.in_audio = 0
+        self.paragraphs = []
+        self.paragraph = None
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
@@ -141,8 +144,19 @@ class Page(HTMLParser):
                 self.descriptions.append(value[:1000])
             if key in ("og:image", "og:image:secure_url"):
                 self.images.append(value)
-        if tag in ("audio", "source") and a.get("src") and len(self.audio_urls) < 32:
-            self.audio_urls.append(a["src"])
+        if tag == "audio":
+            self.in_audio += 1
+        if tag == "p":
+            self.paragraph = ""
+        # Typed player declarations, not arbitrary links or executable JS.
+        # An audio source inside video is not a radio player.
+        if len(self.audio_urls) < 32:
+            if (tag == "audio" or (tag == "source" and self.in_audio)) and a.get("src"):
+                self.audio_urls.append(a["src"])
+            elif tag == "a" and (a.get("type") or "").lower().startswith("audio/") and a.get("href"):
+                self.audio_urls.append(a["href"])
+            elif tag in ("audio", "button", "div") and a.get("data-stream-url"):
+                self.audio_urls.append(a["data-stream-url"])
         if tag == "link" and "icon" in (a.get("rel") or "").lower().split():
             self.images.append(a.get("href") or "")
 
@@ -159,6 +173,12 @@ class Page(HTMLParser):
                             pass
                     self.jsonld = None
             return
+        if tag == "audio":
+            self.in_audio = max(0, self.in_audio-1)
+        if tag == "p" and self.paragraph is not None:
+            if len(self.paragraphs) < 80:
+                self.paragraphs.append(self.paragraph)
+            self.paragraph = None
         if tag == self.section:
             self.section = None
 
@@ -169,6 +189,8 @@ class Page(HTMLParser):
             return
         if self.section and self.identity:
             self.identity[-1] = (self.identity[-1] + " " + data)[:500]
+        if self.paragraph is not None:
+            self.paragraph = (self.paragraph + " " + data)[:1500]
         if len(self.body) < 4000:
             self.body.append(data[:500])
 
@@ -210,6 +232,25 @@ def format_text(value, identity):
     return normalized
 
 
+# Explicit station-level scope phrases, rather than keyword count or brand.
+# More languages can extend these generic linguistic patterns independently.
+SCOPE = re.compile(r"\b(?:24\s*7|24\s*(?:h|hours|heures)|around the clock|non stop|nonstop|all day|only|exclusively|dedicated to|speciali[sz]ed in|exclusivement|consacree? a|specialisee? dans|en continu|rund um die uhr|ausschliesslich|spezialisiert auf|dedicada? a|exclusivamente|todo el dia|sem parar)\b")
+EPISODIC = re.compile(r"\b(?:show|episode|podcast|every (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|weekly|emission|chaque (?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)|hebdomadaire|sendung|programa semanal)\b")
+NEGATION = re.compile(r"\b(?:not|no|never|without|sans|pas de|aucun|kein|ohne|sin|nunca)\b")
+OTHER_FORMAT = re.compile(r"\b(?:indie|pop music|pop|hip hop|rap|jazz|classical|country|talk|news|variety|variete|reggae|dance music)\b")
+
+
+def scope_terms(text, identity):
+    value = format_text(text, identity)
+    # Restrict scope to a single short declaration. A dedicated weekly show
+    # or a negated genre must not certify a whole station.
+    if len(value)>350 or EPISODIC.search(value) or NEGATION.search(value):
+        return []
+    if not SCOPE.search(value) or ELECTRONIC.search(value) or OTHER_FORMAT.search(value):
+        return []
+    return sorted(set(m.group() for m in TARGET.finditer(value)))[:20]
+
+
 def inspect_page(name, url, body, stream_url=None):
     page = Page()
     page.feed(body.decode("utf-8", errors="replace"))
@@ -218,15 +259,22 @@ def inspect_page(name, url, body, stream_url=None):
     # Very short names and generic labels are not enough to bind identity.
     identity_hit = any(matches_identity(identity, x) for x in page.identity)
     structured = []
+    typed_genres = []
     for node in station_nodes(page.structured):
         if isinstance(node.get("name"), str) and normalize(node["name"]) == identity and matches_identity(identity, node["name"]):
             genres = node.get("genre", [])
             if isinstance(genres, str):
                 genres = [genres]
             if isinstance(genres, list):
-                structured.extend(x[:200] for x in genres[:20] if isinstance(x, str))
+                accepted = [x[:200] for x in genres[:20] if isinstance(x, str)]
+                typed_genres.extend(accepted)
+                structured.extend(accepted)
             if isinstance(node.get("description"), str):
                 structured.append(node["description"][:1000])
+            # Exact URL only, on a matching typed station node.
+            for key in ("contentUrl", "streamUrl"):
+                if isinstance(node.get(key), str) and len(page.audio_urls) < 32:
+                    page.audio_urls.append(node[key])
             identity_hit = True
     # A genre in the station name alone is not independent programme evidence.
     primary = " ".join(format_text(x, identity) for x in page.identity + page.descriptions + structured)
@@ -238,11 +286,33 @@ def inspect_page(name, url, body, stream_url=None):
             stream_match = any(urljoin(url, x) == stream_url for x in page.audio_urls)
         except ValueError:
             pass
+    # Accept explicit station scope from typed genre declarations or from
+    # ordinary HTML. A paragraph needs the station name in the same paragraph
+    # (or matching player link and matching page identity).
+    scope_sources = []
+    scope = []
+    genre_text = " ".join(normalize(x) for x in typed_genres)
+    if (identity_hit and TARGET.search(genre_text) and not ELECTRONIC.search(genre_text)
+            and not OTHER_FORMAT.search(genre_text) and not NEGATION.search(genre_text)):
+        scope_sources.append("typed_station_genre")
+        scope.extend(m.group() for m in TARGET.finditer(genre_text))
+    if identity_hit:
+        for text in page.descriptions + page.paragraphs:
+            if not (matches_identity(identity, text) or stream_match):
+                continue
+            hits = scope_terms(text, identity)
+            if hits:
+                scope_sources.append("explicit_html_station_scope")
+                scope.extend(hits)
     # Explicit terms in descriptions/title are stronger than body/navigation
     # hits, but never sufficient to approve editorial format.
-    strong = sorted(set(m.group() for m in TARGET.finditer(primary)))[:20]
+    strong = sorted(set([m.group() for m in TARGET.finditer(primary)] + scope))[:20]
     weak = sorted(set(m.group() for m in TARGET.finditer(visible)))[:20]
     electronic = sorted(set(m.group() for m in ELECTRONIC.finditer(primary)))[:20]
+    other_format = sorted(set(m.group() for m in OTHER_FORMAT.finditer(primary)))[:20]
+    if electronic or other_format:
+        scope_sources = []
+        scope = []
     if strong and electronic:
         signal = "mixed_programme_indication"
     elif strong and identity_hit:
@@ -266,6 +336,10 @@ def inspect_page(name, url, body, stream_url=None):
             continue
     return {"identityNameMatch": bool(identity_hit), "signal": signal,
             "structuredProgrammeEvidence": bool(structured),
+            "programmeScopeEvidence": bool(scope_sources),
+            "programmeScopeSources": sorted(set(scope_sources)),
+            "programmeScopeTerms": sorted(set(scope))[:20],
+            "otherFormatTerms": other_format,
             "declaredStreamLinked": stream_match,
             "primaryTargetTerms": strong, "visibleTargetTerms": weak,
             "primaryElectronicTerms": electronic, "pageSha256": hashlib.sha256(body).hexdigest(),
@@ -311,13 +385,23 @@ def collect(discovery, reconciliation, *, previous=None, limit=0, fetch=fetch_ht
                 if prior.get("streamSha256") == safe_digest(row.get("streamUrl")):
                     continue
             if prior.get("analyzerVersion") != ANALYZER_VERSION or prior.get("streamSha256") != safe_digest(row.get("streamUrl")):
-                result[uid] = dict(result[uid], signal="stale_analyzer_or_stream_review", declaredStreamLinked=False)
+                result[uid] = dict(result[uid], signal="stale_analyzer_or_stream_review", declaredStreamLinked=False, programmeScopeEvidence=False)
         groups.setdefault(url, []).append((uid, row))
     # Previously untested URLs first; repeated failures cannot monopolize queue.
-    queue = sorted(groups, key=lambda u: (
-        not any(uid in result and result[uid].get("signal") == "stale_analyzer_or_stream_review"
-                for uid, _ in groups[u]),
-        all(uid in result for uid, _ in groups[u]), u))[:limit]
+    # Refresh previously promising pages first, then alternate fresh discovery
+    # and stale analyzer rows so an upgrade cannot monopolize the crawl.
+    promising = [u for u in groups if any(old.get(uid, {}).get("signal") == "identity_and_target_indication"
+                  or old.get(uid, {}).get("declaredStreamLinked") is True for uid, _ in groups[u])]
+    promising = sorted(promising)[:max(1, limit//2)] if limit else []
+    remaining = sorted(set(groups)-set(promising))
+    fresh_pages = [u for u in remaining if any(uid not in result for uid,_ in groups[u])]
+    refresh_pages = [u for u in remaining if u not in fresh_pages]
+    queue = list(promising)
+    while len(queue) < limit and (fresh_pages or refresh_pages):
+        if fresh_pages and len(queue)<limit:
+            queue.append(fresh_pages.pop(0))
+        if refresh_pages and len(queue)<limit:
+            queue.append(refresh_pages.pop(0))
     def request(url):
         try:
             final, data = fetch(url)
@@ -348,6 +432,7 @@ def collect(discovery, reconciliation, *, previous=None, limit=0, fetch=fetch_ht
         if row.get("analyzerVersion") != ANALYZER_VERSION:
             row["signal"] = "stale_analyzer_or_stream_review"
             row["declaredStreamLinked"] = False
+            row["programmeScopeEvidence"] = False
     if len(records) > 20000:
         raise ValueError("editorial register capacity")
     return {"schemaVersion": 1, "scanDate": day, "publicationAllowed": False,
@@ -355,6 +440,7 @@ def collect(discovery, reconciliation, *, previous=None, limit=0, fetch=fetch_ht
             "htmlObservedCount": sum(x["retrieval"] == "html_observed" for x in records),
             "identityTargetCount": sum(x.get("signal") == "identity_and_target_indication" for x in records),
             "structuredProgrammeCount": sum(x.get("analyzerVersion") == ANALYZER_VERSION and x.get("structuredProgrammeEvidence") is True for x in records),
+            "programmeScopeCount": sum(x.get("analyzerVersion") == ANALYZER_VERSION and x.get("programmeScopeEvidence") is True for x in records),
             "declaredStreamLinkedCount": sum(x.get("declaredStreamLinked") is True for x in records),
             "records": records}
 

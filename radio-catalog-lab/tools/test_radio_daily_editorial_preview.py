@@ -109,5 +109,40 @@ class EditorialPreviewTests(unittest.TestCase):
         self.assertEqual(again["declaredStreamLinkedCount"], 0)
 
 
+    def test_plain_html_scope_without_jsonld(self):
+        body=b'<h1>Iron Test Radio</h1><p>Iron Test Radio plays heavy metal 24/7.</p><audio src="/live"></audio>'
+        row=inspect_page("Iron Test Radio",URL,body,URL+"live")
+        self.assertTrue(row["programmeScopeEvidence"])
+        self.assertFalse(row["structuredProgrammeEvidence"])
+        self.assertTrue(row["declaredStreamLinked"])
+        self.assertEqual(row["programmeScopeSources"],["explicit_html_station_scope"])
+
+    def test_weekly_show_and_mixed_formats_not_scope(self):
+        for text in ("Iron Test Radio has a weekly show dedicated to metal",
+                     "Iron Test Radio plays metal and indie 24/7",
+                     "Iron Test Radio is not dedicated to metal"):
+            row=inspect_page("Iron Test Radio",URL,("<h1>Iron Test Radio</h1><p>"+text+"</p>").encode())
+            self.assertFalse(row["programmeScopeEvidence"])
+
+    def test_typed_genre_and_exact_station_stream(self):
+        body=b'<script type="application/ld+json">{"@type":"RadioStation","name":"Iron Test Radio","genre":"metal","contentUrl":"/live"}</script>'
+        row=inspect_page("Iron Test Radio",URL,body,URL+"live")
+        self.assertTrue(row["programmeScopeEvidence"])
+        self.assertTrue(row["declaredStreamLinked"])
+        self.assertFalse(inspect_page("Other Radio",URL,body,URL+"live")["declaredStreamLinked"])
+
+    def test_typed_audio_links_not_generic_video(self):
+        for html,expected in ((b'<a type="audio/mpeg" href="/live">Listen</a>',True),
+                              (b'<button data-stream-url="/live">Listen</button>',True),
+                              (b'<video><source src="/live"></video>',False),
+                              (b'<a href="/live">Random link</a>',False)):
+            self.assertEqual(inspect_page("Iron Test Radio",URL,html,URL+"live")["declaredStreamLinked"],expected)
+
+    def test_description_of_one_show_not_structured_scope(self):
+        body=b'<script type="application/ld+json">{"@type":"RadioStation","name":"Iron Test Radio","description":"weekly metal show"}</script>'
+        row=inspect_page("Iron Test Radio",URL,body)
+        self.assertTrue(row["structuredProgrammeEvidence"])
+        self.assertFalse(row["programmeScopeEvidence"])
+
 if __name__ == "__main__":
     unittest.main()
