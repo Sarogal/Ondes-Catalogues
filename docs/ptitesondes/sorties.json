@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-25T19:38:17+01:00",
+  "updated_at": "2026-11-25T19:50:42+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -21063,6 +21063,26 @@
       "geo_precision": "venue",
       "lat": 44.831451,
       "lng": -0.558555
+    },
+    {
+      "id": "openagenda-73708209-2026-12-09",
+      "title": "HEURE DU CONTE",
+      "category": "lecture-jeunesse",
+      "category_label": "Lecture jeunesse",
+      "date_start": "2026-12-09",
+      "date_end": "2026-12-09",
+      "time": "11:00",
+      "city": "Wervicq-Sud",
+      "department": "Nord",
+      "region": "Hauts-de-France",
+      "venue": "Médiathèque municipale de Wervicq-Sud",
+      "source_url": "https://openagenda.com/mediatheque-municipale-de-wervicq-sud/events/73708209_heure-du-conte-2781164",
+      "source_label": "Médiathèque municipale de WERVICQ-SUD — Licence Ouverte 2.0 — données mises à jour le 28/08/2026",
+      "verified_at": "2026-11-25",
+      "geo_verified_at": "2026-11-25",
+      "geo_precision": "venue",
+      "lat": 50.773013,
+      "lng": 3.048191
     }
   ]
 }
