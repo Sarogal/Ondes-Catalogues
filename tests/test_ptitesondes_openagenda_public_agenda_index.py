@@ -151,6 +151,42 @@ class NationalOpenAgendaIndexTests(unittest.TestCase):
         self.assertFalse(item["rights_reviewed"])
         self.assertFalse(item["publisher_enabled"])
 
+    def test_live_invalid_identity_is_quarantined_not_a_page_failure(self):
+        def fetch(request, timeout):
+            return Response(request, {"agendas": [
+                row(11), {**row(12), "slug": "INVALID"},
+                {**row(13), "title": None}, row(14)], "after": [1, 14]})
+        def reader(key, cursor, *, size):
+            return read_index_page(key, cursor, size=size, opener=fetch)
+        result = scan_index_pages([], pages=1, reader=reader, public_read_key=KEY)
+        self.assertEqual(result["counts"]["held_identity_rows"], 2)
+        self.assertEqual(result["next_cursor"], [1, 14])
+        self.assertEqual([x["agenda_uid"] for x in result["new_agenda_candidates"]],
+                         [11, 14])
+        self.assertFalse(result["publication_ready"])
+        self.assertEqual(result["public_writes"], 0)
+
+    def test_live_all_invalid_page_advances_to_next_valid_page(self):
+        pages = iter([
+            {"agendas": [{**row(11), "slug": None}], "after": [1, 11]},
+            {"agendas": [row(12)], "after": None},
+        ])
+        def fetch(request, timeout):
+            return Response(request, next(pages))
+        def reader(key, cursor, *, size):
+            return read_index_page(key, cursor, size=size, opener=fetch)
+        result = scan_index_pages([], pages=2, reader=reader, public_read_key=KEY)
+        self.assertEqual(result["counts"]["held_identity_rows"], 1)
+        self.assertEqual(result["counts"]["pages_read"], 2)
+        self.assertEqual([x["agenda_uid"] for x in result["new_agenda_candidates"]], [12])
+        self.assertTrue(result["index_pass_exhausted"])
+
+    def test_live_duplicate_uid_and_invalid_cursor_still_fail_closed(self):
+        for payload in (page([11, 11]), page([11], after=[0, 11]),
+                        {"agendas": [], "after": [1, 11]}):
+            with self.subTest(payload=payload), self.assertRaises(ValueError):
+                read_index_page(KEY, opener=lambda req, timeout: Response(req, payload))
+
     def test_invalid_page_and_stale_or_repeat_cursor_fail_closed(self):
         cases = (
             {"agendas": None, "after": None},
