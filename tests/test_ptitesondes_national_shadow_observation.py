@@ -13,7 +13,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from ptitesondes_national_shadow_observation import (
     CONTROLLER_SCHEMA, REPORT_RE, BATCH_RE, available_index_reports,
     controller_read, run_observation, recover_pending_index,
-    summarize_private_segment_hints,
+    summarize_private_segment_hints, GEOGRAPHIC_TERMS,
 )
 from ptitesondes_private_national_rotation_runner import _write_atomic_private
 from ptitesondes_openagenda_public_agenda_index import SCHEMA as INDEX_SCHEMA
@@ -67,6 +67,49 @@ class NationalShadowObservationTests(unittest.TestCase):
             index_reader=index, campaign_runner=self.campaign,
             segment_runner=self.segments)
         return result, index
+
+    def test_geographic_queries_discover_unknown_sources_in_fair_order(self):
+        calls = []
+        def geo(key, *, size, search):
+            calls.append(search)
+            if search == "Guyane":
+                raise ValueError("private upstream failure")
+            uid = 100 if search == "Guadeloupe" else 200
+            return {"agendas": [
+                {"uid": n, "slug": f"agenda-{n}", "title": "Source nouvelle"}
+                for n in (uid, uid+1, 778899)], "after": None}
+        result = run_observation(self.root, DAY, "geo-first", execute_live=True,
+            key=KEY, index_reader=Mock(return_value=index_doc()),
+            campaign_runner=self.campaign, segment_runner=self.segments,
+            geography_reader=geo)
+        self.assertEqual(calls, list(GEOGRAPHIC_TERMS[:3]))
+        self.assertEqual(result["geographic_queries_completed"], 2)
+        self.assertEqual(result["geographic_queries_failed"], 1)
+        self.assertEqual(result["geographic_new_agendas_unverified"], 4)
+        self.assertEqual(result["public_writes"], 0)
+        self.assertEqual(result["new_index_census"], 1)
+        reports = list((self.root / "index" / "reports").glob("*-geo-*.json"))
+        self.assertEqual(len(reports), 1)
+        data = json.loads(reports[0].read_text())
+        self.assertEqual([x["agenda_uid"] for x in data["new_agenda_candidates"]],
+                         [100, 200, 101, 201])
+        self.assertTrue(all(not x["publisher_enabled"] for x in data["new_agenda_candidates"]))
+        calls.clear()
+        result = run_observation(self.root, DAY, "geo-next", execute_live=True,
+            key=KEY, index_reader=Mock(return_value=index_doc()),
+            campaign_runner=self.campaign, segment_runner=self.segments,
+            geography_reader=geo)
+        self.assertEqual(calls, list(GEOGRAPHIC_TERMS[3:6]))
+        self.assertEqual(result["geographic_new_agendas_unverified"], 0)
+        self.assertEqual(len(list((self.root / "index" / "reports").glob("*-geo-*.json"))), 1)
+
+    def test_geographic_dry_run_never_reads_sources(self):
+        reader = Mock(side_effect=AssertionError("unexpected network"))
+        result = run_observation(self.root, DAY, "geo-dry",
+                                 geography_reader=reader)
+        self.assertEqual(result["public_writes"], 0)
+        reader.assert_not_called()
+        self.assertFalse((self.root / "index").exists())
 
     def test_failed_recent_index_preserves_existing_rotation_and_retries(self):
         self.invoke()
