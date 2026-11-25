@@ -132,7 +132,7 @@ def geographic_index_sample(index_dir, reports_dir, day, batch_id, key, reader):
                          if type(row) is dict and type(row.get("agenda_uid")) is int)
         except (OSError, ValueError, TypeError, KeyError, AttributeError):
             continue
-    candidates = []
+    groups = []
     completed = failed = identities = 0
     for offset in range(GEOGRAPHIC_QUERIES_PER_RUN):
         term = GEOGRAPHIC_TERMS[(position + offset) % len(GEOGRAPHIC_TERMS)]
@@ -143,23 +143,29 @@ def geographic_index_sample(index_dir, reports_dir, day, batch_id, key, reader):
             failed += 1
             continue
         completed += 1
+        group = []
+        groups.append(group)
         for row in rows:
             identities += 1
             uid = row["uid"]
             if uid in known:
                 continue
             known.add(uid)
-            candidates.append({
+            group.append({
                 "agenda_uid": uid, "agenda_slug": row["slug"],
                 "agenda_title": row["title"], "source_identity_only": True,
                 "owner_verified": False, "organiser_verified": False,
                 "rights_reviewed": False, "publisher_enabled": False,
             })
+    candidates = [group[offset] for offset in range(PAGE_SIZE)
+                  for group in groups if offset < len(group)]
     report_path = None
     if candidates:
         suffix = sha256(batch_id.encode()).hexdigest()[:20]
-        report_path = reports_dir / f"index-{day.isoformat()}-geo-{suffix}.json"
-        if not report_path.exists():
+        report_path = reports_dir / f"index-{day.isoformat()}-geo-{suffix}-{position}.json"
+        if report_path.exists():
+            raise ValueError("geographic_index_batch_already_exists")
+        else:
             _write_new_report(report_path, {
                 "schema": INDEX_SCHEMA,
                 "mode": "private_index_readonly_discovery_not_admission",
@@ -178,7 +184,7 @@ def geographic_index_sample(index_dir, reports_dir, day, batch_id, key, reader):
     _write_atomic_private(path, (json.dumps({
         "schema": GEOGRAPHY_SCHEMA,
         "next_term": (position + GEOGRAPHIC_QUERIES_PER_RUN) % len(GEOGRAPHIC_TERMS),
-    }, sort_keys=True) + "\\n").encode())
+    }, sort_keys=True) + "\n").encode())
     return report_path, completed, failed, len(candidates)
 
 
