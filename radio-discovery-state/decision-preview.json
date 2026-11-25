@@ -7,17 +7,17 @@
   "approvedCount": 0,
   "stagingReviewCount": 0,
   "counts": {
-    "advanced_candidate": 1,
+    "advanced_candidate": 2,
     "already_known": 82,
-    "editorial_review": 158,
+    "editorial_review": 157,
     "identity_review": 29
   },
   "blockingReasonCounts": {
-    "bind_broadcaster_to_stream": 156,
+    "bind_broadcaster_to_stream": 157,
     "confirm_station_level_programme_scope": 159,
-    "obtain_current_continuity_evidence": 121,
-    "obtain_station_bound_editorial_evidence": 152,
-    "repeat_continuity_on_distinct_days": 38,
+    "obtain_current_continuity_evidence": 115,
+    "obtain_station_bound_editorial_evidence": 155,
+    "repeat_continuity_on_distinct_days": 44,
     "resolve_duplicate_or_legacy_identity": 29,
     "resolve_mixed_or_electronic_format": 26,
     "resolve_recent_negative_technical_observation": 29
@@ -428,7 +428,7 @@
       "name": "Church Punks",
       "decision": "editorial_review",
       "streamSha256": "58404456505af5db040c9dcc7ca0479017e676a947be85af7989133918c29164",
-      "editorialMatch": true,
+      "editorialMatch": false,
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
@@ -436,6 +436,7 @@
       "positiveContinuityDays": [],
       "logoDecodedHint": false,
       "blockingReasons": [
+        "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
         "obtain_current_continuity_evidence",
@@ -963,20 +964,21 @@
     {
       "stationuuid": "25de583d-8165-4a5f-8ba5-39861a77f943",
       "name": "Fuzzy Radio",
-      "decision": "editorial_review",
+      "decision": "advanced_candidate",
       "streamSha256": "fcab32b81f3023cc0712a2ea56a31ca7f8c19afe57d5435849e35e665dd04f19",
       "editorialMatch": true,
-      "broadcasterStreamLink": false,
+      "broadcasterStreamLink": true,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": true,
       "blockingReasons": [
-        "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
         "resolve_mixed_or_electronic_format",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1229,7 +1231,7 @@
       "name": "Nocturne Vault Radio",
       "decision": "editorial_review",
       "streamSha256": "d5ef66e6f38f3f0defc7f72559619455099509882969d7e5ee7bdbdb09491c23",
-      "editorialMatch": true,
+      "editorialMatch": false,
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
@@ -1237,6 +1239,7 @@
       "positiveContinuityDays": [],
       "logoDecodedHint": false,
       "blockingReasons": [
+        "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
         "obtain_current_continuity_evidence",
@@ -1507,7 +1510,7 @@
       "name": "Metal Zone Radio",
       "decision": "editorial_review",
       "streamSha256": "a0d2546df73ea61f9f61152087c9a4c5d027a6bf2f74480e1082b0d280e1b18a",
-      "editorialMatch": true,
+      "editorialMatch": false,
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
@@ -1517,6 +1520,7 @@
       ],
       "logoDecodedHint": true,
       "blockingReasons": [
+        "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
         "repeat_continuity_on_distinct_days"
@@ -1608,7 +1612,7 @@
       "decision": "editorial_review",
       "streamSha256": "c56a472d7125556b5e0011d993ff1c175f8598c3ae486b64028c87e77771f070",
       "editorialMatch": false,
-      "broadcasterStreamLink": true,
+      "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "continuityIndication": true,
@@ -1618,6 +1622,7 @@
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
+        "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
         "repeat_continuity_on_distinct_days"
       ],
@@ -2707,14 +2712,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": true,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2749,14 +2756,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": true,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2868,14 +2877,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2889,14 +2900,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2910,14 +2923,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4471,7 +4486,7 @@
       "decision": "editorial_review",
       "streamSha256": "538fbf6ded60062266485eccd9638c81fb00a186ab4b3dce8b0bbf2d4d2dad28",
       "editorialMatch": false,
-      "broadcasterStreamLink": true,
+      "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "continuityIndication": true,
@@ -4481,6 +4496,7 @@
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
+        "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
         "resolve_mixed_or_electronic_format",
         "repeat_continuity_on_distinct_days"

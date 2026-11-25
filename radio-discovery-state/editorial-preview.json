@@ -4,11 +4,12 @@
   "publicationAllowed": false,
   "editoriallyApprovedCount": 0,
   "attemptedPageCount": 8,
-  "htmlObservedCount": 32,
-  "identityTargetCount": 7,
+  "linkedPagesFetched": 4,
+  "htmlObservedCount": 33,
+  "identityTargetCount": 4,
   "structuredProgrammeCount": 0,
   "programmeScopeCount": 0,
-  "declaredStreamLinkedCount": 3,
+  "declaredStreamLinkedCount": 2,
   "records": [
     {
       "stationuuid": "035ed365-f6dc-46a2-901d-7ac97880e875",
@@ -18,7 +19,7 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
-      "analyzerVersion": 3,
+      "analyzerVersion": 4,
       "streamSha256": "7f39876a8b876844369bcce72b212767153cba84bb9cf531267897d7573862c8",
       "editorialApproved": false,
       "publicationAllowed": false,
@@ -48,7 +49,8 @@
       "finalPageSha256": "3057496ab7533b741af1c0219487073fde84cedeadd38072c4840488bf297082",
       "imageHintSha256": [
         "cfeb2e7fb5481114319a3a8216b452578dd8137395854b06926a946b4152ba05"
-      ]
+      ],
+      "linkedPageEvidence": []
     },
     {
       "stationuuid": "0bc40b21-cd89-4dcb-ad47-18528395168a",
@@ -61,7 +63,10 @@
       "analyzerVersion": 3,
       "streamSha256": "1120980f1d05276076fcbf6adcfda68bd56292fa889300d48907cf0fa360048b",
       "editorialApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "signal": "stale_analyzer_or_stream_review",
+      "declaredStreamLinked": false,
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "11ebd6e7-4b9f-4c93-afcd-bca082bb82a6",
@@ -76,7 +81,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
-      "signal": "identity_and_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -108,7 +113,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -257,7 +262,7 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
-      "analyzerVersion": 3,
+      "analyzerVersion": 4,
       "streamSha256": "fcab32b81f3023cc0712a2ea56a31ca7f8c19afe57d5435849e35e665dd04f19",
       "editorialApproved": false,
       "publicationAllowed": false,
@@ -271,16 +276,32 @@
         "indie",
         "pop"
       ],
-      "declaredStreamLinked": false,
+      "declaredStreamLinked": true,
       "primaryTargetTerms": [
         "punk"
       ],
-      "visibleTargetTerms": [],
+      "visibleTargetTerms": [
+        "punk"
+      ],
       "primaryElectronicTerms": [],
       "pageSha256": "9ef6f956ec7e5c1fa8c0de4f96faf4480656cd17aa8d7f28a8fa7739a83e7a9c",
       "finalPageSha256": "c867f24ebb16cbc5a4fdc6bf4a1c6f34bca98296704512e6d5cf61c1a92ba7c4",
       "imageHintSha256": [
         "251c48ac8b189ec653fa087dcda9f10f6d6a52070f394181504c6c2a60bab735"
+      ],
+      "linkedPageEvidence": [
+        {
+          "pageSha256": "9e47b198c579547fd396d075ec28247b64183a204c6dbea2c19a3fbc0c886af2",
+          "finalPageSha256": "6ed2f578caadd1ce0d6ff87dcb1862c319a1dfbb51bfaa667718228ce517570f",
+          "programmeScopeEvidence": false,
+          "declaredStreamLinked": false
+        },
+        {
+          "pageSha256": "982fc6d27150b17b4517f00ef562bf188a5504eeaccfba771d8ed59034082eca",
+          "finalPageSha256": "f35d3b124324b342e2d98360ea1afe82299880dfc8254a1ceafe4f7b505e1e3f",
+          "programmeScopeEvidence": false,
+          "declaredStreamLinked": true
+        }
       ]
     },
     {
@@ -320,7 +341,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
-      "signal": "identity_and_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -384,7 +405,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
-      "signal": "identity_and_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -420,13 +441,13 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "no_format_evidence",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
       "programmeScopeTerms": [],
       "otherFormatTerms": [],
-      "declaredStreamLinked": true,
+      "declaredStreamLinked": false,
       "primaryTargetTerms": [],
       "visibleTargetTerms": [],
       "primaryElectronicTerms": [],
@@ -447,7 +468,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -501,6 +522,19 @@
       "programmeScopeEvidence": false
     },
     {
+      "stationuuid": "6014fd73-f56c-43e3-9c7b-43ef280f278f",
+      "homepageSha256": "0fdf9d1304ccf510803e784c1096953f486c64f4c27c8cecd4ec27b6a7f86df3",
+      "identityNameSha256": "3f37c451ada47621051b489e81cc9208e22bff905df1d98a68cad891afd2576e",
+      "reportedHost": "play.you.radio",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "failed_review",
+      "analyzerVersion": 4,
+      "streamSha256": "2d559c9ce20b544329112f79ff9eba9b76e388b457a2c75102f1397b3f87bbe8",
+      "editorialApproved": false,
+      "publicationAllowed": false
+    },
+    {
       "stationuuid": "652a2fa1-d3fe-4724-a3eb-3d6b7fb1e687",
       "homepageSha256": "def0f3aa138343c4e0ed59453f66de576c2d9fdbd9e063e88dc64ee9cbab441a",
       "identityNameSha256": "eb1594ae7780087d034af677c620102e00896d468128187284e98f9b1912a1f2",
@@ -508,7 +542,7 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "failed_review",
-      "analyzerVersion": 3,
+      "analyzerVersion": 4,
       "streamSha256": "d7735960dc083e55ebbcf7c294be2faf0e517ed4355da8d8c7459963cdebd976",
       "editorialApproved": false,
       "publicationAllowed": false
@@ -524,7 +558,10 @@
       "analyzerVersion": 3,
       "streamSha256": "73ab626bf03ab3f1b73fee1a89930ef24bfd4bd30f673d9a042b2da2370de07d",
       "editorialApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "signal": "stale_analyzer_or_stream_review",
+      "declaredStreamLinked": false,
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "69bc015f-acfd-4175-af3b-bbc131c5bee1",
@@ -550,7 +587,7 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
-      "analyzerVersion": 3,
+      "analyzerVersion": 4,
       "streamSha256": "08e4121484e003dfa9074299b382beb68ab8cfb7021aec650ae9eafa5c2fcafe",
       "editorialApproved": false,
       "publicationAllowed": false,
@@ -574,7 +611,8 @@
       "primaryElectronicTerms": [],
       "pageSha256": "e0ea791ca7cdefcd5e406868908788b835dee49b103d9f25949ac13b9c8ba46d",
       "finalPageSha256": "b69cc21ed68fc3a032b1de2304be0628ee44b70c252308bc7b72e9a311f75a1b",
-      "imageHintSha256": []
+      "imageHintSha256": [],
+      "linkedPageEvidence": []
     },
     {
       "stationuuid": "77337406-99c4-11e9-a605-52543be04c81",
@@ -634,6 +672,34 @@
       "programmeScopeEvidence": false
     },
     {
+      "stationuuid": "8d86b9d5-0afc-4063-8b90-e0351d5aa464",
+      "homepageSha256": "be998f441eaf64c3ca3a874f357b93d151bc8a22610de273441b251eecc58729",
+      "identityNameSha256": "8462722222078252033ae68119f3c3910065dd3ede4c8c80f991cba6ad45f9ac",
+      "reportedHost": "pcmodsquad.com",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "45d52a5c4bd204a362f3b46b5e335d87f4c9120fc7bfdfbc08a17fb169d7d0f3",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": true,
+      "signal": "no_format_evidence",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [],
+      "primaryElectronicTerms": [],
+      "pageSha256": "be604c2cda4cacc6b59f84026e86297f909c08ba9e4f5126080baae1a78c2074",
+      "finalPageSha256": "be998f441eaf64c3ca3a874f357b93d151bc8a22610de273441b251eecc58729",
+      "imageHintSha256": [],
+      "linkedPageEvidence": []
+    },
+    {
       "stationuuid": "8decb3ad-234d-4535-b66e-c40f0cc2179b",
       "homepageSha256": "06a7153938cda20ab7bacdcaf9259d08eafec63db199c9f312981b53b7b97c39",
       "identityNameSha256": "c10f17d8b8380436cd9e60704b5e5405358204b983e39387efb3aa2bc156a160",
@@ -662,7 +728,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -699,7 +765,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -730,7 +796,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
-      "signal": "no_format_evidence",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -784,7 +850,10 @@
       "analyzerVersion": 3,
       "streamSha256": "e7ce64edc0c9b343c33b302ab134c8126d7880518bb442353a9608452476fa7d",
       "editorialApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "signal": "stale_analyzer_or_stream_review",
+      "declaredStreamLinked": false,
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "a6a99730-3118-49ab-ad52-f15d596ef359",
@@ -799,7 +868,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -948,13 +1017,13 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "no_format_evidence",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
       "programmeScopeTerms": [],
       "otherFormatTerms": [],
-      "declaredStreamLinked": true,
+      "declaredStreamLinked": false,
       "primaryTargetTerms": [],
       "visibleTargetTerms": [],
       "primaryElectronicTerms": [],
@@ -996,7 +1065,7 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
-      "analyzerVersion": 3,
+      "analyzerVersion": 4,
       "streamSha256": "2417987d14f785a5aea9b182f848c069da324a1e74d0b836518246ce8ce5dda3",
       "editorialApproved": false,
       "publicationAllowed": false,
@@ -1013,7 +1082,8 @@
       "primaryElectronicTerms": [],
       "pageSha256": "360673ecd305432ab032e3c9e3b3ff6fc31f6b8818f93952e138eb9ef2532566",
       "finalPageSha256": "280d5acc0a499400ad63ef6003af60bc258581b70de6262523bd737b331cdf99",
-      "imageHintSha256": []
+      "imageHintSha256": [],
+      "linkedPageEvidence": []
     },
     {
       "stationuuid": "d5c6fb79-1344-43bc-a995-6524620c61ba",
@@ -1028,7 +1098,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -1058,7 +1128,7 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
-      "analyzerVersion": 3,
+      "analyzerVersion": 4,
       "streamSha256": "e0e0b5c722113931a32cee518640f4b4a816bf62695ad15a0e25546dd5a3fbd0",
       "editorialApproved": false,
       "publicationAllowed": false,
@@ -1075,11 +1145,12 @@
       ],
       "visibleTargetTerms": [],
       "primaryElectronicTerms": [],
-      "pageSha256": "6ee8cdbd29624f7f0681a85c859894ccbf27c17766be764661355962c89072ea",
+      "pageSha256": "ee366519d6522ba7c8f2c6dd322814417eac29c8011b210817da5fd79d06cbe9",
       "finalPageSha256": "3571089d133e00d96f32ee0e1929f91483d16960da3f5b911c259030112c6039",
       "imageHintSha256": [
         "cf2f953b2ece7ce55cf2f0acf29c790e78a55b4752aa4465d825e7fdcabaa195"
-      ]
+      ],
+      "linkedPageEvidence": []
     },
     {
       "stationuuid": "e4fc3a81-354d-420c-b204-affc7e307891",
@@ -1094,7 +1165,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -1132,7 +1203,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -1181,7 +1252,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],

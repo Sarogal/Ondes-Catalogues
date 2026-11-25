@@ -256,7 +256,7 @@
         "imageHintSha256": [
           "cfeb2e7fb5481114319a3a8216b452578dd8137395854b06926a946b4152ba05"
         ],
-        "analyzerVersion": 3,
+        "analyzerVersion": 4,
         "structuredProgrammeEvidence": false,
         "programmeScopeEvidence": false,
         "programmeScopeSources": [],
@@ -624,7 +624,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "failed_review",
         "identityNameMatch": null,
-        "signal": null,
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": null,
         "visibleTargetTerms": null,
         "primaryElectronicTerms": null,
@@ -633,11 +633,11 @@
         "imageHintSha256": null,
         "analyzerVersion": 3,
         "structuredProgrammeEvidence": null,
-        "programmeScopeEvidence": null,
+        "programmeScopeEvidence": false,
         "programmeScopeSources": null,
         "programmeScopeTerms": null,
         "otherFormatTerms": null,
-        "declaredStreamLinked": null,
+        "declaredStreamLinked": false,
         "streamSha256": "1120980f1d05276076fcbf6adcfda68bd56292fa889300d48907cf0fa360048b"
       },
       "officialHomepageVerified": false,
@@ -1091,7 +1091,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": true,
-        "signal": "identity_and_target_indication",
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": [
           "punk rock"
         ],
@@ -1322,7 +1322,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": true,
-        "signal": "unbound_target_indication",
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": [],
         "visibleTargetTerms": [
           "metal",
@@ -2642,14 +2642,16 @@
         "primaryTargetTerms": [
           "punk"
         ],
-        "visibleTargetTerms": [],
+        "visibleTargetTerms": [
+          "punk"
+        ],
         "primaryElectronicTerms": [],
         "pageSha256": "9ef6f956ec7e5c1fa8c0de4f96faf4480656cd17aa8d7f28a8fa7739a83e7a9c",
         "finalPageSha256": "c867f24ebb16cbc5a4fdc6bf4a1c6f34bca98296704512e6d5cf61c1a92ba7c4",
         "imageHintSha256": [
           "251c48ac8b189ec653fa087dcda9f10f6d6a52070f394181504c6c2a60bab735"
         ],
-        "analyzerVersion": 3,
+        "analyzerVersion": 4,
         "structuredProgrammeEvidence": false,
         "programmeScopeEvidence": false,
         "programmeScopeSources": [],
@@ -2658,7 +2660,7 @@
           "indie",
           "pop"
         ],
-        "declaredStreamLinked": false,
+        "declaredStreamLinked": true,
         "streamSha256": "fcab32b81f3023cc0712a2ea56a31ca7f8c19afe57d5435849e35e665dd04f19"
       },
       "officialHomepageVerified": false,
@@ -2674,7 +2676,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "fcab32b81f3023cc0712a2ea56a31ca7f8c19afe57d5435849e35e665dd04f19",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-25"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4001,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "same_reported_host",
         "sourceSha256": "251c48ac8b189ec653fa087dcda9f10f6d6a52070f394181504c6c2a60bab735",
@@ -3410,7 +3428,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": true,
-        "signal": "identity_and_target_indication",
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": [
           "metal",
           "punk"
@@ -4209,7 +4227,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": true,
-        "signal": "identity_and_target_indication",
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": [
           "heavy metal"
         ],
@@ -4536,7 +4554,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": false,
-        "signal": "no_format_evidence",
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": [],
         "visibleTargetTerms": [],
         "primaryElectronicTerms": [],
@@ -4549,7 +4567,7 @@
         "programmeScopeSources": [],
         "programmeScopeTerms": [],
         "otherFormatTerms": [],
-        "declaredStreamLinked": true,
+        "declaredStreamLinked": false,
         "streamSha256": "c56a472d7125556b5e0011d993ff1c175f8598c3ae486b64028c87e77771f070"
       },
       "officialHomepageVerified": false,
@@ -4780,7 +4798,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": false,
-        "signal": "unbound_target_indication",
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": [],
         "visibleTargetTerms": [
           "deathcore",
@@ -6095,7 +6113,29 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "play.you.radio",
+        "homepageSha256": "0fdf9d1304ccf510803e784c1096953f486c64f4c27c8cecd4ec27b6a7f86df3",
+        "identityNameSha256": "3f37c451ada47621051b489e81cc9208e22bff905df1d98a68cad891afd2576e",
+        "observedDate": "2026-11-25",
+        "retrieval": "failed_review",
+        "identityNameMatch": null,
+        "signal": null,
+        "primaryTargetTerms": null,
+        "visibleTargetTerms": null,
+        "primaryElectronicTerms": null,
+        "pageSha256": null,
+        "finalPageSha256": null,
+        "imageHintSha256": null,
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": null,
+        "programmeScopeEvidence": null,
+        "programmeScopeSources": null,
+        "programmeScopeTerms": null,
+        "otherFormatTerms": null,
+        "declaredStreamLinked": null,
+        "streamSha256": "2d559c9ce20b544329112f79ff9eba9b76e388b457a2c75102f1397b3f87bbe8"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -6313,7 +6353,7 @@
         "pageSha256": null,
         "finalPageSha256": null,
         "imageHintSha256": null,
-        "analyzerVersion": 3,
+        "analyzerVersion": 4,
         "structuredProgrammeEvidence": null,
         "programmeScopeEvidence": null,
         "programmeScopeSources": null,
@@ -6402,7 +6442,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "failed_review",
         "identityNameMatch": null,
-        "signal": null,
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": null,
         "visibleTargetTerms": null,
         "primaryElectronicTerms": null,
@@ -6411,11 +6451,11 @@
         "imageHintSha256": null,
         "analyzerVersion": 3,
         "structuredProgrammeEvidence": null,
-        "programmeScopeEvidence": null,
+        "programmeScopeEvidence": false,
         "programmeScopeSources": null,
         "programmeScopeTerms": null,
         "otherFormatTerms": null,
-        "declaredStreamLinked": null,
+        "declaredStreamLinked": false,
         "streamSha256": "73ab626bf03ab3f1b73fee1a89930ef24bfd4bd30f673d9a042b2da2370de07d"
       },
       "officialHomepageVerified": false,
@@ -7009,7 +7049,7 @@
         "pageSha256": "e0ea791ca7cdefcd5e406868908788b835dee49b103d9f25949ac13b9c8ba46d",
         "finalPageSha256": "b69cc21ed68fc3a032b1de2304be0628ee44b70c252308bc7b72e9a311f75a1b",
         "imageHintSha256": [],
-        "analyzerVersion": 3,
+        "analyzerVersion": 4,
         "structuredProgrammeEvidence": false,
         "programmeScopeEvidence": false,
         "programmeScopeSources": [],
@@ -7819,7 +7859,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "d7348572336110b900839f8108e8e2d873b3f3a5889a5a99516439ab01237e87",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-25"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4122,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "aac_adts",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "same_reported_host",
         "sourceSha256": "b179d9cff64e8bd2334fa5a43851bc301ac4861f9082aefbaf7d5f10c4cd7490",
@@ -7933,7 +7989,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "dd0810f5b1b406c43f3b3e40e75b90611b1f7355938e6e842a11d394a40fd65f",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-25"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4001,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "same_reported_host",
         "sourceSha256": "84ffd9fb291c63559f7a7cbcd863e9054c93dcc29e89c7bd77a90b29bdf1b78b",
@@ -8215,7 +8287,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "3db12730b755989de338f8a94c14d866f2c843226981e74ccf6d9f185038cdb4",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-25"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4000,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "missing_source",
         "sourceSha256": null,
@@ -8273,7 +8361,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "165a13a1226ccdef638523312bc3d52272885bc6b9d989ccd71e7406b5a8c28e",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-25"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4000,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
         "sourceSha256": null,
@@ -8331,7 +8435,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "8eb7a79f93e0d5eb2c95e29081f253ac6777ce7b55c302bc09e180f666733e47",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-25"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4001,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "aac_adts",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
         "sourceSha256": null,
@@ -8522,7 +8642,29 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "pcmodsquad.com",
+        "homepageSha256": "be998f441eaf64c3ca3a874f357b93d151bc8a22610de273441b251eecc58729",
+        "identityNameSha256": "8462722222078252033ae68119f3c3910065dd3ede4c8c80f991cba6ad45f9ac",
+        "observedDate": "2026-11-25",
+        "retrieval": "html_observed",
+        "identityNameMatch": true,
+        "signal": "no_format_evidence",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [],
+        "primaryElectronicTerms": [],
+        "pageSha256": "be604c2cda4cacc6b59f84026e86297f909c08ba9e4f5126080baae1a78c2074",
+        "finalPageSha256": "be998f441eaf64c3ca3a874f357b93d151bc8a22610de273441b251eecc58729",
+        "imageHintSha256": [],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": false,
+        "programmeScopeEvidence": false,
+        "programmeScopeSources": [],
+        "programmeScopeTerms": [],
+        "otherFormatTerms": [],
+        "declaredStreamLinked": false,
+        "streamSha256": "45d52a5c4bd204a362f3b46b5e335d87f4c9120fc7bfdfbc08a17fb169d7d0f3"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -8833,7 +8975,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": false,
-        "signal": "unbound_target_indication",
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": [],
         "visibleTargetTerms": [
           "punk"
@@ -9578,7 +9720,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": false,
-        "signal": "unbound_target_indication",
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": [
           "metal"
         ],
@@ -9662,7 +9804,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": true,
-        "signal": "no_format_evidence",
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": [],
         "visibleTargetTerms": [],
         "primaryElectronicTerms": [],
@@ -10226,7 +10368,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "failed_review",
         "identityNameMatch": null,
-        "signal": null,
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": null,
         "visibleTargetTerms": null,
         "primaryElectronicTerms": null,
@@ -10235,11 +10377,11 @@
         "imageHintSha256": null,
         "analyzerVersion": 3,
         "structuredProgrammeEvidence": null,
-        "programmeScopeEvidence": null,
+        "programmeScopeEvidence": false,
         "programmeScopeSources": null,
         "programmeScopeTerms": null,
         "otherFormatTerms": null,
-        "declaredStreamLinked": null,
+        "declaredStreamLinked": false,
         "streamSha256": "e7ce64edc0c9b343c33b302ab134c8126d7880518bb442353a9608452476fa7d"
       },
       "officialHomepageVerified": false,
@@ -10396,7 +10538,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": false,
-        "signal": "unbound_target_indication",
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": [],
         "visibleTargetTerms": [
           "hard rock"
@@ -12481,7 +12623,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": false,
-        "signal": "no_format_evidence",
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": [],
         "visibleTargetTerms": [],
         "primaryElectronicTerms": [],
@@ -12496,7 +12638,7 @@
         "programmeScopeSources": [],
         "programmeScopeTerms": [],
         "otherFormatTerms": [],
-        "declaredStreamLinked": true,
+        "declaredStreamLinked": false,
         "streamSha256": "538fbf6ded60062266485eccd9638c81fb00a186ab4b3dce8b0bbf2d4d2dad28"
       },
       "officialHomepageVerified": false,
@@ -12761,7 +12903,7 @@
         "pageSha256": "360673ecd305432ab032e3c9e3b3ff6fc31f6b8818f93952e138eb9ef2532566",
         "finalPageSha256": "280d5acc0a499400ad63ef6003af60bc258581b70de6262523bd737b331cdf99",
         "imageHintSha256": [],
-        "analyzerVersion": 3,
+        "analyzerVersion": 4,
         "structuredProgrammeEvidence": false,
         "programmeScopeEvidence": false,
         "programmeScopeSources": [],
@@ -12830,7 +12972,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": false,
-        "signal": "unbound_target_indication",
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": [
           "hard rock",
           "heavy metal",
@@ -13592,12 +13734,12 @@
         ],
         "visibleTargetTerms": [],
         "primaryElectronicTerms": [],
-        "pageSha256": "6ee8cdbd29624f7f0681a85c859894ccbf27c17766be764661355962c89072ea",
+        "pageSha256": "ee366519d6522ba7c8f2c6dd322814417eac29c8011b210817da5fd79d06cbe9",
         "finalPageSha256": "3571089d133e00d96f32ee0e1929f91483d16960da3f5b911c259030112c6039",
         "imageHintSha256": [
           "cf2f953b2ece7ce55cf2f0acf29c790e78a55b4752aa4465d825e7fdcabaa195"
         ],
-        "analyzerVersion": 3,
+        "analyzerVersion": 4,
         "structuredProgrammeEvidence": false,
         "programmeScopeEvidence": false,
         "programmeScopeSources": [],
@@ -13724,7 +13866,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": false,
-        "signal": "unbound_target_indication",
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": [
           "metal"
         ],
@@ -13931,7 +14073,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": false,
-        "signal": "unbound_target_indication",
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": [
           "punk"
         ],
@@ -14671,7 +14813,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": false,
-        "signal": "unbound_target_indication",
+        "signal": "stale_analyzer_or_stream_review",
         "primaryTargetTerms": [
           "metal"
         ],
