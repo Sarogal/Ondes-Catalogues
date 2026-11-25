@@ -78,7 +78,7 @@ class NationalShadowObservationTests(unittest.TestCase):
             return {"agendas": [
                 {"uid": n, "slug": f"agenda-{n}", "title": "Source nouvelle"}
                 for n in (uid, uid+1, 778899)], "after": None}
-        result = run_observation(self.root, DAY, "geo-first", execute_live=True,
+        result = run_observation(self.root, DAY, "first", execute_live=True,
             key=KEY, index_reader=Mock(return_value=index_doc()),
             campaign_runner=self.campaign, segment_runner=self.segments,
             geography_reader=geo)
@@ -95,7 +95,7 @@ class NationalShadowObservationTests(unittest.TestCase):
                          [100, 200, 101, 201])
         self.assertTrue(all(not x["publisher_enabled"] for x in data["new_agenda_candidates"]))
         calls.clear()
-        result = run_observation(self.root, DAY, "geo-next", execute_live=True,
+        result = run_observation(self.root, DAY, "next", execute_live=True,
             key=KEY, index_reader=Mock(return_value=index_doc()),
             campaign_runner=self.campaign, segment_runner=self.segments,
             geography_reader=geo)
