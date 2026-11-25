@@ -29,7 +29,8 @@ from national_generic_primary_domain_preflight import (
 )
 from grossesondes_openagenda_linked_edition import (
     event_url, attributed_site, verify_official_site_pages,
-    private_proposal, validate_private_proposal,
+    private_proposal, validate_private_proposal, municipal_selector,
+    prove_municipal_edition,
 )
 from grossesondes_institutional_edition import conflicts_with_signed_catalogue
 from grossesondes_archived_html_intake import latest_patch, atomic_json
@@ -89,16 +90,22 @@ def eligible(queue, catalogue, today):
             selected.append({
                 "dossier_id": dossier["id"], "title": title,
                 "year": year, "url": source["url"],
+                "municipality": (dossier.get("city_hint")
+                                 if municipal_selector(dossier.get("city_hint"))
+                                 else None),
             })
     return sorted(selected, key=lambda x: (x["title"], x["url"]))
 
 
-def digest(source, site, dates):
-    return sha256(json.dumps({
+def digest(source, site, dates, municipality=None):
+    data = {
         "dossier": source["dossier_id"], "event": source["url"],
         "title": source["title"], "year": source["year"],
         "site": site, "dates": list(dates),
-    }, sort_keys=True).encode("utf-8")).hexdigest()
+    }
+    if municipality is not None:
+        data["municipality"] = municipality
+    return sha256(json.dumps(data, sort_keys=True).encode("utf-8")).hexdigest()
 
 
 def examine(state, queue, catalogue, today, *, event_fetch=None,
@@ -148,46 +155,52 @@ def examine(state, queue, catalogue, today, *, event_fetch=None,
             "site_review_only": None,
             "start_date_hint": None, "end_date_hint": None,
         }
+        site, dates, municipality = None, None, None
         try:
             page = read_event(url)
             site = attributed_site(page, source["title"], url)
             if site is None:
                 row["status"] = "OPENAGENDA_OFFICIAL_LINK_UNPROVEN"
             else:
-                root = read_site(site)
                 dates = verify_official_site_pages(
-                    site, root, source["title"], source["year"], today,
-                    fetch=read_site)
+                    site, read_site(site), source["title"], source["year"],
+                    today, fetch=read_site)
                 if dates is None:
                     row["status"] = "FIRST_PARTY_EDITION_UNPROVEN"
-                else:
-                    signature = digest(source, site, dates)
-                    stable = bool(
-                        isinstance(prior, dict)
-                        and prior.get("digest") == signature
-                        and prior.get("lastSeen") in (yesterday, today)
-                        and isinstance(prior.get("firstSeen"), str)
-                        and prior["firstSeen"] < today
-                        and (prior.get("lastSeen") == yesterday
-                             or prior.get("stable") is True))
-                    observed[url] = {
-                        "digest": signature,
-                        "firstSeen": (
-                            prior["firstSeen"] if stable else today),
-                        "lastSeen": today, "lastChecked": today,
-                        "site": site, "stable": stable,
-                    }
-                    row.update(
-                        status=("TWO_DAY_OPENAGENDA_FIRST_PARTY_PRIVATE"
-                                if stable else
-                                "FIRST_DAY_OPENAGENDA_FIRST_PARTY_PRIVATE"),
-                        two_day_observation=stable,
-                        site_review_only=site,
-                        start_date_hint=dates[0],
-                        end_date_hint=dates[1],
-                    )
         except (OSError, ValueError, TypeError, UnicodeError, KeyError):
             row["status"] = "OPENAGENDA_OR_FIRST_PARTY_HTTPS_UNAVAILABLE"
+        # OpenAgenda is discovery only. A government-attributed municipality
+        # may independently prove its own event, even if OA cannot be read.
+        if dates is None and source["municipality"] is not None:
+            direct = prove_municipal_edition(
+                source["municipality"], source["title"], today, fetch=read_site)
+            if direct is not None:
+                site, dates = direct
+                municipality = source["municipality"]
+        if dates is not None:
+            signature = digest(source, site, dates, municipality)
+            stable = bool(
+                isinstance(prior, dict)
+                and prior.get("digest") == signature
+                and prior.get("lastSeen") in (yesterday, today)
+                and isinstance(prior.get("firstSeen"), str)
+                and prior["firstSeen"] < today
+                and (prior.get("lastSeen") == yesterday
+                     or prior.get("stable") is True))
+            observed[url] = {
+                "digest": signature,
+                "firstSeen": prior["firstSeen"] if stable else today,
+                "lastSeen": today, "lastChecked": today,
+                "site": site, "stable": stable,
+                "municipality": municipality,
+            }
+            row.update(
+                status=("TWO_DAY_OPENAGENDA_FIRST_PARTY_PRIVATE" if stable
+                        else "FIRST_DAY_OPENAGENDA_FIRST_PARTY_PRIVATE"),
+                two_day_observation=stable, site_review_only=site,
+                start_date_hint=dates[0], end_date_hint=dates[1],
+                municipality_review_only=municipality,
+            )
         if url not in observed:
             observed[url] = {"lastChecked": today}
         output.append(row)
@@ -235,12 +248,16 @@ def stable_private_proposals(state, queue, catalogue, report, today):
         record = records.get(source["url"])
         dates = row.get("start_date_hint"), row.get("end_date_hint")
         site = row.get("site_review_only")
+        municipality = row.get("municipality_review_only")
+        if municipality is not None and municipality != source["municipality"]:
+            continue
         if (not isinstance(record, dict)
+                or record.get("municipality") != municipality
                 or record.get("stable") is not row["two_day_observation"]
                 or record.get("lastSeen") != today
                 or record.get("lastChecked") != today
                 or record.get("site") != site
-                or record.get("digest") != digest(source, site, dates)):
+                or record.get("digest") != digest(source, site, dates, municipality)):
             continue
         try:
             first_seen = date.fromisoformat(record["firstSeen"])
@@ -252,7 +269,8 @@ def stable_private_proposals(state, queue, catalogue, report, today):
         except (TypeError, ValueError, KeyError):
             continue
         proposal = private_proposal(
-            source["title"], site, dates, today, event_ref=source["url"])
+            source["title"], site, dates, today, event_ref=source["url"],
+            municipality=municipality)
         if (proposal is None or proposal["slug"] in slugs
                 or validate_private_proposal(proposal, today) is None):
             continue

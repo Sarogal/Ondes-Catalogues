@@ -3,6 +3,7 @@ from copy import deepcopy
 from pathlib import Path
 import sys
 from unittest import TestCase, main
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 for path in (str(ROOT / "scripts"), str(ROOT / "tests")):
@@ -15,6 +16,7 @@ from national_openagenda_linked_primary_preflight import (
 from grossesondes_openagenda_linked_edition import (
     PROOF_MODE, event_url, attributed_site, private_proposal,
     validate_private_proposal, validate_verified_row, independently_verify,
+    prove_municipal_edition,
 )
 from grossesondes_cloud_sync import collect_registered_openagenda_sources
 from grossesondes_stage import stage
@@ -269,6 +271,80 @@ class OpenAgendaLinkedPublisherTests(TestCase):
         self.assertIn(proposal["slug"], [
             r["slug"] for r in held_report["held"]])
 
+
+
+
+class MunicipalDirectEditionTests(TestCase):
+    CITY = "Ville Culturelle"
+    ROOT = "https://www.ville-culturelle.fr/"
+    DETAIL = ROOT + "agenda/ferrailles-du-nord-festival"
+
+    def commune(self, city):
+        self.assertEqual(city, self.CITY)
+        return {"city": city, "codeInsee": "12345"}
+
+    def directory(self, url):
+        return {"total_count": 1, "results": [{
+            "nom": "Mairie - " + self.CITY, "code_insee_commune": "12345",
+            "statut_de_diffusion": True,
+            "pivot": [{"type_service_local": "mairie",
+                       "code_insee_commune": ["12345"]}],
+            "site_internet": [{"valeur": self.ROOT}],
+        }]}
+
+    def read(self, url):
+        if url == self.ROOT:
+            return '<a href="/agenda/ferrailles-du-nord-festival">' + TITLE + '</a>'
+        self.assertEqual(url, self.DETAIL)
+        return PRIMARY
+
+    def proof(self, city, title, today, *, fetch):
+        return prove_municipal_edition(
+            city, title, today, fetch=fetch, commune_lookup=self.commune,
+            directory_fetch=self.directory)
+
+    def test_direct_municipal_page_without_external_festival_website(self):
+        self.assertEqual(self.proof(self.CITY, TITLE, D1, fetch=self.read),
+                         (self.DETAIL, DATES))
+        proposal = private_proposal(
+            TITLE, self.DETAIL, DATES, D1, event_ref=EVENT,
+            municipality=self.CITY)
+        self.assertIsNotNone(proposal)
+        with patch("grossesondes_openagenda_linked_edition.prove_municipal_edition",
+                   side_effect=self.proof):
+            public = independently_verify(proposal, D2, organizer_fetch=self.read,
+                                          event_fetch=lambda _: self.fail("OA not authority"))
+            self.assertEqual(validate_verified_row(proposal, public, D2), public)
+            self.assertIsNotNone(public)
+            self.assertEqual(public["officialSite"], self.DETAIL)
+            self.assertIsNone(public["city"])
+            self.assertFalse(public["showOnMap"])
+            forged = private_proposal(TITLE, "https://evil.example/event", DATES,
+                                      D1, event_ref=EVENT, municipality=self.CITY)
+            self.assertIsNone(independently_verify(forged, D2, organizer_fetch=self.read))
+
+    def test_genre_and_wrong_heading_fail(self):
+        for changed in (PRIMARY.replace("metal, punk et hard rock", "techno"),
+                        PRIMARY.replace("Ferrailles du Nord", "Autre Nom")):
+            def read(url):
+                return changed if url == self.DETAIL else self.read(url)
+            self.assertIsNone(self.proof(self.CITY, TITLE, D1, fetch=read))
+
+    def test_discovery_handoff_on_unavailable_oa(self):
+        cal, _, _ = fixtures()
+        dossier_queue = queue(D1)
+        dossier_queue["dossiers"][0]["city_hint"] = self.CITY
+        state = {"schema": "grossesondes.source-watch.v1"}
+        def unavailable(_):
+            raise OSError("OpenAgenda unavailable")
+        with patch("national_openagenda_linked_primary_preflight.prove_municipal_edition",
+                   side_effect=self.proof):
+            report = examine(state, dossier_queue, cal, D1,
+                             event_fetch=unavailable, organizer_fetch=self.read)
+        proposals = stable_private_proposals(state, dossier_queue, cal, report, D1)
+        self.assertEqual(len(proposals), 1)
+        self.assertEqual(proposals[0]["evidence"], [EVENT, self.DETAIL, self.CITY])
+        self.assertFalse(report["publication_authorized"])
 
 if __name__ == "__main__":
     main()
