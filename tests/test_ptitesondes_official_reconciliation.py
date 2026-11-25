@@ -1,6 +1,6 @@
 """Offline safety contract for automated first-party OA corrections and withdrawals."""
 from copy import deepcopy
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 import sys
 import unittest
@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "tests"))
 
-from ptitesondes_official_reconciliation import reconcile, digest, unwrap_exact_public_v2_event, assert_live_source_health
+from ptitesondes_official_reconciliation import reconcile as _reconcile, digest, unwrap_exact_public_v2_event, assert_live_source_health
 from test_ptitesondes_candidate_promotion import base
 from test_ptitesondes_published_oa_drift_watch import source
 
@@ -59,6 +59,14 @@ def live(day=DAY, time="10:00", status=1):
         "publisher": {"name": "Agenda officiel"},
     }
     return s
+
+
+def reconcile(catalogue, today, slot, **kwargs):
+    # Fixtures simulate an explicit historical day, never the runner wall
+    # clock; real publishing continues to use its current UTC timestamp.
+    kwargs.setdefault("as_of_utc", datetime(today.year, today.month, today.day,
+                                            tzinfo=timezone.utc))
+    return _reconcile(catalogue, today, slot, **kwargs)
 
 
 def check(doc, event, *, day=TODAY):
@@ -283,6 +291,15 @@ class OfficialReconciliationTests(unittest.TestCase):
                             for x in after["events"]))
         self.assertEqual(sum(x["action"] == "add" for x in audit["operations"]), 4)
         self.assertEqual(before["events"], [old])
+        # The 25 Nov 09:00 local session starts at 13:00 UTC. Its admission
+        # is refused after that instant without losing the later sessions.
+        late, late_audit, _ = reconcile(
+            before, date(2026, 11, 25), 0, read_event=lambda *_: package,
+            resolve_city_venue=resolve,
+            as_of_utc=datetime(2026, 11, 25, 13, 1, tzinfo=timezone.utc))
+        self.assertEqual(len(late["events"]), 4)
+        self.assertNotIn("2026-11-25", {e["date_start"] for e in late["events"]})
+        self.assertEqual(sum(x["action"] == "add" for x in late_audit["operations"]), 3)
 
     def test_city_only_reconciliation_rejects_missing_wrong_or_network_place(self):
         old = row()
