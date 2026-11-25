@@ -268,6 +268,9 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published,
             and not CONCERT_AUDIENCE.search(audience)):
         return fail("oa_direct_child_audience_missing")
     category = category_for(title, source_text)
+    if (category is None and re.search(r"\bconcerts?\b", _norm(title))
+            and CONCERT_AUDIENCE.search(audience)):
+        category = ("concert", "Concert")
     if category is None:
         family = propose_family_activity(title, source_text)
         if family["category_proposal"] in PUBLISHABLE_CHILD_ARTS:
