@@ -9,9 +9,10 @@ class RadioStartupSession<T> {
   T? get current => _current;
 
   Future<T?> load(Future<T?> Function() prepare, {bool refresh = false}) {
+    // A manual refresh must not delay selection from an active session.
+    if (_initialized && !refresh) return Future<T?>.value(_current);
     final pending = _pending;
     if (pending != null) return pending;
-    if (_initialized && !refresh) return Future<T?>.value(_current);
     final operation = Future<T?>.sync(prepare).then((value) {
       if (value != null) _current = value;
       _initialized = true;
