@@ -986,6 +986,7 @@ jobs:
             if ! python public/automation/concerts/published_lineup_patch_builder.py \
                 --catalogue public/docs/grossesondes/concerts.json \
                 --audit confidential/automation/concerts/intake/published-lineup-audit.json \
+                --approved confidential/automation/concerts/approved.json \
                 --output confidential/automation/concerts/intake/published-lineup-patch-proposals.json \
                 > "$RUNNER_TEMP/concerts-private-logs/lineup-patch-proposals.log" 2>&1; then
               echo "::warning::Aucune proposition de correctif de programmation approuvée."

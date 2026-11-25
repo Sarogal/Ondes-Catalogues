@@ -26,6 +26,10 @@ PROOF_FIELDS = frozenset({
     "url", "proofType", "checkedAt", "checkedFields", "confirmedArtists",
 })
 EVENT_CORE = ("id", "date", "venueId", "officialUrl")
+PROMOTIONAL_PROOF = "official-published-promotional-identity-v1"
+ADDITIVE_PROOF = "official-published-lineup-v1"
+ADDITIVE_HISTORY = "Programmation complétée après nouvelle vérification de la fiche officielle"
+PROMOTIONAL_HISTORY = "Identité artistique rectifiée après nouvelle vérification de la fiche officielle"
 ID = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 
 
@@ -68,6 +72,70 @@ def _match_artist(name, all_artists):
     return hits[0]
 
 
+def promotional_source(signed_original, current):
+    """Bind a possible name correction to the immutable original OA proof.
+
+    Return the UID-bound export and expected cleaned names. This is only a
+    candidate mapping until the real original announcement is fetched.
+    """
+    from automation.concerts import openagenda_official_concert as oa
+    require(isinstance(signed_original, dict)
+            and signed_original.get("reviewDecision") == "approved"
+            and signed_original.get("reviewedBy") in (
+                "independent-official-verifier", "automated-official-recheck"),
+            "original independent approval absent")
+    event = signed_original.get("event")
+    evidence = signed_original.get("officialEvidence")
+    require(isinstance(event, dict) and isinstance(evidence, list)
+            and len(evidence) == 1 and isinstance(evidence[0], dict),
+            "original OpenAgenda proof absent")
+    proof = evidence[0]
+    require(proof.get("proofType") ==
+            "dynamic-existing-venue-openagenda-single-source-v1"
+            and proof.get("url") == event.get("officialUrl")
+            and proof.get("officialOpenAgendaEventUrl") == event.get("officialUrl")
+            and proof.get("checkedAt") == signed_original.get("reviewedAt")
+            and oa.is_openagenda_event_url(event.get("officialUrl")),
+            "original UID-bound OpenAgenda proof required")
+    raw = proof.get("officialArtistNames")
+    ids = event.get("artistIds")
+    require(isinstance(raw, list) and isinstance(ids, list)
+            and bool(ids) and len(raw) == len(ids)
+            and len(set(ids)) == len(ids)
+            and all(isinstance(name, str) and name.strip() for name in raw),
+            "original artist names not bound")
+    artists = {a["id"]: a for a in current["artists"]}
+    require(all(aid in artists and normal(artists[aid].get("name")) == normal(name)
+                for aid, name in zip(ids, raw)),
+            "original published identities changed")
+    candidates = [oa.promotional_artist_candidate(name) or name for name in raw]
+    require(any(normal(before) != normal(after)
+                for before, after in zip(raw, candidates))
+            and len({normal(name) for name in candidates}) == len(candidates),
+            "no unambiguous promotional identity correction")
+    uid = proof.get("officialOpenAgendaUid")
+    eid = proof.get("officialOpenAgendaEventUid")
+    url = oa.official_export_url(uid, eid)
+    return {"url": url, "agendaUid": uid, "eventUid": eid,
+            "names": candidates, "originalNames": raw}
+
+
+def recheck_promotional(signed_original, current, *, fetch=None):
+    """Fresh independent export; the cleaned name must be explicitly proven."""
+    from automation.concerts import openagenda_official_concert as oa
+    source = promotional_source(signed_original, current)
+    event = signed_original["event"]
+    venues = [v for v in current["venues"] if v["id"] == event["venueId"]]
+    require(len(venues) == 1, "physical venue not in existing catalogue")
+    fetch = fetch if fetch is not None else network_fetch
+    names, _genres = oa.verified_export(
+        fetch(source["url"]), event["officialUrl"], event["date"], venues[0],
+        agenda_uid=source["agendaUid"], event_uid=source["eventUid"])
+    require(list(map(normal, names)) == list(map(normal, source["names"])),
+            "fresh original export disagrees with promotional identities")
+    return names
+
+
 def plan(row, signed_original, current, today):
     """Validate the complete immutable patch envelope; no network yet.
 
@@ -101,12 +169,33 @@ def plan(row, signed_original, current, today):
             "unsigned original artist bill")
     require(row["oldArtistIds"] == base["artistIds"],
             "old artist IDs differ from original signed approval")
+    proofs = row["officialEvidence"]
+    require(isinstance(proofs, list) and len(proofs) == 1
+            and isinstance(proofs[0], dict)
+            and set(proofs[0]) == PROOF_FIELDS,
+            "official named-bill proof absent")
+    proof = proofs[0]
+    promotional = proof["proofType"] == PROMOTIONAL_PROOF
+    require(promotional or proof["proofType"] == ADDITIVE_PROOF,
+            "unsupported correction proof")
     new_ids = row["artistIds"]
-    require(isinstance(new_ids, list) and len(new_ids) > len(base["artistIds"])
+    require(isinstance(new_ids, list)
             and all(isinstance(i, str) and ID.fullmatch(i) for i in new_ids)
-            and len(set(new_ids)) == len(new_ids)
-            and all(i in new_ids for i in base["artistIds"]),
+            and len(set(new_ids)) == len(new_ids),
             "invalid new artist set")
+    if promotional:
+        source = promotional_source(signed_original, current)
+        require(len(new_ids) == len(base["artistIds"])
+                and new_ids != base["artistIds"],
+                "promotional correction must be one-to-one")
+        for old_id, new_id, old_name, name in zip(
+                base["artistIds"], new_ids, source["originalNames"], source["names"]):
+            require((old_id == new_id) == (normal(old_name) == normal(name)),
+                    "non-promotional identity changed or promotional identity retained")
+    else:
+        require(len(new_ids) > len(base["artistIds"])
+                and all(i in new_ids for i in base["artistIds"]),
+                "invalid new artist set")
     require(isinstance(row["newArtists"], list), "new artist list missing")
     existing = {a["id"]: a for a in current["artists"]}
     fresh = {}
@@ -135,14 +224,7 @@ def plan(row, signed_original, current, today):
             "new or existing artist missing")
     require(set(fresh) == set(new_ids) - set(existing),
             "unexpected artist creation")
-    proofs = row["officialEvidence"]
-    require(isinstance(proofs, list) and len(proofs) == 1
-            and isinstance(proofs[0], dict)
-            and set(proofs[0]) == PROOF_FIELDS,
-            "official named-bill proof absent")
-    proof = proofs[0]
     require(proof["url"] == row["officialUrl"]
-            and proof["proofType"] == "official-published-lineup-v1"
             and proof["checkedAt"] == row["reviewedAt"]
             and set(proof["checkedFields"]) == {"artists", "date", "venue"}
             and isinstance(proof["confirmedArtists"], list)
@@ -150,6 +232,10 @@ def plan(row, signed_original, current, today):
             and all(isinstance(n, str) and 2 <= len(n.strip()) <= 120
                     for n in proof["confirmedArtists"]),
             "proof does not bind all named artists, date and place")
+    if promotional:
+        require(list(map(normal, proof["confirmedArtists"])) ==
+                list(map(normal, source["names"])),
+                "correction does not match the signed promotional mapping")
     all_artists = list(existing.values()) + list(fresh.values())
     require([_match_artist(name, all_artists)
              for name in proof["confirmedArtists"]] == new_ids,
@@ -161,7 +247,9 @@ def plan(row, signed_original, current, today):
     return {"reviewedAt": row["reviewedAt"],
             "artistIds": list(new_ids), "title": row["title"],
             "officialNames": list(proof["confirmedArtists"]),
-            "newArtists": list(fresh.values())}
+            "newArtists": list(fresh.values()),
+            "promotional": promotional,
+            "historyChange": PROMOTIONAL_HISTORY if promotional else ADDITIVE_HISTORY}
 
 
 def expected(event, plan_row):
@@ -172,7 +260,7 @@ def expected(event, plan_row):
     result["lastVerified"] = plan_row["reviewedAt"]
     result["history"] = list(event.get("history") or []) + [{
         "date": plan_row["reviewedAt"],
-        "change": "Programmation complétée après nouvelle vérification de la fiche officielle",
+        "change": plan_row["historyChange"],
     }]
     return result
 
@@ -195,7 +283,7 @@ def apply(row, signed_original, catalogue, today, *, fetch=None):
         require(old.get("lastVerified") == signed["reviewedAt"]
                 and old.get("history")
                 and old["history"][-1]["change"] ==
-                    "Programmation complétée après nouvelle vérification de la fiche officielle",
+                    signed["historyChange"],
                 "patched event differs from approved result")
         for artist in signed["newArtists"]:
             require(artist["id"] in {a["id"] for a in result["artists"]},
@@ -209,14 +297,21 @@ def apply(row, signed_original, catalogue, today, *, fetch=None):
     venue_rows = [v for v in result["venues"] if v["id"] == row["venueId"]]
     require(len(venue_rows) == 1, "physical venue not in existing catalogue")
     source = fetch if fetch is not None else network_fetch
-    bill = official_bill(source(row["officialUrl"]), old, venue_rows[0],
-                         result["artists"])
-    require(bill["officialNames"] == signed["officialNames"],
-            "fresh page disagrees with signed bill")
-    # Never borrow a name from recommendations, biographies or another date.
-    new_names = [normal(a.get("name")) for a in signed["newArtists"]]
-    require(all(name in {normal(n) for n in bill["missingNamedArtists"]}
-                for name in new_names), "new artists not on the official bill")
+    if signed["promotional"]:
+        names = recheck_promotional(signed_original, result, fetch=source)
+        require(list(map(normal, names)) == list(map(normal, signed["officialNames"])),
+                "fresh export disagrees with signed identities")
+    else:
+        bill = official_bill(source(row["officialUrl"]), old, venue_rows[0],
+                             result["artists"])
+        require(bill["officialNames"] == signed["officialNames"],
+                "fresh page disagrees with signed bill")
+        # Never borrow a name from recommendations, biographies or another date.
+        new_names = [normal(a.get("name")) for a in signed["newArtists"]]
+        require(all(name in {normal(n) for n in bill["missingNamedArtists"]}
+                    for name in new_names), "new artists not on the official bill")
+    # Keep former IDs in the append-only artist table for historical
+    # consumers. Removing or redirecting them is a separate schema migration.
     for artist in signed["newArtists"]:
         result["artists"].append(copy.deepcopy(artist))
     updated = expected(old, signed)

@@ -328,6 +328,70 @@ class UnlistedExistingVenueTests(unittest.TestCase):
                 dynamic.validate(signed, venues, artists, TODAY,
                     fetch=fake_fetch({"primary": wrong}))
 
+    def test_visible_tour_named_roster_replayed_by_producer_and_publisher(self):
+        from automation.concerts import dynamic_first_party_venue_proposals as proposals
+        from automation.concerts import dynamic_osm_official_proposals as producer
+        from automation.concerts import official_visible_tour_bill as tour
+        title = "Independent Across Europe Tour 2027"
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        node = {"@type": "MusicEvent", "name": title, "url": EVENT,
+                "location": {"@type": "Place", "country": "FR"}}
+        roster = "<br/>".join(n + " - https://artists.example.org/" + i
+                              for n, i in zip(NAMES, IDS))
+        card = ("<main><h1>" + title + " par</h1><p>Black Metal</p>"
+                "<p>5 mars 2027, au Bikini - Ramonville-Saint-Agne</p>"
+                "<p>Avec<br/>" + NAMES[0] + " + " + NAMES[1]
+                + " + 6 supports dans le cadre de la tournée</p>"
+                "<p>" + roster + "</p></main>")
+        def schema(n):
+            return "<script type='application/ld+json'>" + json.dumps(n) + "</script>"
+        html = schema(node) + card
+        self.assertEqual(tour.verified_tour(html, title, venue["name"], venue["city"],
+                                            "2027-03-05"), (NAMES, ["Black Metal"]))
+        self.assertEqual(proposals._individual_event(
+            html, EVENT, "2027-03-05", venue, accept_generic=True),
+            (NAMES, ["Black Metal"]))
+        signed = signed_approval()
+        signed["officialEvidence"][0]["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        signed["officialEvidence"][0].pop("corroboratingEventUrl")
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+        get = fake_fetch({"primary": html})
+        self.assertTrue(dynamic.validate(signed, venues, artists, TODAY, fetch=get))
+        candidate = {"eventDetailUrl": EVENT, "sourceUrl": EVENT,
+                     "sourcePage": EVENT, "venue": venue["name"],
+                     "city": venue["city"], "department": venue["department"],
+                     "leadArtist": title, "name": title}
+        proposed = producer.propose((EVENT, "2027-03-05", VENUE_ID, candidate),
+                                    BASE, TODAY, fetch=get)
+        self.assertEqual(proposed["event"]["artistIds"], IDS)
+        self.assertEqual(proposed["event"]["title"], " + ".join(NAMES))
+        self.assertNotIn(title, [a["name"] for a in proposed["newArtists"]])
+        with mock.patch.object(dynamic, "safe_fetch", side_effect=get):
+            published, counts = publisher.merge(
+                BASE, BASE, {"schema": publisher.SCHEMA, "approvals": [proposed]}, TODAY)
+        self.assertEqual(counts["newEvents"], 1, counts["held"])
+        self.assertEqual(published["events"][-1]["artistIds"], IDS)
+        for wrong in (
+                html.replace("5 mars", "6 mars"),
+                html.replace("au Bikini", "au Théâtre"),
+                html.replace("Black Metal", "Jazz"),
+                html.replace("6 supports", "5 supports"),
+                html.replace(roster, roster.replace(NAMES[-1], NAMES[0])),
+                html.replace("Avec", "Recommandations"),
+                html.replace("</main>", "<p>Concert annulé</p></main>"),
+                html.replace("<p>" + roster, "<h2>Vous aimerez aussi</h2><p>" + roster),
+                schema({**node, "startDate": "2027-03-06"}) + card,
+                schema({**node, "performer": [{"@type": "MusicGroup", "name": "Other Band"}]}) + card,
+                schema(node) + html):
+            with self.subTest(wrong=wrong[:100]):
+                with self.assertRaises(ValueError):
+                    dynamic.validate(signed, venues, artists, TODAY,
+                                     fetch=fake_fetch({"primary": wrong}))
+        approximate = dict(venue, geoPrecision="centre de commune (position indicative)")
+        self.assertIsNone(dynamic.sparse_visible_event_detail(
+            html, [node], EVENT, "2027-03-05", approximate, tour_only=True))
+
     def test_generic_leaf_divs_join_inline_date_and_isolate_recommendations(self):
         from automation.concerts import open_world_visible_cards as cards
         page = ("<h1>La Salle</h1><h2>La Salle présente :</h2>"

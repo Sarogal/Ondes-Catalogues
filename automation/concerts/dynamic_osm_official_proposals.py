@@ -278,8 +278,19 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
         candidate_name = openagenda.promotional_artist_candidate(observed)
         if candidate_name is not None:
             initial = intake.normalized(candidate_name)
-    require(initial in {intake.normalized(name) for name in names},
-            "fresh bill does not contain the observed headliner")
+    named_lead = initial in {intake.normalized(name) for name in names}
+    tour_correlated = False
+    if not named_lead and not openagenda_page:
+        nodes = verified.individual_event_nodes(body, accept_generic=True)
+        # Only an exact originally observed tour title, rechecked by the
+        # same independently authenticated visible tour verifier, may stand
+        # in for a named discovery headliner. Never register that title.
+        if len(nodes) == 1 and intake.normalized(nodes[0].get("name")) == initial:
+            detail = verified.sparse_visible_event_detail(
+                body, nodes, url, date, venue, tour_only=True)
+            tour_correlated = detail == (names, genres)
+    require(named_lead or tour_correlated,
+            "fresh bill does not contain the observed headliner or verified tour title")
     artists, newly_named = pairs._artists(names, catalogue)
     eid = ("go-c-" + date.replace("-", "") + "-" +
            intake.normalized(venue["city"]).replace(" ", "-")[:72] + "-" +
