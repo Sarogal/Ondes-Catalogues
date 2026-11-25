@@ -85,8 +85,8 @@ jobs:
           assert "ptitesondes_national_openworld_research_cycle.py" in s
           assert 'automation-intake/ptitesondes/national-observation/research' in s
           assert 'archive_args+=(--archive-expired)' in s
-          assert s.index('cp "$OUT/backlog-archive/"*.json') < s.index('cp "$OUT/backlog.json"')
-          assert s.index('git -C state add -- "automation-intake/ptitesondes/backlog-archive"') < s.index("push_private 'data(ptitesondes): collecter")
+          assert s.rindex('cp "$OUT/backlog-archive/"*.json') < s.rindex('cp "$OUT/backlog.json"')
+          assert s.rindex('git -C state add -- "automation-intake/ptitesondes/backlog-archive"') < s.rindex("push_private 'data(ptitesondes): collecter")
           # The recent ODS cursor is private state, never part of public Pages.
           assert s.count('cp "$OUT/ods-recent-cursor.json" "$STATE/ods-recent-cursor.json"') == 2
           assert s.count('git -C state add -- "automation-intake/ptitesondes/ods-recent-cursor.json"') == 2
