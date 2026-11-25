@@ -452,6 +452,50 @@ class ApprovalBatchTests(unittest.TestCase):
                     self.assertIsNone(e["time"])
                 elif any(
                         p.get("proofType") ==
+                            "dynamic-existing-venue-official-single-source-v1"
+                        for p in row.get("officialEvidence", [])
+                        if isinstance(p, dict)):
+                    # This is the Publisher's existing venue-origin contract.
+                    # Historical snapshot integrity is offline; the Publisher
+                    # itself independently authenticates the venue and event.
+                    proofs = row["officialEvidence"]
+                    self.assertEqual(len(proofs), 1)
+                    proof = proofs[0]
+                    self.assertEqual(row["reviewedBy"],
+                                     "independent-official-verifier")
+                    self.assertEqual(e["sourceType"], "salle")
+                    self.assertIsNone(e["time"])
+                    self.assertEqual(set(proof), {
+                        "url", "proofType", "checkedAt", "checkedFields",
+                        "officialArtistNames", "officialGenreLabels",
+                        "officialVenueSourceUrl",
+                    })
+                    self.assertEqual(proof["url"], e["officialUrl"])
+                    self.assertEqual(proof["checkedAt"], row["reviewedAt"])
+                    dt.date.fromisoformat(proof["checkedAt"])
+                    self.assertEqual(proof["checkedFields"],
+                                     ["artists", "date", "venue", "genre",
+                                      "sourceWebsite"])
+                    names = proof["officialArtistNames"]
+                    self.assertIsInstance(names, list)
+                    self.assertEqual(len(names), len(e["artistIds"]))
+                    self.assertTrue(all(isinstance(n, str) and n.strip()
+                                        for n in names))
+                    self.assertEqual(" + ".join(names).casefold(),
+                                     e["title"].casefold())
+                    labels = proof["officialGenreLabels"]
+                    self.assertIsInstance(labels, list)
+                    self.assertTrue(all(isinstance(g, str) and g.strip()
+                                        for g in labels))
+                    self.assertTrue(set(e["genres"]).issubset(set(labels)))
+                    for url in (proof["url"], proof["officialVenueSourceUrl"]):
+                        parsed = urlsplit(url)
+                        self.assertEqual(parsed.scheme, "https")
+                        self.assertTrue(parsed.hostname)
+                        self.assertIsNone(parsed.username)
+                        self.assertIsNone(parsed.password)
+                elif any(
+                        p.get("proofType") ==
                             "dynamic-existing-venue-openagenda-single-source-v1"
                         for p in row.get("officialEvidence", [])
                         if isinstance(p, dict)):
