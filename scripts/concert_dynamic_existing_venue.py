@@ -337,12 +337,16 @@ def _visible_artist_labels(section, name):
             if label not in labels:
                 labels.append(label)
             continue
-        # Permit neighbouring non-target single genre badges, but stop at
-        # prose. Only the immediate label group can provide evidence.
-        if len(text.split()) > 3 or len(text) > 40 or re.search(r"[.!?;:]", text):
-            if not labels and kind == "p":
-                return _direct_artist_description(name, text)
-            break
+        # A neutral genre badge may precede a relevant one. Unknown short
+        # fragments (including "not", "influences", etc.) end the label group.
+        if normal(text) in {"pop", "synth pop", "synthpop", "darkwave",
+                           "dark wave", "coldwave", "cold wave", "new wave",
+                           "electro", "electronic", "jazz", "folk", "goth",
+                           "cinematic", "indie", "dream pop", "rap", "hip hop"}:
+            continue
+        if not labels and kind == "p":
+            return _direct_artist_description(name, text)
+        break
     return labels
 
 
