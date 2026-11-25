@@ -2496,6 +2496,21 @@
       "id": "the-locos-ex-ska-p-en-concert",
       "name": "THE LOCOS (ex Ska-P) en concert",
       "aliases": []
+    },
+    {
+      "id": "martin-dupont",
+      "name": "Martin Dupont",
+      "aliases": []
+    },
+    {
+      "id": "estetica-noir",
+      "name": "Estetica Noir",
+      "aliases": []
+    },
+    {
+      "id": "august-angst",
+      "name": "August Angst",
+      "aliases": []
     }
   ],
   "venues": [
@@ -15767,6 +15782,37 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Warehouse",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-25",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-25",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261205-toulouse-martin-dupont",
+      "title": "Martin Dupont + Estetica Noir + August Angst",
+      "date": "2026-12-05",
+      "artistIds": [
+        "martin-dupont",
+        "estetica-noir",
+        "august-angst"
+      ],
+      "venueId": "le-metronum",
+      "genres": [
+        "Post Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lemetronum.fr/evenement/martin-dupont-estetica-noir-august-angst/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Metronum",
       "ticketUrl": null,
       "lastVerified": "2026-11-25",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
