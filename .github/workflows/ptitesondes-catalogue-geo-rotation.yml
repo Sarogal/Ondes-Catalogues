@@ -1,0 +1,103 @@
+name: "P'tites Ondes — rotation privée des recherches GPS historiques"
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_catalogue_geo_rotation.py'
+      - 'tests/test_ptitesondes_catalogue_geo_rotation.py'
+      - '.github/workflows/ptitesondes-catalogue-geo-rotation.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ptitesondes-catalogue-geo-rotation.yml'
+  schedule:
+    - cron: '42 05 * * *'
+    - cron: '42 16 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ptitesondes-public-private-intake
+  queue: max
+  cancel-in-progress: false
+jobs:
+  offline:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test rotation without secrets or network
+        env:
+          PYTHONPATH: scripts:tests
+        run: python -m unittest -v test_ptitesondes_catalogue_geo_rotation
+  observe:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: automation/ptitesondes-intake
+          path: state
+          fetch-depth: 0
+          sparse-checkout: |
+            automation-intake/ptitesondes
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Research current catalogue and update private checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          WORK="$RUNNER_TEMP/po-catalogue-geo"
+          install -d -m 700 "$WORK"
+          SRC="state/automation-intake/ptitesondes/catalogue-geo-rotation.json"
+          if [[ -f "$SRC" ]]; then cp -- "$SRC" "$WORK/state.json"; fi
+          if ! python scripts/ptitesondes_catalogue_geo_rotation.py --catalogue docs/ptitesondes/sorties.json --day "$(TZ=Europe/Paris date +%F)" --state "$WORK/state.json" --live > "$WORK/summary.json" 2> "$WORK/errors.log"; then
+            echo "::error::GPS research incomplete; private state unchanged."
+            exit 1
+          fi
+          python - "$WORK/summary.json" <<'PY'
+          import json, sys, os
+          r = json.load(open(sys.argv[1]))
+          assert r["publication_ready"] is False and r["public_writes"] == 0
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              for k in ("group_count", "examined", "never_examined", "venue_points_found"):
+                  assert type(r[k]) is int and r[k] >= 0
+                  f.write(f"- {k}: {r[k]}\n")
+          PY
+          git diff --exit-code -- docs/ptitesondes/sorties.json
+      - name: Persist only the private rotation checkpoint
+        env:
+          PRIVATE_WRITE_TOKEN: ${{ secrets.PTITESONDES_INTAKE_WRITE_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${PRIVATE_WRITE_TOKEN:-}" ]]
+          WORK="$RUNNER_TEMP/po-catalogue-geo"
+          PATH_IN_REPO="automation-intake/ptitesondes/catalogue-geo-rotation.json"
+          cp -- "$WORK/state.json" "state/$PATH_IN_REPO"
+          git -C state add -- "$PATH_IN_REPO"
+          if git -C state diff --cached --quiet; then exit 0; fi
+          test "$(git -C state diff --cached --name-only)" = "$PATH_IN_REPO"
+          git -C state config user.name 'github-actions[bot]'
+          git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C state commit -m 'data(ptitesondes): private historical GPS research rotation' > "$WORK/commit.log" 2>&1
+          AUTH="$(printf 'x-access-token:%s' "$PRIVATE_WRITE_TOKEN" | base64 -w0)"
+          if ! git -C state -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" push origin HEAD:automation/ptitesondes-intake > "$WORK/push.log" 2>&1; then
+            echo "::error::Private checkpoint push failed; no public data changed."
+            exit 1
+          fi
