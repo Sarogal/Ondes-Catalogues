@@ -41,6 +41,16 @@ jobs:
           python -m py_compile scripts/ptitesondes_reviewed_retractions.py
           python -m unittest -v test_ptitesondes_reviewed_retractions_polyglottes_20261125
           python -m unittest -v test_ptitesondes_reviewed_retractions test_ptitesondes_reviewed_retractions_20261123 test_ptitesondes_oa_evergreen_on_demand
+      - name: Verify retry shell syntax without running publication
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          s = Path('.github/workflows/ptitesondes-reviewed-retractions-20261125-polyglottes.yml').read_text()
+          script = s.split('      - name: Recalculer le retrait sur main', 1)[1].split('        run: |\n', 1)[1].split('\n  deploy:', 1)[0]
+          script = '\n'.join(line[10:] if line.startswith('          ') else line for line in script.splitlines())
+          subprocess.run(['bash', '-n'], input=script, text=True, check=True)
+          PY
       - name: Preview exact reviewed edits without filesystem mutation
         run: |
           python scripts/ptitesondes_reviewed_retractions.py \
@@ -77,15 +87,15 @@ jobs:
             git checkout --detach FETCH_HEAD
             base="$(git rev-parse HEAD)"
             # Refuse the withdrawal until the prevention rule is on trusted main.
-            PYTHONPATH=scripts python - <<'PY'
-            from ptitesondes_primary_editorial import primary_out_of_scope
-            description = ("Au programme : un atelier d'écriture en ukrainien, "
-                           "des lectures d'albums pour enfants, une animation autour "
-                           "de la culture vénézuélienne, un concert de chants du monde "
-                           "et des expositions.")
-            assert primary_out_of_scope("Les Journées polyglottes", description) == "mixed_umbrella_programme_primary"
-            assert primary_out_of_scope("Concert de chants du monde pour enfants", description) is None
-            PY
+          PYTHONPATH=scripts python - <<'PY'
+          from ptitesondes_primary_editorial import primary_out_of_scope
+          description = ("Au programme : un atelier d'écriture en ukrainien, "
+                         "des lectures d'albums pour enfants, une animation autour "
+                         "de la culture vénézuélienne, un concert de chants du monde "
+                         "et des expositions.")
+          assert primary_out_of_scope("Les Journées polyglottes", description) == "mixed_umbrella_programme_primary"
+          assert primary_out_of_scope("Concert de chants du monde pour enfants", description) is None
+          PY
             python scripts/ptitesondes_reviewed_retractions.py \
               --catalogue docs/ptitesondes/sorties.json \
               --manifest config/ptitesondes-reviewed-retractions-20261125-polyglottes.json \
