@@ -1,0 +1,363 @@
+{
+  "schema": "ptitesondes.official_reconciliation.v1",
+  "checked_on": "2026-11-25",
+  "slot": 2,
+  "source_series_checked": 30,
+  "total_source_series": 99,
+  "before_count": 919,
+  "after_count": 968,
+  "source_summary": {
+    "official_new_session_admitted": 3,
+    "official_new_session_on_demand_review": 1,
+    "official_unavailable": 1,
+    "official_unchanged": 25
+  },
+  "catalogue_before_sha256": "82f2667b0685596bfb165901e91f4570a8d65a2d12120c86dc6905ba8ed3271e",
+  "catalogue_after_sha256": "f0e24e7742746d8ed91c728820a0a93c2024058c6f635145cafe5c1827bc988a",
+  "operations": [
+    {
+      "id": "openagenda-21086055-2026-12-26",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "855030580eec927aa83b8a62a35ce25b915f1daf2fc95d8e096937ce152897ac"
+    },
+    {
+      "id": "openagenda-21086055-2026-12-27",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "12b098801953801d32eeea3936646e0d61ad8ee2049f2693d96f1b3f4d92d60a"
+    },
+    {
+      "id": "openagenda-21086055-2026-12-28",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "c1f69bcc65b033b866b0e6ba19b6603b1e1681f1111e34d15bdf69c436cf5a43"
+    },
+    {
+      "id": "openagenda-21086055-2026-12-29",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "9e8b9e19938cdc2a9ee6dcc1c261ef5a326ec02adb81806c819a77cba1ce1e56"
+    },
+    {
+      "id": "openagenda-21086055-2026-12-31",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "2bf91cd8d679274ad41ac4d09573b8e6c107ccba3d6fa479bc7ed91a03d718f0"
+    },
+    {
+      "id": "openagenda-21086055-2027-01-01",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "4cd397e68f5b5050b6407e3bd8c0a50f19ac23509d6d2bd2986545a0a6dbd701"
+    },
+    {
+      "id": "openagenda-21086055-2027-01-02",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "c738908c9c8bcdf2746a0bfd0d59c169b488ea32a518c5a0cc645727cf815d36"
+    },
+    {
+      "id": "openagenda-21086055-2027-01-03",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "95e245768d49be8ec110b1624ee3673a16d2f3227957ff44c315c0cb4505dcf9"
+    },
+    {
+      "id": "openagenda-21086055-2027-01-06",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "10631d47364d93dd72f0b6e76cf764081c6243be82425f6e6d601265a1dee597"
+    },
+    {
+      "id": "openagenda-21086055-2027-01-09",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "8635845cb609700ee2a2f97f27bb26f11d45c18c20e8a12823e591abd6096e6c"
+    },
+    {
+      "id": "openagenda-21086055-2027-01-10",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "d401f54d127c316ebb11812b440ef3e74c0a905809241fb4e908f753e73101a3"
+    },
+    {
+      "id": "openagenda-21086055-2027-01-13",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "45f71dd3c0179bf365d6cb922b087022a777f7a80766620ab05c70e292c59880"
+    },
+    {
+      "id": "openagenda-21086055-2027-01-16",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "d1c0442244717e7997024a679d0fe8872563fca62c8379e66b826b6ba345fcc9"
+    },
+    {
+      "id": "openagenda-21086055-2027-01-17",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "a57a15117855f3a2fc9d2a126ff1815d98b73dd8967f0182fd4a3d63d7fc858a"
+    },
+    {
+      "id": "openagenda-21086055-2027-01-20",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "0ff3eb3eeb08e259c392e84d48fceb7fdd7b7417a4f5bf41ad489feb9bfcb9b6"
+    },
+    {
+      "id": "openagenda-21086055-2027-01-23",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "56600ec42ee2aaec99bf23d5814fda221f6a9b4ccd3159b4f280e06af339fb7f"
+    },
+    {
+      "id": "openagenda-21086055-2027-01-24",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "ba1b0772aa7a79bdff3f45b681c044ac00ec737e655924ffc352ae2cb22dbb38"
+    },
+    {
+      "id": "openagenda-21086055-2027-01-27",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "7d781d88266ba132dc9b736014caabf37570e7cddd0482d3495efe017940cfd5"
+    },
+    {
+      "id": "openagenda-21086055-2027-01-30",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "cba0dd483eb677ef0b1b2cd4a96a3c2ec5af2fe6c069fd536e755d398d01a32a"
+    },
+    {
+      "id": "openagenda-21086055-2027-01-31",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "cea55540d935529a410164e46289f8d7c932c56612cd43f78f44f818b0fb7f26"
+    },
+    {
+      "id": "openagenda-21086055-2027-02-03",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "d9d3931d76b61189a1f6917657ec7f1ae22ca80fc442d6dce5391f2495b2e116"
+    },
+    {
+      "id": "openagenda-21086055-2027-02-06",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "d8cf2145a38226dbd61f0abcabc83d30b8d04722d4f26796d6864bb593d793e1"
+    },
+    {
+      "id": "openagenda-21086055-2027-02-07",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/21086055_guignol-guerin-grande-exposition-and-spectacles-de-marionnettes-a-lhotel-de-ragueneau",
+      "new_event_sha256": "7f1fed2d8c2b189517ebbe3609ce6ab48e463d479ed5f14467ad16fbccd9ee99"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-04",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "48a92fda4f0973bcfd4f3aaea6daf4b3dcaae3ff9dfdf166f18ed6ab1ded16d3"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-05",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "9fcb79b9f73b9ada1158512bdf7471eaa469951238f7ebd7604ef5c7f913a236"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-06",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "e7d74d72741b7ba173fdc125e8f521d225ceeb43d92a7da0a9d88c3bebbcf032"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-07",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "e6e38288a28813a002ca23a322d1bdd20912d65ca6285dad9d30aec266195ae4"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-08",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "cbf81219c40041ce3fbd43e321a2529fef9efcd303abdf72c8ec56f011aab8a7"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-09",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "ba519efb1d7c2815a08710b7a2a35903d58a5bb7a0778492737568900e707665"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-10",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "732b4c62e769cd42805d8abb80a97a96d23397b639c5c7401a3d8870d0572911"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-11",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "de1d7985b05f8e47c8aace90ba61bbd1548d497dc82ace95faac1ee62353644b"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-12",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "ade4098bfb83b4677bbf760bd23a5db943549b8c1faeafcded944f2bfc4c16b6"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-13",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "b942f3f1f85fa5c117410bf73c315132a78d0ad6ca925bc563794711c88743cd"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-14",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "bc105ac9bd3cfb6cce3221cbaab452a3a33532cf5f537db27babf655585e51fd"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-15",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "ebe4c73cd2e8508fcb9a1df39302047a9242ca4fad1a7b727ab9f93d5b99e683"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-16",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "35ab939ae4a7375e891caf87d36f8cc6dc1f3cbd58f4095b8a757602da88a231"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-17",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "11917d5132f5f55652a61445e4154ba310072d29626793fefe6f5484130703fc"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-18",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "71e19e68c86b6b53ff67ab64c72a6b8ab02e2a4b8c4dd3a8aa109139c64bee99"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-19",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "60bec09e624a434539fc89940a67ef94138a6f7eb6fe58e87fed499c6f76ccd5"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-20",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "605e3677cbf21b49df50f60ae55c75f29add734ef41fa0abe0091f3592fd331d"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-21",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "4b653b305db4afd07ba2e1a89e2596b626aa0ba11270f223d7aef2f910fbede4"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-22",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "c33c459590fe8736d196907de374da3f429c9cd8995e8fb374e5671422d7ad10"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-23",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "106c55444b42ae564c39f4e2c771f598e628505d788ac7054a77f3f1865c7189"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-24",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "3738d25d43d002bc6bb64adb329f13ca6fbb56a94f41ccf06ba46d4722270499"
+    },
+    {
+      "id": "openagenda-65601356-2026-12-25",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/65601356_la-nuit-ou-bordeaux-a-reve-spectacle-son-et-lumiere",
+      "new_event_sha256": "9322a41b4d3165d183839950cad08d6ff026242c873084850fd8a1d12b15589c"
+    },
+    {
+      "id": "openagenda-88464730-2026-12-01",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/vie-associative-nantes-ville-et-metropole/events/88464730_les-journees-polyglottes-8332015",
+      "new_event_sha256": "b7188345dd2aad18b7487560419bb830286053b64656c8a75c84cd422dc8f477"
+    },
+    {
+      "id": "openagenda-88464730-2026-12-02",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/vie-associative-nantes-ville-et-metropole/events/88464730_les-journees-polyglottes-8332015",
+      "new_event_sha256": "a1c1c5ed055464fba7fdd64bd67532ca863069bd88ba4683cf153f930f01c5dd"
+    },
+    {
+      "id": "openagenda-88464730-2026-12-03",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/vie-associative-nantes-ville-et-metropole/events/88464730_les-journees-polyglottes-8332015",
+      "new_event_sha256": "84b1a657f3c40f04cbb3eec7ac33a43f99af8e2e47b9b1737a1adaf39762a740"
+    },
+    {
+      "id": "openagenda-88464730-2026-12-05",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/vie-associative-nantes-ville-et-metropole/events/88464730_les-journees-polyglottes-8332015",
+      "new_event_sha256": "f0bfeb8ec6e408c7466449e31a4fcd41e672cd3a5ba24451f2c5f4083201849e"
+    }
+  ],
+  "unrelated_public_records_preserved": true
+}
