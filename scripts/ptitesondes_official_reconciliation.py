@@ -8,7 +8,7 @@ never remove a published outing. All operations are auditable, ID-scoped.
 """
 from collections import Counter
 from copy import deepcopy
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 import hashlib
 import json
 import math
@@ -115,7 +115,7 @@ def _identity(source, uid, slug):
 
 
 def reconcile(catalogue, today, slot, *, read_event, limit=MAX_SCAN,
-              resolve_city_venue=resolve_named_city_only_venue):
+              resolve_city_venue=resolve_named_city_only_venue, as_of_utc=None):
     """Return (new_catalogue, audit, counters); never mutates input.
 
     Eligible withdrawals: a first-party status explicitly cancelled, moved
@@ -132,6 +132,12 @@ def reconcile(catalogue, today, slot, *, read_event, limit=MAX_SCAN,
             or type(today) is not date or not callable(read_event)
             or not callable(resolve_city_venue)):
         raise ValueError("invalid_public_reconciliation_input")
+    # One real instant for the whole review, also injectable in offline tests.
+    if as_of_utc is None:
+        as_of_utc = datetime.now(timezone.utc)
+    if (not isinstance(as_of_utc, datetime) or as_of_utc.tzinfo is None
+            or as_of_utc.utcoffset() is None):
+        raise ValueError("invalid_reconciliation_clock")
     ids = [e.get("id") for e in catalogue["events"] if type(e) is dict]
     if (len(ids) != len(catalogue["events"])
             or any(type(value) is not str or not value for value in ids)
@@ -347,7 +353,8 @@ def reconcile(catalogue, today, slot, *, read_event, limit=MAX_SCAN,
                         view = dict(catalogue, events=[
                             *catalogue["events"], *new_rows])
                         candidate, reason = admit_live_openagenda(
-                            lead, day, agenda, source, catalogue, view, today)
+                            lead, day, agenda, source, catalogue, view, today,
+                            as_of_utc=as_of_utc)
                         if candidate is None:
                             hold("official_new_session_held")
                             continue
