@@ -312,7 +312,7 @@ def event_genres(raw, official_url, *, fetch=None, cache=None):
             html = fetch(target, shared)
             try:
                 labels = profiles.profile_genres(html, name)
-            except (ValueError, TypeError, RecursionError):
+            except profiles.MissingStructuredArtistGenre:
                 # Only a biography explicitly linked from the venue-attributed
                 # performer page, on that same HTTPS host. At most one extra
                 # fetch per linked performer. Never search by name or trust
