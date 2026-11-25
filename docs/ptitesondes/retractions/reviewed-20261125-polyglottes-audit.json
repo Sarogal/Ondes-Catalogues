@@ -1,0 +1,47 @@
+{
+  "schema": "ptitesondes.reviewed_retraction_audit.v1",
+  "reviewed_on": "2026-11-25",
+  "applied_at": "2026-11-25T15:36:37+01:00",
+  "before_count": 968,
+  "after_count": 962,
+  "catalogue_before_sha256": "f0e24e7742746d8ed91c728820a0a93c2024058c6f635145cafe5c1827bc988a",
+  "catalogue_after_sha256": "1ac38f1349ae5ab44665f1415b3d0442eaa98c5fb918451a3de2baf7a4be5d14",
+  "withdrawn": [
+    {
+      "id": "openagenda-88464730-2026-11-28",
+      "reason_code": "mixed_umbrella_programme_primary",
+      "evidence_url": "https://metropole.nantes.fr/que-faire-a-nantes/agenda/88464730_les-journees-polyglottes-8332015",
+      "original_source_url": "https://openagenda.com/vie-associative-nantes-ville-et-metropole/events/88464730_les-journees-polyglottes-8332015"
+    },
+    {
+      "id": "openagenda-88464730-2026-12-01",
+      "reason_code": "mixed_umbrella_programme_primary",
+      "evidence_url": "https://metropole.nantes.fr/que-faire-a-nantes/agenda/88464730_les-journees-polyglottes-8332015",
+      "original_source_url": "https://openagenda.com/vie-associative-nantes-ville-et-metropole/events/88464730_les-journees-polyglottes-8332015"
+    },
+    {
+      "id": "openagenda-88464730-2026-12-02",
+      "reason_code": "mixed_umbrella_programme_primary",
+      "evidence_url": "https://metropole.nantes.fr/que-faire-a-nantes/agenda/88464730_les-journees-polyglottes-8332015",
+      "original_source_url": "https://openagenda.com/vie-associative-nantes-ville-et-metropole/events/88464730_les-journees-polyglottes-8332015"
+    },
+    {
+      "id": "openagenda-88464730-2026-12-03",
+      "reason_code": "mixed_umbrella_programme_primary",
+      "evidence_url": "https://metropole.nantes.fr/que-faire-a-nantes/agenda/88464730_les-journees-polyglottes-8332015",
+      "original_source_url": "https://openagenda.com/vie-associative-nantes-ville-et-metropole/events/88464730_les-journees-polyglottes-8332015"
+    },
+    {
+      "id": "openagenda-88464730-2026-12-04",
+      "reason_code": "mixed_umbrella_programme_primary",
+      "evidence_url": "https://metropole.nantes.fr/que-faire-a-nantes/agenda/88464730_les-journees-polyglottes-8332015",
+      "original_source_url": "https://openagenda.com/vie-associative-nantes-ville-et-metropole/events/88464730_les-journees-polyglottes-8332015"
+    },
+    {
+      "id": "openagenda-88464730-2026-12-05",
+      "reason_code": "mixed_umbrella_programme_primary",
+      "evidence_url": "https://metropole.nantes.fr/que-faire-a-nantes/agenda/88464730_les-journees-polyglottes-8332015",
+      "original_source_url": "https://openagenda.com/vie-associative-nantes-ville-et-metropole/events/88464730_les-journees-polyglottes-8332015"
+    }
+  ]
+}
