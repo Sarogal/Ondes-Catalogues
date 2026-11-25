@@ -156,6 +156,12 @@ class BridgeTests(unittest.TestCase):
             index_dir.mkdir(parents=True)
             raw = json.dumps(source).encode("utf-8")
             (index_dir / "index-2026-11-20-livescan.json").write_bytes(raw)
+            # More than the former lifetime cap of 100 reports, with the
+            # usable report deliberately at the end of the sorted history.
+            for n in range(101):
+                earlier = dict(source, new_agenda_candidates=[])
+                (index_dir / f"index-2026-11-19-history-{n:03d}.json").write_text(
+                    json.dumps(earlier), encoding="utf-8")
             full_digest = sha256(raw).hexdigest()
             one_agenda = dict(source,
                               new_agenda_candidates=[source["new_agenda_candidates"][1]])
@@ -203,6 +209,41 @@ class BridgeTests(unittest.TestCase):
             path.write_text(json.dumps(segment), encoding="utf-8")
             with self.assertRaises(ValueError):
                 _inventory(root)
+
+    def test_inventory_continues_after_former_segment_count_cap(self):
+        from ptitesondes_national_backlog_bridge import _iter_inventory
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "index" / "reports"
+            index.mkdir(parents=True)
+            doc = {"schema": "ptitesondes.private_national_oa_index.v1",
+                   "publication_ready": False, "public_writes": 0,
+                   "new_agenda_candidates": [{"agenda_uid": 101}]}
+            raw = json.dumps(doc).encode()
+            (index / "index-2026-11-20-history.json").write_bytes(raw)
+            source = root / "campaigns" / sha256(raw).hexdigest()[:24] / "agenda-0000"
+            source.mkdir(parents=True)
+            # Simulate 10,001 segment paths without generating thousands of
+            # files. The actual provenance validation remains covered above.
+            segment_paths = [source / f"agenda-{n // 10000:04d}-segment-{n % 10000:04d}.json"
+                             for n in range(10001)]
+            original_glob = Path.glob
+            def glob(path, pattern):
+                if path == source:
+                    return iter(segment_paths)
+                return original_glob(path, pattern)
+            def read(path, maximum):
+                if path.parent == index:
+                    return doc, raw
+                leads = [{"event_uid": 12345}] if path == segment_paths[-1] else []
+                return {"event_leads": leads}, b""
+            with patch.object(Path, "glob", glob), patch(
+                    "ptitesondes_national_backlog_bridge._read", side_effect=read), patch(
+                    "ptitesondes_national_backlog_bridge.verified_report") as verify:
+                found = list(_iter_inventory(root))
+            self.assertEqual(verify.call_count, 10001)
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0][2]["event_leads"][0]["event_uid"], 12345)
 
     def test_absent_observation_yields_unchanged_private_backlog(self):
         with TemporaryDirectory() as temp:
