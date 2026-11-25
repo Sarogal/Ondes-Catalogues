@@ -31,13 +31,43 @@ COMMERCIAL_STUDIO_SERVICE = re.compile(
 )
 
 
+# A multi-activity programme is not an exact occurrence of each component.
+# Recognise the umbrella wording and independent mixed formats together;
+# an explicitly named show, storytelling or music programme is unaffected.
+UMBRELLA_PROGRAMME = re.compile(
+    r"^(?:(?:les |la |le |une? )?(?:journees?|semaines?|quinzaines?|"
+    r"mois|temps forts?))\b"
+)
+NAMED_ART_FORMAT = re.compile(
+    r"\b(?:musique|musical(?:e|es|s)?|concerts?|spectacles?|"
+    r"marionnettes?|contes?|lectures?|comptines?|chansons?|"
+    r"jeune public|enfants?|jeunesse)\b"
+)
+
+
+def mixed_umbrella_programme(title, description):
+    main, body = norm(title), norm(description)
+    if not UMBRELLA_PROGRAMME.search(main) or NAMED_ART_FORMAT.search(main):
+        return False
+    if not re.search(r"\b(?:au programme|programme des animations)\b", body):
+        return False
+    arts = re.search(r"\b(?:concerts?|spectacles?|lectures?|contes?)\b", body)
+    other_formats = sum(bool(re.search(pattern, body)) for pattern in (
+        r"\bexpositions?\b",
+        r"\bateliers? d ecriture\b",
+        r"\banimations? autour de la culture\b",
+        r"\b(?:conferences?|tables rondes?)\b",
+    ))
+    return bool(arts and other_formats >= 2)
+
+
 def primary_out_of_scope(title, description=""):
     """Return a stable generic reason, or None.
 
     Explicit child access in the description is NOT a substitute for the
     primary activity being cultural. Conversely, a musical family workshop
     remains eligible even when adults can also attend. Description is
-    intentionally not used to veto based on incidental words like "devoirs"
+    not used alone to veto based on incidental words like "devoirs"
     or "forum" appearing in an otherwise genuine performance.
     """
     if not isinstance(title, str) or not title.strip():
@@ -51,4 +81,6 @@ def primary_out_of_scope(title, description=""):
         return "market_gathering_primary"
     if COMMERCIAL_STUDIO_SERVICE.search(main):
         return "commercial_studio_service_primary"
+    if mixed_umbrella_programme(title, description):
+        return "mixed_umbrella_programme_primary"
     return None
