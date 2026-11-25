@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 14,
-  "distinctArtistHints": 14,
+  "stationsWithArtistHints": 19,
+  "distinctArtistHints": 19,
   "records": [
     {
       "stationuuid": "035ed365-f6dc-46a2-901d-7ac97880e875",
@@ -328,6 +328,96 @@
           "date": "2026-11-25",
           "artistHint": "Poison",
           "titleSha256": "6750fb1cd0060333c9ac4fc56329fc7901a202f3ad56d6c0c4574da001337a3d"
+        }
+      ]
+    },
+    {
+      "stationuuid": "5e9f7c0a-a1ef-4739-b115-dad73cfbf404",
+      "streamSha256": "08c4129d00a6096cde9f1ef2a03caac619f400f91ba137643751c1da9c9f4eb6",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-25",
+          "artistHint": "Howard Jones",
+          "titleSha256": "35ab7b6599c0e12b19c22939501c37e3d95f24ce339840caf378be6bcc961674"
+        }
+      ]
+    },
+    {
+      "stationuuid": "62ef2552-35e9-433a-b747-efdae52bfe4f",
+      "streamSha256": "ed7da234ceab2923c1e84a6e7772716502e28ea3d6684d4b2027145fe61de218",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-25",
+          "artistHint": "The Who",
+          "titleSha256": "416534c8e29e53f3e6c7e9b7ebafadd91469e72aa2b68c940f55b7334b0e2b56"
+        }
+      ]
+    },
+    {
+      "stationuuid": "652a2fa1-d3fe-4724-a3eb-3d6b7fb1e687",
+      "streamSha256": "d7735960dc083e55ebbcf7c294be2faf0e517ed4355da8d8c7459963cdebd976",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": []
+    },
+    {
+      "stationuuid": "6928b97f-56f2-459e-b7e8-d76997fd9802",
+      "streamSha256": "7420bb7ecd89803cc9d82f15696d5af755f543e5265467929b1c1eaf5644e4d2",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-25",
+          "artistHint": "Blondinka Ksju",
+          "titleSha256": "854145b288566f78288b0c7277d8c9aa6244e169c177571c7081b5a44c216cf6"
+        }
+      ]
+    },
+    {
+      "stationuuid": "6fc8bce6-0ab9-4d0a-a703-992634eddf61",
+      "streamSha256": "91952bac6ff32ecefb03a9be8829f86c7f873623b54c2c87af06159d675a8bf3",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-25",
+          "artistHint": "Dead End Tragedy",
+          "titleSha256": "477e1092c6cd65d297316cf7df3311e748c0def319f9c431c2b2a938e1ecf248"
+        }
+      ]
+    },
+    {
+      "stationuuid": "7264e476-09d5-4dc0-8580-bf8cc2070265",
+      "streamSha256": "b40accf7a7fe6283ba591d75c0b8b3e5074750f4c55d700d0e550e3729cb6d13",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-25",
+          "artistHint": "AC/DC",
+          "titleSha256": "f7ba934ba7b2ffbb0987c8dae23d61679043edc02a76ba5a109cb24a486690de"
         }
       ]
     }

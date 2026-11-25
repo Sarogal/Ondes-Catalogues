@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "scanDate": "2026-11-25",
+  "publicationAllowed": false,
+  "approvedCount": 0,
+  "observedNameCount": 19,
+  "dueNameCount": 19,
+  "attemptedCount": 6,
+  "serviceFailure": null,
+  "retryAfterKey": null,
+  "entries": {
+    "38 special": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "38 Special",
+      "checkedAt": "2026-11-25",
+      "source": "wikidata",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "ac/dc": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "AC/DC",
+      "checkedAt": "2026-11-25",
+      "source": "wikidata",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "aisyk": {
+      "status": "identity_held",
+      "artistName": "Aisyk",
+      "checkedAt": "2026-11-25",
+      "source": "wikidata",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "axiommaxiom": {
+      "status": "not_found",
+      "artistName": "AxiomMaxiom",
+      "checkedAt": "2026-11-25",
+      "source": "wikidata",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "blondinka ksju": {
+      "status": "identity_held",
+      "artistName": "Blondinka Ksju",
+      "checkedAt": "2026-11-25",
+      "source": "wikidata",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "dead end tragedy": {
+      "status": "not_found",
+      "artistName": "Dead End Tragedy",
+      "checkedAt": "2026-11-25",
+      "source": "wikidata",
+      "identityVerified": false,
+      "publicationAllowed": false
+    }
+  }
+}

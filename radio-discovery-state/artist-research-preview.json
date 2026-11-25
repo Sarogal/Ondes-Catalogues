@@ -3,11 +3,11 @@
   "scanDate": "2026-11-25",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 14,
-  "dueNameCount": 12,
-  "attemptedCount": 1,
+  "observedNameCount": 19,
+  "dueNameCount": 17,
+  "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "never obey again",
+  "retryAfterKey": "poison",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -28,6 +28,14 @@
       "genreSource": "musicbrainz-community",
       "sourceUrl": "https://musicbrainz.org/artist/1cf1db8f-06bc-4c02-a608-4fc7980bbfcc",
       "artistName": "Johnny Hates Jazz",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-25",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "panda bear, cindy lee": {
+      "status": "not_found",
+      "artistName": "Panda Bear, Cindy Lee",
       "source": "musicbrainz",
       "checkedAt": "2026-11-25",
       "identityVerified": false,

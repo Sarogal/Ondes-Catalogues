@@ -4,9 +4,9 @@
   "publicationAllowed": false,
   "editoriallyApprovedCount": 0,
   "attemptedPageCount": 8,
-  "linkedPagesFetched": 4,
-  "htmlObservedCount": 56,
-  "identityTargetCount": 6,
+  "linkedPagesFetched": 6,
+  "htmlObservedCount": 59,
+  "identityTargetCount": 7,
   "structuredProgrammeCount": 3,
   "programmeScopeCount": 0,
   "declaredStreamLinkedCount": 3,
@@ -164,12 +164,12 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
-      "analyzerVersion": 3,
+      "analyzerVersion": 4,
       "streamSha256": "58404456505af5db040c9dcc7ca0479017e676a947be85af7989133918c29164",
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
-      "signal": "stale_analyzer_or_stream_review",
+      "signal": "identity_and_target_indication",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -184,9 +184,10 @@
         "punk rock"
       ],
       "primaryElectronicTerms": [],
-      "pageSha256": "0c013926635d6ced6d547cadfe1d3d5b07a7d7173d20b6b294c0a1a85071b4af",
+      "pageSha256": "82b9774d47f8bcd5600f5405369b21f5a497e626d6ee7a8166489f1ee8411ffe",
       "finalPageSha256": "f4636bdd68c55c8c869546e75f55eef09d8f1f2a366be6bd490d89c2a65bf981",
-      "imageHintSha256": []
+      "imageHintSha256": [],
+      "linkedPageEvidence": []
     },
     {
       "stationuuid": "125f0f3a-4833-4e2d-856a-106fba6cd6cd",
@@ -1166,13 +1167,10 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "failed_review",
-      "analyzerVersion": 2,
+      "analyzerVersion": 4,
       "streamSha256": "48ffa310933f6876dbe66c587facef3fe955482c232973a03202d21c391216de",
       "editorialApproved": false,
-      "publicationAllowed": false,
-      "signal": "stale_analyzer_or_stream_review",
-      "declaredStreamLinked": false,
-      "programmeScopeEvidence": false
+      "publicationAllowed": false
     },
     {
       "stationuuid": "7912f9a4-750e-4575-8718-37a2a2edfb16",
@@ -1675,6 +1673,50 @@
       "linkedPageEvidence": []
     },
     {
+      "stationuuid": "c9e17187-7b9f-48af-8454-0cf8462302c7",
+      "homepageSha256": "b66a8ad040334ab66fe3da30c390221835a8455a8462f1df1e1d3a6b3c224b76",
+      "identityNameSha256": "a01944bb54a050512f76b9da4f2b228e183b5b6cdad52fb65908216aa9c121cc",
+      "reportedHost": "realrockrevival.com",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "fddf34061b7fd8ee9eb7f65671814212918fe4fd90f4302cfe31dd283ec0d04b",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": true,
+      "signal": "no_format_evidence",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [],
+      "primaryElectronicTerms": [],
+      "pageSha256": "46ff6633a58031f190f70568d7035c322fe532fa7af7bd3adc92a7db5bbe2043",
+      "finalPageSha256": "b66a8ad040334ab66fe3da30c390221835a8455a8462f1df1e1d3a6b3c224b76",
+      "imageHintSha256": [
+        "a1d63c48dba8411233a4e332c0c6478f29d0fd30a263cb2d33b5b0190940eedf",
+        "ca181e05390e2a7c138df2bc8fd245f796bb70484486ea181047d92b9005326e"
+      ],
+      "linkedPageEvidence": [
+        {
+          "pageSha256": "dec59d2785703e12a7be2ee9f9af30f7b8d2d3fd48f339460c5289f7755c5ba9",
+          "finalPageSha256": "2fa42c3bba7599cf271ec6590872fa82b0ba2646db993e367c9409d0b1b4bec8",
+          "programmeScopeEvidence": false,
+          "declaredStreamLinked": false
+        },
+        {
+          "pageSha256": "2957496edb0f398caf1ffe0c738e60b4b0736dc16fb099088b73f1af2da49638",
+          "finalPageSha256": "fdaecfcee937d21e2f78e21a2a482ade16e70c7d985fd4abc227769f7ce4f943",
+          "programmeScopeEvidence": false,
+          "declaredStreamLinked": false
+        }
+      ]
+    },
+    {
       "stationuuid": "cbb233ad-fad1-46e1-b89b-9389f457f204",
       "homepageSha256": "f1cbb50fa932a49e9cfcbcbcffe1ed0ddf13f6e42427ba9b527ecc1c67a0acf1",
       "identityNameSha256": "9dab93f522baba9ccddbc89aa6011e54e31d8e1796ff13984b862c0a9ebe327c",
@@ -1882,12 +1924,12 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
-      "analyzerVersion": 3,
+      "analyzerVersion": 4,
       "streamSha256": "9c9b03736f802f1f2e4e45ee7ed195fedfe24fbc68d1141b2782b9ff79dc38b5",
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "stale_analyzer_or_stream_review",
+      "signal": "unbound_target_indication",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -1905,9 +1947,91 @@
         "metal"
       ],
       "primaryElectronicTerms": [],
-      "pageSha256": "f31d20bf8be49cd1492241c214bf3db911fc1362751355692d73d9738edf3b09",
+      "pageSha256": "8d9e49a2b39e353742208312d01858eac41d9b9df7bb6a9032458a93a23ee726",
       "finalPageSha256": "37bfd2124f8fdcbb0cb29866443432839bfd53ba7647e046beb9cb5cec05f618",
-      "imageHintSha256": []
+      "imageHintSha256": [],
+      "linkedPageEvidence": []
+    },
+    {
+      "stationuuid": "d7be93d3-067b-4056-8759-fdefc607cc17",
+      "homepageSha256": "c5ccf3e67dc4e4fff6e71381ec3c676c713e1e87059086cd0630e6ce4359b668",
+      "identityNameSha256": "d7facb32f8061ac7145c51649153c3e4e46e1cb99dd10d6ce9599bef0c5d5dd3",
+      "reportedHost": "rayo.sk",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "5a5745576caa294d3798f33060dbf079373213f258391acde92b74a6b60f02ef",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": false,
+      "signal": "unbound_target_indication",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [
+        "hard rock"
+      ],
+      "visibleTargetTerms": [
+        "hard rock"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "f7b40c6cdebad9692e5236d578b50a69dcb971601f5d1f9c085ced6bf4ee2668",
+      "finalPageSha256": "c5ccf3e67dc4e4fff6e71381ec3c676c713e1e87059086cd0630e6ce4359b668",
+      "imageHintSha256": [
+        "805ad076dd3c0fe3a80585ce42277db1d0543a4e4e387f4ee90ae743454e34a1",
+        "af05b164739bdffa4170796581712363f3e0a9469ae0459b7bfd29a6839cf39c",
+        "c5ccf3e67dc4e4fff6e71381ec3c676c713e1e87059086cd0630e6ce4359b668"
+      ],
+      "linkedPageEvidence": []
+    },
+    {
+      "stationuuid": "da7d7480-3616-4ba6-bf43-e086deb71d1a",
+      "homepageSha256": "404dca0bb831d3ed4ddf89e996a42db30d89304677712427e218a5321499f3ae",
+      "identityNameSha256": "4db5fbd07b4c9f2155cfaa5979c0f1c270618af08e5712e08d092d825388183d",
+      "reportedHost": "realrockradio.co.uk",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "failed_review",
+      "analyzerVersion": 4,
+      "streamSha256": "22e144939d311cfe487d1bbba6ad5afa7caa71afd05f568a9b06cdc806d23ce9",
+      "editorialApproved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "e0069278-117c-4437-9c41-1ec614b702ca",
+      "homepageSha256": "66190d0b2b9e0d06b01cf1ef03b9de29acce31654b32f9d63d27f2a9c4fd1933",
+      "identityNameSha256": "a5b4c890f7226fb47740e3c2586cf2564a7dab519cf4a71bef4ae977aabb3065",
+      "reportedHost": "radioxes.de",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "75d9daebe859a6ffe2e98e65d618bca1867b2dfb7dbe1ba5ffa01b00fcdece5f",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": false,
+      "signal": "unbound_target_indication",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [
+        "gothic metal",
+        "industrial metal",
+        "metal"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "5d2e21ceb5e74dce8e0b28e1b385d460a2877adcdd54cbd754f0e6dfeb3ae228",
+      "finalPageSha256": "66190d0b2b9e0d06b01cf1ef03b9de29acce31654b32f9d63d27f2a9c4fd1933",
+      "imageHintSha256": [],
+      "linkedPageEvidence": []
     },
     {
       "stationuuid": "e22310aa-c0a7-49eb-abe8-4c125ac9c4ce",
@@ -2050,13 +2174,10 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "failed_review",
-      "analyzerVersion": 2,
+      "analyzerVersion": 4,
       "streamSha256": "0e8dbdfa96a66eee36f3d0de0bbf45a369f1b37765664d74623d3b2fd2536feb",
       "editorialApproved": false,
-      "publicationAllowed": false,
-      "signal": "stale_analyzer_or_stream_review",
-      "declaredStreamLinked": false,
-      "programmeScopeEvidence": false
+      "publicationAllowed": false
     },
     {
       "stationuuid": "ed02a49b-11e2-4de3-b279-279529290257",
