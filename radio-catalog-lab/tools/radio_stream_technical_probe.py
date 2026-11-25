@@ -331,6 +331,7 @@ def probe_url(raw_url: str, request: Callable[[str], ResponseSample]) -> dict:
 def probe_candidates(
     discovery: dict, request: Callable[[str], ResponseSample], *, limit: int = 3,
     observation_day: dt.date | None = None,
+    previous_evidence: dict | None = None,
 ) -> dict:
     """Probe a bounded number of candidates. Always preview, never publish."""
     if not isinstance(discovery, dict) or discovery.get("schemaVersion") != 1 or (
@@ -367,11 +368,41 @@ def probe_candidates(
         raw_url = station.get("streamUrl")
         if isinstance(raw_url, str) and raw_url:
             eligible.append((identifier, raw_url))
-    # Do not re-check the first N UUIDs forever: rotate the network probe
-    # window by UTC date. This stays bounded even when hundreds of stations
-    # are discovered and cannot reorder a user's historical radio catalog.
+    # Preserve the date rotation for callers without a prior evidence ledger.
+    # With durable evidence, reserve one slot for a positive sample awaiting
+    # confirmation and spend the rest on unseen/changed streams. Only revisit
+    # an unchanged endpoint at most once per UTC day.
     eligible.sort()
-    if eligible:
+    if previous_evidence is not None:
+        if (not isinstance(previous_evidence, dict)
+                or previous_evidence.get("schemaVersion") != 1
+                or previous_evidence.get("publicationAllowed") is not False
+                or not isinstance(previous_evidence.get("records"), list)):
+            raise ValueError("Invalid prior probe evidence")
+        from radio_stream_recheck_ledger import next_evidence_report
+        validated = next_evidence_report({
+            "schemaVersion": 1, "publicationAllowed": False,
+            "observationDate": observation_day.isoformat(), "checks": [],
+        }, previous_evidence)
+        prior = {r["stationuuid"]: r for r in validated["records"]}
+        unseen, confirmation, retry = [], [], []
+        today = observation_day.isoformat()
+        for uid, url in eligible:
+            old = prior.get(uid)
+            digest = hashlib.sha256(url.encode("utf-8")).hexdigest()
+            if old is None or old["streamSha256"] != digest:
+                unseen.append((uid, url))
+            elif old["lastObservedDate"] < today:
+                if old["lastVerdict"] == "audio_sample_ok" and len(old["audioEvidenceDates"]) == 1:
+                    confirmation.append((uid, url))
+                else:
+                    retry.append((uid, url))
+        confirmation.sort(key=lambda pair: (prior[pair[0]]["lastObservedDate"], pair[0]))
+        retry.sort(key=lambda pair: (prior[pair[0]]["lastObservedDate"], pair[0]))
+        # Reserve up to one slot; never starve fresh work when confirmations
+        # accumulate. Remaining capacity can serve either queue.
+        selected = (confirmation[:1] + unseen + confirmation[1:] + retry)[:limit]
+    elif eligible:
         start = (observation_day.toordinal() * limit) % len(eligible)
         selected = [eligible[(start + i) % len(eligible)]
                     for i in range(min(limit, len(eligible)))]
@@ -396,6 +427,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--discovery", type=Path, required=True)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--limit", type=int, default=3)
+    p.add_argument("--previous-evidence", type=Path)
     p.add_argument("--allow-network", action="store_true",
                    help="Required for any external stream request; use only on controlled runners.")
     args = p.parse_args(argv)
@@ -404,7 +436,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.discovery.stat().st_size > MAX_INPUT_SIZE:
         p.error("Discovery document too large")
     data = json.loads(args.discovery.read_text(encoding="utf-8"))
-    report = probe_candidates(data, PinnedHttpTransport().request, limit=args.limit)
+    previous = None
+    if args.previous_evidence:
+        if args.previous_evidence.stat().st_size > MAX_INPUT_SIZE:
+            p.error("Previous evidence too large")
+        previous = json.loads(args.previous_evidence.read_text(encoding="utf-8"))
+    report = probe_candidates(data, PinnedHttpTransport().request, limit=args.limit,
+                              previous_evidence=previous)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n",
                            encoding="utf-8")
