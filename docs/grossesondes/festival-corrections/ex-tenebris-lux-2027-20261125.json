@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "reviewedAt": "2026-11-25",
+  "reason": "Official organizer explicitly classifies the date as a touring concert outside the festival; no verified 2027 festival edition on this date.",
+  "action": "retract_false_edition_only",
+  "previousRow": {
+    "bands": 0,
+    "endDate": "2027-02-04",
+    "lastVerified": "2026-11-20",
+    "slug": "ex-tenebris-lux-2027",
+    "lon": null,
+    "officialSite": "https://extenebrislux.fr/",
+    "venue": null,
+    "notes": "Édition annoncée sur une page du site officiel ; dates visibles revérifiées. Lieu, séances, tarifs et coordonnées à confirmer.",
+    "startDate": "2027-02-04",
+    "price": null,
+    "region": null,
+    "department": null,
+    "city": null,
+    "status": "Annoncé",
+    "verificationStatus": "Édition vérifiée sur le site officiel de l'archive ; lieu et coordonnées 2027 non confirmés",
+    "dateRangeIsContinuous": false,
+    "name": "EX TENEBRIS LUX 2027",
+    "source": "https://extenebrislux.fr/",
+    "lineup": [],
+    "showOnMap": false,
+    "sourceConfidence": "Site officiel (HTML visible vérifié indépendamment)",
+    "lat": null
+  },
+  "evidence": [
+    "https://extenebrislux.fr/",
+    "https://extenebrislux.fr/events/etiquette/hors-festival/",
+    "https://extenebrislux.fr/event/shred-fest-tour-obscura-pestilence-cryptic-shift-thus-dvrk/",
+    "https://www.victoire2.com/programmation/"
+  ],
+  "concertLead": {
+    "title": "SHRED FEST Tour",
+    "date": "2027-02-04",
+    "venue": "Victoire 2",
+    "city": "Saint-Jean-de-Védas",
+    "artists": [
+      "Obscura",
+      "Pestilence",
+      "Cryptic Shift",
+      "Thus",
+      "DVRK"
+    ],
+    "publicationAuthorized": false,
+    "department": "34",
+    "officialUrl": "https://extenebrislux.fr/event/shred-fest-tour-obscura-pestilence-cryptic-shift-thus-dvrk/"
+  },
+  "retainHistoricalFestival": true,
+  "continueEditionWatch": true
+}
