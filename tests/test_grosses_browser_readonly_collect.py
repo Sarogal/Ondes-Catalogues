@@ -124,6 +124,35 @@ class IsolatedBrowserCollectionTests(unittest.TestCase):
         self.assertLessEqual(len(first), 8)
         self.assertLessEqual(len(second), 8)
 
+    def test_failed_unlocated_roots_get_priority_without_starving_other_roots(self):
+        pub, hist = fixtures()
+        pub["festivals"] = [
+            {"slug": f"festival-{i:02d}-2027",
+             "name": f"Festival Exemple {i} 2027",
+             "officialSite": f"https://festival-exemple-{i:02d}.fr/",
+             "startDate": "2027-08-19",
+             "lat": None if i < 6 else 47.0,
+             "lon": None if i < 6 else 2.0,
+             "showOnMap": i >= 6}
+            for i in range(12)]
+        missing = {row["officialSite"] for row in pub["festivals"][:6]}
+        located = {row["officialSite"] for row in pub["festivals"][6:]}
+        def fetch(url):
+            raise OSError("HTTP unavailable")
+        seen = set()
+        for slot in range(3):
+            targets, probed, unavailable = prioritize_unavailable(
+                pub, hist, date.fromisoformat(DAY), slot,
+                event_name="push", fetch=fetch)
+            self.assertEqual((probed, unavailable), (12, 12))
+            self.assertEqual(len(set(targets[:5]) & missing), 3)
+            self.assertEqual(len(set(targets[:5]) & located), 2)
+            self.assertEqual(len(targets), len(set(targets)))
+            self.assertLessEqual(len(targets), 8)
+            self.assertIn(OTHER, targets)
+            seen.update(targets[:5])
+        self.assertEqual(seen, missing | located)
+
     def test_failed_network_does_not_serialize_exception_or_html(self):
         urls = [HOME, OTHER]
         def render(url):
