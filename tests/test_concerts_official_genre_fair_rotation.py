@@ -85,6 +85,49 @@ class FairGenreReviewSlots(unittest.TestCase):
         self.assertEqual(report["officialGenreTaggedExamined"], 12)
         self.assertEqual(report["otherOfficialExamined"], 12)
 
+    def test_repeated_same_slot_advances_all_lanes_with_private_memory(self):
+        queue = ([row("oa", i) for i in range(12)] +
+                 [row("tag", i, "genre_tag_review") for i in range(12)] +
+                 [row("unknown", i) for i in range(36)])
+        prior = None
+        seen = set()
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose", side_effect=ValueError("Held")):
+            for cycle in range(3):
+                out, report = pipeline.build({}, CATALOGUE, BEFORE, TODAY,
+                                             slot=0, limit=16, prior=prior)
+                ids = {c["candidateId"] for c in report["candidateChecks"]}
+                self.assertEqual(len(ids), 16)
+                self.assertFalse(seen & ids)
+                self.assertEqual(report["firstReviewInMemory"], 16)
+                self.assertEqual(report["previouslyReviewed"], 0)
+                self.assertEqual(report["openAgendaExamined"], 3)
+                self.assertEqual(report["officialGenreTaggedExamined"], 4)
+                self.assertEqual(out, BEFORE)
+                seen.update(ids)
+                prior = report
+            self.assertEqual(len(prior["recentReviewKeys"]), 48)
+            _, report = pipeline.build({}, CATALOGUE, BEFORE, TODAY,
+                                        slot=0, limit=16, prior=prior)
+            self.assertGreater(report["previouslyReviewed"], 0)
+            self.assertEqual(len(set(report["recentReviewKeys"])),
+                             len(report["recentReviewKeys"]))
+
+    def test_legacy_report_can_advance_same_slot_and_untrusted_memory_ignored(self):
+        queue = [row("unknown", i) for i in range(40)]
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose", side_effect=ValueError("Held")):
+            _, first = pipeline.build({}, CATALOGUE, BEFORE, TODAY, slot=1)
+            legacy = {k: v for k, v in first.items() if k != "recentReviewKeys"}
+            _, second = pipeline.build({}, CATALOGUE, BEFORE, TODAY,
+                                        slot=1, prior=legacy)
+            first_ids = {c["candidateId"] for c in first["candidateChecks"]}
+            second_ids = {c["candidateId"] for c in second["candidateChecks"]}
+            self.assertFalse(first_ids & second_ids)
+            _, invalid = pipeline.build({}, CATALOGUE, BEFORE, TODAY, slot=1,
+                                         prior={**first, "publicationAllowed": True})
+            self.assertEqual(first["candidateChecks"], invalid["candidateChecks"])
+
     def test_all_unknown_sources_unchanged_rotation(self):
         queue = [row("unknown", i) for i in range(50)]
         seen = set()
