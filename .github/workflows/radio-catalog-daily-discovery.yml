@@ -22,7 +22,7 @@ on:
   workflow_dispatch:
     inputs:
       run_stream_probes:
-        description: "Enable up to 5 safe audio sample probes (preview only)"
+        description: "Enable up to 20 safe audio sample probes (preview only)"
         required: false
         type: boolean
         default: true
@@ -181,7 +181,7 @@ jobs:
           python radio-catalog-lab/tools/radio_stream_technical_probe.py \
             --discovery "$RUNNER_TEMP/go-radio-discovery/probe-candidates.json" \
             --output "$RUNNER_TEMP/go-radio-discovery/technical-probes.json" \
-            --limit 5 --allow-network "${previous[@]}"
+            --limit 20 --workers 4 --allow-network "${previous[@]}"
       - name: Track technical samples over separate days (never approve streams)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
         shell: bash

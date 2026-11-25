@@ -79,7 +79,7 @@ class StreamRecheckTests(unittest.TestCase):
             next_evidence_report(probe(checks=[row(), row()]))
         with self.assertRaises(ValueError):
             next_evidence_report(probe(checks=[row(uid=str(i).zfill(8) + "-0000-4000-8000-000000000000")
-                                                  for i in range(6)]))
+                                                  for i in range(21)]))
 
     def test_malformed_hash_refused(self):
         with self.assertRaises(ValueError):

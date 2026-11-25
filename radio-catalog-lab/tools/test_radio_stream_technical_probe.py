@@ -4,6 +4,7 @@ import hashlib
 import json
 import io
 import socket
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -488,6 +489,45 @@ class TechnicalStreamProbeTests(unittest.TestCase):
                              previous_evidence={"schemaVersion": 1,
                                                 "publicationAllowed": True,
                                                 "records": []})
+
+
+    def test_parallel_probe_budget_and_stable_result_order(self):
+        from radio_stream_recheck_ledger import next_evidence_report
+        items = [station(f"{i:08d}-0000-4000-8000-000000000000",
+                         f"https://radio.example.org/{i}") for i in range(25)]
+        lock = threading.Lock()
+        first_four = threading.Barrier(4, timeout=5)
+        active = peak = calls = 0
+        def request(url):
+            nonlocal active, peak, calls
+            with lock:
+                calls += 1
+                active += 1
+                peak = max(peak, active)
+                first = calls <= 4
+            if first:
+                first_four.wait()
+            with lock:
+                active -= 1
+            return sample()
+        result = probe_candidates(report(items), request, limit=20, workers=4,
+                                  observation_day=dt.date(2026, 11, 25),
+                                  previous_evidence={"schemaVersion": 1,
+                                  "publicationAllowed": False, "records": []})
+        self.assertEqual(calls, 20)
+        self.assertEqual(peak, 4)
+        self.assertEqual([x["stationuuid"] for x in result["checks"]],
+                         [x["stationuuid"] for x in items[:20]])
+        self.assertEqual(len(next_evidence_report(result)["records"]), 20)
+        self.assertFalse(result["publicationAllowed"])
+
+    def test_parallel_limits_rejected_before_request(self):
+        for limit, workers in [(21, 1), (1, 5), (1, 0)]:
+            with self.subTest(limit=limit, workers=workers):
+                with self.assertRaises(ValueError):
+                    probe_candidates(report([station()]),
+                        lambda _: self.fail("unexpected network"),
+                        limit=limit, workers=workers)
 
 
 if __name__ == "__main__":

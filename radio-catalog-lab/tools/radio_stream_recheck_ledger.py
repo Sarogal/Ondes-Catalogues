@@ -18,6 +18,7 @@ VALID_VERDICTS = frozenset({
     "audio_sample_ok", "audio_mime_only", "playlist_pending",
     "not_confirmed_audio", "needs_review", "blocked_unsafe", "container_pending",
 })
+MAX_PROBE_CHECKS = 20
 SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
 
 
@@ -46,7 +47,7 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
         raise ValueError("Untrusted technical probe report")
     day = parse_day(probe.get("observationDate"))
     checks = probe["checks"]
-    if len(checks) > 5:
+    if len(checks) > MAX_PROBE_CHECKS:
         raise ValueError("Probe count exceeds isolated budget")
     records: dict[str, dict] = {}
     if previous is not None:

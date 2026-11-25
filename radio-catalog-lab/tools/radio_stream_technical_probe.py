@@ -19,16 +19,19 @@ import ssl
 import sys
 import urllib.parse
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
 from radio_stream_playlist_preview import playlist_hint
+from radio_stream_recheck_ledger import MAX_PROBE_CHECKS
 
 MAX_BYTES = 512
 MAX_REDIRECTS = 3
 CONNECT_TIMEOUT = 7.0
-MAX_CANDIDATES = 5
+MAX_CANDIDATES = MAX_PROBE_CHECKS
+MAX_WORKERS = 4
 MAX_INPUT_SIZE = 10_000_000
 USER_AGENT = "GrossesOndesStreamQualifier/0.1 (+https://grosses-ondes.fr/)"
 REDIRECT_CODES = frozenset({301, 302, 303, 307, 308})
@@ -332,6 +335,7 @@ def probe_candidates(
     discovery: dict, request: Callable[[str], ResponseSample], *, limit: int = 3,
     observation_day: dt.date | None = None,
     previous_evidence: dict | None = None,
+    workers: int = 1,
 ) -> dict:
     """Probe a bounded number of candidates. Always preview, never publish."""
     if not isinstance(discovery, dict) or discovery.get("schemaVersion") != 1 or (
@@ -340,6 +344,8 @@ def probe_candidates(
         raise ValueError("Untrusted discovery input")
     if not 1 <= limit <= MAX_CANDIDATES:
         raise ValueError("Probe budget exceeded")
+    if not 1 <= workers <= MAX_WORKERS:
+        raise ValueError("Probe concurrency budget exceeded")
     items = discovery["candidates"]
     if len(items) > 20000:
         raise ValueError("Excessive candidate count")
@@ -369,7 +375,7 @@ def probe_candidates(
         if isinstance(raw_url, str) and raw_url:
             eligible.append((identifier, raw_url))
     # Preserve the date rotation for callers without a prior evidence ledger.
-    # With durable evidence, reserve one slot for a positive sample awaiting
+    # With durable evidence, reserve part of the budget for positive samples awaiting
     # confirmation and spend the rest on unseen/changed streams. Only revisit
     # an unchanged endpoint at most once per UTC day.
     eligible.sort()
@@ -399,18 +405,28 @@ def probe_candidates(
                     retry.append((uid, url))
         confirmation.sort(key=lambda pair: (prior[pair[0]]["lastObservedDate"], pair[0]))
         retry.sort(key=lambda pair: (prior[pair[0]]["lastObservedDate"], pair[0]))
-        # Reserve up to one slot; never starve fresh work when confirmations
-        # accumulate. Remaining capacity can serve either queue.
-        selected = (confirmation[:1] + unseen + confirmation[1:] + retry)[:limit]
+        # Reserve a quarter of the budget; do not starve new streams.
+        confirm_slots = max(1, limit // 4)
+        selected = (confirmation[:confirm_slots] + unseen + confirmation[confirm_slots:] + retry)[:limit]
     elif eligible:
         start = (observation_day.toordinal() * limit) % len(eligible)
         selected = [eligible[(start + i) % len(eligible)]
                     for i in range(min(limit, len(eligible)))]
     else:
         selected = []
-    for identifier, raw_url in selected:
-        check = probe_url(raw_url, request)
-        rows.append({"stationuuid": identifier, **check, "publicationAllowed": False})
+    def check_one(pair: tuple[str, str]) -> dict:
+        identifier, raw_url = pair
+        return {"stationuuid": identifier, **probe_url(raw_url, request),
+                "publicationAllowed": False}
+
+    if workers == 1:
+        rows = [check_one(pair) for pair in selected]
+    else:
+        # No more than four simultaneous probes; a worker retains all the
+        # existing per-request DNS, redirect, timeout and sample-byte limits.
+        # map returns results in queue order, independent of completion order.
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            rows = list(pool.map(check_one, selected))
     return {
         "schemaVersion": 1,
         "observationDate": observation_day.isoformat(),
@@ -427,6 +443,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--discovery", type=Path, required=True)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--limit", type=int, default=3)
+    p.add_argument("--workers", type=int, default=1)
     p.add_argument("--previous-evidence", type=Path)
     p.add_argument("--allow-network", action="store_true",
                    help="Required for any external stream request; use only on controlled runners.")
@@ -442,7 +459,7 @@ def main(argv: list[str] | None = None) -> int:
             p.error("Previous evidence too large")
         previous = json.loads(args.previous_evidence.read_text(encoding="utf-8"))
     report = probe_candidates(data, PinnedHttpTransport().request, limit=args.limit,
-                              previous_evidence=previous)
+                              previous_evidence=previous, workers=args.workers)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n",
                            encoding="utf-8")
