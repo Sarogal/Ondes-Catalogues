@@ -311,6 +311,54 @@ class UnlistedExistingVenueTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 dynamic.validate(signed, venues, artists, TODAY, fetch=wrong)
 
+    def test_named_artist_without_external_link_can_qualify_from_own_event_bio(self):
+        from automation.concerts import dynamic_first_party_venue_proposals as proposals
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        source = page(EVENT, genres=False)
+        person = {"@type": "MusicGroup", "name": NAMES[-1]}
+        sentence = NAMES[-1] + " are a black metal band from Norway."
+        primary = source.replace(json.dumps(person),
+                                 json.dumps({**person, "description": sentence}))
+        visible = source.replace("<h1>Nouvel événement</h1>",
+                                 "<h1>" + " + ".join(NAMES) + "</h1><h2>"
+                                 + NAMES[-1] + "</h2><p>" + sentence + "</p>")
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+        for body in (primary, visible):
+            fetch = fake_fetch({"primary": body})
+            self.assertEqual(proposals._individual_event(
+                body, EVENT, signed["event"]["date"], venue,
+                accept_generic=True, fetch=fetch, cache={}),
+                (NAMES, ["Black Metal"]))
+            with mock.patch.object(dynamic, "safe_fetch", side_effect=fetch):
+                result, counts = publisher.merge(
+                    BASE, BASE, {"schema": publisher.SCHEMA,
+                                 "approvals": [signed]}, TODAY)
+                self.assertEqual(counts["newEvents"], 1)
+        for sentence_bad in (
+                "Another Artist are a black metal band.",
+                NAMES[-1] + " are not a black metal band.",
+                NAMES[-1] + " are a jazz band influenced by black metal.",
+                NAMES[-1] + " support a black metal band.",
+                NAMES[-1] + " are a black metal tribute band."):
+            body = primary.replace(sentence, sentence_bad)
+            with self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY,
+                                 fetch=fake_fetch({"primary": body}))
+        conflicting = source.replace(json.dumps(person), json.dumps({
+            **person, "genre": "Jazz", "description": sentence}))
+        unrelated = visible.replace("<h2>" + NAMES[-1],
+                                    "<h2>Related events</h2><h2>" + NAMES[-1])
+        for body in (conflicting, unrelated,
+                     visible.replace("<h1>" + " + ".join(NAMES), "<h1>Other show")):
+            with self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY,
+                                 fetch=fake_fetch({"primary": body}))
+
     def test_signed_published_osm_api_node_sources_are_rechecked_without_allowlist(self):
         # Five real published venues use the API-node spelling; the old
         # validator rejected these even though it fetches that exact API.
