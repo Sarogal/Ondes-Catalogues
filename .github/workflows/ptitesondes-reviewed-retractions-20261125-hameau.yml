@@ -1,0 +1,194 @@
+name: "P'tites Ondes — retrait audité de 53 horaires du Hameau Enchanté"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_reviewed_retractions.py'
+      - 'tests/test_ptitesondes_reviewed_retractions_hameau_20261125.py'
+      - 'tests/test_ptitesondes_oa_evergreen_on_demand.py'
+      - 'scripts/ptitesondes_oa_evergreen_on_demand.py'
+      - 'scripts/ptitesondes_oa_first_party_admission.py'
+      - 'config/ptitesondes-reviewed-retractions-20261125-hameau.json'
+      - '.github/workflows/ptitesondes-reviewed-retractions-20261125-hameau.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'config/ptitesondes-reviewed-retractions-20261125-hameau.json'
+      - '.github/workflows/ptitesondes-reviewed-retractions-20261125-hameau.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ondes-cloud-publication
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Compile and test the immutable review contract
+        env:
+          PYTHONPATH: scripts:tests
+        run: |
+          python -m py_compile scripts/ptitesondes_reviewed_retractions.py
+          python -m unittest -v test_ptitesondes_reviewed_retractions_hameau_20261125
+          python -m unittest -v test_ptitesondes_reviewed_retractions test_ptitesondes_reviewed_retractions_20261123 test_ptitesondes_oa_evergreen_on_demand
+      - name: Verify retry shell syntax without running publication
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          s = Path('.github/workflows/ptitesondes-reviewed-retractions-20261125-hameau.yml').read_text()
+          script = s.split('      - name: Recalculer le retrait sur main', 1)[1].split('        run: |\n', 1)[1].split('\n  deploy:', 1)[0]
+          script = '\n'.join(line[10:] if line.startswith('          ') else line for line in script.splitlines())
+          subprocess.run(['bash', '-n'], input=script, text=True, check=True)
+          PY
+      - name: Preview exact reviewed edits without filesystem mutation
+        run: |
+          python scripts/ptitesondes_reviewed_retractions.py \
+            --catalogue docs/ptitesondes/sorties.json \
+            --manifest config/ptitesondes-reviewed-retractions-20261125-hameau.json \
+            --audit-out /tmp/ptitesondes-review-preview.json
+
+  apply:
+    needs: validate
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      changed: ${{ steps.review.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 2
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Recalculer le retrait sur main et pousser sans écraser les publications concurrentes
+        id: review
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for attempt in 1 2 3 4 5; do
+            git fetch --no-tags origin main
+            git checkout --detach FETCH_HEAD
+            base="$(git rev-parse HEAD)"
+            # Refuse the withdrawal until the prevention rule is on trusted main.
+          PYTHONPATH=scripts python - <<'PY'
+          from ptitesondes_primary_editorial import primary_out_of_scope
+          description = ("parc à thème ... accueillir les visiteurs ... "
+                         "scénographie féérique ... Au fil de la visite ... "
+                         "bonhomme de neige automate")
+          assert primary_out_of_scope("Le Hameau Enchanté", description) == "park_visit_programme_primary"
+          assert primary_out_of_scope("Concert pour enfants", description) is None
+          PY
+            python scripts/ptitesondes_reviewed_retractions.py \
+              --catalogue docs/ptitesondes/sorties.json \
+              --manifest config/ptitesondes-reviewed-retractions-20261125-hameau.json \
+              --audit-out docs/ptitesondes/retractions/reviewed-20261125-hameau-audit.json \
+              --apply | tee /tmp/ptitesondes-reviewed-summary.txt
+            if grep -qx 'changed=false' /tmp/ptitesondes-reviewed-summary.txt; then
+              echo 'changed=false' >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            grep -qx 'changed=true' /tmp/ptitesondes-reviewed-summary.txt
+            test -s docs/ptitesondes/retractions/reviewed-20261125-hameau-audit.json
+            git add -- docs/ptitesondes/sorties.json docs/ptitesondes/retractions/reviewed-20261125-hameau-audit.json
+            test "$(git diff --cached --name-only | wc -l)" -eq 2
+            git commit -m "data(ptitesondes): retirer 53 horaires du Hameau Enchanté mal classés après audit exact"
+            if git push origin HEAD:main; then
+              echo 'changed=true' >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            git fetch --no-tags origin main
+            if [[ "$(git rev-parse FETCH_HEAD)" == "$base" ]]; then
+              echo "::error::Push failed without a concurrent update"
+              exit 1
+            fi
+            # Never replay the old JSON diff: re-run the exact manifest on the
+            # new main, so additions and unrelated edits survive.
+            sleep "$((attempt * 2))"
+          done
+          echo "::error::Concurrent updates exhausted the bounded retry budget"
+          exit 1
+
+  deploy:
+    needs: apply
+    if: needs.apply.outputs.changed == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      actions: write
+    environment:
+      name: github-pages
+      url: ${{ steps.publication.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/
+      - name: Publication du catalogue corrigé
+        id: publication
+        uses: actions/deploy-pages@v5
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Vérifier la réalité du JSON public après déploiement
+        run: |
+          python - <<'PY'
+          import json, time
+          from pathlib import Path
+          from urllib.request import urlopen, Request
+          local = json.loads(Path('docs/ptitesondes/sorties.json').read_text())
+          expected = {x['id'] for x in local['events']}
+          assert expected
+          assert not any(eid.startswith("openagenda-23913876-") for eid in expected)
+          url = 'https://sarogal.github.io/Ondes-Catalogues/ptitesondes/sorties.json'
+          for attempt in range(12):
+              try:
+                  req = Request(url, headers={'User-Agent':'PO-Reviewed-Deploy-Check/1.0'})
+                  with urlopen(req, timeout=20) as resp:
+                      remote = json.loads(resp.read(9_000_001))
+                  actual = {x['id'] for x in remote['events']}
+                  if (len(remote['events']) == len(local['events'])
+                          and actual == expected and remote == local):
+                      print('Public GitHub Pages: count and identities verified', len(actual))
+                      break
+              except (OSError, ValueError, KeyError):
+                  pass
+              time.sleep(10)
+          else:
+              raise SystemExit('Public GitHub Pages did not match the corrected catalogue')
+          PY
+
+      - name: Reconstruire les dossiers privés depuis le catalogue corrigé
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # This is a research dispatch, never a direct publication.
+          # It happens ONLY after complete GitHub Pages equality was proven.
+          # Refresh the private queue against the exact corrected catalogue.
+          gh workflow run ptitesondes-private-intake-on-public-runners.yml \
+            --repo Sarogal/Ondes-Catalogues --ref main \
+            -f cycle=outings -f mode=write -f recovery=none
+          echo 'Fresh private national intake requested after verified retraction.'
