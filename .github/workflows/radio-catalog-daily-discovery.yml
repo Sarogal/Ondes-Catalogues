@@ -68,24 +68,35 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Restore previous candidate ledger when available
-        if: github.event_name != 'push'
+      - name: Read durable discovery state
+        uses: actions/checkout@v4
+        with:
+          ref: state/go-radio-discovery-preview
+          path: go-radio-state-checkout
+          persist-credentials: false
+          sparse-checkout: |
+            radio-discovery-state
+      - name: Restore durable evidence or bootstrap once from validated collection
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          previous_id="$(gh run list --repo "$GITHUB_REPOSITORY" \
-            --workflow radio-catalog-daily-discovery.yml --branch "$GITHUB_REF_NAME" \
-            --status success --limit 10 --json databaseId \
-            --jq '.[0].databaseId // empty' || true)"
-          if [[ -n "$previous_id" ]]; then
-            mkdir -p "$RUNNER_TEMP/go-radio-previous"
-            if ! gh run download "$previous_id" --repo "$GITHUB_REPOSITORY" \
-              --name "go-radio-discovery-$previous_id" \
-              --dir "$RUNNER_TEMP/go-radio-previous"; then
-              echo "Previous evidence unavailable; candidate history starts anew"
+          previous="$RUNNER_TEMP/go-radio-previous"
+          mkdir -p "$previous"
+          state=go-radio-state-checkout/radio-discovery-state
+          if [[ -f "$state/ledger.json" ]]; then
+            cp "$state/ledger.json" "$previous/ledger.json"
+            cp "$state/genre-hints.json" "$previous/candidates.json"
+            if [[ -f "$state/stream-evidence.json" ]]; then
+              cp "$state/stream-evidence.json" "$previous/stream-evidence.json"
             fi
+          else
+            # Bootstrap from the last verified v8 reconciliation, never
+            # silently reset an existing state on a transport error.
+            gh run download 45606141697 --repo "$GITHUB_REPOSITORY" \
+              --name go-radio-discovery-45606141697 --dir "$previous"
+            test -f "$previous/ledger.json"
           fi
       - name: Scan Radio Browser without UUID allowlist
         shell: bash
@@ -165,6 +176,22 @@ jobs:
             --probe "$RUNNER_TEMP/go-radio-discovery/technical-probes.json" \
             --output "$RUNNER_TEMP/go-radio-discovery/stream-evidence.json" \
             "${previous[@]}"
+      - name: Prepare safe durable genre hints
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "go-radio-discovery"
+          report = json.loads((root / "candidates.json").read_text())
+          hints = report.get("suggestedGenreTags", [])
+          assert isinstance(hints, list) and len(hints) <= 200
+          assert all(isinstance(x, str) and len(x) <= 240 for x in hints)
+          (root / "genre-hints.json").write_text(json.dumps({
+              "schemaVersion": 1, "publicationAllowed": False,
+              "suggestedGenreTags": hints,
+          }, ensure_ascii=False, indent=2) + "\n")
+          PY
       - name: Upload review-only candidate report
         uses: actions/upload-artifact@v4
         with:
@@ -172,3 +199,55 @@ jobs:
           path: ${{ runner.temp }}/go-radio-discovery/
           if-no-files-found: error
           retention-days: 14
+
+  persist-preview-state:
+    name: Persist non-publishing evidence in isolated Git branch
+    needs: discovery-preview
+    if: github.ref == 'refs/heads/feature/radio-daily-discovery-lab-20261120'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: state/go-radio-discovery-preview
+      - uses: actions/download-artifact@v4
+        with:
+          name: go-radio-discovery-${{ github.run_id }}
+          path: ${{ runner.temp }}/go-radio-state-input
+      - name: Validate and persist only evidence files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          src = Path(os.environ["RUNNER_TEMP"]) / "go-radio-state-input"
+          dst = Path("radio-discovery-state")
+          dst.mkdir(exist_ok=True)
+          for name in ("ledger.json", "genre-hints.json", "stream-evidence.json"):
+              path = src / name
+              if name == "stream-evidence.json" and not path.exists():
+                  continue
+              assert path.stat().st_size <= 12 * 1024 * 1024
+              data = json.loads(path.read_text())
+              assert data.get("schemaVersion") == 1
+              assert data.get("publicationAllowed") is False
+              if name == "ledger.json":
+                  assert data.get("automaticallyApprovedCount") == 0
+                  assert isinstance(data.get("records"), list)
+              if name == "stream-evidence.json":
+                  assert data.get("technicallyQualifiedCount") == 0
+              (dst / name).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- radio-discovery-state/
+          if git diff --cached --quiet; then
+            echo "Durable evidence already up to date"
+          else
+            git commit -m "state(radio-preview): retain discovery evidence"
+            git push origin HEAD:refs/heads/state/go-radio-discovery-preview
+          fi
