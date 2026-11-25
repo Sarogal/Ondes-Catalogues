@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "observationDate": "2026-11-25",
+  "publicationAllowed": false,
+  "technicallyQualifiedCount": 0,
+  "repeatAudioCandidateCount": 0,
+  "notObservedTodayCount": 0,
+  "records": [
+    {
+      "stationuuid": "01707580-90b4-47cd-9a46-2954e457ea8f",
+      "streamSha256": "b5f1141e355d89f40c324fc39788fae92bd739b3f26bba1eefe1140f38bb42f2",
+      "audioEvidenceDates": [],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_mime_only",
+      "repeatAudioSample": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "017f1b35-7330-4ccc-a8eb-0544a7a9b611",
+      "streamSha256": "2c9ec5aa863946e78cdd1173b91c3693693c72bc0ee0fb2dc4873b381b850c80",
+      "audioEvidenceDates": [],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_mime_only",
+      "repeatAudioSample": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "f4df535d-d65b-46ad-8498-df5b56a011c7",
+      "streamSha256": "e44844cc2e8cc0cfe95618a5e3229acd019f69703518d6add6c44019e890e355",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "f8b1341f-2c88-4c86-bcb5-a820fa890221",
+      "streamSha256": "687d6a80b6ffd3ab7f0b6959ea7e549c382f12d90fc182bd6d7a5b3fa23e86a1",
+      "audioEvidenceDates": [],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "needs_review",
+      "repeatAudioSample": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "f95f4310-ff8c-4106-9b8e-18f05e594f1f",
+      "streamSha256": "53948485098b57585dda110ae9c67bcf5fca741c1335e4b93742af7f7b973ef9",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    }
+  ]
+}
