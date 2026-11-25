@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "scanDate": "2026-11-25",
+  "publicationAllowed": false,
+  "approvedCount": 0,
+  "observedNameCount": 6,
+  "dueNameCount": 6,
+  "attemptedCount": 3,
+  "serviceFailure": "service_or_response_held",
+  "retryAfterKey": "marc freak",
+  "entries": {
+    "38 special": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "38 Special",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-25",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "johnny hates jazz": {
+      "status": "name_hypothesis",
+      "mbid": "1cf1db8f-06bc-4c02-a608-4fc7980bbfcc",
+      "genres": [
+        "new wave",
+        "pop",
+        "sophisti-pop"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/1cf1db8f-06bc-4c02-a608-4fc7980bbfcc",
+      "artistName": "Johnny Hates Jazz",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-25",
+      "identityVerified": false,
+      "publicationAllowed": false
+    }
+  }
+}

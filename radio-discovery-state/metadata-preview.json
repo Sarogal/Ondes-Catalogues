@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 2,
-  "distinctArtistHints": 2,
+  "stationsWithArtistHints": 6,
+  "distinctArtistHints": 6,
   "records": [
     {
       "stationuuid": "035ed365-f6dc-46a2-901d-7ac97880e875",
@@ -72,6 +72,90 @@
     {
       "stationuuid": "35080d89-d7b9-4e1e-af80-ae4a50420f67",
       "streamSha256": "49ad66de7ab731d5dfd7d4a726e439856c73f3f336de0397fff71bbdf37f11ff",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": []
+    },
+    {
+      "stationuuid": "3a40f5fc-8ba3-4177-a145-b1f90dfb06d5",
+      "streamSha256": "dd30406461d941b61cc5c3c9e0cdba561a7062b93da113034e70735e044481e4",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-25",
+          "artistHint": "38 Special",
+          "titleSha256": "c338ab8dfc50a84f1ce91246bc8ce0ba1420c87f73be57548916aa35254a8ed4"
+        }
+      ]
+    },
+    {
+      "stationuuid": "3cf8f90f-0776-44ef-ac57-1eb446abfbe4",
+      "streamSha256": "efd4f4b76d9b1b919f4de6a1c32726c57a58dd4f4cc9b5536f0ce5230b64e94a",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-25",
+          "artistHint": "WDK",
+          "titleSha256": "fbbe661ee46b878303ea7870d65e4ad433addbcec5024a4c55ee1dc66144001d"
+        }
+      ]
+    },
+    {
+      "stationuuid": "3e416d41-3433-4f74-bb32-c224bda34016",
+      "streamSha256": "600f26605e986226e5d5cddc48f3d2e4ac950ad2ba5bf70a13b26a80af00924c",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": []
+    },
+    {
+      "stationuuid": "418b964f-a3df-4b72-a2ff-173ec7e1c1ff",
+      "streamSha256": "ee105dc19818e10b108cf9eb99ce662922d5dba7b074ef7aa8f392669dea95b0",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-25",
+          "artistHint": "Panda Bear, Cindy Lee",
+          "titleSha256": "6d3b491cc4b3b8c942decedece5f1f363e8f996b489f995acb320c18f73b3ca5"
+        }
+      ]
+    },
+    {
+      "stationuuid": "4340f942-c877-4b60-9d2e-e628db62f761",
+      "streamSha256": "a0d2546df73ea61f9f61152087c9a4c5d027a6bf2f74480e1082b0d280e1b18a",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-25",
+          "artistHint": "Rage",
+          "titleSha256": "7da9e701180e16438b8d0d49de481502b7019cc8100592bda0d29024d2c3e100"
+        }
+      ]
+    },
+    {
+      "stationuuid": "44088288-7ad1-44a7-8ec5-d8c210099c12",
+      "streamSha256": "3443345152a9d708d5a506c600c8cdee46d235fd1623008431eb37cc985a7b82",
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "approved": false,

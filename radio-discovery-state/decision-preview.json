@@ -15,9 +15,9 @@
   "blockingReasonCounts": {
     "bind_broadcaster_to_stream": 158,
     "confirm_station_level_programme_scope": 161,
-    "obtain_current_continuity_evidence": 100,
+    "obtain_current_continuity_evidence": 94,
     "obtain_station_bound_editorial_evidence": 156,
-    "repeat_continuity_on_distinct_days": 61,
+    "repeat_continuity_on_distinct_days": 67,
     "resolve_duplicate_or_legacy_identity": 29,
     "resolve_mixed_or_electronic_format": 28,
     "resolve_recent_negative_technical_observation": 30
@@ -4305,14 +4305,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4381,15 +4383,17 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
         "resolve_mixed_or_electronic_format",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4608,14 +4612,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4673,14 +4679,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4715,14 +4723,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4758,14 +4768,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": true,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
