@@ -36,6 +36,7 @@ from grossesondes_future_geo_publisher import (
 from grossesondes_future_city_publisher import (
     apply_independently_verified_city, private_city_report,
 )
+from grossesondes_dated_ticket_tables import parse_dated_ticket_summary
 from grossesondes_existing_official_updates import (
     apply_independently_verified_updates, CHANGEABLE as OFFICIAL_UPDATE_FIELDS,
     COMMUNE_FIELDS as COMMUNE_UPDATE_FIELDS,
@@ -246,7 +247,8 @@ def _certified_new_commune_delta(old, new, *, allow_direct=False):
                 and norm(old["city"]) != norm(new["city"]))
             or not isinstance(new.get("geoSource"), str)
             or not new["geoSource"].startswith(
-                "https://geo.api.gouv.fr/communes?")
+                ("https://geo.api.gouv.fr/communes?",
+                "https://geo.api.gouv.fr/communes_associees_deleguees?"))
             or not isinstance(new.get("geoInsee"), str)
             or re.fullmatch(r"[0-9AB]{5}", new["geoInsee"]) is None):
         return False
@@ -377,12 +379,23 @@ def _verified_official_update_delta(old, new):
         price = new.get("price")
         if not isinstance(price, str) or len(price) > 350:
             return False
+        old_grid = parse_dated_ticket_summary(old.get("price"))
+        new_grid = parse_dated_ticket_summary(price)
+        if old_grid and (not new_grid or not set(old_grid[1]) <= set(new_grid[1])):
+            return False
+        if new_grid:
+            try:
+                if (new_grid[0] > date.fromisoformat(old["startDate"])
+                        or (old.get("price") is not None and not old_grid)):
+                    return False
+            except (ValueError, TypeError, KeyError):
+                return False
         old_tiers = parsed_seasonal_ticket_summary(old.get("price"))
         new_tiers = parsed_seasonal_ticket_summary(price)
         if old_tiers and (not new_tiers or not set(old_tiers) <= set(new_tiers)):
             return False
         if ("billetterie officielle ouverte" not in price
-                and not new_tiers):
+                and not new_tiers and not new_grid):
             return False
         if new_tiers and old.get("price") is not None and not old_tiers:
             return False
