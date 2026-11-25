@@ -29,7 +29,8 @@ from radio_daily_qualification_dossiers import index, safe_digest
 MAX_BYTES = 256 * 1024
 MAX_PAGES = 8
 MAX_INPUT = 12 * 1024 * 1024
-ANALYZER_VERSION = 3
+ANALYZER_VERSION = 4
+MAX_FOLLOWUP_PAGES = 2
 TARGET = re.compile(r"\b(?:(?:heavy|black|death|thrash|doom|power|folk|pagan|nu|glam|hair|speed|progressive|symphonic|industrial|groove|alternative|extreme|sludge|stoner|gothic|viking|melodic)\s+metal|metal|metalcore|deathcore|grindcore|hard\s+rock|punk(?:\s+rock)?|hardcore\s+punk|punkrock|thrash|djent|nwobhm)\b")
 ELECTRONIC = re.compile(r"\b(?:techno|electronic|edm|gabber|hardstyle|happy hardcore|drum and bass|rave|speedcore|uptempo hardcore|dubstep)\b")
 
@@ -123,6 +124,8 @@ class Page(HTMLParser):
         self.in_audio = 0
         self.paragraphs = []
         self.paragraph = None
+        self.links = []
+        self.anchor = None
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
@@ -132,6 +135,8 @@ class Page(HTMLParser):
             self.ignored.append(tag)
         if self.ignored:
             return
+        if tag == "a" and a.get("href") and len(self.links) < 160:
+            self.anchor = [a["href"][:1500], (a.get("title") or "")[:200]]
         if tag in ("title", "h1"):
             self.section = tag
             self.identity.append("")
@@ -173,6 +178,10 @@ class Page(HTMLParser):
                             pass
                     self.jsonld = None
             return
+        if tag == "a" and self.anchor is not None:
+            if len(self.links) < 160:
+                self.links.append(self.anchor)
+            self.anchor = None
         if tag == "audio":
             self.in_audio = max(0, self.in_audio-1)
         if tag == "p" and self.paragraph is not None:
@@ -187,6 +196,8 @@ class Page(HTMLParser):
             if self.jsonld is not None and self.ignored[-1] == "script":
                 self.jsonld.append(data[:32769])
             return
+        if self.anchor is not None:
+            self.anchor[1] = (self.anchor[1] + " " + data)[:300]
         if self.section and self.identity:
             self.identity[-1] = (self.identity[-1] + " " + data)[:500]
         if self.paragraph is not None:
@@ -346,6 +357,69 @@ def inspect_page(name, url, body, stream_url=None):
             "finalPageSha256": safe_digest(url), "imageHintSha256": sorted(set(images))[:8]}
 
 
+# Follow only links actually present in the broadcaster's HTML, never a
+# guessed URL or an arbitrary external search result. No recursive crawl.
+FOLLOW_SCOPE = re.compile(r"\b(?:about|about us|about radio|our station|programme|programming|programacion|programacao|schedule|format|uber uns|programm|a propos|qui sommes nous|presentation|programmation|quienes somos|sobre nos|sobre nosotros|musica)\b")
+FOLLOW_PLAYER = re.compile(r"\b(?:listen|listen live|player|live radio|ecouter|ecoute|en direct|ao vivo|escuchar|horen|webplayer)\b")
+FOLLOW_EXCLUDE = re.compile(r"\b(?:podcast|episode|archive|login|register|privacy|contact|shop|donate|advertis|newsletter|download|facebook|instagram)\b")
+
+
+def followup_links(url, body):
+    page = Page()
+    page.feed(body.decode("utf-8", errors="replace"))
+    ranked = {}
+    for href, label in page.links:
+        try:
+            candidate = urljoin(url, href)
+            p = urlsplit(candidate)
+            if p.scheme != "https" or p.query or p.fragment or not related_host(candidate, url):
+                continue
+            if homepage_url(candidate) != candidate or candidate == url:
+                continue
+            text = normalize(p.path + " " + label)
+            if FOLLOW_EXCLUDE.search(text) or re.search(r"\\.(?:pdf|mp3|aac|m3u8?|pls|jpg|png|zip)$", p.path, re.I):
+                continue
+            score = 2 if FOLLOW_SCOPE.search(text) else 1 if FOLLOW_PLAYER.search(text) else 0
+            if score:
+                ranked[candidate] = max(score, ranked.get(candidate, 0))
+        except (ValueError, TypeError):
+            continue
+    # Reserve one slot for a player page where available.
+    scope = sorted(u for u, score in ranked.items() if score == 2)
+    player = sorted(u for u, score in ranked.items() if score == 1)
+    return (scope[:1] + player[:1] + scope[1:] + player[1:])[:MAX_FOLLOWUP_PAGES]
+
+
+def inspect_site(name, final, data, stream_url, children):
+    root = inspect_page(name, final, data, stream_url)
+    root["linkedPageEvidence"] = []
+    if not root["identityNameMatch"]:
+        return root
+    for child_url, child_data in children:
+        child = inspect_page(name, child_url, child_data, stream_url)
+        if not child["identityNameMatch"]:
+            continue
+        root["linkedPageEvidence"].append({
+            "pageSha256": child["pageSha256"],
+            "finalPageSha256": child["finalPageSha256"],
+            "programmeScopeEvidence": child["programmeScopeEvidence"],
+            "declaredStreamLinked": child["declaredStreamLinked"],
+        })
+        for key in ("primaryTargetTerms", "visibleTargetTerms", "primaryElectronicTerms",
+                    "otherFormatTerms", "programmeScopeTerms", "programmeScopeSources", "imageHintSha256"):
+            root[key] = sorted(set(root[key] + child[key]))[:20 if key != "imageHintSha256" else 8]
+        for key in ("structuredProgrammeEvidence", "programmeScopeEvidence", "declaredStreamLinked"):
+            root[key] = root[key] or child[key]
+    if root["primaryElectronicTerms"] or root["otherFormatTerms"]:
+        root["programmeScopeEvidence"] = False
+        root["programmeScopeTerms"] = []
+        root["programmeScopeSources"] = []
+    if root["primaryTargetTerms"]:
+        root["signal"] = ("mixed_programme_indication" if root["primaryElectronicTerms"]
+                          else "identity_and_target_indication")
+    return root
+
+
 def collect(discovery, reconciliation, *, previous=None, limit=0, fetch=fetch_html):
     day = parse_day(discovery.get("scanDate"))
     if (discovery.get("schemaVersion") != 1 or discovery.get("publicationAllowed") is not False
@@ -408,14 +482,27 @@ def collect(discovery, reconciliation, *, previous=None, limit=0, fetch=fetch_ht
             if (homepage_url(final) != final or not related_host(final, url)
                     or not isinstance(data, bytes) or not 0 < len(data) <= MAX_BYTES):
                 raise ValueError("invalid response")
-            return url, final, data
+            children = []
+            for link in followup_links(final, data):
+                try:
+                    child_url, child_data = fetch(link)
+                    if (homepage_url(child_url) == child_url and related_host(child_url, final)
+                            and child_url != final and isinstance(child_data, bytes)
+                            and 0 < len(child_data) <= MAX_BYTES
+                            and child_url not in {u for u, _ in children}):
+                        children.append((child_url, child_data))
+                except Exception:
+                    continue
+            return url, final, data, children
         except Exception:
-            return url, None, None
+            return url, None, None, []
+    followup_count = 0
     with ThreadPoolExecutor(max_workers=3) as pool:
-        for url, final, data in pool.map(request, queue):
+        for url, final, data, children in pool.map(request, queue):
+            followup_count += len(children)
             for uid, row in groups[url]:
                 try:
-                    evidence = inspect_page(row.get("name"), final, data, row.get("streamUrl")) if data else {}
+                    evidence = inspect_site(row.get("name"), final, data, row.get("streamUrl"), children) if data else {}
                 except (ValueError, TypeError, RecursionError):
                     data_for_row = None
                     evidence = {}
@@ -437,6 +524,7 @@ def collect(discovery, reconciliation, *, previous=None, limit=0, fetch=fetch_ht
         raise ValueError("editorial register capacity")
     return {"schemaVersion": 1, "scanDate": day, "publicationAllowed": False,
             "editoriallyApprovedCount": 0, "attemptedPageCount": len(queue),
+            "linkedPagesFetched": followup_count,
             "htmlObservedCount": sum(x["retrieval"] == "html_observed" for x in records),
             "identityTargetCount": sum(x.get("signal") == "identity_and_target_indication" for x in records),
             "structuredProgrammeCount": sum(x.get("analyzerVersion") == ANALYZER_VERSION and x.get("structuredProgrammeEvidence") is True for x in records),
