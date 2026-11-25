@@ -70,6 +70,21 @@ class CandidateLedgerTests(unittest.TestCase):
         self.assertEqual(second["newCandidateCount"], 1)
         self.assertEqual(second["notSeenTodayCount"], 1)
 
+    def test_editorial_signal_is_retained_without_granting_admission(self):
+        initial = update_ledger(scan("2026-11-20", [
+            dict(row(), editorialSignal="electronic_context_review")]))
+        later = update_ledger(scan("2026-11-21", []), initial)
+        self.assertEqual(later["records"][0]["editorialSignal"],
+                         "electronic_context_review")
+        self.assertEqual(later["automaticallyApprovedCount"], 0)
+        self.assertFalse(later["publicationAllowed"])
+
+    def test_legacy_records_have_no_editorial_approval(self):
+        initial = update_ledger(scan("2026-11-20", [row()]))
+        del initial["records"][0]["editorialSignal"]
+        later = update_ledger(scan("2026-11-21", []), initial)
+        self.assertEqual(later["records"][0]["editorialSignal"], "not_assessed")
+
     def test_future_previous_ledger_is_rejected(self):
         previous = update_ledger(scan("2026-11-21", [row()]))
         with self.assertRaises(ValueError):
