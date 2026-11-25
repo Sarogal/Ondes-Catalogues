@@ -346,6 +346,34 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertTrue(_verified_official_update_delta(row, updated))
         self.assertEqual(report["accepted"], [row["slug"]])
 
+        # A raw response with valid edition identity but all statuses still
+        # loading must not suppress the independently rendered same-root DOM.
+        pending = html.replace("Disponibilité : Épuisé", "Disponibilité : Actualisation…").replace(
+            "Disponibilité : Disponible", "Disponibilité : Actualisation…")
+        out, report = apply_independently_verified_updates(
+            original, original, DAY, fetch=lambda _: pending,
+            browser_fetch=lambda _: html, browser_sites=(site,),
+            commune_resolver=lambda *_: None, limit=1, tick=0)
+        self.assertEqual(out["festivals"][0]["price"], summary)
+        self.assertTrue(_verified_official_update_delta(row, out["festivals"][0]))
+        diagnostic = report["official_edition_diagnostics"][0]
+        self.assertTrue(diagnostic["seasonal_ticket_rendered_proof"])
+        self.assertEqual(diagnostic["seasonal_ticket_tiers_found"], 3)
+        self.assertEqual(diagnostic["commune_diagnostic"],
+                         "admin_resolution_unavailable_or_ambiguous")
+        # An explicit competing raw status is not merely a loading screen.
+        mixed = pending.replace("Disponibilité : Actualisation…",
+                                "Disponibilité : Épuisé", 1)
+        for raw, allowed in ((mixed, (site,)), (pending, ())):
+            out, report = apply_independently_verified_updates(
+                original, original, DAY, fetch=lambda _: raw,
+                browser_fetch=lambda _: html, browser_sites=allowed,
+                commune_resolver=lambda *_: None, limit=1, tick=0)
+            self.assertIsNone(out["festivals"][0]["price"])
+            self.assertFalse(report["official_edition_diagnostics"][0]
+                             ["seasonal_ticket_rendered_proof"])
+
+
     def test_linked_official_news_can_recover_when_both_raw_requests_fail(self):
         signed = doc(festival("mozhell-open-air", MOZHELL))
         browser_calls = []
