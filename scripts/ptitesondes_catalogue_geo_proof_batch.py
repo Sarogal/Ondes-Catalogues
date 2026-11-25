@@ -7,7 +7,7 @@ import argparse
 from datetime import date
 import json
 from pathlib import Path
-from proof import meters
+from proof import meters, norm
 from ptitesondes_catalogue_geo_research import research_queue
 from ptitesondes_dila_municipal_domains import (
     fetch_dila, municipal_site_hosts, approved_municipal_page_host,
@@ -18,6 +18,10 @@ from ptitesondes_shared_venue_location_evidence import (
     mint_private_location_proof, location_from_proof,
 )
 from ptitesondes_generic_venue_ign_corroboration import fetch_ign
+from ptitesondes_generic_venue_osm_preflight import fetch_overpass
+from ptitesondes_unnumbered_official_geo_proof import (
+    _exact_official_point, mint_private_unnumbered_location_proof,
+)
 
 MAX_GROUPS = 3
 MAX_PAGES = 4
@@ -25,7 +29,8 @@ ERRORS = (OSError, ValueError, TypeError, KeyError, TimeoutError)
 
 
 def research_group(group, today, *, directory_get=fetch_dila,
-                   html_get=read_unknown_https, ign_get=fetch_ign):
+                   html_get=read_unknown_https, ign_get=fetch_ign,
+                   osm_get=fetch_overpass):
     result = dict(city=group["city"], venue=group["venue"],
                   active_ids=group["active_ids"], missing_ids=group["missing_ids"],
                   status="venue_proof_not_found", publication_ready=False)
@@ -41,6 +46,7 @@ def research_group(group, today, *, directory_get=fetch_dila,
     urls += ["https://" + h + "/" for h in sorted(hosts)]
     todo = list(dict.fromkeys(urls))
     seen, locations = set(), []
+    osm_cache = {}
     while todo and len(seen) < MAX_PAGES:
         url = todo.pop(0)
         if url in seen or not approved_municipal_page_host(url, group["city"], directory):
@@ -50,6 +56,20 @@ def research_group(group, today, *, directory_get=fetch_dila,
             html = html_get(url)
             proof = mint_private_location_proof(
                 group, directory, url, html, ign_get, today)
+            # For a place without a street number, use only its explicitly
+            # named official point as a search centre. No old catalogue pin
+            # or street/city centroid may substitute for that source.
+            if proof is None:
+                official_point = _exact_official_point(group, html)
+                if official_point is not None:
+                    center = tuple(official_point)
+                    if center not in osm_cache:
+                        osm_cache[center] = osm_get(center)
+                    named_group = {**group, "key": [
+                        norm(group["city"]), norm(group["venue"])]}
+                    proof = mint_private_unnumbered_location_proof(
+                        named_group, directory, url, html, osm_cache[center],
+                        source_center=None, checked_on=today)
             loc = location_from_proof(proof, group["city"], group["venue"], today)
             if loc is not None:
                 locations.append(loc)
