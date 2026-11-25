@@ -1,0 +1,52 @@
+name: Concerts — diagnostic de rejeu officiel en lecture seule
+on:
+  push:
+    branches: [diagnostic/concerts-live-proof-replay-20261125]
+    paths: ['.github/workflows/concerts-live-proof-replay-20261125.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Rejouer la preuve du concert et inspecter les titres publics
+        run: |
+          python - <<'PY'
+          import datetime as dt
+          import json
+          from pathlib import Path
+          from scripts import concert_dynamic_existing_venue as dynamic
+          from automation.concerts import dynamic_osm_official_proposals as producer
+          from automation.concerts import openagenda_official_concert as oa
+          cat = json.loads(Path("docs/grossesondes/concerts.json").read_text())
+          venue = next(v for v in cat["venues"] if v["id"] == "le-metronum")
+          url = "https://lemetronum.fr/evenement/martin-dupont-estetica-noir-august-angst/"
+          lead = {"source": "agenda_officiel_structure", "sourceUrl": url,
+                  "sourcePage": url, "eventDetailUrl": url,
+                  "leadArtist": "Martin Dupont", "name": "Martin Dupont + Estetica Noir + August Angst",
+                  "venue": venue["name"], "city": venue["city"],
+                  "department": venue["department"]}
+          try:
+              proposal = producer.propose((url, "2026-12-05", venue["id"], lead),
+                                          cat, dt.date.today())
+              print(json.dumps({"metronumReplay": "passed", "event": proposal["event"]}, ensure_ascii=True))
+          except (ValueError, TypeError, KeyError, OSError) as exc:
+              print(json.dumps({"metronumReplay": "held", "reason": str(exc)[:250]}, ensure_ascii=True))
+          for uid in ("20459036", "10336861"):
+              try:
+                  raw = dynamic.safe_fetch(oa.official_export_url("9969608", uid), {})
+                  record = json.loads(raw)["events"][0]
+                  # Public source fields only; never read or log private approvals.
+                  fields = {k: record.get(k) for k in ("title", "description", "longDescription", "keywords", "performers", "performer")}
+                  print(json.dumps({"publicUID": uid, "sourceFields": fields}, ensure_ascii=True)[:12000])
+              except (ValueError, TypeError, KeyError, OSError, IndexError) as exc:
+                  print(json.dumps({"publicUID": uid, "error": type(exc).__name__}))
+          PY
+          git diff --exit-code
