@@ -5,7 +5,9 @@
   "editoriallyApprovedCount": 0,
   "attemptedPageCount": 8,
   "htmlObservedCount": 6,
-  "identityTargetCount": 2,
+  "identityTargetCount": 1,
+  "structuredProgrammeCount": 0,
+  "declaredStreamLinkedCount": 1,
   "records": [
     {
       "stationuuid": "035ed365-f6dc-46a2-901d-7ac97880e875",
@@ -15,10 +17,14 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "7f39876a8b876844369bcce72b212767153cba84bb9cf531267897d7573862c8",
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
       "signal": "identity_and_target_indication",
+      "structuredProgrammeEvidence": false,
+      "declaredStreamLinked": true,
       "primaryTargetTerms": [
         "punk"
       ],
@@ -26,8 +32,7 @@
         "metal",
         "punk",
         "punk rock",
-        "punkrock",
-        "rock metal"
+        "punkrock"
       ],
       "primaryElectronicTerms": [],
       "pageSha256": "abfd843942de275975b8262feb7727f26e2f6c1c071da0ef28327cdea8620b9a",
@@ -44,6 +49,8 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "failed_review",
+      "analyzerVersion": 2,
+      "streamSha256": "d7735960dc083e55ebbcf7c294be2faf0e517ed4355da8d8c7459963cdebd976",
       "editorialApproved": false,
       "publicationAllowed": false
     },
@@ -55,6 +62,8 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "failed_review",
+      "analyzerVersion": 2,
+      "streamSha256": "73ab626bf03ab3f1b73fee1a89930ef24bfd4bd30f673d9a042b2da2370de07d",
       "editorialApproved": false,
       "publicationAllowed": false
     },
@@ -66,10 +75,14 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "77c568b0dc217ce0d3a91aa837a1e0bd62a237a2df76771f6e5f48220022bc73",
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
       "signal": "unbound_target_indication",
+      "structuredProgrammeEvidence": false,
+      "declaredStreamLinked": false,
       "primaryTargetTerms": [],
       "visibleTargetTerms": [
         "punk"
@@ -91,18 +104,22 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "c73342d4af203f124e3209b0b1f19dc58d3aa6441959a24a97a50a97b0db7857",
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
       "signal": "unbound_target_indication",
+      "structuredProgrammeEvidence": false,
+      "declaredStreamLinked": false,
       "primaryTargetTerms": [
-        "nigel metal"
+        "metal"
       ],
       "visibleTargetTerms": [
-        "nigel metal"
+        "metal"
       ],
       "primaryElectronicTerms": [],
-      "pageSha256": "91b66f0f19cf24ce446149d1cbc725aaa8802da1d2d10b551610a52684a118dc",
+      "pageSha256": "78b93ba324493e48bf989f60331bdaa8873cf7e19e56b79e62bff9fe4416149f",
       "finalPageSha256": "691c99d05c9781203e4386a07a8c85f98b085121998cc5788b3f7dd5329eff12",
       "imageHintSha256": []
     },
@@ -114,23 +131,22 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "4566531dbd4311deaf0cac5b8c4b1848f5232820ffe9ead59ca6a58b9208aff2",
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
-      "signal": "identity_and_target_indication",
-      "primaryTargetTerms": [
-        "azuracast metal",
-        "metal"
-      ],
-      "visibleTargetTerms": [
-        "metal"
-      ],
+      "signal": "no_format_evidence",
+      "structuredProgrammeEvidence": false,
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [],
       "primaryElectronicTerms": [],
-      "pageSha256": "8158ee7368f69c54e6377f8c5d9de2ff57ce451623893c333164bce558c43cb1",
+      "pageSha256": "462bb1677f74fe693f421e11a29ea0adb54ad9cecf77acf51be0323e8aa144c4",
       "finalPageSha256": "755ca68139ff87dfa17ef373c6b84b17373faa801ed2e1242d476bd60488278a",
       "imageHintSha256": [
-        "c42811f2e06318651896075a0183da59263a42a4d40bc94702c6d9eafab756c6",
-        "e01214ea9aebf59f2cb3054e3f9008ca3ad37c6b81e4ba1faf55038ad81e96c3"
+        "18eb8e1671b5f9d5f8a4c9eea77e42fd7a9783896a55056fd4b77ddcb95e650e",
+        "c42811f2e06318651896075a0183da59263a42a4d40bc94702c6d9eafab756c6"
       ]
     },
     {
@@ -141,10 +157,14 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "2417987d14f785a5aea9b182f848c069da324a1e74d0b836518246ce8ce5dda3",
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
       "signal": "no_format_evidence",
+      "structuredProgrammeEvidence": false,
+      "declaredStreamLinked": false,
       "primaryTargetTerms": [],
       "visibleTargetTerms": [],
       "primaryElectronicTerms": [],
@@ -160,16 +180,20 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "a7258348619b75d963f8c3bf67f5569c2a4516d782ff1ac2307c855a797a3edd",
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
       "signal": "unbound_target_indication",
+      "structuredProgrammeEvidence": false,
+      "declaredStreamLinked": false,
       "primaryTargetTerms": [
-        "wave metal"
+        "metal"
       ],
       "visibleTargetTerms": [
         "hair metal",
-        "wave metal"
+        "metal"
       ],
       "primaryElectronicTerms": [],
       "pageSha256": "642918dc37917429f561a7ef8510b42395a48feee774fa83668bcb0ccaefb316",
