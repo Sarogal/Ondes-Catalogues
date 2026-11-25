@@ -43,7 +43,8 @@ from automation.concerts import openagenda_official_concert as openagenda
 from scripts import concert_dynamic_existing_venue as verified
 
 SCHEMA = "grossesondes.concert.single-official-osm-proposals.v1"
-MAX_CHECKS = 16  # bounded network rechecks, never a cap on sources or bands
+MAX_CHECKS = 16  # default for standalone callers
+MAX_REVIEW_CHECKS = 32  # bounded network rechecks, never a cap on sources or bands
 MAX_REVIEW_MEMORY = 4096
 REVIEW_BUCKETS = frozenset({"genre_tag_review", "genre_unknown"})
 
@@ -374,7 +375,7 @@ def _review_memory(prior, selected):
 def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
           fetch=verified.safe_fetch, prior=None):
     require(type(slot) is int and slot in (0, 1, 2)
-            and type(limit) is int and 1 <= limit <= 16,
+            and type(limit) is int and 1 <= limit <= MAX_REVIEW_CHECKS,
             "invalid bounded scan")
     require(isinstance(before, dict)
             and before.get("schema") == "grossesondes.concert.approvals.v1"
@@ -414,15 +415,15 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
     window = fast_ranked[:reserved]
     # A venue with one explicitly labelled first-party metal/punk show
     # should not wait through dozens of unrelated genre-unknown cards.
-    # Reserve up to four of the remaining probes for genre-tagged
-    # official leads, scaled to the available budget. The rest still rotates across EVERY other venue and
+    # Reserve a bounded share for genre-tagged official leads, scaled to
+    # the available budget. The rest still rotates across EVERY other venue and
     # previously unknown group; registry tags are NAVIGATION ONLY.
     tagged = [row for row in regular
               if row[3].get("reviewBucket") == "genre_tag_review"]
     other = [row for row in regular
              if row[3].get("reviewBucket") != "genre_tag_review"]
     spare = limit - len(window)
-    tagged_budget = 4 if limit >= 16 else 2
+    tagged_budget = 8 if limit >= 32 else 4 if limit >= 16 else 2
     take_tagged = min(len(tagged), spare if not other else min(tagged_budget, max(1, spare // 3), spare))
     tstart = (tick * take_tagged) % len(tagged) if tagged else 0
     tagged_ranked = ranked(tagged, tstart)
