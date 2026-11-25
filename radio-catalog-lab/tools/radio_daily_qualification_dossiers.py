@@ -51,7 +51,7 @@ def reported_host(raw):
         return None
 
 
-def build_dossiers(discovery, reconciliation, ledger, stream, logo, baseline_sha, previous=None, editorial=None, continuity=None):
+def build_dossiers(discovery, reconciliation, ledger, stream, logo, baseline_sha, previous=None, editorial=None, continuity=None, hls=None):
     if not isinstance(baseline_sha, str) or not SHA256_RE.fullmatch(baseline_sha):
         raise ValueError("Missing pinned catalogue digest")
     day = parse_day(discovery.get("scanDate"))
@@ -100,6 +100,15 @@ def build_dossiers(discovery, reconciliation, ledger, stream, logo, baseline_sha
         if any(x.get("technicalQualified") is not False or x.get("publicationAllowed") is not False
                for x in continuity_rows.values()):
             raise ValueError("Unexpected continuity approval")
+    hls_rows = {}
+    if hls is not None:
+        if (hls.get("schemaVersion") != 1 or hls.get("scanDate") != day
+                or hls.get("publicationAllowed") is not False or hls.get("technicallyQualifiedCount") != 0):
+            raise ValueError("Untrusted HLS preview")
+        hls_rows = index(hls, "records")
+        if any(x.get("technicalQualified") is not False or x.get("publicationAllowed") is not False
+               for x in hls_rows.values()):
+            raise ValueError("Unexpected HLS approval")
     prior = {}
     if previous is not None:
         if (previous.get("schemaVersion") != 1 or previous.get("publicationAllowed") is not False
@@ -141,6 +150,9 @@ def build_dossiers(discovery, reconciliation, ledger, stream, logo, baseline_sha
         l = artwork.get(uid)
         e = editorial_rows.get(uid)
         fingerprint = observation.get("streamSha256") if observation else None
+        hs = hls_rows.get(uid)
+        if hs and hs.get("streamSha256") != fingerprint:
+            hs = None
         c = continuity_rows.get(uid)
         if c and c.get("streamSha256") != fingerprint:
             c = None
@@ -187,6 +199,10 @@ def build_dossiers(discovery, reconciliation, ledger, stream, logo, baseline_sha
                 "streamSha256", "audioEvidenceDates", "liveFrameEvidenceDates", "lastObservedDate",
                 "lastVerdict")} if a else None,
             "streamEvidenceMatchesCurrentSource": matching_audio,
+            "hlsEvidence": {k: hs.get(k) for k in (
+                "streamSha256", "observedDate", "verdict", "firstLastSequence",
+                "secondLastSequence", "targetDuration", "segmentSampleBytes",
+                "frameCodec", "firstManifestSha256", "secondManifestSha256")} if hs else None,
             "continuityEvidence": {k: c.get(k) for k in (
                 "streamSha256", "observedDate", "verdict", "windowCount", "sampleBytes",
                 "elapsedMs", "coherentWindowCount", "distinctWindowCount", "frameCodec",
@@ -210,6 +226,7 @@ def main():
     p.add_argument("--previous", type=Path)
     p.add_argument("--editorial", type=Path)
     p.add_argument("--continuity", type=Path)
+    p.add_argument("--hls", type=Path)
     p.add_argument("--baseline-sha256", required=True)
     a = p.parse_args()
     def load(path):
@@ -220,7 +237,8 @@ def main():
                               ("discovery", "reconciliation", "ledger", "stream", "logo")),
                             a.baseline_sha256, load(a.previous) if a.previous else None,
                             load(a.editorial) if a.editorial else None,
-                            load(a.continuity) if a.continuity else None)
+                            load(a.continuity) if a.continuity else None,
+                            load(a.hls) if a.hls else None)
     encoded = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if len(encoded.encode("utf-8")) > MAX_BYTES:
         raise ValueError("Dossier register capacity exceeded")
