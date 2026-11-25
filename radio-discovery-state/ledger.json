@@ -3,9 +3,9 @@
   "scanDate": "2026-11-25",
   "publicationAllowed": false,
   "automaticallyApprovedCount": 0,
-  "newCandidateCount": 0,
-  "reobservedCandidateCount": 270,
-  "notSeenTodayCount": 0,
+  "newCandidateCount": 2,
+  "reobservedCandidateCount": 269,
+  "notSeenTodayCount": 1,
   "records": [
     {
       "stationuuid": "01707580-90b4-47cd-9a46-2954e457ea8f",
@@ -1350,6 +1350,17 @@
       "repeatedObservation": false
     },
     {
+      "stationuuid": "7264e476-09d5-4dc0-8580-bf8cc2070265",
+      "firstSeen": "2026-11-25",
+      "lastSeen": "2026-11-25",
+      "seenDays": 1,
+      "name": "Beacon NXT",
+      "lastStatus": "needs_stream_check",
+      "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
+      "repeatedObservation": false
+    },
+    {
       "stationuuid": "753d2e38-194f-4fb0-9918-4263c6119188",
       "firstSeen": "2026-11-25",
       "lastSeen": "2026-11-25",
@@ -2281,6 +2292,17 @@
       "name": "Tangra Mega Rock",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
+      "repeatedObservation": false
+    },
+    {
+      "stationuuid": "bee55fe5-930a-4914-a8c8-573625112522",
+      "firstSeen": "2026-11-25",
+      "lastSeen": "2026-11-25",
+      "seenDays": 1,
+      "name": "Long Tracks Radio",
+      "lastStatus": "candidate_requires_qualification",
+      "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },

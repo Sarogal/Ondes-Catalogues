@@ -3,7 +3,7 @@
   "scanDate": "2026-11-25",
   "publicationAllowed": false,
   "approvedLogoCount": 0,
-  "candidateCount": 159,
+  "candidateCount": 161,
   "attemptedSourceCount": 0,
   "decodedCandidateCount": 26,
   "retainedEvidenceCount": 0,
@@ -814,6 +814,16 @@
       "observedInScan": true
     },
     {
+      "stationuuid": "7264e476-09d5-4dc0-8580-bf8cc2070265",
+      "sourceClass": "missing_source",
+      "sourceSha256": null,
+      "audioEvidenceRank": 2,
+      "retrieval": "not_attempted",
+      "logoApproved": false,
+      "publicationAllowed": false,
+      "observedInScan": true
+    },
+    {
       "stationuuid": "753d2e38-194f-4fb0-9918-4263c6119188",
       "sourceClass": "query_source_review",
       "sourceSha256": null,
@@ -1273,6 +1283,16 @@
       "sourceClass": "external_image_host_review",
       "sourceSha256": null,
       "audioEvidenceRank": 1,
+      "retrieval": "not_attempted",
+      "logoApproved": false,
+      "publicationAllowed": false,
+      "observedInScan": true
+    },
+    {
+      "stationuuid": "bee55fe5-930a-4914-a8c8-573625112522",
+      "sourceClass": "missing_source",
+      "sourceSha256": null,
+      "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
       "publicationAllowed": false,

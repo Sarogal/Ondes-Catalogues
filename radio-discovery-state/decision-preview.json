@@ -9,18 +9,18 @@
   "counts": {
     "advanced_candidate": 2,
     "already_known": 82,
-    "editorial_review": 157,
+    "editorial_review": 159,
     "identity_review": 29
   },
   "blockingReasonCounts": {
-    "bind_broadcaster_to_stream": 156,
-    "confirm_station_level_programme_scope": 159,
-    "obtain_current_continuity_evidence": 110,
-    "obtain_station_bound_editorial_evidence": 154,
-    "repeat_continuity_on_distinct_days": 49,
+    "bind_broadcaster_to_stream": 158,
+    "confirm_station_level_programme_scope": 161,
+    "obtain_current_continuity_evidence": 106,
+    "obtain_station_bound_editorial_evidence": 156,
+    "repeat_continuity_on_distinct_days": 55,
     "resolve_duplicate_or_legacy_identity": 29,
-    "resolve_mixed_or_electronic_format": 27,
-    "resolve_recent_negative_technical_observation": 29
+    "resolve_mixed_or_electronic_format": 28,
+    "resolve_recent_negative_technical_observation": 30
   },
   "records": [
     {
@@ -1287,6 +1287,7 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
+        "resolve_mixed_or_electronic_format",
         "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
@@ -2453,6 +2454,29 @@
       "publicationAllowed": false
     },
     {
+      "stationuuid": "7264e476-09d5-4dc0-8580-bf8cc2070265",
+      "name": "Beacon NXT",
+      "decision": "editorial_review",
+      "streamSha256": "b40accf7a7fe6283ba591d75c0b8b3e5074750f4c55d700d0e550e3729cb6d13",
+      "editorialMatch": false,
+      "broadcasterStreamLink": false,
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
+      "logoDecodedHint": false,
+      "blockingReasons": [
+        "obtain_station_bound_editorial_evidence",
+        "bind_broadcaster_to_stream",
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
+      ],
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
       "stationuuid": "753d2e38-194f-4fb0-9918-4263c6119188",
       "name": "Indie X FM",
       "decision": "editorial_review",
@@ -3346,14 +3370,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3433,14 +3459,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3654,14 +3682,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3735,14 +3765,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": true,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3865,14 +3897,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": true,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4089,6 +4123,28 @@
       "logoDecodedHint": false,
       "blockingReasons": [
         "resolve_duplicate_or_legacy_identity"
+      ],
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "bee55fe5-930a-4914-a8c8-573625112522",
+      "name": "Long Tracks Radio",
+      "decision": "editorial_review",
+      "streamSha256": "a99834636de550a201a2580d0d020e8f7106369497c70b46190c3e9caff7a0b3",
+      "editorialMatch": false,
+      "broadcasterStreamLink": false,
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "continuityIndication": false,
+      "positiveContinuityDays": [],
+      "logoDecodedHint": false,
+      "blockingReasons": [
+        "obtain_station_bound_editorial_evidence",
+        "bind_broadcaster_to_stream",
+        "confirm_station_level_programme_scope",
+        "obtain_current_continuity_evidence",
+        "resolve_recent_negative_technical_observation"
       ],
       "approved": false,
       "publicationAllowed": false
