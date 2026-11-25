@@ -113,6 +113,44 @@ class FairGenreReviewSlots(unittest.TestCase):
             self.assertEqual(len(set(report["recentReviewKeys"])),
                              len(report["recentReviewKeys"]))
 
+    def test_double_budget_keeps_lanes_and_advances_same_slot(self):
+        queue = ([row("oa", i) for i in range(24)] +
+                 [row("tag", i, "genre_tag_review") for i in range(24)] +
+                 [row("unknown", i) for i in range(72)])
+        prior = None
+        seen = set()
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose", side_effect=ValueError("Held")):
+            for _ in range(3):
+                out, report = pipeline.build({}, CATALOGUE, BEFORE, TODAY,
+                                             slot=0, limit=32, prior=prior)
+                ids = {c["candidateId"] for c in report["candidateChecks"]}
+                self.assertEqual(len(ids), 32)
+                self.assertFalse(seen & ids)
+                self.assertEqual(report["reviewBudget"], 32)
+                self.assertEqual(report["firstReviewInMemory"], 32)
+                self.assertEqual(report["previouslyReviewed"], 0)
+                self.assertEqual(report["openAgendaExamined"], 6)
+                self.assertEqual(report["officialGenreTaggedExamined"], 8)
+                self.assertEqual(out, BEFORE)
+                self.assertFalse(report["publicationAllowed"])
+                seen.update(ids)
+                prior = report
+            self.assertEqual(len(seen), 96)
+            self.assertEqual(len(prior["recentReviewKeys"]), 96)
+            with self.assertRaises(ValueError):
+                pipeline.build({}, CATALOGUE, BEFORE, TODAY, slot=0, limit=33)
+
+    def test_double_budget_reuses_unused_lanes(self):
+        queue = [row("unknown", i) for i in range(40)]
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose", side_effect=ValueError("Held")):
+            _, report = pipeline.build({}, CATALOGUE, BEFORE, TODAY,
+                                       slot=0, limit=32)
+            self.assertEqual(report["examined"], 32)
+            self.assertEqual(report["otherOfficialExamined"], 32)
+            self.assertEqual(report["officialGenreTaggedExamined"], 0)
+
     def test_legacy_report_can_advance_same_slot_and_untrusted_memory_ignored(self):
         queue = [row("unknown", i) for i in range(40)]
         with mock.patch.object(pipeline, "eligible", return_value=queue), \
