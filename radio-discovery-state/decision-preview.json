@@ -13,11 +13,11 @@
     "identity_review": 29
   },
   "blockingReasonCounts": {
-    "bind_broadcaster_to_stream": 158,
+    "bind_broadcaster_to_stream": 156,
     "confirm_station_level_programme_scope": 159,
-    "obtain_current_continuity_evidence": 127,
-    "obtain_station_bound_editorial_evidence": 153,
-    "repeat_continuity_on_distinct_days": 32,
+    "obtain_current_continuity_evidence": 121,
+    "obtain_station_bound_editorial_evidence": 152,
+    "repeat_continuity_on_distinct_days": 38,
     "resolve_duplicate_or_legacy_identity": 29,
     "resolve_mixed_or_electronic_format": 26,
     "resolve_recent_negative_technical_observation": 29
@@ -1229,7 +1229,7 @@
       "name": "Nocturne Vault Radio",
       "decision": "editorial_review",
       "streamSha256": "d5ef66e6f38f3f0defc7f72559619455099509882969d7e5ee7bdbdb09491c23",
-      "editorialMatch": false,
+      "editorialMatch": true,
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
@@ -1237,7 +1237,6 @@
       "positiveContinuityDays": [],
       "logoDecodedHint": false,
       "blockingReasons": [
-        "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
         "obtain_current_continuity_evidence",
@@ -1609,7 +1608,7 @@
       "decision": "editorial_review",
       "streamSha256": "c56a472d7125556b5e0011d993ff1c175f8598c3ae486b64028c87e77771f070",
       "editorialMatch": false,
-      "broadcasterStreamLink": false,
+      "broadcasterStreamLink": true,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "continuityIndication": true,
@@ -1619,7 +1618,6 @@
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
-        "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
         "repeat_continuity_on_distinct_days"
       ],
@@ -2562,14 +2560,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": true,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2583,14 +2583,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2604,14 +2606,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": true,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2641,14 +2645,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2662,14 +2668,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4463,18 +4471,19 @@
       "decision": "editorial_review",
       "streamSha256": "538fbf6ded60062266485eccd9638c81fb00a186ab4b3dce8b0bbf2d4d2dad28",
       "editorialMatch": false,
-      "broadcasterStreamLink": false,
+      "broadcasterStreamLink": true,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-25"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
-        "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
         "resolve_mixed_or_electronic_format",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
