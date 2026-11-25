@@ -132,7 +132,8 @@ def reconcile(catalogue, today, slot, *, read_event, limit=MAX_SCAN,
             or type(today) is not date or not callable(read_event)
             or not callable(resolve_city_venue)):
         raise ValueError("invalid_public_reconciliation_input")
-    # One real instant for the whole review, also injectable in offline tests.
+    # Use one actual UTC instant across the entire batch, just like the
+    # direct Publisher. Offline replay can supply its own explicit clock.
     if as_of_utc is None:
         as_of_utc = datetime.now(timezone.utc)
     if (not isinstance(as_of_utc, datetime) or as_of_utc.tzinfo is None
