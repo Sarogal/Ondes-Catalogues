@@ -263,6 +263,60 @@ def individual_event_nodes(html, *, accept_generic=False):
     return nodes
 
 
+def sparse_visible_event_detail(html, nodes, url, when, venue):
+    """Replay the complete visible card for one incomplete structured event.
+
+    An incomplete schema is not a contradictory schema. Only a single
+    canonical Event with no structured roster or genre can use this path.
+    Keep any stated date, location and status constraints; require the same
+    exact named visible bill and full date, event genre and venue card.
+    The caller must independently authenticate the official source first.
+    """
+    if len(nodes) != 1:
+        return None
+    node = nodes[0]
+    if (not isinstance(node, dict) or node.get("url") != url
+            or not normal(node.get("name"))
+            or discover.reject_listing(node.get("name"))
+            or node.get("performer") not in (None, "", [])
+            or node.get("genre") not in (None, "", [])
+            or node.get("startDate") not in (None, "")
+            and discover.iso_day(node.get("startDate")) != when):
+        return None
+    status = node.get("eventStatus")
+    if status not in (None, ""):
+        if isinstance(status, dict):
+            status = status.get("@id")
+        if not isinstance(status, str) or status.rsplit("/", 1)[-1] != "EventScheduled":
+            return None
+    location = node.get("location")
+    if location not in (None, "", {}):
+        # Only truly sparse Place objects. A substantive or contradictory
+        # structured address must go through the normal structured verifier.
+        if (not isinstance(location, dict)
+                or set(location) - {"@type", "name", "country"}
+                or bridge._event_types(location.get("@type")) != {"Place"}
+                or location.get("name") not in (None, "")
+                and normal(location.get("name")) != normal(venue["name"])):
+            return None
+        country = location.get("country")
+        if country not in (None, ""):
+            if isinstance(country, dict):
+                country = country.get("name") or country.get("@id")
+            if normal(country) not in {"fr", "france", "republique francaise"}:
+                return None
+    from automation.concerts import open_world_visible_cards
+    detail = open_world_visible_cards.verified_detail(
+        html, venue["name"], venue["city"], when,
+        address=venue.get("address"), postal=venue.get("postalCode"))
+    if detail is None:
+        return None
+    names, genres = detail
+    if normal(" + ".join(names)) != normal(node.get("name")):
+        return None
+    return names, genres
+
+
 def _direct_artist_description(name, description):
     """Accept a literal named subject + musical identity, not influences."""
     from automation.concerts import artist_official_bio as biographies
@@ -467,6 +521,49 @@ def event_genres(raw, official_url, *, fetch=None, cache=None, html=None):
     return genres, scope
 
 
+def _exact_location_description(location, venue):
+    """Accept an exact published French address in THIS Event's Place.
+
+    Some schema.org producers serialize an empty PostalAddress and put the
+    complete address in Place.description. Never use page-wide prose, another
+    Event, a city centroid, or contradict populated structured address fields.
+    Called only after the source's independent venue identity is verified.
+    """
+    from html import unescape
+
+    addr = location.get("address")
+    if not isinstance(addr, dict):
+        return False
+    street, postal, city = (venue.get(k) for k in
+                            ("address", "postalCode", "city"))
+    if (not isinstance(street, str) or len(normal(street)) < 5
+            or not isinstance(postal, str) or not re.fullmatch(r"[0-9]{5}", postal)
+            or not isinstance(city, str) or not normal(city)):
+        return False
+    for field, expected in (("streetAddress", street), ("postalCode", postal),
+                            ("addressLocality", city)):
+        value = addr.get(field)
+        if value not in (None, "") and normal(value) != normal(expected):
+            return False
+    for country in (addr.get("addressCountry"), location.get("country"),
+                    location.get("addressCountry")):
+        if country in (None, ""):
+            continue
+        if isinstance(country, dict):
+            country = country.get("name") or country.get("@id")
+        if normal(country) not in {"fr", "france", "republique francaise"}:
+            return False
+    description = location.get("description")
+    if not isinstance(description, str) or not 5 <= len(description) <= 1000:
+        return False
+    value = normal(unescape(description))
+    expected = normal(street + " " + postal + " " + city)
+    # The venue address must be the leading, contiguous complete address.
+    # A second postal code makes the physical location ambiguous.
+    return (value == expected or value.startswith(expected + " ")) and (
+        re.findall(r"(?<![0-9])[0-9]{5}(?![0-9])", value) == [postal])
+
+
 def _event(raw, event, venue, artists, *, accept_generic=False,
            fetch=None, cache=None, html=None):
     """Verify one complete first-party concert event; never join evidence."""
@@ -501,14 +598,15 @@ def _event(raw, event, venue, artists, *, accept_generic=False,
     country = addr.get("addressCountry")
     if isinstance(country, dict):
         country = country.get("name") or country.get("@id")
-    require(normal(country) in {"fr", "france", "republique francaise"},
-            "event takes place outside France")
-    require(normal(addr.get("addressLocality")) == normal(venue["city"]) and
-            str(addr.get("postalCode")) == venue.get("postalCode"),
-            "first-party postal address differs from published venue")
-    # Missing street number is acceptable. It must still identify the site.
-    require(normal(addr.get("streetAddress")) == normal(venue.get("address")),
-            "official street conflicts with published venue")
+    if not (accept_generic and _exact_location_description(location, venue)):
+        require(normal(country) in {"fr", "france", "republique francaise"},
+                "event takes place outside France")
+        require(normal(addr.get("addressLocality")) == normal(venue["city"]) and
+                str(addr.get("postalCode")) == venue.get("postalCode"),
+                "first-party postal address differs from published venue")
+        # Missing street number is acceptable. It must still identify the site.
+        require(normal(addr.get("streetAddress")) == normal(venue.get("address")),
+                "official street conflicts with published venue")
     genres, scope = event_genres(raw, event["officialUrl"],
                                  fetch=fetch if accept_generic else None,
                                  cache=cache, html=html)
@@ -660,7 +758,11 @@ def validate(approval, venues, artists, today, *, fetch=None):
         html, accept_generic=(is_single_osm or is_address or is_official))
     # Reconstruct the same first-party visible evidence during the LIVE
     # Publisher recheck, AFTER OSM attribution was verified afresh.
+    sparse_detail = None
     if is_single_osm or is_address or is_official:
+        sparse_detail = sparse_visible_event_detail(
+            html, events, event["officialUrl"], event["date"], venue)
+    if (is_single_osm or is_address or is_official) and sparse_detail is None:
         import event_site_pair_recheck as paired
         attested = []
         for raw in events:
@@ -674,11 +776,13 @@ def validate(approval, venues, artists, today, *, fetch=None):
             attested.append(raw)
         events = attested
     valid = []
-    if not events and (is_single_osm or is_address or is_official):
+    if (not events or sparse_detail is not None) and (is_single_osm or is_address or is_official):
         from automation.concerts import open_world_visible_cards
-        detail = open_world_visible_cards.verified_detail(
-            html, venue['name'], venue['city'], event['date'],
-            address=venue.get('address'), postal=venue.get('postalCode'))
+        detail = sparse_detail
+        if not events:
+            detail = open_world_visible_cards.verified_detail(
+                html, venue['name'], venue['city'], event['date'],
+                address=venue.get('address'), postal=venue.get('postalCode'))
         if detail is not None:
             names, genres = detail
             require(normal(' + '.join(names)) == normal(event.get('title'))
@@ -688,7 +792,7 @@ def validate(approval, venues, artists, today, *, fetch=None):
                             for g in event.get('genres', [])),
                     'fresh visible concert differs from signed event')
             valid.append(detail)
-    for raw in events:
+    for raw in ([] if sparse_detail is not None else events):
         try:
             valid.append(_event(raw, event, venue, resolved,
                                 accept_generic=(is_single_osm or is_address or is_official),

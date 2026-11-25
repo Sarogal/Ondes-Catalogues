@@ -70,6 +70,20 @@ def eligible(queue, catalogue, today):
         if (title is None or not current.year <= year <= current.year + 3
                 or _published(catalogue, title, year)):
             continue
+        # An unverified date hint affects ordering ONLY. Never pass it to
+        # the independent proof or authorize a publication with it.
+        hints = []
+        raw_hints = dossier.get("date_hints")
+        if isinstance(raw_hints, list):
+            for hint in raw_hints[:30]:
+                if not isinstance(hint, dict):
+                    continue
+                try:
+                    start = date.fromisoformat(hint["start_date"])
+                except (ValueError, TypeError, KeyError):
+                    continue
+                if start.year == year and start >= current:
+                    hints.append(start.isoformat())
         for source in dossier["sources"]:
             if (not isinstance(source, dict)
                     or source.get("kind") != "OPENAGENDA_PUBLIC_RESEARCH_ONLY"
@@ -90,6 +104,7 @@ def eligible(queue, catalogue, today):
             selected.append({
                 "dossier_id": dossier["id"], "title": title,
                 "year": year, "url": source["url"],
+                "priority_date_hint": min(hints, default=None),
                 "municipality": (dossier.get("city_hint")
                                  if municipal_selector(dossier.get("city_hint"))
                                  else None),
@@ -127,18 +142,26 @@ def examine(state, queue, catalogue, today, *, event_fetch=None,
     def old(s):
         row = observed.get(s["url"])
         return row if isinstance(row, dict) else {}
-    pending = [s for s in sources
-               if old(s).get("lastSeen") == yesterday
-               and isinstance(old(s).get("digest"), str)]
-    other = [s for s in sources if s not in pending]
-    fresh = [s for s in other if old(s).get("lastChecked") != today]
-    repeated = [s for s in other if s not in fresh]
-    def rotate(items):
-        if not items:
-            return items
-        n = (current.toordinal() // 2 * MAX_CHECKS) % len(items)
-        return items[n:] + items[:n]
-    selected = (pending + rotate(fresh) + rotate(repeated))[:limit]
+    def priority(s):
+        hint = s["priority_date_hint"]
+        # Unknown dates in the current year are potentially urgent. Use
+        # December 31 as their coarse ordering hint, not an edition date.
+        return (hint or f'{s["year"]}-12-31', s["title"], s["url"])
+
+    def last_checked(s):
+        try:
+            day = date.fromisoformat(old(s).get("lastChecked"))
+            return day if day <= current else date.min
+        except (TypeError, ValueError):
+            return date.min
+
+    fresh = [s for s in sources if last_checked(s) != current]
+    repeated = [s for s in sources if last_checked(s) == current]
+    # Never recheck a dossier today while another eligible one is unchecked.
+    # Oldest-first guarantees that future-year and long-running candidates
+    # advance too, even when today's queue contains new urgent candidates.
+    selected = (sorted(fresh, key=lambda s: (last_checked(s), priority(s)))
+                + sorted(repeated, key=priority))[:limit]
     read_event = event_fetch or fetch_public_html
     read_site = organizer_fetch or fetch_public_html
     output = []
@@ -171,7 +194,9 @@ def examine(state, queue, catalogue, today, *, event_fetch=None,
             row["status"] = "OPENAGENDA_OR_FIRST_PARTY_HTTPS_UNAVAILABLE"
         # OpenAgenda is discovery only. A government-attributed municipality
         # may independently prove its own event, even if OA cannot be read.
-        if dates is None and source["municipality"] is not None:
+        # Do not bypass a reachable attributed organizer whose edition
+        # proof failed (it may explicitly contradict the municipal agenda).
+        if dates is None and site is None and source["municipality"] is not None:
             direct = prove_municipal_edition(
                 source["municipality"], source["title"], today, fetch=read_site)
             if direct is not None:

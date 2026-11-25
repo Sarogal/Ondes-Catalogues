@@ -68,6 +68,10 @@ def _individual_event(html, url, when, venue, *, accept_generic=False,
     matches = []
     rejected = Counter()
     nodes = dynamic.individual_event_nodes(html, accept_generic=accept_generic)
+    if accept_generic and nodes:
+        detail = dynamic.sparse_visible_event_detail(html, nodes, url, when, venue)
+        if detail is not None:
+            return detail
     if accept_generic and not nodes:
         from automation.concerts import open_world_visible_cards
         diagnostics = {}

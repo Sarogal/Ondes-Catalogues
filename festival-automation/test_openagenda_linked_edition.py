@@ -177,6 +177,33 @@ class OpenAgendaLinkedPublisherTests(TestCase):
             original, D2, event_fetch=lambda _: OA,
             organizer_fetch=lambda _: crossover))
 
+    def test_oldest_first_and_urgent_unknown_current_year(self):
+        cal, _, _ = fixtures()
+        q = queue()
+        example = q["dossiers"][0]
+        q["dossiers"] = []
+        for index, (name, year, hint) in enumerate((
+                ("A Future Festival", 2027, None),
+                ("Z Current Festival", 2026, None),
+                ("Y Imminent Festival", 2026, "2026-11-23"),
+                ("B Future Festival", 2027, None))):
+            d = deepcopy(example)
+            d.update(id="national-priority-" + str(index), name_hint=name,
+                     edition_year_hint=year,
+                     date_hints=[{"start_date": hint}] if hint else [])
+            d["sources"][0]["url"] = EVENT + "-" + str(index)
+            q["dossiers"].append(d)
+        state = {"schema": "grossesondes.source-watch.v1"}
+        def read(_):
+            raise OSError("Unavailable")
+        order = []
+        for _ in range(4):
+            report = examine(state, q, cal, D1, event_fetch=read, limit=1)
+            order.append(report["rows"][0]["event_ref_review_only"])
+        self.assertEqual(order, [EVENT + "-" + str(i) for i in (2, 1, 0, 3)])
+        self.assertTrue(all(row["lastChecked"] == D1
+                            for row in state[STATE_KEY].values()))
+
     def test_first_day_can_prepare_but_never_authorize_publication(self):
         cal, _, _ = fixtures()
         state = {"schema": "grossesondes.source-watch.v1"}
@@ -358,6 +385,17 @@ class MunicipalDirectEditionTests(TestCase):
             def bad_read(url):
                 return read(url) if url == self.ROOT else invalid
             self.assertIsNone(self.proof(self.CITY, title, D1, fetch=bad_read))
+
+    def test_no_municipal_override_of_attributed_organizer(self):
+        cal, _, _ = fixtures()
+        q = queue(D1)
+        q["dossiers"][0]["city_hint"] = self.CITY
+        state = {"schema": "grossesondes.source-watch.v1"}
+        with patch("national_openagenda_linked_primary_preflight.prove_municipal_edition",
+                   side_effect=AssertionError("Cannot bypass primary source")):
+            result = examine(state, q, cal, D1, event_fetch=lambda _: OA,
+                             organizer_fetch=lambda _: "<h1>Festival annulé</h1>")
+        self.assertEqual(stable_private_proposals(state, q, cal, result, D1), [])
 
     def test_discovery_handoff_on_unavailable_oa(self):
         cal, _, _ = fixtures()

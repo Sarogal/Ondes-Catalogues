@@ -263,12 +263,21 @@ def prove_municipal_edition(city, title, today, *, fetch=fetch_public_html,
                             safe_same_host_article(link, url, root) == link
                             and (rank == 0 or not named)):
                         pending.append((rank, link))
-                pending = sorted(set(pending))[:12]
+                best = {}
+                for rank, link in pending:
+                    if link not in seen:
+                        best[link] = min(rank, best.get(link, rank))
+                # Never truncate an excess of exact event links and then
+                # silently accept a potentially conflicting edition.
+                if sum(rank == 0 for rank in best.values()) > 12:
+                    return None
+                pending = sorted((rank, link) for link, rank in best.items())[:12]
             except (OSError, ValueError, TypeError, UnicodeError, KeyError):
                 if priority == 0 and url != root:
                     unresolved_named = True
         # Conflicting or unresolved exact-name pages fail closed.
-        if unresolved_named or any(rank == 0 for rank, _ in pending):
+        if unresolved_named or any(rank == 0 and link not in seen
+                                   for rank, link in pending):
             return None
         if len({dates for _, dates in proofs}) != 1:
             return None
