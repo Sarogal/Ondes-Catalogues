@@ -7,6 +7,8 @@ on:
       - 'radio-catalog-lab/flutter/test/central_media_artwork_hydration_test.dart'
       - 'radio-catalog-lab/flutter/lib/media_selection_intent.dart'
       - 'radio-catalog-lab/flutter/test/media_selection_intent_test.dart'
+      - 'radio-catalog-lab/flutter/lib/media_icy_transition.dart'
+      - 'radio-catalog-lab/flutter/test/media_icy_transition_test.dart'
       - '.github/workflows/go-aa-deferred-artwork-lab.yml'
 permissions:
   contents: read
@@ -36,3 +38,7 @@ jobs:
         run: flutter analyze --fatal-infos lib/media_selection_intent.dart test/media_selection_intent_test.dart
       - name: Verify competing asynchronous station selections
         run: flutter test --reporter expanded test/media_selection_intent_test.dart
+      - name: Analyze ICY transition filter
+        run: flutter analyze --fatal-infos lib/media_icy_transition.dart test/media_icy_transition_test.dart
+      - name: Verify ICY source boundaries and same-track recurrence
+        run: flutter test --reporter expanded test/media_icy_transition_test.dart
