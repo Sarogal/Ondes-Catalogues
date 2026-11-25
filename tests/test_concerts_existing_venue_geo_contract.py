@@ -94,3 +94,39 @@ class GenericVenueGeoContractTests(unittest.TestCase):
         normalized["venues"][0]["address"] = "A different historical correction"
         with self.assertRaisesRegex(ValueError, "conflicts"):
             contract.apply(normalized, plans)
+
+
+    def test_real_publisher_preserves_reference_and_replays_signed_geo(self):
+        import json
+        from pathlib import Path
+        from scripts import concerts_cloud_sync as sync
+        root = Path(__file__).resolve().parents[1]
+        reference = json.loads((root / "docs/grossesondes/concerts-reference.json").read_text(encoding="utf-8"))
+        original = next(v for v in reference["venues"] if v["id"] == "le-grillen-colmar")
+        event = next(e for e in reference["events"] if e["venueId"] == original["id"])
+        # Synthetic first-party event in a copy of the real-size baseline.
+        # No reference fixture or public catalogue is changed on disk.
+        event.update(sourceType="salle", status="confirmed", officialUrl=URL,
+                     date="2027-02-12")
+        _, proof, _ = fixture()
+        proof.update(venueId=original["id"], eventId=event["id"],
+                     originalVenue=copy.deepcopy(original))
+        row = contract.signed_proposal(proof, TODAY)
+        ledger = {"schema": sync.SCHEMA, "approvals": [], contract.KEY: [row]}
+        current = copy.deepcopy(reference)
+        with mock.patch.object(evidence, "verify", return_value=proof):
+            changed, stats = sync.merge(reference, current, ledger, TODAY)
+        self.assertEqual(stats["correctedVenues"], 1)
+        self.assertEqual(stats["newEvents"], 0)
+        self.assertEqual(changed["events"], current["events"])
+        self.assertEqual(changed["artists"], current["artists"])
+        self.assertEqual(next(v for v in changed["venues"] if v["id"] == original["id"]),
+                         dict(original, **row["venuePatch"]))
+        self.assertEqual(reference, current)
+        with self.assertRaises(ValueError):
+            sync.merge(reference, changed, {"schema": sync.SCHEMA, "approvals": []}, TODAY)
+        with mock.patch.object(evidence, "verify", side_effect=AssertionError("network")):
+            repeated, stats2 = sync.merge(reference, changed, ledger, dt.date(2027, 5, 1))
+            sync.protect_reference(reference, repeated, approvals=ledger, today=dt.date(2027, 5, 1))
+        self.assertEqual(stats2["correctedVenues"], 0)
+        self.assertEqual(changed, repeated)
