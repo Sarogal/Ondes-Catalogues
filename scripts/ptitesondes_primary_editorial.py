@@ -61,6 +61,18 @@ def mixed_umbrella_programme(title, description):
     return bool(arts and other_formats >= 2)
 
 
+def park_visit_programme(title, description):
+    """Do not turn a park's general visitor hours into concert sessions."""
+    main, body = norm(title), norm(description)
+    if NAMED_ART_FORMAT.search(main):
+        return False
+    park = re.search(r"\b(?:parc d attractions?|parc a theme|oenoparc|parc de loisirs)\b", body)
+    visit = re.search(r"\b(?:au fil de la visite|parcours de visite|accueillir les visiteurs|horaires d ouverture)\b", body)
+    scenery = re.search(r"\b(?:decors?|scenographie|attractions?|animations permanentes)\b", body)
+    incidental = re.search(r"\b(?:concerts?|chansons?|chanteurs?|musiciens?|automates?|musique)\b", body)
+    return bool(park and visit and scenery and incidental)
+
+
 def primary_out_of_scope(title, description=""):
     """Return a stable generic reason, or None.
 
@@ -81,6 +93,8 @@ def primary_out_of_scope(title, description=""):
         return "market_gathering_primary"
     if COMMERCIAL_STUDIO_SERVICE.search(main):
         return "commercial_studio_service_primary"
+    if park_visit_programme(title, description):
+        return "park_visit_programme_primary"
     if mixed_umbrella_programme(title, description):
         return "mixed_umbrella_programme_primary"
     return None

@@ -165,6 +165,24 @@ class PrimaryEditorialTests(unittest.TestCase):
         self.assertIsNone(primary_out_of_scope(
             "Journées musicales pour enfants", desc))
 
+    def test_park_opening_hours_are_not_concert_sessions(self):
+        title = "Le Hameau Enchanté"
+        desc = ("Un parc d'attractions version Noël. Le parc à thème "
+                "accueille les visiteurs dans des décors féériques. Au fil "
+                "de la visite, un bonhomme de neige automate offre un concert, "
+                "des rennes chanteurs et des attractions.")
+        self.assertEqual(primary_out_of_scope(title, desc),
+                         "park_visit_programme_primary")
+        self.assertIsNone(category_for(title, desc))
+        self.assertIsNone(propose_family_activity(title, desc)["category_proposal"])
+        candidate, reason = live_case(title, desc, category="concert")
+        self.assertIsNone(candidate)
+        self.assertEqual(reason, "oa_direct_primary_activity_outside_scope")
+        self.assertIsNone(primary_out_of_scope(
+            "Concert des rennes pour enfants", desc))
+        self.assertIsNone(primary_out_of_scope(
+            "Spectacle de marionnettes", desc))
+
     def test_no_session_count_cap_on_real_youth_workshops(self):
         self.assertIsNone(primary_out_of_scope(
             "Éveil musical pour les tout-petits",
