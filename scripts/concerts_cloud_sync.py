@@ -7940,7 +7940,7 @@ def merge(reference, current, approvals, today):
                     and existing.get("lastVerified") == planned["reviewedAt"]
                     and bool(existing.get("history"))
                     and existing["history"][-1].get("change") ==
-                        "Programmation complétée après nouvelle vérification de la fiche officielle"),
+                        planned["historyChange"]),
                 "Programmation cloud modifiée hors correctif signé")
             continue
         if existing["id"] == GWENDOLINE_CORRECTION_ID:

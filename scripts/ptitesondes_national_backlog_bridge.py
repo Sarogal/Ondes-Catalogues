@@ -28,8 +28,6 @@ REPORT_RE = re.compile(r"index-(20\d\d-\d\d-\d\d)-[a-zA-Z0-9_-]{1,70}\.json\Z")
 SEGMENT_RE = re.compile(r"agenda-\d{4}-segment-\d{4}\.json\Z")
 MAX_EVENTS_PER_RUN = 24
 MAX_BACKLOG = 4000
-MAX_INDEX_REPORTS = 100
-MAX_SEGMENTS = 10000
 
 
 def _read(path, maximum):
@@ -61,16 +59,16 @@ def _atomic_json(path, obj):
             os.unlink(name)
 
 
-def _inventory(root):
-    """Recreate the exact per-agenda index digest used by the saved campaign."""
+def _iter_inventory(root):
+    """Stream verified historical evidence in stable order, without a lifetime cap.
+
+    Each file remains size-bounded and source-bound. The callers bound live
+    network work independently; an ever-growing history is not invalid input.
+    """
     reports = root / "index" / "reports"
     if not reports.is_dir() or reports.is_symlink():
-        return []
+        return
     index_files = sorted(reports.glob("index-*.json"))
-    if len(index_files) > MAX_INDEX_REPORTS:
-        raise ValueError("too_many_private_index_reports")
-    todo = []
-    segment_count = 0
     for index_path in index_files:
         match = REPORT_RE.fullmatch(index_path.name)
         if not match:
@@ -94,16 +92,19 @@ def _inventory(root):
                 single, sort_keys=True, ensure_ascii=False,
                 separators=(",", ":")).encode("utf-8")).hexdigest()
             for segment_path in sorted(source.glob("agenda-*-segment-*.json")):
-                segment_count += 1
-                if segment_count > MAX_SEGMENTS or not SEGMENT_RE.fullmatch(segment_path.name):
-                    raise ValueError("untrusted_private_segment_count_or_name")
+                if not SEGMENT_RE.fullmatch(segment_path.name):
+                    raise ValueError("untrusted_private_segment_name")
                 segment, _ = _read(segment_path, MAX_REPORT_BYTES)
                 verified_report(single, digest, segment, scan_day)
                 for offset, event in enumerate(segment["event_leads"]):
                     if not isinstance(event, dict) or type(event.get("event_uid")) is not int:
                         raise ValueError("untrusted_private_event_reference")
-                    todo.append((single, digest, segment, scan_day, offset))
-    return todo
+                    yield single, digest, segment, scan_day, offset
+
+
+def _inventory(root):
+    """Compatibility snapshot for callers that require positional rotation."""
+    return list(_iter_inventory(root))
 
 
 def _identity(lead):
