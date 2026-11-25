@@ -32,6 +32,9 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_decision_preview.py"
       - "radio-catalog-lab/tools/radio_daily_v9_generator.py"
       - "radio-catalog-lab/tools/test_radio_daily_v9_generator.py"
+      - "radio-catalog-lab/tools/radio_daily_baseline_verify.py"
+      - "radio-catalog-lab/tools/test_radio_daily_baseline_verify.py"
+      - "radio-catalog-lab/schemas/radio_catalog_v1.schema.json"
       - ".github/workflows/radio-catalog-daily-discovery.yml"
   workflow_dispatch:
     inputs:
@@ -63,6 +66,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install public verification dependencies
+        run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0"
       - name: Validate candidate engine without network
         run: |
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_daily*.py" -v
@@ -82,6 +87,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install public verification dependencies
+        run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0"
       - name: Read durable discovery state
         uses: actions/checkout@v4
         with:
@@ -163,6 +170,12 @@ jobs:
             "https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/feature/go-radio-test-v2-isolated-20261123/grossesondes/radio-test-v2/releases/${BASELINE_SHA256}.json" \
             --output "$baseline"
           printf '%s  %s\n' "$BASELINE_SHA256" "$baseline" | sha256sum --check --strict
+          pointer="$RUNNER_TEMP/go-radio-v8-pointer.json"
+          curl --fail --silent --show-error --max-time 45 --max-filesize 16384 \
+            "https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/feature/go-radio-test-v2-isolated-20261123/grossesondes/radio-test-v2/current.json" \
+            --output "$pointer"
+          python radio-catalog-lab/tools/radio_daily_baseline_verify.py \
+            --pointer "$pointer" --baseline "$baseline"
           # Digest is pinned to the previously signed TEST v8. This is a
           # classification-only report, not authority to admit or sign.
           python radio-catalog-lab/tools/radio_catalog_daily_candidate_reconcile.py \
@@ -321,6 +334,12 @@ jobs:
             --dossiers "$root/qualification-dossiers.json" \
             --decisions "$root/decision-preview.json" \
             --output-dir "$root/v9-preview"
+          if [[ -f "$root/v9-preview/unsigned-candidate-v9.json" ]]; then
+            python radio-catalog-lab/tools/radio_daily_baseline_verify.py \
+              --pointer "$RUNNER_TEMP/go-radio-v8-pointer.json" \
+              --baseline "$RUNNER_TEMP/go-radio-v8-baseline.json" \
+              --candidate "$root/v9-preview/unsigned-candidate-v9.json"
+          fi
       - name: Prepare safe durable genre hints
         shell: bash
         run: |
