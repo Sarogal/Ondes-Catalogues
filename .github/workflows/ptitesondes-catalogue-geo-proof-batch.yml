@@ -1,0 +1,44 @@
+name: "P'tites Ondes — recherche de preuves GPS du catalogue"
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_catalogue_geo_proof_batch.py'
+      - 'tests/test_ptitesondes_catalogue_geo_proof_batch.py'
+      - '.github/workflows/ptitesondes-catalogue-geo-proof-batch.yml'
+  workflow_dispatch:
+    inputs:
+      offset:
+        description: Position de reprise dans la file de recherche
+        type: number
+        required: false
+        default: 0
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test independent geographic research
+        env:
+          PYTHONPATH: scripts:tests
+        run: python -m unittest -v test_ptitesondes_catalogue_geo_proof_batch
+      - name: Research actual public catalogue without publication
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+        env:
+          OFFSET: ${{ inputs.offset }}
+        run: |
+          python scripts/ptitesondes_catalogue_geo_proof_batch.py --catalogue docs/ptitesondes/sorties.json --day "$(TZ=Europe/Paris date +%F)" --offset "$OFFSET" --live > /tmp/ptitesondes-geo-proofs.json
+          git diff --exit-code -- docs/ptitesondes/sorties.json
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+        with:
+          name: ptitesondes-geo-proof-research
+          path: /tmp/ptitesondes-geo-proofs.json
+          retention-days: 7
