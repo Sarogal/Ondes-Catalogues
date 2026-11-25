@@ -1,0 +1,44 @@
+name: GO v8 runtime performance validation
+on:
+  push:
+    branches: [audit/go-v8-runtime-performance-lab-20261125]
+    paths:
+      - 'radio-catalog-lab/flutter/lib/central_radio_catalog_client.dart'
+      - 'radio-catalog-lab/flutter/lib/central_logo_asset_store.dart'
+      - 'radio-catalog-lab/flutter/test/central_radio_catalog_client_test.dart'
+      - 'radio-catalog-lab/flutter/test/central_logo_asset_store_test.dart'
+      - 'radio-catalog-lab/flutter/lib/radio_startup_session.dart'
+      - 'radio-catalog-lab/flutter/test/radio_startup_session_test.dart'
+      - 'radio-catalog-lab/flutter/lib/central_logo_prefetch_executor.dart'
+      - 'radio-catalog-lab/flutter/test/central_logo_prefetch_executor_test.dart'
+      - '.github/workflows/go-v8-runtime-performance-lab.yml'
+permissions:
+  contents: read
+jobs:
+  flutter-lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    defaults:
+      run:
+        working-directory: radio-catalog-lab/flutter
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Analyze verified memo implementations
+        run: flutter analyze --fatal-infos lib/central_radio_catalog_client.dart lib/central_logo_asset_store.dart test/central_radio_catalog_client_test.dart test/central_logo_asset_store_test.dart
+      - name: Verify signed catalog integrity and logo cache regressions
+        run: flutter test --reporter expanded test/central_radio_catalog_client_test.dart test/central_logo_asset_store_test.dart
+      - name: Analyze single startup session
+        run: flutter analyze --fatal-infos lib/radio_startup_session.dart test/radio_startup_session_test.dart
+      - name: Verify 285 selections without repeated initialization
+        run: flutter test --reporter expanded test/radio_startup_session_test.dart
+      - name: Analyze bounded logo prefetch
+        run: flutter analyze --fatal-infos lib/central_logo_prefetch_executor.dart test/central_logo_prefetch_executor_test.dart
+      - name: Verify bounded logo prefetch and warm reuse
+        run: flutter test --reporter expanded test/central_logo_prefetch_executor_test.dart

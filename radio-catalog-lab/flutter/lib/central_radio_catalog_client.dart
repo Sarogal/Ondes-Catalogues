@@ -4,14 +4,48 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart' as crypto;
+
 import 'central_radio_catalog_core.dart';
 
 typedef CentralCatalogByteFetcher = Future<Uint8List> Function(
     Uri uri, int maxBytes);
 
+/// Process-scoped memo of authenticated immutable snapshot bytes. Every read
+/// still hashes the actual disk envelope; changed bytes cannot reuse proof.
+/// Only the same verifier instance and exact bytes may share a verification.
+class CentralCatalogVerificationMemo {
+  final Map<String, Future<ValidatedCentralCatalog>> _entries = {};
+  CentralCatalogVerifier? _verifier;
+
+  Future<ValidatedCentralCatalog> _verify(
+    CentralCatalogVerifier verifier,
+    Uint8List bytes,
+    Future<ValidatedCentralCatalog> Function() operation,
+  ) {
+    if (!identical(_verifier, verifier)) {
+      _entries.clear();
+      _verifier = verifier;
+    }
+    final key = crypto.sha256.convert(bytes).toString();
+    final existing = _entries[key];
+    if (existing != null) return existing;
+    final future = Future<ValidatedCentralCatalog>.sync(operation);
+    _entries[key] = future;
+    while (_entries.length > 24) {
+      _entries.remove(_entries.keys.first);
+    }
+    return future.then((value) => value, onError: (Object error, StackTrace stack) {
+      if (identical(_entries[key], future)) _entries.remove(key);
+      Error.throwWithStackTrace(error, stack);
+    });
+  }
+}
+
 class CentralCatalogDiskStore {
-  const CentralCatalogDiskStore(this.directory);
+  const CentralCatalogDiskStore(this.directory, {this.verificationMemo});
   final Directory directory;
+  final CentralCatalogVerificationMemo? verificationMemo;
 
   static final _snapshotName =
       RegExp(r'^go-radio-v1-([1-9][0-9]*)-([0-9a-f]{64})\.json$');
@@ -51,16 +85,25 @@ class CentralCatalogDiskStore {
       visited++;
       try {
         if (await file.length() > 15 * 1024 * 1024) continue;
-        final raw = jsonDecode(await file.readAsString());
-        if (raw is! Map<String, dynamic> ||
-            raw['pointer_base64'] is! String ||
-            raw['catalog_base64'] is! String) continue;
-        final pointer = Uint8List.fromList(
-            base64.decode(raw['pointer_base64'] as String));
-        final catalog = Uint8List.fromList(
-            base64.decode(raw['catalog_base64'] as String));
-        final snapshot = await verifier.verify(
-            pointerBytes: pointer, catalogBytes: catalog);
+        final bytes = await file.readAsBytes();
+        if (bytes.length > 15 * 1024 * 1024) continue;
+        Future<ValidatedCentralCatalog> validate() async {
+          final raw = jsonDecode(utf8.decode(bytes));
+          if (raw is! Map<String, dynamic> ||
+              raw['pointer_base64'] is! String ||
+              raw['catalog_base64'] is! String) {
+            throw const CentralCatalogException('Invalid stored snapshot envelope');
+          }
+          final pointer = Uint8List.fromList(
+              base64.decode(raw['pointer_base64'] as String));
+          final catalog = Uint8List.fromList(
+              base64.decode(raw['catalog_base64'] as String));
+          return verifier.verify(pointerBytes: pointer, catalogBytes: catalog);
+        }
+        final memo = verificationMemo;
+        final snapshot = memo == null
+            ? await validate()
+            : await memo._verify(verifier, bytes, validate);
         final expected =
             'go-radio-v1-${snapshot.pointer.sequence}-${snapshot.pointer.sha256}.json';
         if (file.uri.pathSegments.last != expected) continue;
@@ -187,13 +230,19 @@ class CentralRadioCatalogClient {
 
   /// Never called at startup by existing CatalogController. Explicit opt-in
   /// test invocation only until full product/Android Auto authorization.
-  Future<CentralCatalogSyncResult> sync() async {
+  Future<CentralCatalogSyncResult> sync({
+    void Function(List<ValidatedCentralCatalog>)? onVerifiedHistory,
+  }) async {
     if (_synchronizing) {
       throw const CentralCatalogException('Concurrent catalog sync');
     }
     _synchronizing = true;
     try {
-      final previous = await loadOffline();
+      // Read the verified history once. The selector can reuse this exact
+      // immutable list even if the network subsequently fails.
+      final history = await disk.loadVerifiedHistory(verifier);
+      onVerifiedHistory?.call(history);
+      final previous = history.isEmpty ? null : history.first;
       final pointerBytes = await _fetch(
           baseUri.resolve('current.json'),
           CentralCatalogPointer.maximumPointerBytes);

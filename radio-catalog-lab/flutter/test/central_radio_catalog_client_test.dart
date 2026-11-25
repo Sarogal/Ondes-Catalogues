@@ -97,6 +97,19 @@ Future<ValidatedCentralCatalog> validatePayload(Uint8List payload,
   return verifier.verify(pointerBytes: pointer, catalogBytes: payload, previous: previous);
 }
 
+class CountingHistoryStore extends CentralCatalogDiskStore {
+  CountingHistoryStore(super.directory);
+  int scans = 0;
+
+  @override
+  Future<List<ValidatedCentralCatalog>> loadVerifiedHistory(
+    CentralCatalogVerifier verifier, {int maxFiles = 24}
+  ) {
+    scans++;
+    return super.loadVerifiedHistory(verifier, maxFiles: maxFiles);
+  }
+}
+
 void main() {
   setUpAll(() async {
     signingPair = await Ed25519().newKeyPair();
@@ -892,5 +905,95 @@ void main() {
       ['legacy-1', 'legacy-2', 'unknown']);
   });
 
+
+
+  test('memo reuses verified disk envelope but rejects tampered bytes', () async {
+    final dir = await Directory.systemTemp.createTemp('go-catalog-memo-');
+    try {
+      final store = CentralCatalogDiskStore(dir,
+        verificationMemo: CentralCatalogVerificationMemo());
+      final snapshot = await validatePayload(jsonBytes(catalog([station(1)])));
+      await store.persist(snapshot);
+      final first = await store.loadLatest(verifier);
+      final second = await store.loadLatest(verifier);
+      expect(first, isNotNull);
+      expect(identical(first, second), isTrue);
+      final diskFile = (await dir.list().toList()).whereType<File>().single;
+      final original = await diskFile.readAsString();
+      final envelope = jsonDecode(original) as Map<String, dynamic>;
+      final changed = jsonBytes(catalog([station(2)]));
+      envelope['catalog_base64'] = base64.encode(changed);
+      await diskFile.writeAsString(jsonEncode(envelope), flush: true);
+      expect(await store.loadLatest(verifier), isNull);
+      await diskFile.writeAsString(original, flush: true);
+      expect(await store.loadLatest(verifier), isNotNull);
+      final untrusted = CentralCatalogVerifier(trustedKeys: {});
+      expect(await store.loadLatest(untrusted), isNull);
+    } finally {
+      await dir.delete(recursive: true);
+    }
+  });
+
+  test('memo keeps the signed history scan and sees newly persisted releases', () async {
+    final dir = await Directory.systemTemp.createTemp('go-catalog-memo-next-');
+    try {
+      final store = CentralCatalogDiskStore(dir,
+        verificationMemo: CentralCatalogVerificationMemo());
+      final first = await validatePayload(jsonBytes(catalog([station(1)])));
+      await store.persist(first);
+      expect((await store.loadLatest(verifier))!.pointer.sequence, 1);
+      final second = await validatePayload(
+        jsonBytes(catalog([station(1), station(2)], sequence: 2)),
+        sequence: 2, previous: first);
+      await store.persist(second);
+      final history = await store.loadVerifiedHistory(verifier);
+      expect(history.map((s) => s.pointer.sequence), [2, 1]);
+      expect(history.first.stations, hasLength(2));
+    } finally {
+      await dir.delete(recursive: true);
+    }
+  });
+
+
+  test('sync exposes verified history exactly once even on network failure', () async {
+    final dir = await Directory.systemTemp.createTemp('go-single-history-');
+    try {
+      final store = CountingHistoryStore(dir);
+      final payload = jsonBytes(catalog([station(1)]));
+      final snapshot = await validatePayload(payload);
+      await store.persist(snapshot);
+      final pointer = await signedPointer(payload, 1);
+      var online = true;
+      var requests = 0;
+      final client = CentralRadioCatalogClient(
+        baseUri: Uri.parse('https://example.org/catalog/'),
+        verifier: verifier, disk: store,
+        fetch: (uri, max) async {
+          requests++;
+          expect(uri.path.endsWith('current.json'), isTrue);
+          if (!online) throw StateError('offline');
+          return pointer;
+        },
+      );
+      List<ValidatedCentralCatalog>? history;
+      final synced = await client.sync(onVerifiedHistory: (value) => history = value);
+      expect(store.scans, 1);
+      expect(requests, 1);
+      expect(synced.updated, isFalse);
+      expect(history!.single.pointer.sequence, 1);
+      expect(() => history!.clear(), throwsUnsupportedError);
+      online = false;
+      history = null;
+      await expectLater(
+        client.sync(onVerifiedHistory: (value) => history = value),
+        throwsStateError,
+      );
+      expect(store.scans, 2);
+      expect(requests, 2);
+      expect(history!.single.pointer.sequence, 1);
+    } finally {
+      await dir.delete(recursive: true);
+    }
+  });
 
 }

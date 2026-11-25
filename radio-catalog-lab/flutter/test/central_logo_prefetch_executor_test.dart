@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -261,4 +262,91 @@ void main() {
     // A malformed plan must fail before any network or cache write.
     expect(calls, 0);
   });
+
+  test('bounded parallel downloads, stable report order and warm cache', () async {
+    final images = List.generate(9, (i) => sampleImage(30 + i));
+    final signed = plan([
+      for (var i = 0; i < images.length; i++)
+        (imageSpec(images[i], url: 'https://images.example.org/$i.png'), ['station-$i']),
+    ]);
+    final directory = Directory('${temp.path}/parallel');
+    final firstBatch = Completer<void>();
+    var active = 0;
+    var peak = 0;
+    var calls = 0;
+    Future<Uint8List> fetch(Uri uri, int maxBytes) async {
+      calls++;
+      active++;
+      if (active > peak) peak = active;
+      if (calls == 3) firstBatch.complete();
+      await firstBatch.future.timeout(const Duration(seconds: 5));
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      active--;
+      return images[int.parse(uri.pathSegments.last.split('.').first)];
+    }
+    final policy = CentralLogoPrefetchPolicy(
+      allowNetwork: true, allowedHosts: const {'images.example.org'},
+      maxConcurrent: 3, maxObjects: 9, maxBytes: 9 * 128,
+    );
+    Future<CentralLogoPrefetchReport> run() =>
+      CentralLogoPrefetchExecutor().execute(
+        plan: signed, store: CentralLogoAssetStore(directory: directory, decoder: fakeDecoder),
+        policy: policy, fetch: fetch,
+      );
+    final cold = await run();
+    expect(peak, 3);
+    expect(cold.downloadedObjects, 9);
+    expect(cold.reservedAttempts, 9);
+    expect(cold.entries.map((e) => e.planned.descriptor.sha256),
+      signed.items.map((e) => e.descriptor.sha256));
+    final warm = await run();
+    expect(warm.cachedObjects, 9);
+    expect(warm.reservedAttempts, 0);
+    expect(calls, 9);
+  });
+
+  test('parallel transfers cannot oversubscribe attempt or byte quotas', () async {
+    final images = List.generate(8, (i) => sampleImage(60 + i));
+    var calls = 0;
+    final report = await CentralLogoPrefetchExecutor().execute(
+      plan: plan([
+        for (var i = 0; i < images.length; i++)
+          (imageSpec(images[i], url: 'https://images.example.org/$i.png'), ['station-$i']),
+      ]),
+      store: CentralLogoAssetStore(directory: temp, decoder: fakeDecoder),
+      policy: CentralLogoPrefetchPolicy(
+        allowNetwork: true, allowedHosts: const {'images.example.org'},
+        maxConcurrent: 4, maxObjects: 3, maxBytes: 2 * 128,
+      ),
+      fetch: (uri, size) async {
+        calls++;
+        return images[int.parse(uri.pathSegments.last.split('.').first)];
+      },
+    );
+    expect(calls, 2);
+    expect(report.reservedAttempts, 2);
+    expect(report.reservedBytes, 256);
+    expect(report.downloadedObjects, 2);
+    expect(report.entries.where((e) => e.outcome == CentralLogoPrefetchOutcome.budgetExceeded).length, 6);
+  });
+
+  test('zero admission window still verifies cached objects', () async {
+    final bytes = sampleImage(100);
+    final descriptor = imageSpec(bytes);
+    final store = CentralLogoAssetStore(directory: temp, decoder: fakeDecoder);
+    await store.ensure(target: descriptor, fetch: (_, __) async => bytes);
+    final report = await CentralLogoPrefetchExecutor().execute(
+      plan: plan([(descriptor, ['cached']), (imageSpec(sampleImage(101)), ['missing'])]),
+      store: store,
+      policy: CentralLogoPrefetchPolicy(
+        allowNetwork: true, allowedHosts: const {'images.example.org'},
+        maxConcurrent: 2, maxNetworkDuration: Duration.zero,
+      ),
+      fetch: (_, __) async => throw StateError('network must not be admitted'),
+    );
+    expect(report.cachedObjects, 1);
+    expect(report.entries.last.outcome, CentralLogoPrefetchOutcome.budgetExceeded);
+    expect(report.reservedAttempts, 0);
+  });
+
 }
