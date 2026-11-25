@@ -1,0 +1,26 @@
+{
+  "schema": "ptitesondes.official_reconciliation.v1",
+  "checked_on": "2026-11-25",
+  "slot": 0,
+  "source_series_checked": 30,
+  "total_source_series": 63,
+  "before_count": 872,
+  "after_count": 873,
+  "source_summary": {
+    "official_new_session_admitted": 1,
+    "official_new_session_held": 1,
+    "official_unchanged": 29
+  },
+  "catalogue_before_sha256": "82b422b60f97a317ab4c4926133ca238e0ee8906db926fa307d2a9a575c22e16",
+  "catalogue_after_sha256": "bc4c8bce7507bf1d493c848ea2b857789e7f95bda11a01555572b68edd7672d5",
+  "operations": [
+    {
+      "id": "openagenda-38483269-2027-05-28",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "78ac1dcaf357db54383e54a51122a797dd2a1b09d5b20f545d925c2608265df5"
+    }
+  ],
+  "unrelated_public_records_preserved": true
+}

@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-25T03:31:21+01:00",
+  "updated_at": "2026-11-25T05:11:26+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -18083,6 +18083,26 @@
       "geo_precision": "venue",
       "lat": 47.207848,
       "lng": -1.532593
+    },
+    {
+      "id": "openagenda-38483269-2027-05-28",
+      "title": "Contes en lumière pour bébés curieux",
+      "category": "eveil-musical",
+      "category_label": "Éveil musical",
+      "date_start": "2027-05-28",
+      "date_end": "2027-05-28",
+      "time": "08:00",
+      "city": "Bièvres",
+      "department": "Essonne",
+      "region": "Île-de-France",
+      "venue": "Musée Français de la Photographie",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "source_label": "Bicentenaire de la Photographie - 2026-2027 — Licence Ouverte 2.0 — données mises à jour le 09/11/2026",
+      "verified_at": "2026-11-25",
+      "geo_verified_at": "2026-11-25",
+      "geo_precision": "venue",
+      "lat": 48.763057,
+      "lng": 2.225483
     }
   ]
 }
