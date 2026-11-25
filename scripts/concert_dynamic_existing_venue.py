@@ -295,8 +295,8 @@ def _direct_artist_description(name, description):
     return []
 
 
-def _visible_artist_description(html, title, name):
-    """One named artist subsection inside the exact current event heading."""
+def _visible_artist_sections(html, title):
+    """Only the exact individual event's visible content, not suggestions."""
     import official_html_evidence as visible
 
     if not isinstance(html, str) or not 0 < len(html) <= probe.MAX_BYTES:
@@ -313,14 +313,71 @@ def _visible_artist_description(html, title, name):
         if normal(text) in visible.END_SECTION:
             break
         section.append((kind, text))
+    return section
+
+
+def _visible_artist_labels(section, name):
+    """Exact standalone subgenre labels immediately under an artist heading."""
+    from automation.concerts import artist_official_bio as biographies
+
     matches = [i for i, (kind, text) in enumerate(section)
                if kind in ("h2", "h3", "h4") and normal(text) == normal(name)]
     if len(matches) != 1:
         return []
-    index = matches[0] + 1
-    if index >= len(section) or section[index][0] != "p":
-        return []
-    return _direct_artist_description(name, section[index][1])
+    # Exact vocabulary, not substring hits such as 'influenced by metal'.
+    allowed = {normal(g): g.title() for g in
+               (*triage.POSITIVE_GENRES, *biographies.BIO_GENRES)
+               if normal(g) not in {"hardcore", "rock"}}
+    labels = []
+    for kind, text in section[matches[0] + 1:matches[0] + 7]:
+        if kind not in ("p", "span", "strong", "text"):
+            break
+        label = allowed.get(normal(text))
+        if label:
+            if label not in labels:
+                labels.append(label)
+            continue
+        # Permit neighbouring non-target single genre badges, but stop at
+        # prose. Only the immediate label group can provide evidence.
+        if len(text.split()) > 3 or len(text) > 40 or re.search(r"[.!?;:]", text):
+            if not labels and kind == "p":
+                return _direct_artist_description(name, text)
+            break
+    return labels
+
+
+def _visible_artist_description(html, title, name):
+    return _visible_artist_labels(_visible_artist_sections(html, title), name)
+
+
+def visible_named_bill(html, title):
+    """Recover an absent bill only from its exact H1 AND individual headings.
+
+    Each title artist must have exactly one matching heading, in bill order.
+    One relevant named artist suffices; no genre is assigned to other acts.
+    """
+    if not isinstance(title, str):
+        return None
+    names = [s.strip() for s in re.split(r"\s+\+\s+", title)]
+    keys = [normal(s) for s in names]
+    if (not all(2 <= len(s) <= 120 for s in names) or not all(keys)
+            or len(set(keys)) != len(keys)):
+        return None
+    section = _visible_artist_sections(html, title)
+    matched = [normal(t) for k, t in section
+               if k in ("h2", "h3", "h4") and normal(t) in keys]
+    if matched != keys:
+        return None
+    people = []
+    for name in names:
+        labels = _visible_artist_labels(section, name)
+        person = {"@type": "MusicGroup", "name": name}
+        if labels:
+            person["genre"] = labels
+        people.append(person)
+    if not any(p.get("genre") for p in people):
+        return None
+    return people if bridge.official_named_bill(people) else None
 
 
 def event_genres(raw, official_url, *, fetch=None, cache=None, html=None):
@@ -336,7 +393,7 @@ def event_genres(raw, official_url, *, fetch=None, cache=None, html=None):
             "classification": genres, "genreEvidenceScope": scope,
             "officialDetailFound": True}):
         return genres, scope
-    if (fetch is None or "MusicEvent" not in bridge._event_types(raw.get("@type"))):
+    if fetch is None or not bridge._event_types(raw.get("@type")) & {"MusicEvent", "Event"}:
         return genres, scope
     from automation.concerts import open_world_artist_genre as profiles
     from automation.concerts import artist_official_bio as biographies
@@ -363,6 +420,8 @@ def event_genres(raw, official_url, *, fetch=None, cache=None, html=None):
             inline_labels = _visible_artist_description(html, raw.get("name"), name)
         if inline_labels:
             return inline_labels, "official_artist_in_event_detail"
+        if "MusicEvent" not in bridge._event_types(raw.get("@type")):
+            continue  # External profile navigation retains its original scope.
         target = person.get("url")
         host = intake.valid_https(target)
         if not host or host == intake.valid_https(official_url):
@@ -604,6 +663,8 @@ def validate(approval, venues, artists, today, *, fetch=None):
             if raw.get("performer") in (None, "", []):
                 names = paired._visible_artist_genres_from_this_event(
                     html, raw.get("name"))
+                if names is None:
+                    names = visible_named_bill(html, raw.get("name"))
                 if names is not None:
                     raw = {**raw, "performer": names}
             attested.append(raw)
