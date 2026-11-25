@@ -145,6 +145,61 @@ class UnlistedExistingVenueTests(unittest.TestCase):
             proposals._individual_event(page(EVENT) + page(EVENT), EVENT,
                                         "2027-03-05", venue, accept_generic=True)
 
+    def test_explicit_same_graph_artist_references_replayed_by_publisher(self):
+        from automation.concerts import dynamic_first_party_venue_proposals as proposals
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        node = next(dynamic.discover.read_ld(page(EVENT)))
+        people = [{"@id": "#artist-" + str(i), "@type": "MusicGroup",
+                   "name": name} for i, name in enumerate(NAMES)]
+        node["performer"] = [{"@id": p["@id"]} for p in people]
+        unrelated = {"@id": "#unrelated", "@type": "MusicGroup",
+                     "name": "Not On Bill", "genre": "Black Metal"}
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+
+        def graph_page(nodes):
+            return ("<html><main><script type='application/ld+json'>"
+                    + json.dumps({"@context": "https://schema.org",
+                                  "@graph": nodes})
+                    + "</script><p>Official concert detail</p></main></html>")
+
+        html = graph_page([node, *people, unrelated])
+        self.assertEqual(proposals._individual_event(
+            html, EVENT, signed["event"]["date"], venue,
+            accept_generic=True), (NAMES, ["Black Metal"]))
+        self.assertTrue(dynamic.validate(
+            signed, venues, artists, TODAY, fetch=fake_fetch({"primary": html})))
+
+        # No guessed roster from unlinked nodes, conflicting definitions,
+        # missing references, wrong type or partially inlined contradictions.
+        wrong_type = {**people[0], "@type": "Organization"}
+        duplicate = {**people[0], "name": "A Different Band"}
+        partial = {**node, "performer": [
+            {**node["performer"][0], "name": "Conflicting Inline Name"},
+            *node["performer"][1:]]}
+        for nodes in ([node, *people[1:], unrelated],
+                      [node, *people, duplicate],
+                      [node, wrong_type, *people[1:]],
+                      [partial, *people],
+                      [{**node, "performer": []}, *people]):
+            body = graph_page(nodes)
+            with self.assertRaises(ValueError):
+                proposals._individual_event(
+                    body, EVENT, signed["event"]["date"], venue,
+                    accept_generic=True)
+            with self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY,
+                                 fetch=fake_fetch({"primary": body}))
+        # Identifiers cannot join independent script documents.
+        split = graph_page([node]) + graph_page(people)
+        with self.assertRaises(ValueError):
+            dynamic.validate(signed, venues, artists, TODAY,
+                             fetch=fake_fetch({"primary": split}))
+
     def test_visible_detail_single_source_replayed_with_eight_unknown_artists(self):
         from automation.concerts import dynamic_first_party_venue_proposals as proposals
         signed = signed_approval()
