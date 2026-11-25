@@ -333,7 +333,7 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
                 "Disponibilité : Épuisé</p><p>Disponibilité : Disponible</p></li><li><img alt=\"Pass 3 jours Soutien"),
         ):
             self.assertEqual(seasonal_ticket_card_offers(bad, row, DAY), {})
-        self.assertIsNone(seasonal_ticket_summary({
+        self.assertIn("formules affichées épuisées", seasonal_ticket_summary({
             (3, "tarif reduit"): ("Tarif réduit", "89 €", "épuisé")}))
         original = doc(row)
         out, report = apply_independently_verified_updates(
@@ -345,6 +345,29 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(updated["price"], summary)
         self.assertTrue(_verified_official_update_delta(row, updated))
         self.assertEqual(report["accepted"], [row["slug"]])
+
+        # A previously published canonical set must refresh both amounts and
+        # availability, including exhaustion of every displayed paid tier.
+        sold_out = html.replace("Disponibilité : Disponible", "Disponibilité : Épuisé")
+        sold_out = sold_out.replace("115 €.", "119 €.")
+        sold_doc, sold_report = apply_independently_verified_updates(
+            out, out, DAY, fetch=lambda _: sold_out,
+            commune_resolver=lambda *_: None, limit=1, tick=0)
+        sold = sold_doc["festivals"][0]
+        self.assertIn("119 € (épuisé)", sold["price"])
+        self.assertIn("formules affichées épuisées", sold["price"])
+        self.assertNotIn("billetterie officielle ouverte", sold["price"])
+        self.assertTrue(_verified_official_update_delta(updated, sold))
+        self.assertEqual(sold_report["accepted"], [row["slug"]])
+        # A disappeared card is not proof of a removed or sold-out tier.
+        incomplete = sold_out.replace(
+            '<li><img alt="Pass 3 jours Soutien : 130 €."><p>Festival</p>'
+            '<h3>Tarif soutien</h3><p>Disponibilité : Épuisé</p></li>', '')
+        self.assertNotEqual(incomplete, sold_out)
+        result, _ = apply_independently_verified_updates(
+            sold_doc, sold_doc, DAY, fetch=lambda _: incomplete,
+            commune_resolver=lambda *_: None, limit=1, tick=0)
+        self.assertEqual(result["festivals"][0]["price"], sold["price"])
 
         # A raw response with valid edition identity but all statuses still
         # loading must not suppress the independently rendered same-root DOM.
