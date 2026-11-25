@@ -170,13 +170,18 @@ jobs:
           candidates = {r["stationuuid"] for r in reconciliation["candidates"]
                         if r["classification"] == "unmapped_candidate"}
           discovery["candidates"] = [r for r in discovery["candidates"]
-                                     if r["stationuuid"] in candidates]
+                                     if r["stationuuid"] in candidates
+                                     and r.get("editorialSignal") != "electronic_context_review"]
           (root / "probe-candidates.json").write_text(json.dumps(discovery))
           PY
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/stream-evidence.json" ]]; then
+            previous=(--previous-evidence "$RUNNER_TEMP/go-radio-previous/stream-evidence.json")
+          fi
           python radio-catalog-lab/tools/radio_stream_technical_probe.py \
             --discovery "$RUNNER_TEMP/go-radio-discovery/probe-candidates.json" \
             --output "$RUNNER_TEMP/go-radio-discovery/technical-probes.json" \
-            --limit 5 --allow-network
+            --limit 5 --allow-network "${previous[@]}"
       - name: Track technical samples over separate days (never approve streams)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
         shell: bash
