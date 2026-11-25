@@ -11,6 +11,8 @@ on:
       - 'tests/test_concerts_dynamic_new_site_source.py'
       - '.github/workflows/grossesondes-concerts-public-engine-tests.yml'
       - '.github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml'
+      - '.github/workflows/grossesondes-concerts-cloud-sync.yml'
+      - 'tests/test_concerts_publisher_queued_checkout.py'
   push:
     branches: [main]
     paths:
@@ -22,6 +24,8 @@ on:
       - 'tests/test_concerts_dynamic_new_site_source.py'
       - '.github/workflows/grossesondes-concerts-public-engine-tests.yml'
       - '.github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml'
+      - '.github/workflows/grossesondes-concerts-cloud-sync.yml'
+      - 'tests/test_concerts_publisher_queued_checkout.py'
   workflow_dispatch:
 
 permissions:

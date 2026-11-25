@@ -78,13 +78,21 @@ jobs:
   prepare:
     # Only a successful collection from the default branch of this repo can
     # trigger the privileged cloud publisher via workflow_run.
-    if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository) }}
+    if: ${{ github.ref == 'refs/heads/main' && (github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository)) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     outputs:
       deploy: ${{ steps.decision.outputs.deploy }}
     steps:
+      # The common publication lock may have queued this run behind a newer
+      # catalogue. Read the current trusted main only after acquiring it.
       - uses: actions/checkout@v7
+        with:
+          ref: refs/heads/main
+          fetch-depth: 0
+      - name: Mémoriser la révision réellement vérifiée
+        id: checked_base
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -169,7 +177,10 @@ jobs:
 
       - name: Conserver le nouveau JSON approuvé dans Git
         if: ${{ steps.sync.outputs.changed == 'true' && steps.decision.outputs.deploy == 'true' }}
+        env:
+          CHECKED_BASE: ${{ steps.checked_base.outputs.sha }}
         run: |
+          test "$(git rev-parse HEAD)" = "$CHECKED_BASE"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- docs/grossesondes/concerts.json
@@ -181,13 +192,14 @@ jobs:
           # its security tests: those require a FRESH preflight and workflow run.
           git fetch --no-tags origin main
           REMOTE_HEAD="$(git rev-parse FETCH_HEAD)"
-          if ! git merge-base --is-ancestor "$GITHUB_SHA" "$REMOTE_HEAD"; then
+          if ! git merge-base --is-ancestor "$CHECKED_BASE" "$REMOTE_HEAD"; then
             echo "::error::Main a été réécrit : publication interrompue"
             exit 1
           fi
-          if ! git diff --quiet "$GITHUB_SHA" "$REMOTE_HEAD" -- \
-            scripts/concerts_cloud_sync.py \
-            automation/concerts/reviewed_venue_specs_v1.json \
+          if ! git diff --quiet "$CHECKED_BASE" "$REMOTE_HEAD" -- \
+            scripts/ \
+            automation/concerts/ \
+            .github/workflows/grossesondes-concerts-cloud-sync.yml \
             tests/test_concerts_cloud_sync.py \
             docs/grossesondes/concerts.json \
             docs/grossesondes/concerts-reference.json; then
