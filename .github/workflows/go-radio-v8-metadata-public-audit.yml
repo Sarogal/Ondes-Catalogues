@@ -1,0 +1,37 @@
+name: GO v8 metadata audit on public runners
+on:
+  push:
+    branches: [audit/go-radio-v8-metadata-public-20261125]
+    paths:
+      - 'radio-catalog-lab/tools/go_radio_v8_public_verifier.py'
+      - 'radio-catalog-lab/tools/go_radio_v8_metadata_probe.py'
+      - 'radio-catalog-lab/tools/test_go_radio_v8_metadata_probe.py'
+      - '.github/workflows/go-radio-v8-metadata-public-audit.yml'
+permissions:
+  contents: read
+concurrency:
+  group: go-radio-v8-metadata-public-audit
+  cancel-in-progress: true
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install signature verifier dependency
+        run: python -m pip install cryptography
+      - name: Test bounded ICY parsing
+        run: python -m unittest discover -s radio-catalog-lab/tools -p test_go_radio_v8_metadata_probe.py
+      - name: Probe the public signed v8 catalog (read only)
+        run: python radio-catalog-lab/tools/go_radio_v8_metadata_probe.py --workers 6 --output /tmp/go-radio-v8-metadata.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-v8-metadata-first-pass
+          path: /tmp/go-radio-v8-metadata.json
+          retention-days: 7
+          if-no-files-found: error
