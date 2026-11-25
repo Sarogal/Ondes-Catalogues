@@ -96,16 +96,48 @@ class CentralLogoCacheResult {
   bool get available => image != null;
 }
 
+/// Cache only decoder results, never image bytes. All callers still check
+/// the exact SHA-256 of actual file/download bytes before using this memo.
+class CentralLogoDecodedMemo {
+  final Map<String, Future<CentralDecodedLogo>> _decoded = {};
+  CentralLogoBytesDecoder? _decoder;
+
+  Future<CentralDecodedLogo> _decode(
+    String digest, Uint8List verifiedBytes, CentralLogoBytesDecoder decoder,
+  ) {
+    if (_decoder != decoder) {
+      _decoder = decoder;
+      _decoded.clear();
+    }
+    final existing = _decoded[digest];
+    if (existing != null) return existing;
+    final operation = Future<CentralDecodedLogo>.sync(() => decoder(verifiedBytes));
+    _decoded[digest] = operation;
+    while (_decoded.length > 512) {
+      _decoded.remove(_decoded.keys.first);
+    }
+    return operation.then((value) => value, onError: (Object error, StackTrace stack) {
+      if (identical(_decoded[digest], operation)) _decoded.remove(digest);
+      Error.throwWithStackTrace(error, stack);
+    });
+  }
+}
+
 class CentralLogoAssetStore {
   CentralLogoAssetStore({
     required this.directory,
     required this.decoder,
+    this.decodedMemo,
     DateTime Function()? clock,
     this.failedDownloadBackoff = const Duration(hours: 6),
   }) : _clock = clock ?? DateTime.now;
 
   final Directory directory;
   final CentralLogoBytesDecoder decoder;
+  final CentralLogoDecodedMemo? decodedMemo;
+
+  Future<CentralDecodedLogo> _decodeVerified(String digest, Uint8List bytes) =>
+      decodedMemo?._decode(digest, bytes, decoder) ?? decoder(bytes);
   final DateTime Function() _clock;
   final Duration failedDownloadBackoff;
   final Map<String, Future<CentralLogoCacheResult>> _inFlight = {};
@@ -126,7 +158,7 @@ class CentralLogoAssetStore {
       if (await file.length() != spec.byteSize) return null;
       final data = await file.readAsBytes();
       if (crypto.sha256.convert(data).toString() != spec.sha256) return null;
-      final decoded = await decoder(data);
+      final decoded = await _decodeVerified(spec.sha256, data);
       if (decoded.width != spec.width || decoded.height != spec.height ||
           decoded.mimeType != spec.mimeType) return null;
       return file;
@@ -178,7 +210,7 @@ class CentralLogoAssetStore {
           crypto.sha256.convert(bytes).toString() != target.sha256) {
         return null;
       }
-      final decoded = await decoder(bytes);
+      final decoded = await _decodeVerified(target.sha256, bytes);
       if (decoded.width != target.width ||
           decoded.height != target.height ||
           decoded.mimeType != target.mimeType) {
@@ -262,7 +294,7 @@ class CentralLogoAssetStore {
           crypto.sha256.convert(bytes).toString() != target.sha256) {
         throw const CentralCatalogException('Logo SHA or byte count mismatch');
       }
-      final decoded = await decoder(bytes);
+      final decoded = await _decodeVerified(target.sha256, bytes);
       if (decoded.width != target.width || decoded.height != target.height ||
           decoded.mimeType != target.mimeType) {
         throw const CentralCatalogException('Logo decode/dimension mismatch');
