@@ -132,6 +132,38 @@ class AdminCommuneTests(unittest.TestCase):
                 self.assertIsNone(verified_commune(
                     "Colonne", "39", lambda _: raw))
 
+    def test_delegated_commune_fallback_is_exact_and_bounded(self):
+        original = feature("Village Ancien", "39161", "39")
+        delegated = {**original, "properties": {
+            **original["properties"], "type": "commune-deleguee",
+            "chefLieu": "39162"}}
+        calls = []
+        def reader(url):
+            calls.append(url)
+            return response(delegated) if "communes_associees_deleguees?" in url else response()
+        got = verified_commune("Village Ancien", "39", reader)
+        self.assertEqual(got["city"], "Village Ancien")
+        self.assertEqual(got["codeInsee"], "39161")
+        self.assertEqual(got["geoPrecision"], "commune")
+        self.assertEqual(got["geoSource"], search_url("Village Ancien", delegated=True))
+        self.assertEqual(search_url_from_existing(calls[1]), calls[1])
+        self.assertEqual(len(calls), 2)
+        self.assertIsNone(verified_commune("Village Ancien", "75", reader))
+        for bad in (original, {**delegated, "properties": {
+                **delegated["properties"], "chefLieu": "bad"}},
+                {**delegated, "geometry": {"type": "Polygon", "coordinates": []}}):
+            self.assertIsNone(verified_commune(
+                "Village Ancien", "39", lambda _: response(),
+                delegated_reader=lambda _: response(bad)))
+        self.assertIsNone(verified_commune(
+            "Village Ancien", None, lambda _: response(),
+            delegated_reader=lambda _: response(delegated, delegated)))
+        # An ambiguous or malformed exact ordinary result must not be
+        # replaced by a delegated match.
+        self.assertIsNone(verified_commune(
+            "Village Ancien", None, lambda _: response(original, original),
+            delegated_reader=lambda _: self.fail("unexpected fallback")))
+
     def test_transport_has_no_redirect_fallback_and_bounded_bytes(self):
         from unittest.mock import patch
         class Response:
