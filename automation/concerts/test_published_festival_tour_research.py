@@ -104,6 +104,44 @@ class PublishedToursTests(unittest.TestCase):
         self.assertFalse(entry["independentCorroborationVerified"])
         self.assertFalse(out["publicationAllowed"])
 
+    def test_reviewed_retraction_transfers_once_without_republishing(self):
+        previous = festival("Montpellier", "2027-02-04", "wrong-festival",
+                            lineup=[], city=None, venue=None)
+        detail = "https://festival-tour.example.fr/event/tour/"
+        correction = {
+            "schema": 1, "action": "retract_false_edition_only",
+            "retainHistoricalFestival": True, "continueEditionWatch": True,
+            "previousRow": previous, "evidence": [detail],
+            "concertLead": {
+                "title": "Tour", "date": "2027-02-04",
+                "venue": "Salle du Rock", "city": "Montpellier",
+                "department": "34", "artists": list(LINEUP),
+                "officialUrl": detail, "publicationAuthorized": False,
+            },
+        }
+        report = bridge.find_research(signed([]), TODAY,
+                                      corrections=[correction, correction])
+        self.assertEqual(len(report["candidates"]), 1)
+        candidate = report["candidates"][0]
+        self.assertEqual(candidate["sourceUrl"], detail)
+        self.assertEqual(candidate["artistNamesFromFestivalOnly"], LINEUP)
+        self.assertEqual(candidate["reviewBucket"], "tour_source_research")
+        self.assertFalse(candidate["publicationAllowed"])
+        self.assertFalse(candidate["officialDetailFound"])
+        self.assertTrue(candidate["requiresArtistAndVenueReproof"])
+        registry, stats = intake_archive.merge(
+            None, report, "2026-11-21T04:22:00+00:00")
+        self.assertEqual(stats["added"], 1)
+        self.assertEqual(registry["total"], 1)
+        for key, value in (("publicationAuthorized", True),
+                           ("date", "2027-02-05"),
+                           ("officialUrl", "https://other.example.fr/event/"),
+                           ("artists", ["Only one"])):
+            invalid = deepcopy(correction)
+            invalid["concertLead"][key] = value
+            self.assertEqual(bridge.find_research(
+                signed([]), TODAY, corrections=[invalid])["candidates"], [])
+
     def test_only_one_city_is_not_inferred_touring_concert(self):
         report = bridge.find_research(signed([fixture()["festivals"][0]]),
                                       TODAY)
