@@ -30,6 +30,7 @@ from grossesondes_preview import (
     ROOT, CAL_URL, HIS_URL, load_patch, require, index
 )
 from grossesondes_stage import official_text, stage, PROOF_MODE, norm
+from grossesondes_official_status import CANCELLED, POSTPONED, valid_status_delta
 from grossesondes_future_geo_publisher import (
     apply_independently_verified_geo, private_geo_report,
 )
@@ -284,6 +285,8 @@ def _verified_official_update_delta(old, new):
         return False
     changed = {k for k in set(old) | set(new)
                if (k not in old) != (k not in new) or old.get(k) != new.get(k)}
+    if new.get("status") in (CANCELLED, POSTPONED) and "status" in changed:
+        return valid_status_delta(old, new)
     newly_dated = {"startDate", "endDate"} <= changed
     if (not changed or not changed <= OFFICIAL_UPDATE_FIELDS or
             not ({"lineup", "price"} & changed)
