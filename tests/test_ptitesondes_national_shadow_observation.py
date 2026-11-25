@@ -68,6 +68,37 @@ class NationalShadowObservationTests(unittest.TestCase):
             segment_runner=self.segments)
         return result, index
 
+    def test_failed_recent_index_preserves_existing_rotation_and_retries(self):
+        self.invoke()
+        self.invoke(batch_id="second")
+        saved_cursor = (self.root / "index" / "cursor.json").read_bytes()
+        before = self.campaign.call_count
+        failed = Mock(side_effect=ValueError("invalid_oa_index_cursor"))
+        with self.assertRaisesRegex(ValueError, "invalid_oa_index_cursor"):
+            self.invoke(batch_id="failed", index=failed)
+        self.assertGreater(self.campaign.call_count, before)
+        self.assertEqual(controller_read(self.root / "controller.json")["invocations"], 2)
+        self.assertEqual((self.root / "index" / "cursor.json").read_bytes(), saved_cursor)
+        self.assertFalse((self.root / "index" / "recent-cursor.json").exists())
+        diagnostic = json.loads((self.root / "index" /
+                                 "last-recent-read-failure.json").read_text())
+        self.assertEqual(diagnostic["reason_code"], "invalid_oa_index_cursor")
+        self.assertEqual(diagnostic["public_writes"], 0)
+        self.assertFalse(diagnostic["publication_ready"])
+        retry = Mock(return_value=index_doc(998877))
+        result, _ = self.invoke(batch_id="retry", index=retry)
+        self.assertEqual(retry.call_args.kwargs["sort"], "recentlyAddedEvents.desc")
+        self.assertEqual(result["new_index_census"], 1)
+
+    def test_index_diagnostic_never_contains_unknown_error_text(self):
+        failed = Mock(side_effect=ValueError("https://private.invalid/?key=SECRET"))
+        with self.assertRaises(ValueError):
+            self.invoke(index=failed)
+        raw = (self.root / "index" / "last-legacy-read-failure.json").read_text()
+        self.assertNotIn("SECRET", raw)
+        self.assertEqual(json.loads(raw)["reason_code"],
+                         "invalid_or_conflicting_source_evidence")
+
     def test_default_dry_run_no_network_or_private_writes(self):
         report, reader = self.invoke(live=False)
         self.assertEqual(report["mode"], "dry_run_no_network_or_writes")
@@ -523,6 +554,9 @@ class NationalShadowObservationTests(unittest.TestCase):
         self.assertIn("publication_ready", content)
         self.assertIn("public_writes", content)
         self.assertIn("ptitesondes-public-private-intake", content)
+        self.assertIn("pending-index-transaction.json pending-recent-index-transaction.json", content)
+        self.assertIn('rm -f -- "$DEST/index/$journal"', content)
+        self.assertNotIn("--delete", content)
 
 
 if __name__ == "__main__":

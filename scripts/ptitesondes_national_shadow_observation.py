@@ -311,6 +311,33 @@ def _safe_failure_reason(exc):
     return "invalid_or_conflicting_source_evidence"
 
 
+INDEX_READ_ERROR_CODES = frozenset({
+    "invalid_oa_index_request", "oa_index_unavailable",
+    "unexpected_oa_index_endpoint", "oa_index_size_invalid",
+    "oa_index_invalid_json", "invalid_oa_index_page",
+    "invalid_oa_index_rows", "invalid_oa_index_cursor",
+    "invalid_oa_index_item", "invalid_oa_index_identity",
+    "invalid_oa_index_scan", "repeated_oa_agenda_in_cursor_scan",
+    "invalid_oa_index_cursor_reuse", "untrusted_national_index_response",
+})
+
+
+def write_index_read_failure(index_dir, mode, day, exc):
+    """Persist only fixed reason codes, never exception text or credentials."""
+    reason = _safe_failure_reason(exc)
+    if type(exc) is ValueError and len(exc.args) == 1:
+        candidate = exc.args[0]
+        if isinstance(candidate, str) and candidate in INDEX_READ_ERROR_CODES:
+            reason = candidate
+    record = {
+        "schema": "ptitesondes.private_national_index_failure.v1",
+        "mode": mode, "day": day.isoformat(), "reason_code": reason,
+        "publication_ready": False, "public_writes": 0,
+    }
+    _write_atomic_private(index_dir / f"last-{mode}-read-failure.json",
+                          (json.dumps(record, sort_keys=True) + "\n").encode())
+
+
 def rotate_agendas_independently(index_doc, digest, scan_day, campaign_dir,
                                  rotation_dir, key, campaign_runner,
                                  segment_runner, *, clock=monotonic):
@@ -448,6 +475,7 @@ def run_observation(root, day, batch_id, *,
     # identities are merely research leads requiring independent evidence.
     # Keep each batch: adding a fresh index cannot destroy unfinished ones.
     index_scanned = False
+    index_read_failure = None
     if (not recovered_index
             and controller["invocations"] % INDEX_EVERY_N_INVOCATIONS == 0):
         # Legacy UID-ascending crawl guarantees exhaustive eventual coverage.
@@ -470,14 +498,22 @@ def run_observation(root, day, batch_id, *,
                          "public_read_key": key}
             if mode == "recent":
                 arguments["sort"] = "recentlyAddedEvents.desc"
-            result = index_reader([], **arguments)
-            if (result.get("schema") != "ptitesondes.private_national_oa_index.v1"
-                    or result.get("publication_ready") is not False
-                    or result.get("public_writes") != 0):
-                raise ValueError("untrusted_national_index_response")
-            store_index_batch(index_dir, reports_dir, new_path, result, state,
-                              mode=mode)
-            index_scanned = True
+            try:
+                result = index_reader([], **arguments)
+                if (not isinstance(result, dict)
+                        or result.get("schema") != "ptitesondes.private_national_oa_index.v1"
+                        or result.get("publication_ready") is not False
+                        or result.get("public_writes") != 0):
+                    raise ValueError("untrusted_national_index_response")
+            except (OSError, ValueError, TypeError, KeyError) as exc:
+                # Keep the failed census due; existing saved campaigns can
+                # nevertheless advance. Never publish raw upstream messages.
+                index_read_failure = exc
+                write_index_read_failure(index_dir, mode, day, exc)
+            else:
+                store_index_batch(index_dir, reports_dir, new_path, result, state,
+                                  mode=mode)
+                index_scanned = True
 
     reports = available_index_reports(reports_dir)
     n = len(reports)
@@ -537,12 +573,15 @@ def run_observation(root, day, batch_id, *,
 
     updated = {
         "schema": CONTROLLER_SCHEMA,
-        "invocations": controller["invocations"] + 1,
+        "invocations": controller["invocations"] + int(index_read_failure is None),
         "next_batch_index": (start + len(selected)) % n if n else 0,
     }
     _write_atomic_private(control_path, (
         json.dumps(updated, sort_keys=True, separators=(",", ":")) + "\n"
     ).encode("utf-8"))
+    if index_read_failure is not None:
+        # Checkpoints are saved, but the workflow must remain failed.
+        raise index_read_failure
     return {"mode": "private_observation_readonly",
             "stored_index_batches": n, "new_index_census": int(index_scanned),
             "index_batches_examined": len(selected),
