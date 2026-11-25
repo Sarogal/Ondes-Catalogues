@@ -1,5 +1,5 @@
 import unittest
-from radio_daily_editorial_preview import homepage_url, inspect_page, collect
+from radio_daily_editorial_preview import homepage_url, inspect_page, collect, followup_links
 
 A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
 B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
@@ -143,6 +143,72 @@ class EditorialPreviewTests(unittest.TestCase):
         row=inspect_page("Iron Test Radio",URL,body)
         self.assertTrue(row["structuredProgrammeEvidence"])
         self.assertFalse(row["programmeScopeEvidence"])
+
+
+    def test_bounded_followup_programme_and_player(self):
+        d,r = inputs()
+        d["candidates"][0]["streamUrl"] = URL+"live"
+        calls = []
+        pages = {
+            URL: b'<h1>Iron Test Radio</h1><a href="/about">About us</a><a href="/player">Listen live</a><a href="/schedule">Schedule</a>',
+            URL+"about": b'<h1>Iron Test Radio</h1><p>Iron Test Radio plays heavy metal 24/7.</p><a href="/extra">Programming</a>',
+            URL+"player": b'<h1>Iron Test Radio</h1><audio src="/live"></audio>'
+        }
+        def fetch(url):
+            calls.append(url)
+            return url, pages[url]
+        report = collect(d,r,limit=1,fetch=fetch)
+        self.assertEqual(calls,[URL,URL+"about",URL+"player"])
+        self.assertEqual(report["linkedPagesFetched"],2)
+        a,b = report["records"]
+        self.assertTrue(a["programmeScopeEvidence"])
+        self.assertTrue(a["declaredStreamLinked"])
+        self.assertEqual(len(a["linkedPageEvidence"]),2)
+        self.assertFalse(b["programmeScopeEvidence"])
+        self.assertFalse(b["declaredStreamLinked"])
+
+    def test_followup_links_exclude_unsafe_and_irrelevant_targets(self):
+        html = b'<a href="https://other.example.org/about">About</a><a href="http://radio.example.org/about">About</a><a href="/about?token=x">About</a><a href="/about.pdf">About</a><a href="/podcast">Programming</a><a href="/about">About</a><a href="/about">About</a>'
+        self.assertEqual(followup_links(URL,html),[URL+"about"])
+
+    def test_child_wrong_identity_not_merged(self):
+        def fetch(url):
+            if url == URL:
+                return url,b'<h1>Iron Test Radio</h1><a href="/about">About</a>'
+            return url,b'<h1>Different Radio</h1><p>Different Radio plays metal 24/7.</p><audio src="/live"></audio>'
+        d,r=inputs()
+        d["candidates"][0]["streamUrl"]=URL+"live"
+        row=collect(d,r,limit=1,fetch=fetch)["records"][0]
+        self.assertFalse(row["programmeScopeEvidence"])
+        self.assertFalse(row["declaredStreamLinked"])
+        self.assertEqual(row["linkedPageEvidence"],[])
+
+    def test_child_external_redirect_not_merged(self):
+        def fetch(url):
+            if url == URL:
+                return url,b'<h1>Iron Test Radio</h1><a href="/about">About</a>'
+            return "https://other.example.org/about", b'<h1>Iron Test Radio</h1><p>Iron Test Radio plays metal 24/7.</p>'
+        report=collect(*inputs(),limit=1,fetch=fetch)
+        self.assertEqual(report["linkedPagesFetched"],0)
+        self.assertFalse(report["records"][0]["programmeScopeEvidence"])
+
+    def test_conflicting_child_programme_blocks_scope(self):
+        def fetch(url):
+            if url == URL:
+                return url,b'<h1>Iron Test Radio</h1><p>Iron Test Radio plays metal 24/7.</p><a href="/about">About</a>'
+            return url,b'<h1>Iron Test Radio: metal and techno</h1>'
+        row=collect(*inputs(),limit=1,fetch=fetch)["records"][0]
+        self.assertFalse(row["programmeScopeEvidence"])
+        self.assertEqual(row["signal"],"mixed_programme_indication")
+
+    def test_failed_child_preserves_homepage(self):
+        def fetch(url):
+            if url == URL:
+                return url,b'<h1>Iron Test Radio</h1><p>Iron Test Radio plays metal 24/7.</p><a href="/about">About</a>'
+            raise TimeoutError()
+        row=collect(*inputs(),limit=1,fetch=fetch)["records"][0]
+        self.assertTrue(row["programmeScopeEvidence"])
+        self.assertEqual(row["retrieval"],"html_observed")
 
 if __name__ == "__main__":
     unittest.main()
