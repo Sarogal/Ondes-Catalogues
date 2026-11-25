@@ -124,6 +124,56 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
             self.assertEqual(stats["newEvents"], 1, stats["held"])
             self.assertEqual(published["events"][-1]["artistIds"], ["new-act"])
 
+    def test_long_description_genre_replayed_by_producer_and_publisher(self):
+        reg = registry()
+        payload = official_export(
+            keywords={"fr": ["Musique"]}, description={"fr": "Concert à venir"},
+            longDescription={"fr": "<p>Groupe Libre 8 est un groupe de black metal.</p>"})
+        def get(url, cache):
+            self.assertEqual(url, EXPORT)
+            return payload
+        before = {"schema": publisher.SCHEMA, "approvals": []}
+        with mock.patch.object(identity, "safe_fetch", side_effect=get):
+            signed, report = producer.build(reg, self.catalogue, before, TODAY, fetch=get)
+            self.assertEqual(len(signed["approvals"]), 1, report)
+            event = signed["approvals"][0]["event"]
+            self.assertEqual(event["genres"], ["black metal"])
+            self.assertEqual(event["artistIds"], fixture.IDS)
+            result, stats = publisher.merge(self.catalogue, self.catalogue, signed, TODAY)
+            self.assertEqual(stats["newEvents"], 1, stats["held"])
+            self.assertEqual(result["events"][-1]["artistIds"], fixture.IDS)
+        for artist in signed["approvals"][0]["newArtists"]:
+            self.assertNotIn("genres", artist)
+
+    def test_long_description_does_not_infer_genre_from_unrelated_or_hidden_text(self):
+        venue = next(v for v in self.catalogue["venues"] if v["id"] == fixture.VENUE_ID)
+        for desc in (
+                "Another Group is a black metal band.",
+                "Groupe Libre 8 est influencé par le black metal.",
+                "Groupe Libre 8 n'est pas un groupe de black metal.",
+                "Groupe Libre 8 joue du hardcore techno.",
+                "<script>Groupe Libre 8 plays black metal.</script>",
+                "<div hidden>Groupe Libre 8 plays black metal.</div>",
+                "<p aria-hidden='true'>Groupe Libre 8 plays black metal.</p>",
+                "<div style='display:none'>Groupe Libre 8 plays black metal.</div>",
+                "<aside>Groupe Libre 8 plays black metal.</aside>"):
+            with self.subTest(desc=desc), self.assertRaisesRegex(ValueError, "genre evidence missing"):
+                oa.verified_export(
+                    official_export(keywords={"fr": []},
+                                    description={"fr": "Concert à venir"},
+                                    longDescription={"fr": desc}),
+                    URL, DAY, venue, agenda_uid=9969608, event_uid=87654321)
+        for desc, genre in (
+                ("<p>Groupe Libre 2 joue du punk.</p>", "punk"),
+                ("<p>Groupe Libre 8 is a death metal band.</p>", "death metal"),
+                ("<p><strong>Groupe Libre 1</strong> joue du metal.</p>", "metal")):
+            names, genres = oa.verified_export(
+                official_export(keywords={"fr": []},
+                                longDescription={"fr": desc}),
+                URL, DAY, venue, agenda_uid=9969608, event_uid=87654321)
+            self.assertEqual(names, fixture.NAMES)
+            self.assertEqual(genres, [genre])
+
     def test_publisher_accepts_official_export_without_json_ld(self):
         observed = []
         def get(url, cache):
