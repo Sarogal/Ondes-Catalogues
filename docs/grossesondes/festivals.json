@@ -6332,6 +6332,30 @@
       "auditSources": [
         "https://www.osezmauges.fr/agenda/mauges-pit-fest/occ/1/"
       ]
+    },
+    {
+      "lat": null,
+      "endDate": "2026-11-28",
+      "price": null,
+      "dateRangeIsContinuous": false,
+      "verificationStatus": "Site et édition revérifiés indépendamment",
+      "source": "https://www.saintcyr78.fr/evenement/cyrcus-metal-fest-3/",
+      "officialSite": "https://www.saintcyr78.fr/evenement/cyrcus-metal-fest-3/",
+      "lon": null,
+      "name": "Cyrcus Métal Fest 2026",
+      "region": null,
+      "showOnMap": false,
+      "department": null,
+      "startDate": "2026-11-28",
+      "status": "Annoncé",
+      "sourceConfidence": "Agenda municipal officiel (Geo/DILA et fiche revérifiés)",
+      "notes": "Dates et genre revérifiés sur une fiche municipale officielle ; lieu précis, artistes et GPS à confirmer.",
+      "city": null,
+      "lastVerified": "2026-11-25",
+      "slug": "cyrcus-metal-fest-2026",
+      "bands": 0,
+      "lineup": [],
+      "venue": null
     }
   ]
 }
