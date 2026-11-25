@@ -138,7 +138,8 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
         before = {"schema": publisher.SCHEMA, "approvals": []}
         with mock.patch.object(identity, "safe_fetch", side_effect=get), \
                 mock.patch.object(oa, "promotional_artist_candidate", return_value=None), \
-                mock.patch.object(oa, "verified_export", return_value=([old_name], ["punk"])):
+                mock.patch.object(oa, "verified_export", return_value=([old_name], ["punk"])), \
+                mock.patch.object(identity.openagenda, "verified_export", return_value=([old_name], ["punk"])):
             signed, report = producer.build(reg, self.catalogue, before, TODAY, fetch=get)
             self.assertEqual(report["stateCounts"], {"independently_verified_proposal": 1}, report)
             current, stats = publisher.merge(self.catalogue, self.catalogue, signed, TODAY)
