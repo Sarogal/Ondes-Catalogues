@@ -45,7 +45,9 @@
       "Thus",
       "DVRK"
     ],
-    "publicationAuthorized": false
+    "publicationAuthorized": false,
+    "department": "34",
+    "officialUrl": "https://extenebrislux.fr/event/shred-fest-tour-obscura-pestilence-cryptic-shift-thus-dvrk/"
   },
   "retainHistoricalFestival": true,
   "continueEditionWatch": true
