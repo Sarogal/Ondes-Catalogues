@@ -374,7 +374,8 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
     other = [row for row in regular
              if row[3].get("reviewBucket") != "genre_tag_review"]
     spare = limit - len(window)
-    take_tagged = min(len(tagged), spare if not other else min(4, max(1, spare // 3), spare))
+    tagged_budget = 4 if limit >= 16 else 2
+    take_tagged = min(len(tagged), spare if not other else min(tagged_budget, max(1, spare // 3), spare))
     tstart = (tick * take_tagged) % len(tagged) if tagged else 0
     window.extend(tagged[(tstart + i) % len(tagged)]
                   for i in range(take_tagged))
