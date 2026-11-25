@@ -18,7 +18,7 @@ REASONS = frozenset({
     "oa_direct_primary_activity_outside_scope",
     "oa_direct_evergreen_on_demand_review",
 })
-HEX = re.compile(r"[0-9a-f]{64}\\Z")
+HEX = re.compile(r"[0-9a-f]{64}")
 
 
 def digest(value):
@@ -71,14 +71,16 @@ def fresh_memory(raw, now):
     result["cursor"] = raw["cursor"]
     for k, row in raw["entries"].items():
         if (type(k) is not str or not HEX.fullmatch(k)
-                or type(row) is not dict or row.get("reason") not in REASONS
+                or type(row) is not dict or type(row.get("reason")) is not str
+                or row["reason"] not in REASONS
                 or not all(type(row.get(field)) is str
                            and HEX.fullmatch(row[field])
                            for field in ("clue_sha256", "source_sha256"))):
             continue
         checked = checked_time(row)
         if checked is not None and timedelta(0) <= now - checked < TTL:
-            result["entries"][k] = row
+            result["entries"][k] = {field: row[field] for field in (
+                "reason", "checked_at", "clue_sha256", "source_sha256")}
     return result
 
 
