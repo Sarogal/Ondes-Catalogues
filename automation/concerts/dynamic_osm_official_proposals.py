@@ -269,7 +269,15 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
     # Discovery may list just the headliner while the official page carries
     # the complete multi-artist bill. Never assume the whole event shares
     # the same genre or that a musician is already known.
-    initial = intake.normalized(lead.split(" + ")[0])
+    observed = lead.split(" + ")[0]
+    initial = intake.normalized(observed)
+    # For OpenAgenda only, compare the observed commercial headline's
+    # candidate name with the name already VERIFIED from the fresh export.
+    # This is a discovery correlation, not artist or publication evidence.
+    if official_export:
+        candidate_name = openagenda.promotional_artist_candidate(observed)
+        if candidate_name is not None:
+            initial = intake.normalized(candidate_name)
     require(initial in {intake.normalized(name) for name in names},
             "fresh bill does not contain the observed headliner")
     artists, newly_named = pairs._artists(names, catalogue)

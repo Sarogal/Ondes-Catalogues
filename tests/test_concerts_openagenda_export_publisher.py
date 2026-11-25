@@ -72,6 +72,58 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
             self.addCleanup(lambda: publisher.NEW_REFERENCE_GEO_SOURCES.__setitem__(
                 fixture.VENUE_ID, old))
 
+    def test_promotional_titles_do_not_create_false_artist_identities(self):
+        venue = next(v for v in self.catalogue["venues"] if v["id"] == fixture.VENUE_ID)
+        cases = (
+            ("NEW ACT Release Party", "Le groupe New Act joue du punk.", "NEW ACT"),
+            ("NEW ACT (ex Former Band) en concert",
+             "NEW ACT (ex Former Band) en concert. New Act a joué partout.",
+             "NEW ACT"),
+            ("New Act + Other Act en concert",
+             "Le groupe Other Act joue du punk.", "New Act + Other Act"),
+        )
+        for title, desc, expected in cases:
+            with self.subTest(title=title):
+                payload = official_export(title={"fr": title},
+                                          longDescription={"fr": desc})
+                names, _ = oa.verified_export(
+                    payload, URL, DAY, venue,
+                    agenda_uid=9969608, event_uid=87654321)
+                self.assertEqual(" + ".join(names), expected)
+        for desc in ("NEW ACT Release Party", "Un autre groupe joue du punk.",
+                     "<script>Le groupe New Act joue du punk.</script>"):
+            with self.subTest(desc=desc), self.assertRaisesRegex(ValueError, "promotional artist name not confirmed"):
+                oa.verified_export(
+                    official_export(title={"fr": "NEW ACT Release Party"},
+                                    description={"fr": desc}),
+                    URL, DAY, venue, agenda_uid=9969608, event_uid=87654321)
+        names, _ = oa.verified_export(
+            official_export(title={"fr": "The (Real) Band"}),
+            URL, DAY, venue, agenda_uid=9969608, event_uid=87654321)
+        self.assertEqual(names, ["The (Real) Band"])
+
+    def test_promotional_title_replayed_by_producer_and_publisher(self):
+        reg = registry()
+        candidate = reg["items"]["from-openagenda"]["candidate"]
+        candidate["name"] = candidate["leadArtist"] = "NEW ACT Release Party"
+        payload = official_export(
+            title={"fr": "NEW ACT Release Party"},
+            longDescription={"fr": "Le groupe New Act joue du punk."})
+        def get(url, cache):
+            self.assertEqual(url, EXPORT)
+            return payload
+        before = {"schema": publisher.SCHEMA, "approvals": []}
+        with mock.patch.object(identity, "safe_fetch", side_effect=get):
+            proposed, report = producer.build(reg, self.catalogue, before, TODAY, fetch=get)
+            self.assertEqual(report["stateCounts"], {"independently_verified_proposal": 1}, report)
+            signed = proposed["approvals"][0]
+            self.assertEqual(signed["event"]["title"], "NEW ACT")
+            self.assertEqual(signed["event"]["artistIds"], ["new-act"])
+            self.assertEqual(signed["newArtists"], [{"id": "new-act", "name": "NEW ACT"}])
+            published, stats = publisher.merge(self.catalogue, self.catalogue, proposed, TODAY)
+            self.assertEqual(stats["newEvents"], 1, stats["held"])
+            self.assertEqual(published["events"][-1]["artistIds"], ["new-act"])
+
     def test_publisher_accepts_official_export_without_json_ld(self):
         observed = []
         def get(url, cache):
