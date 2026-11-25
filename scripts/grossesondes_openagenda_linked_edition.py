@@ -115,9 +115,208 @@ def attributed_site(event_html, title, url):
     return next(iter(sites)) if len(sites) == 1 else None
 
 
-def private_proposal(title, site, dates, today, *, event_ref):
+def municipal_selector(city):
+    """A city is a search key only, never evidence or a network destination."""
+    return (isinstance(city, str) and 2 <= len(city) <= 80
+            and city == city.strip()
+            and all(c.isalpha() or c in " -'’." for c in city)
+            and any(c.isalpha() for c in city))
+
+
+def _municipal_heading_matches(heading, title, year):
+    """Exact brand, optionally followed by an explicit year or edition number."""
+    brand = normalized(title.rsplit(" ", 1)[0])
+    value = normalized(heading)
+    # A bare trailing number is accepted only with a printed # or edition
+    # label. A different named event, city, artist or year cannot match.
+    if value in (brand, brand + " " + str(year)):
+        return True
+    if not re.search(r"(?:#\s*\d{1,2}|\b[ée]dition\s+\d{1,2})\s*$",
+                     heading, re.I):
+        return False
+    return re.fullmatch(re.escape(brand) +
+                        r"(?: edition)? [0-9]{1,2}", value) is not None
+
+
+def _municipal_detail_dates(html, title, year, today):
+    """A bounded named event section may contain a separate date heading.
+
+    Municipal CMS templates often place the event in h2, not h1, and give
+    its edition number rather than a year in the title. Only that section
+    may establish its explicit current dates, musical genre and format.
+    """
+    from grossesondes_institutional_edition import VisibleInstitutionHeadings, TOURING_SHOW
+    from grossesondes_official_html_edition import (
+        fold, explicit_ranges, dominant_visible_range, CANCEL,
+        administrative_calendar_dates,
+    )
+    from grossesondes_generic_directory_edition import (
+        verify_primary, ROCK_METAL_PUNK_GENRES,
+    )
+    from grossesondes_structured_edition import no_same_edition_jsonld_contradiction
+    from festival_event_kind import touring_concert_stop
+    if not isinstance(html, str) or not 0 < len(html) <= 650_000:
+        return False, None
+    parser = VisibleInstitutionHeadings()
+    parser.feed(html)
+    parser.close()
+    matches = [i for i, heading in enumerate(parser.headings)
+               if _municipal_heading_matches(heading, title, year)]
+    if len(matches) != 1 or len(parser.headings) != len(parser.heading_starts):
+        return bool(matches), None
+    index = matches[0]
+    start = parser.heading_starts[index]
+    end = (parser.heading_starts[index + 1]
+           if index + 1 < len(parser.heading_starts) else len(parser.parts))
+    section = " ".join(fold(" ".join(parser.parts[start:end])).split())
+    brand = normalized(title.rsplit(" ", 1)[0])
+    outside = re.sub(r"(?<![a-z0-9])" + re.escape(brand)
+                     + r"(?![a-z0-9])", " ", normalized(section))
+    if (not ROCK_METAL_PUNK_GENRES.search(outside)
+            or CANCEL.search(section) or TOURING_SHOW.search(outside)):
+        return True, None
+    excluded = administrative_calendar_dates(html, title, year)
+    intervals = {(a, b) for _, _, a, b in explicit_ranges(section, year)
+                 if (a, b) not in excluded}
+    target = dominant_visible_range(intervals)
+    if (target is None or target[0] < date.fromisoformat(today)
+            or touring_concert_stop(html, *target)
+            or not no_same_edition_jsonld_contradiction(html, title, *target)):
+        return True, None
+    dates = tuple(d.isoformat() for d in target)
+    if verify_primary(html, title, year, today) == dates:
+        return True, dates
+    # Fallback for a named "Fest" with no literal "festival" in the page:
+    # an explicit recurring edition or festival description plus a calendar
+    # date immediately following the event heading. Never a ticket-sale day.
+    if not (re.search(r"\bfestival\b", outside)
+            or (re.search(r"\bfest\b", brand)
+                and re.search(r"\b(?:edition|editions)\b", outside))):
+        return True, None
+    leading = section[:240]
+    for offset, _, a, b in explicit_ranges(leading, year):
+        if (a, b) != target:
+            continue
+        prefix = leading[:offset]
+        if re.search(r"\b(?:billetterie|prevente|tickets?|vente|inscription)\b", prefix):
+            continue
+        # The date must be next to the named event, not a different paragraph
+        # much further down a multi-event agenda.
+        if len(prefix) <= 120:
+            return True, dates
+    return True, None
+
+
+def prove_municipal_edition(city, title, today, *, fetch=fetch_public_html,
+                            commune_lookup=None, directory_fetch=None):
+    """Reconstruct a mairie origin, then read its own event-detail publication.
+
+    No privately supplied domain or detail URL is fetched. An institutional
+    listing is not evidence of municipal organization, nor a proof of GPS.
+    """
+    from national_municipal_source_research import (
+        verified_commune, mairie_records_url, fetch_dila_records,
+        verified_mairie_site, INSEE,
+    )
+    from national_municipal_pages_preflight import (
+        _candidate_links, _visible, safe_same_host_article,
+    )
+    if (not municipal_selector(city) or not isinstance(title, str)
+            or not re.fullmatch(r".{7,150} 20[2-4][0-9]", title)):
+        return None
+    try:
+        year = int(title.rsplit(" ", 1)[-1])
+        admin = (commune_lookup or verified_commune)(city)
+        if not isinstance(admin, dict):
+            return None
+        name, code = admin.get("city"), admin.get("codeInsee")
+        if (not isinstance(name, str) or normalized(name) != normalized(city)
+                or not isinstance(code, str) or not INSEE.fullmatch(code)):
+            return None
+        record = (directory_fetch or fetch_dila_records)(mairie_records_url(code))
+        root = verified_mairie_site(record, code, name)
+        if root is None:
+            return None
+        pending = [(0, root)]
+        seen = set()
+        proofs = []
+        unresolved_named = False
+        # Bounded crawl, exact event links before generic navigation.
+        while pending and len(seen) < 6:
+            priority, url = pending.pop(0)
+            if url in seen:
+                continue
+            seen.add(url)
+            try:
+                html = fetch(url)
+                _visible(html)  # reject malformed or oversized responses
+                named, dates = (_municipal_detail_dates(html, title, year, today)
+                                if url != root else (False, None))
+                if named:
+                    if dates is None:
+                        unresolved_named = True
+                    else:
+                        proofs.append((url, tuple(dates)))
+                for rank, link in _candidate_links(
+                        html, url, root, title, year, today, ranked=True):
+                    if (link not in seen and
+                            safe_same_host_article(link, url, root) == link
+                            and (rank == 0 or not named)):
+                        pending.append((rank, link))
+                best = {}
+                for rank, link in pending:
+                    if link not in seen:
+                        best[link] = min(rank, best.get(link, rank))
+                # Never truncate an excess of exact event links and then
+                # silently accept a potentially conflicting edition.
+                if sum(rank == 0 for rank in best.values()) > 12:
+                    return None
+                pending = sorted((rank, link) for link, rank in best.items())[:12]
+            except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+                if priority == 0 and url != root:
+                    unresolved_named = True
+        # Conflicting or unresolved exact-name pages fail closed.
+        if unresolved_named or any(rank == 0 and link not in seen
+                                   for rank, link in pending):
+            return None
+        if len({dates for _, dates in proofs}) != 1:
+            return None
+        return sorted(proofs)[0]
+    except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+        return None
+
+
+MUNICIPAL_PRIVATE_NOTES = ("Fiche événement institutionnelle repérée ; "
+                           "dates et genre à revérifier. Lieu précis inconnu.")
+MUNICIPAL_PUBLIC_NOTES = ("Dates et genre revérifiés sur une fiche municipale "
+                          "officielle ; lieu précis, artistes et GPS à confirmer.")
+MUNICIPAL_PRIVATE_CONFIDENCE = "Agenda municipal (origine à recontrôler)"
+MUNICIPAL_PUBLIC_CONFIDENCE = "Agenda municipal officiel (Geo/DILA et fiche revérifiés)"
+
+
+def private_proposal(title, site, dates, today, *, event_ref, municipality=None):
     if event_url(event_ref) is None or slug_for(title) is None:
         return None
+    if municipality is not None:
+        from national_municipal_pages_preflight import safe_same_host_article
+        if not municipal_selector(municipality) or not isinstance(site, str):
+            return None
+        try:
+            root = "https://" + urlsplit(site).netloc + "/"
+            if safe_same_host_article(site, root, root) != site:
+                return None
+        except (TypeError, ValueError):
+            return None
+        row = directory_proposal(title, root, dates, today)
+        if row is None:
+            return None
+        row.update(
+            proofMode=PROOF_MODE, originSlug=event_ref,
+            evidence=[event_ref, site, municipality],
+            officialSite=site, source=site, notes=MUNICIPAL_PRIVATE_NOTES,
+            verificationStatus=PRIVATE_STATUS,
+            sourceConfidence=MUNICIPAL_PRIVATE_CONFIDENCE)
+        return row
     row = directory_proposal(title, site, dates, today)
     if row is None:
         return None
@@ -131,9 +330,17 @@ def private_proposal(title, site, dates, today, *, event_ref):
 
 def validate_private_proposal(row, today):
     if (not isinstance(row, dict) or set(row) != ROW_KEYS | PRIVATE_KEYS
-            or event_url(row.get("originSlug")) is None
-            or row.get("evidence") != [row.get("originSlug"),
-                                       row.get("officialSite")]):
+            or event_url(row.get("originSlug")) is None):
+        return None
+    evidence = row.get("evidence")
+    expected_evidence = [row.get("originSlug"), row.get("officialSite")]
+    municipality = None
+    if isinstance(evidence, list) and len(evidence) == 3:
+        municipality = evidence[2]
+        if not municipal_selector(municipality):
+            return None
+        expected_evidence.append(municipality)
+    if evidence != expected_evidence:
         return None
     try:
         verified = date.fromisoformat(row["verified_at"])
@@ -145,18 +352,25 @@ def validate_private_proposal(row, today):
     expected = private_proposal(
         row.get("name"), row.get("officialSite"),
         (row.get("startDate"), row.get("endDate")), row["verified_at"],
-        event_ref=row["originSlug"])
+        event_ref=row["originSlug"], municipality=municipality)
     return row if expected == row else None
+
+
+def _approved(proposal):
+    row = {key: proposal[key] for key in ROW_KEYS}
+    municipal = len(proposal["evidence"]) == 3
+    row.update(
+        verificationStatus=PUBLISHED_STATUS,
+        sourceConfidence=(MUNICIPAL_PUBLIC_CONFIDENCE if municipal
+                          else PUBLISHED_CONFIDENCE),
+        notes=MUNICIPAL_PUBLIC_NOTES if municipal else PUBLISHED_NOTES)
+    return row
 
 
 def validate_verified_row(proposal, row, today):
     if validate_private_proposal(proposal, today) is None:
         return None
-    expected = {key: proposal[key] for key in ROW_KEYS}
-    expected.update(
-        verificationStatus=PUBLISHED_STATUS,
-        sourceConfidence=PUBLISHED_CONFIDENCE, notes=PUBLISHED_NOTES)
-    return row if row == expected else None
+    return row if row == _approved(proposal) else None
 
 
 def independently_verify(proposal, today, event_fetch=fetch_public_html,
@@ -164,6 +378,13 @@ def independently_verify(proposal, today, event_fetch=fetch_public_html,
     """Private hints never pick the official website the Publisher visits."""
     if validate_private_proposal(proposal, today) is None:
         return None
+    if len(proposal["evidence"]) == 3:
+        proven = prove_municipal_edition(
+            proposal["evidence"][2], proposal["name"], today,
+            fetch=organizer_fetch)
+        expected = (proposal["officialSite"],
+                    (proposal["startDate"], proposal["endDate"]))
+        return _approved(proposal) if proven == expected else None
     try:
         html = event_fetch(proposal["originSlug"])
         site = attributed_site(
@@ -179,8 +400,4 @@ def independently_verify(proposal, today, event_fetch=fetch_public_html,
         return None
     if dates != (proposal["startDate"], proposal["endDate"]):
         return None
-    approved = {key: proposal[key] for key in ROW_KEYS}
-    approved.update(
-        verificationStatus=PUBLISHED_STATUS,
-        sourceConfidence=PUBLISHED_CONFIDENCE, notes=PUBLISHED_NOTES)
-    return approved
+    return _approved(proposal)
