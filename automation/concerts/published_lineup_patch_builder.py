@@ -144,16 +144,95 @@ def build(catalogue, observed, today, *, fetch=probe.safe_fetch):
     }
 
 
+def build_promotional(catalogue, approved, today, *, fetch=probe.safe_fetch, limit=8):
+    """Find published promotional names from the original signed OA ledger.
+
+    Only propose corrections, never modify either input. Network work is
+    bounded by event count, not artist count. Already signed or corrected
+    events are skipped; future runs retry an unproven candidate.
+    """
+    from automation.concerts import openagenda_official_concert as oa
+    require(isinstance(approved, dict)
+            and approved.get("schema") == "grossesondes.concert.approvals.v1"
+            and isinstance(approved.get("approvals"), list)
+            and isinstance(approved.get("lineupCorrections", []), list)
+            and type(limit) is int and 0 <= limit <= 8,
+            "invalid signed approval ledger or review budget")
+    events = {e["id"]: e for e in catalogue["events"]}
+    known = {a["id"]: a for a in catalogue["artists"]}
+    corrected = {r["eventId"] for r in approved.get("lineupCorrections", [])}
+    seen, cache, proposals, held = set(), {}, [], []
+    for original in approved["approvals"]:
+        event = original.get("event") or {}
+        eid = event.get("id")
+        current = events.get(eid)
+        if (eid in corrected or eid in seen or current is None
+                or current.get("status") != "confirmed"
+                or current.get("date", "") < today.isoformat()
+                or current.get("artistIds") != event.get("artistIds")
+                or current.get("title") != event.get("title")
+                or not any(oa.promotional_artist_candidate(known.get(aid, {}).get("name"))
+                           for aid in current.get("artistIds", []))):
+            continue
+        if len(proposals) + len(held) >= limit:
+            break
+        seen.add(eid)
+        try:
+            require(all(current.get(k) == event.get(k) for k in
+                        ("id", "date", "venueId", "officialUrl", "genres",
+                         "status", "sourceType")),
+                    "published event identity differs from original approval")
+            names = contract.recheck_promotional(
+                original, catalogue, fetch=lambda url: fetch(url, cache))
+            pending = {}
+            ids = [_identity(name, known, pending) for name in names]
+            row = {
+                "eventId": eid, "reviewDecision": "approved",
+                "reviewedBy": "automated-official-recheck",
+                "reviewedAt": today.isoformat(),
+                "date": event["date"], "venueId": event["venueId"],
+                "officialUrl": event["officialUrl"],
+                "oldArtistIds": list(event["artistIds"]), "artistIds": ids,
+                "title": " + ".join(names), "newArtists": list(pending.values()),
+                "officialEvidence": [{
+                    "url": event["officialUrl"], "proofType": contract.PROMOTIONAL_PROOF,
+                    "checkedAt": today.isoformat(),
+                    "checkedFields": ["artists", "date", "venue"],
+                    "confirmedArtists": names,
+                }],
+            }
+            contract.plan(row, original, catalogue, today)
+            proposals.append(row)
+        except (KeyError, ValueError, TypeError, OSError, TimeoutError):
+            held.append({"eventId": eid, "reason": "promotional_identity_unproven"})
+    return {
+        "schema": SCHEMA, "asOf": today.isoformat(),
+        "proposals": proposals, "held": held,
+        "stateCounts": {"promotional_identity_proposed": len(proposals),
+                        "promotional_identity_held": len(held)},
+        "publisherAuthorityGranted": False, "publicationAllowed": False,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--catalogue", required=True)
     parser.add_argument("--audit", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--approved", help="Original append-only signed private ledger")
     args = parser.parse_args()
     cat = json.loads(Path(args.catalogue).read_text(encoding="utf-8"))
     report = json.loads(Path(args.audit).read_text(encoding="utf-8"))
     today = dt.datetime.now(ZoneInfo("Europe/Paris")).date()
     doc = build(cat, report, today)
+    if args.approved:
+        ledger = json.loads(Path(args.approved).read_text(encoding="utf-8"))
+        identity = build_promotional(cat, ledger, today)
+        already = {row["eventId"] for row in doc["proposals"]}
+        doc["proposals"].extend(
+            row for row in identity["proposals"] if row["eventId"] not in already)
+        doc["held"].extend(identity["held"])
+        doc["stateCounts"].update(identity["stateCounts"])
     Path(args.output).write_text(
         json.dumps(doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print("Lineup patch proposals prepared privately; no publication.")
