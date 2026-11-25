@@ -46,7 +46,7 @@ def policy_fingerprint():
 
 def empty_memory():
     return {"schema": SCHEMA, "policy": policy_fingerprint(),
-            "cursor": 0, "entries": {}}
+            "cursor": 0, "entries": {}, "attempt_sequence": 0, "attempts": {}}
 
 
 def checked_time(row):
@@ -69,6 +69,13 @@ def fresh_memory(raw, now):
             or not 0 <= raw["cursor"] < 10**12):
         return result
     result["cursor"] = raw["cursor"]
+    sequence, attempts = raw.get("attempt_sequence", 0), raw.get("attempts", {})
+    if (type(sequence) is int and 0 <= sequence < 10**12
+            and type(attempts) is dict and len(attempts) <= MAX_ENTRIES):
+        result["attempt_sequence"] = sequence
+        result["attempts"] = {key: value for key, value in attempts.items()
+                              if type(key) is str and HEX.fullmatch(key)
+                              and type(value) is int and 0 < value <= sequence}
     for k, row in raw["entries"].items():
         if (type(k) is not str or not HEX.fullmatch(k)
                 or type(row) is not dict or type(row.get("reason")) is not str
@@ -96,6 +103,26 @@ def load_memory(path, now):
 def identity_key(identity):
     slug, uid, day, _ = identity
     return digest([slug, uid, day])
+
+
+def attempt_key(identity, clue_sha):
+    # A changed clue is a fresh research opportunity, never a permanent denial.
+    return digest([identity, clue_sha])
+
+
+def retain_active_attempts(memory, keys):
+    memory["attempts"] = {key: value for key, value in memory["attempts"].items()
+                          if key in keys}
+
+
+def mark_attempt(memory, key):
+    if memory["attempt_sequence"] >= 10**12 - 1:
+        # Defensive wrap; no opportunity is blocked by counter exhaustion.
+        memory["attempt_sequence"] = 0
+        memory["attempts"] = {}
+    memory["attempt_sequence"] += 1
+    if len(memory["attempts"]) < MAX_ENTRIES or key in memory["attempts"]:
+        memory["attempts"][key] = memory["attempt_sequence"]
 
 
 def can_defer(identity, today):

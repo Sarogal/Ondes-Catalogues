@@ -307,12 +307,56 @@ def flatten_ld(node):
             yield from flatten_ld(node["item"])
 
 
+def _resolve_event_performer_refs(document, event):
+    """Resolve only explicit, unique performer references in this JSON-LD graph.
+
+    Never infer a bill from nearby MusicGroup nodes or dereference URLs.
+    Contradictory definitions, wrong types and partial inline assertions
+    stay unresolved, so existing admission rules can reject the bill.
+    """
+    graph = (document.get("@graph") if isinstance(document, dict)
+             else document if isinstance(document, list) else None)
+    if not isinstance(graph, list):
+        return event
+    definitions = {}
+    for node in graph:
+        if not isinstance(node, dict) or set(node) == {"@id"}:
+            continue
+        key = node.get("@id")
+        if isinstance(key, str) and key:
+            definitions.setdefault(key, []).append(node)
+
+    def resolve(value):
+        if not isinstance(value, dict) or set(value) != {"@id"}:
+            return value
+        key = value["@id"]
+        if not isinstance(key, str) or not key:
+            return value
+        matches = definitions.get(key, [])
+        if len(matches) != 1:
+            return value
+        person = matches[0]
+        if not official_rss_jsonld_bridge._event_types(
+                person.get("@type")) & {"MusicGroup", "Person"}:
+            return value
+        return dict(person)
+
+    performers = event.get("performer")
+    if isinstance(performers, list):
+        resolved = [resolve(p) for p in performers]
+    else:
+        resolved = resolve(performers)
+    return {**event, "performer": resolved} if resolved != performers else event
+
+
 def read_ld(html_text):
     parser = EventHtml()
     parser.feed(html_text)
     for script in parser.ld:
         try:
-            yield from flatten_ld(json.loads(script))
+            document = json.loads(script)
+            for event in flatten_ld(document):
+                yield _resolve_event_performer_refs(document, event)
         except (ValueError, TypeError, json.JSONDecodeError):
             continue
 

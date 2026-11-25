@@ -362,11 +362,17 @@ def _review_memory(prior, selected):
         index[(str(row[3].get("candidateId", ""))[:120], row[1], row[2])].append(
             _review_key(row))
     result = []
-    for check in prior.get("candidateChecks", []):
+    checks = prior.get("candidateChecks", [])
+    if not isinstance(checks, list):
+        return []
+    for check in checks:
         if not isinstance(check, dict):
             continue
-        matches = index.get((check.get("candidateId"), check.get("date"),
-                             check.get("venueId")), [])
+        identity = (check.get("candidateId"), check.get("date"),
+                    check.get("venueId"))
+        if not all(isinstance(part, str) for part in identity):
+            continue
+        matches = index.get(identity, [])
         if len(matches) == 1:
             result.append(matches[0])
     return list(dict.fromkeys(result))[-MAX_REVIEW_MEMORY:]
@@ -445,6 +451,40 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
             if id(lead) not in picked:
                 window.append(lead)
                 picked.add(id(lead))
+    # Once a priority lane has exhausted its unseen candidates, its
+    # reserved capacity should not repeatedly fetch the same pages while
+    # another lane still contains unvisited leads. Keep the lane allocation
+    # for first visits; then spend unused capacity on unseen leads globally.
+    # When the entire queue has been visited, resume least-recent review
+    # within the original lane quotas. This is scheduling, never evidence.
+    repeated = [row for row in window if _review_key(row) in recency]
+    window = [row for row in window if _review_key(row) not in recency]
+    picked = {_review_key(row) for row in window}
+    target = min(limit, len(selected))
+    for pool in (fast_ranked, tagged_ranked, other_ranked):
+        for row in pool:
+            if len(window) >= target:
+                break
+            key = _review_key(row)
+            if key not in recency and key not in picked:
+                window.append(row)
+                picked.add(key)
+    for row in repeated:
+        if len(window) >= target:
+            break
+        key = _review_key(row)
+        if key not in picked:
+            window.append(row)
+            picked.add(key)
+    # Defensive refill if repeated identities were present in the registry.
+    for pool in (fast_ranked, tagged_ranked, other_ranked):
+        for row in pool:
+            if len(window) >= target:
+                break
+            key = _review_key(row)
+            if key not in picked:
+                window.append(row)
+                picked.add(key)
     output = copy.deepcopy(before)
     working = copy.deepcopy(catalogue)
     known = {row["event"]["id"] for row in output["approvals"]

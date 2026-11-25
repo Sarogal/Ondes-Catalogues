@@ -18,7 +18,7 @@ from urllib.request import Request, build_opener
 from proof import norm
 from ptitesondes_editorial_refusal_memory import (
     digest, deferred, remember_refusal, fresh_memory, load_memory,
-    MAX_QUEUE_RECHECKS,
+    MAX_QUEUE_RECHECKS, attempt_key, retain_active_attempts, mark_attempt,
 )
 from ptitesondes_national_backlog_bridge import _atomic_json
 from ptitesondes_openagenda_national_event_research import _french_text
@@ -321,6 +321,25 @@ def deadline_aware_backlog_batch(identities, today, batch_index):
     return selected
 
 
+def persistent_backlog_batch(identities, today, memory, clues):
+    """Least-recently attempted rotation; no fixed slot can repeat a batch.
+
+    Keep the established source interleaving as the stable tie-breaker and
+    reserve urgent capacity independently. Attempts, including transient
+    failures, are advisory ordering only, never denials or admissions.
+    """
+    threshold = (today + timedelta(days=URGENT_WINDOW_DAYS)).isoformat()
+    ordered = sorted(identities, key=lambda identity:
+                     memory["attempts"].get(attempt_key(identity, clues[identity]), 0))
+    urgent = [row for row in ordered if row[2] <= threshold]
+    ordinary = [row for row in ordered if row[2] > threshold]
+    urgent_count = min(URGENT_CYCLE_BUDGET, len(urgent))
+    chosen = urgent[:urgent_count]
+    chosen.extend(ordinary[:MAX_ATTEMPTS - len(chosen)])
+    chosen.extend(urgent[urgent_count:urgent_count + MAX_ATTEMPTS - len(chosen)])
+    return chosen
+
+
 def reclaim_editorial_queue(queue, clues, published, today, now, key,
                             memory, agenda_reader, event_reader):
     """Reclaim only exact direct-OA requests recoverable from durable history."""
@@ -331,7 +350,9 @@ def reclaim_editorial_queue(queue, clues, published, today, now, key,
         lead = item["lead"]
         ident = (lead.get("agenda_slug"), lead.get("event_uid"),
                  item.get("date_start"), lead.get("title"))
-        if ident not in clues:
+        if (type(ident[0]) is not str or type(ident[1]) is not int
+                or type(ident[2]) is not str or type(ident[3]) is not str
+                or ident not in clues):
             remaining.append(item)
             continue
         slug, uid, day, title = ident
@@ -425,6 +446,8 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
         refreshed = fresh_memory(refusal_memory, now)
         refusal_memory.clear()
         refusal_memory.update(refreshed)
+        retain_active_attempts(refusal_memory, {
+            attempt_key(identity, fingerprint) for identity, fingerprint in clues.items()})
         queue, cached_queue, confirmed_queue, queue_reads = reclaim_editorial_queue(
             combined["open_world_research"], clues, published, today, now,
             key, refusal_memory, agenda_reader, event_reader)
@@ -462,8 +485,10 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
             active.append(identity)
     # No permanent blacklist: a future run rebuilds the active view from
     # the full history and the current public catalogue and pending queue.
-    review_order = deadline_aware_backlog_batch(
-        fair_backlog_identity_order(active), today, batch_index)
+    ordered_active = fair_backlog_identity_order(active)
+    review_order = (persistent_backlog_batch(ordered_active, today, refusal_memory, clues)
+                    if refusal_memory is not None else
+                    deadline_aware_backlog_batch(ordered_active, today, batch_index))
     visited = attempts = holds = 0
     proposals = []
     cache = {}
@@ -477,6 +502,8 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
         visited += 1
         if ("openagenda-" + str(uid) + "-" + day) in already or (uid, day) in queue_keys:
             continue
+        if refusal_memory is not None:
+            mark_attempt(refusal_memory, attempt_key(identity, clues[identity]))
         try:
             if slug not in cache:
                 cache[slug] = agenda_reader(slug, key)

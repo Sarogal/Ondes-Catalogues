@@ -6066,7 +6066,7 @@
       "endDate": "2027-08-21",
       "lastVerified": "2026-11-25",
       "slug": "les-gueules-de-bois-2027",
-      "lon": null,
+      "lon": 5.5863,
       "officialSite": "https://festivalgueulesdebois.com/",
       "venue": null,
       "notes": "Édition annoncée sur une page du site officiel ; dates visibles revérifiées. Lieu, séances, tarifs et coordonnées à confirmer.",
@@ -6074,7 +6074,7 @@
       "price": "Pass 3 jours — Bois de Chauffe : 89 € (épuisé) ; Pass 3 jours — Bûche de Noël : 98 € (épuisé) ; Pass 3 jours — plein tarif : 115 € (disponible) — billetterie officielle ouverte",
       "region": null,
       "department": null,
-      "city": null,
+      "city": "Légna",
       "status": "Annoncé",
       "verificationStatus": "Édition vérifiée sur le site officiel de l'archive ; lieu et coordonnées 2027 non confirmés",
       "dateRangeIsContinuous": false,
@@ -6085,12 +6085,25 @@
         "Ludwig von 88",
         "Dirty Old Mat"
       ],
-      "showOnMap": false,
+      "showOnMap": true,
       "sourceConfidence": "Site officiel (HTML visible vérifié indépendamment)",
-      "lat": null,
+      "lat": 46.4325,
       "auditSources": [
         "https://festivalgueulesdebois.com/"
-      ]
+      ],
+      "geoCity": "Valzin en Petite Montagne",
+      "geoPrecision": "commune",
+      "geoInsee": "39290",
+      "geoSource": "https://geo.api.gouv.fr/communes?nom=Valzin+en+Petite+Montagne&fields=nom%2Ccode%2CcodeDepartement%2Cdepartement%2Ccentre&format=geojson&geometry=centre&zone=metro%2Cdrom%2Ccom",
+      "geoVerification": {
+        "proofMode": "current-edition-commune-direct-official.v1",
+        "firstObserved": "2026-11-25",
+        "verifiedAt": "2026-11-25",
+        "officialSite": "https://festivalgueulesdebois.com/",
+        "markerMeaning": "centre_indicatif_de_commune",
+        "historicalSource": "https://www.insee.fr/fr/statistiques/fichier/8740222/v_mvt_commune_2026.csv",
+        "historicalInsee": "39290"
+      }
     },
     {
       "lastVerified": "2026-11-22",

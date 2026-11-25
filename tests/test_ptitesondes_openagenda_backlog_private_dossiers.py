@@ -65,6 +65,76 @@ class BacklogFirstPartyTests(unittest.TestCase):
         return build_backlog_dossiers(
             rows, self.patch, self.catalogue, TODAY, self.key, **kwargs)
 
+    def test_same_slot_retries_rotate_persisted_transient_failures(self):
+        from ptitesondes_editorial_refusal_memory import empty_memory
+        now = datetime(2026, 11, 21, 10, tzinfo=timezone.utc)
+        memory = empty_memory()
+        rows = [clue(uid=800000+i) for i in range(60)]
+        batches = []
+        for _ in range(3):
+            reads = []
+            def unavailable(agenda_uid, uid, key):
+                reads.append(uid)
+                raise TimeoutError("transient")
+            result, counts = self.build(rows, batch_index=0,
+                refusal_memory=memory, as_of_utc=now, event_reader=unavailable)
+            self.assertEqual(counts["clues_examined"], MAX_ATTEMPTS)
+            self.assertEqual(result["open_world_research"], [])
+            self.assertFalse(result["safe_to_publish"])
+            self.assertEqual(memory["entries"], {})
+            batches.append(set(reads))
+            # Simulate a different runner with only persisted private JSON.
+            memory = json.loads(json.dumps(memory))
+        self.assertFalse(batches[0] & batches[1])
+        self.assertEqual(len(set.union(*batches)), 60)
+        self.assertEqual(len(memory["attempts"]), 60)
+
+    def test_persistent_rotation_preserves_urgent_budget_and_changed_clue(self):
+        from ptitesondes_editorial_refusal_memory import empty_memory
+        now = datetime(2026, 11, 21, 10, tzinfo=timezone.utc)
+        memory = empty_memory()
+        urgent = [clue(uid=900000+i,
+            day=(TODAY+timedelta(days=2)).isoformat()) for i in range(20)]
+        ordinary = [clue(uid=800000+i) for i in range(60)]
+        rows = urgent + ordinary
+        batches = []
+        for turn in range(2):
+            reads = []
+            def unavailable(agenda_uid, uid, key):
+                reads.append(uid)
+                raise TimeoutError("transient")
+            self.build(rows, batch_index=0, refusal_memory=memory,
+                       as_of_utc=now, event_reader=unavailable)
+            batches.append(set(reads))
+            self.assertEqual(sum(uid >= 900000 for uid in reads), 8)
+        self.assertFalse(batches[0] & batches[1])
+        changed_uid = min(uid for uid in batches[0] if uid < 900000)
+        changed = [dict(row, reason="updated") if
+                   row["external_id"] == str(changed_uid) else row for row in rows]
+        reads = []
+        def unavailable(agenda_uid, uid, key):
+            reads.append(uid)
+            raise TimeoutError("transient")
+        self.build(changed, batch_index=0, refusal_memory=memory,
+                   as_of_utc=now, event_reader=unavailable)
+        self.assertIn(changed_uid, reads)
+        self.assertEqual(sum(uid >= 900000 for uid in reads), 8)
+
+    def test_attempt_memory_migrates_and_rejects_untrusted_recency(self):
+        from ptitesondes_editorial_refusal_memory import empty_memory, fresh_memory
+        now = datetime(2026, 11, 21, 10, tzinfo=timezone.utc)
+        old = empty_memory()
+        old.pop("attempts")
+        old.pop("attempt_sequence")
+        result = fresh_memory(old, now)
+        self.assertEqual(result["attempts"], {})
+        self.assertEqual(result["attempt_sequence"], 0)
+        old.update(attempt_sequence=3, attempts={
+            "a"*64: 2, "b"*64: 4, "c"*64: -1, "d"*64: True, "bad": 1})
+        result = fresh_memory(old, now)
+        self.assertEqual(result["attempts"], {"a"*64: 2})
+        self.assertEqual(result["attempt_sequence"], 3)
+
     def test_ods_and_existing_oa_sources_are_untrusted_but_eligible(self):
         for collector in ("opendatasoft-index", "openagenda-v2"):
             with self.subTest(collector=collector):
