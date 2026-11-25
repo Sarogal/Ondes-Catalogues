@@ -51,7 +51,7 @@ def reported_host(raw):
         return None
 
 
-def build_dossiers(discovery, reconciliation, ledger, stream, logo, baseline_sha, previous=None):
+def build_dossiers(discovery, reconciliation, ledger, stream, logo, baseline_sha, previous=None, editorial=None):
     if not isinstance(baseline_sha, str) or not SHA256_RE.fullmatch(baseline_sha):
         raise ValueError("Missing pinned catalogue digest")
     day = parse_day(discovery.get("scanDate"))
@@ -80,6 +80,16 @@ def build_dossiers(discovery, reconciliation, ledger, stream, logo, baseline_sha
     if any(x.get("logoApproved") is not False or x.get("publicationAllowed") is not False
            for x in artwork.values()):
         raise ValueError("Unexpected logo approval")
+    editorial_rows = {}
+    if editorial is not None:
+        if (editorial.get("schemaVersion") != 1 or editorial.get("scanDate") != day
+                or editorial.get("publicationAllowed") is not False
+                or editorial.get("editoriallyApprovedCount") != 0):
+            raise ValueError("Untrusted editorial preview")
+        editorial_rows = index(editorial, "records")
+        if any(x.get("editorialApproved") is not False or x.get("publicationAllowed") is not False
+               for x in editorial_rows.values()):
+            raise ValueError("Unexpected editorial approval")
     prior = {}
     if previous is not None:
         if (previous.get("schemaVersion") != 1 or previous.get("publicationAllowed") is not False
@@ -119,6 +129,7 @@ def build_dossiers(discovery, reconciliation, ledger, stream, logo, baseline_sha
         cls = observation["classification"] if observation else None
         a = audio.get(uid)
         l = artwork.get(uid)
+        e = editorial_rows.get(uid)
         fingerprint = observation.get("streamSha256") if observation else None
         matching_audio = bool(fingerprint and a and a.get("streamSha256") == fingerprint)
         positive = matching_audio and a.get("lastVerdict") == "audio_sample_ok"
@@ -152,6 +163,11 @@ def build_dossiers(discovery, reconciliation, ledger, stream, logo, baseline_sha
             "firstSeen": h.get("firstSeen"), "lastSeen": h.get("lastSeen"), "seenDays": h.get("seenDays"),
             "observedInScan": uid in candidates, "lastSourceObservation": observation,
             "editorialSignal": h.get("editorialSignal"), "editorialVerified": False,
+            "homepageEvidence": {k: e.get(k) for k in (
+                "reportedHost", "homepageSha256", "identityNameSha256", "observedDate",
+                "retrieval", "identityNameMatch", "signal", "primaryTargetTerms",
+                "visibleTargetTerms", "primaryElectronicTerms", "pageSha256",
+                "finalPageSha256", "imageHintSha256")} if e else None,
             "officialHomepageVerified": False, "duplicateRisk": h.get("duplicateRisk") is True,
             "streamEvidence": {k: a.get(k) for k in (
                 "streamSha256", "audioEvidenceDates", "liveFrameEvidenceDates", "lastObservedDate",
@@ -174,6 +190,7 @@ def main():
     for name in ("discovery", "reconciliation", "ledger", "stream", "logo", "output"):
         p.add_argument("--" + name, required=True, type=Path)
     p.add_argument("--previous", type=Path)
+    p.add_argument("--editorial", type=Path)
     p.add_argument("--baseline-sha256", required=True)
     a = p.parse_args()
     def load(path):
@@ -182,7 +199,8 @@ def main():
         return json.loads(path.read_text(encoding="utf-8"))
     report = build_dossiers(*(load(getattr(a, k)) for k in
                               ("discovery", "reconciliation", "ledger", "stream", "logo")),
-                            a.baseline_sha256, load(a.previous) if a.previous else None)
+                            a.baseline_sha256, load(a.previous) if a.previous else None,
+                            load(a.editorial) if a.editorial else None)
     encoded = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if len(encoded.encode("utf-8")) > MAX_BYTES:
         raise ValueError("Dossier register capacity exceeded")
