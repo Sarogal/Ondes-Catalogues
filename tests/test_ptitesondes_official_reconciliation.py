@@ -1,6 +1,6 @@
 """Offline safety contract for automated first-party OA corrections and withdrawals."""
 from copy import deepcopy
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 import sys
 import unittest
@@ -9,13 +9,18 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "tests"))
 
-from ptitesondes_official_reconciliation import reconcile, digest, unwrap_exact_public_v2_event, assert_live_source_health
+from ptitesondes_official_reconciliation import reconcile as reconcile_live, digest, unwrap_exact_public_v2_event, assert_live_source_health
 from test_ptitesondes_candidate_promotion import base
 from test_ptitesondes_published_oa_drift_watch import source
 
 TODAY = date(2026, 11, 23)
 DAY = "2026-12-05"
 SRC = "https://openagenda.com/agenda-generique/events/111_musique-jeunesse"
+
+
+def reconcile(catalogue, today, slot, **kwargs):
+    kwargs.setdefault("as_of_utc", datetime.combine(today, datetime.min.time(), tzinfo=timezone.utc))
+    return reconcile_live(catalogue, today, slot, **kwargs)
 
 
 def row(day=DAY):
@@ -283,6 +288,16 @@ class OfficialReconciliationTests(unittest.TestCase):
                             for x in after["events"]))
         self.assertEqual(sum(x["action"] == "add" for x in audit["operations"]), 4)
         self.assertEqual(before["events"], [old])
+        # At 14:00 UTC the 09:00 Martinique session has already begun.
+        late, late_audit, late_counts = reconcile(
+            before, date(2026, 11, 25), 0, read_event=lambda *_: package,
+            resolve_city_venue=resolve,
+            as_of_utc=datetime(2026, 11, 25, 14, tzinfo=timezone.utc))
+        self.assertEqual({x["date_start"] for x in late["events"]},
+                         {"2026-12-02", "2026-12-09", "2026-12-16", "2026-12-23"})
+        self.assertEqual(late["events"][0], old)
+        self.assertEqual(sum(x["action"] == "add" for x in late_audit["operations"]), 3)
+        self.assertEqual(late_counts["official_new_session_held"], 1)
 
     def test_city_only_reconciliation_rejects_missing_wrong_or_network_place(self):
         old = row()
