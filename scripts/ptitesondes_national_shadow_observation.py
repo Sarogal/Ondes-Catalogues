@@ -19,6 +19,7 @@ from time import monotonic
 from ptitesondes_openagenda_public_agenda_index import (
     load_state as load_index_state,
     scan_index_pages, _write_new_report, _write_state_atomic,
+    read_index_page, _validated_page, PAGE_SIZE, SCHEMA as INDEX_SCHEMA,
 )
 from ptitesondes_openagenda_national_event_research import (
     MAX_INDEX_BYTES, _private_directory, _private_input,
@@ -44,6 +45,21 @@ MAX_AGENDAS_PER_BATCH = 20
 MAX_AGENDA_ROTATION_SECONDS = 600
 AGENDA_SELECTOR_SCHEMA = "ptitesondes.private_national_agenda_rotation.v1"
 MAX_CONTROL_BYTES = 4096
+GEOGRAPHY_SCHEMA = "ptitesondes.private_geographic_index_rotation.v1"
+# Geographic queries are discovery seeds, never agenda/venue allowlists.
+# All unfiltered index lanes remain independent and continue to run.
+# Start with the three regions with no published outings on 25 Nov 2026.
+GEOGRAPHIC_TERMS = (
+    "Guadeloupe", "Guyane", "Mayotte",
+    "Martinique", "La Réunion", "Corse",
+    "Auvergne-Rhône-Alpes", "Bourgogne-Franche-Comté", "Bretagne",
+    "Centre-Val de Loire", "Grand Est", "Hauts-de-France",
+    "Île-de-France", "Normandie", "Nouvelle-Aquitaine",
+    "Occitanie", "Pays de la Loire", "Provence-Alpes-Côte d'Azur",
+    "Polynésie française", "Nouvelle-Calédonie", "Wallis-et-Futuna",
+    "Saint-Pierre-et-Miquelon", "Saint-Barthélemy", "Saint-Martin",
+)
+GEOGRAPHIC_QUERIES_PER_RUN = 3
 SEGMENT_REPORT_RE = re.compile(r"agenda-[0-9]{1,8}-segment-[0-9]{1,8}\.json\Z")
 
 
@@ -85,6 +101,91 @@ def available_index_reports(index_dir):
                 scan_day = None   # Retain as held research, never silently drop.
             reports.append((path, scan_day))
     return sorted(reports, key=lambda pair: pair[0].name)
+
+
+def geographic_index_sample(index_dir, reports_dir, day, batch_id, key, reader):
+    """Discover new agenda identities with bounded geographic search queries.
+
+    Search results do not establish their territory, organiser or eligibility.
+    They join the exact same independent campaign, backlog and Publisher lanes.
+    The relevance page is a supplemental sample, not an exhaustive census.
+    """
+    path = index_dir / "geographic-cursor.json"
+    position = 0
+    if path.exists() or path.is_symlink():
+        state = json.loads(_safe_existing_file(path, MAX_CONTROL_BYTES))
+        if (type(state) is not dict or set(state) != {"schema", "next_term"}
+                or state["schema"] != GEOGRAPHY_SCHEMA
+                or type(state["next_term"]) is not int
+                or not 0 <= state["next_term"] < len(GEOGRAPHIC_TERMS)):
+            raise ValueError("invalid_geographic_index_rotation")
+        position = state["next_term"]
+    known = set()
+    for existing, _ in available_index_reports(reports_dir):
+        try:
+            doc = json.loads(_private_input(existing, MAX_INDEX_BYTES))
+            if (doc.get("schema") != INDEX_SCHEMA
+                    or doc.get("publication_ready") is not False
+                    or doc.get("public_writes") != 0):
+                continue
+            known.update(row["agenda_uid"] for row in doc["new_agenda_candidates"]
+                         if type(row) is dict and type(row.get("agenda_uid")) is int)
+        except (OSError, ValueError, TypeError, KeyError, AttributeError):
+            continue
+    groups = []
+    completed = failed = identities = 0
+    for offset in range(GEOGRAPHIC_QUERIES_PER_RUN):
+        term = GEOGRAPHIC_TERMS[(position + offset) % len(GEOGRAPHIC_TERMS)]
+        try:
+            data = reader(key, size=PAGE_SIZE, search=term)
+            rows, _ = _validated_page(data, PAGE_SIZE, None)
+        except (OSError, ValueError, TypeError, KeyError, TimeoutError):
+            failed += 1
+            continue
+        completed += 1
+        group = []
+        groups.append(group)
+        for row in rows:
+            identities += 1
+            uid = row["uid"]
+            if uid in known:
+                continue
+            known.add(uid)
+            group.append({
+                "agenda_uid": uid, "agenda_slug": row["slug"],
+                "agenda_title": row["title"], "source_identity_only": True,
+                "owner_verified": False, "organiser_verified": False,
+                "rights_reviewed": False, "publisher_enabled": False,
+            })
+    candidates = [group[offset] for offset in range(PAGE_SIZE)
+                  for group in groups if offset < len(group)]
+    report_path = None
+    if candidates:
+        suffix = sha256(batch_id.encode()).hexdigest()[:20]
+        report_path = reports_dir / f"index-{day.isoformat()}-geo-{suffix}-{position}.json"
+        if report_path.exists():
+            raise ValueError("geographic_index_batch_already_exists")
+        else:
+            _write_new_report(report_path, {
+                "schema": INDEX_SCHEMA,
+                "mode": "private_index_readonly_discovery_not_admission",
+                "counts": {"pages_read": completed,
+                           "public_agenda_identifiers_seen": identities,
+                           "new_index_agendas_unverified": len(candidates)},
+                "new_agenda_candidates": candidates,
+                "next_cursor": None, "index_pass_exhausted": False,
+                "owner_independently_verified": False,
+                "publisher_connected": False, "publication_ready": False,
+                "public_writes": 0,
+            })
+    # Keep geographic failure isolated from national census progress.
+    # A failed term is retried on the next complete geographic rotation;
+    # successful first-page samples never become permanent exclusions.
+    _write_atomic_private(path, (json.dumps({
+        "schema": GEOGRAPHY_SCHEMA,
+        "next_term": (position + GEOGRAPHIC_QUERIES_PER_RUN) % len(GEOGRAPHIC_TERMS),
+    }, sort_keys=True) + "\n").encode())
+    return report_path, completed, failed, len(candidates)
 
 
 def _cursor_state(state, after, completed):
@@ -438,7 +539,8 @@ def rotate_agendas_independently(index_doc, digest, scan_day, campaign_dir,
 def run_observation(root, day, batch_id, *,
                     execute_live=False, key="", index_reader=scan_index_pages,
                     campaign_runner=run_campaign,
-                    segment_runner=run_all_discovered_segments):
+                    segment_runner=run_all_discovered_segments,
+                    geography_reader=None):
     """Inspect a bounded fair rotation; resume every saved campaign batch.
 
     The original day stays attached to each collected report. Older reports
@@ -525,6 +627,15 @@ def run_observation(root, day, batch_id, *,
                     index_scanned = True
                     break
 
+    geographic_path = None
+    geographic_completed = geographic_failed = geographic_new = 0
+    if geography_reader is not None:
+        try:
+            geographic_path, geographic_completed, geographic_failed, geographic_new = (
+                geographic_index_sample(index_dir, reports_dir, day, batch_id,
+                                        key, geography_reader))
+        except (OSError, ValueError, TypeError, KeyError, TimeoutError):
+            geographic_failed = GEOGRAPHIC_QUERIES_PER_RUN
     reports = available_index_reports(reports_dir)
     n = len(reports)
     started = held = examined_segments = examined_events = 0
@@ -537,6 +648,14 @@ def run_observation(root, day, batch_id, *,
     start = controller["next_batch_index"] % n if n else 0
     selected = [reports[(start + step) % n]
                 for step in range(min(n, MAX_BATCHES_PER_RUN))]
+    regular_slots = len(selected)
+    # Newly discovered geographic sources get one prompt review slot;
+    # retain at least one ordinary batch and its own fair rotation.
+    if geographic_path is not None and all(p != geographic_path for p, _ in selected):
+        pair = next((pair for pair in reports if pair[0] == geographic_path), None)
+        if pair is not None:
+            selected = selected[:1] + [pair]
+            regular_slots = 1
     for report_path, scan_day in selected:
         try:
             raw = _private_input(report_path, MAX_INDEX_BYTES)
@@ -584,7 +703,7 @@ def run_observation(root, day, batch_id, *,
     updated = {
         "schema": CONTROLLER_SCHEMA,
         "invocations": controller["invocations"] + int(index_read_failure is None),
-        "next_batch_index": (start + len(selected)) % n if n else 0,
+        "next_batch_index": (start + regular_slots) % n if n else 0,
     }
     _write_atomic_private(control_path, (
         json.dumps(updated, sort_keys=True, separators=(",", ":")) + "\n"
@@ -594,6 +713,9 @@ def run_observation(root, day, batch_id, *,
         raise index_read_failure
     return {"mode": "private_observation_readonly",
             "stored_index_batches": n, "new_index_census": int(index_scanned),
+            "geographic_queries_completed": geographic_completed,
+            "geographic_queries_failed": geographic_failed,
+            "geographic_new_agendas_unverified": geographic_new,
             "index_batches_examined": len(selected),
             "index_batches_advanced": started,
             # A completed agenda is not proof the whole index batch finished.
@@ -623,7 +745,8 @@ def main():
     result = run_observation(
         args.private_observation_root,
         args.day, args.batch_id, execute_live=args.execute_live,
-        key=os.environ.get("OPENAGENDA_READ_KEY", ""))
+        key=os.environ.get("OPENAGENDA_READ_KEY", ""),
+        geography_reader=read_index_page)
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
 
 
