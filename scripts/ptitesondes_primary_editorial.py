@@ -19,6 +19,11 @@ NON_PERFORMANCE_GATHERING = re.compile(
     r"table ronde|assemblee generale|reunion d information|"
     r"seminaire|debat citoyen))\b"
 )
+MARKET_GATHERING = re.compile(
+    r"^(?:(?:le |la |un |une |grand |petit )?marche(?:s)? "
+    r"(?:de noel|de saint nicolas|artisanal|artisans|des artisans|"
+    r"de producteurs|des producteurs)|vide grenier|brocante)\b"
+)
 COMMERCIAL_STUDIO_SERVICE = re.compile(
     r"^(?:(?:location|louez|reservez|reservation) (?:un |une |d un |de |du |d )?"
     r"(?:studio|salle d enregistrement)|"
@@ -42,6 +47,8 @@ def primary_out_of_scope(title, description=""):
         return "school_support_primary"
     if NON_PERFORMANCE_GATHERING.search(main):
         return "non_performance_gathering_primary"
+    if MARKET_GATHERING.search(main):
+        return "market_gathering_primary"
     if COMMERCIAL_STUDIO_SERVICE.search(main):
         return "commercial_studio_service_primary"
     return None

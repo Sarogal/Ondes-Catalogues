@@ -102,6 +102,50 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
                 self.assertIsNone(candidate)
                 self.assertEqual(status, reason)
 
+    def test_market_programme_is_not_a_standalone_childrens_event(self):
+        for title, description in (
+            ("Marché de Saint-Nicolas", "Artisans, restauration et contes pour enfants."),
+            ("Marché de Noël", "Spectacle de marionnettes pour enfants le matin."),
+        ):
+            with self.subTest(title=title):
+                candidate, status = admit_live_openagenda(
+                    dict(lead(), title=title), DAY.isoformat(), AGENDA,
+                    dict(oa_event(), title={"fr": title}, description={"fr": description},
+                         age=None), base(), base(), TODAY)
+                self.assertIsNone(candidate)
+                self.assertEqual(status, "oa_direct_primary_activity_outside_scope")
+
+    def test_generic_concert_requires_targeted_youth_not_biography_or_social_copy(self):
+        for title, description in (
+            ("Groupe de rock", "L'enfant du rock promet un concert incandescent."),
+            ("Jazz brunch", "Venez assister à un concert entre amis ou en famille."),
+        ):
+            with self.subTest(title=title):
+                candidate, status = admit_live_openagenda(
+                    dict(lead(), title=title), DAY.isoformat(), AGENDA,
+                    dict(oa_event(), title={"fr": title}, description={"fr": description},
+                         age=None), base(), base(), TODAY)
+                self.assertIsNone(candidate)
+                self.assertEqual(status, "oa_direct_child_audience_missing")
+
+    def test_real_child_or_family_concert_stays_eligible_without_known_venue(self):
+        for title, description in (
+            ("Concert pour enfants", "Musique rock et découverte instrumentale."),
+            ("Le voyage des sons", "Un concert destiné aux enfants."),
+            ("Concert familial", "Tous les styles musicaux."),
+            ("Chansons de Noël au marché de Noël", "Concert pour les enfants."),
+        ):
+            with self.subTest(title=title):
+                reference = base()
+                reference["events"][0]["category"] = "concert"
+                reference["events"][0]["category_label"] = "Concert"
+                candidate, status = admit_live_openagenda(
+                    dict(lead(), title=title), DAY.isoformat(), AGENDA,
+                    dict(oa_event(), title={"fr": title}, description={"fr": description},
+                         age=None), reference, reference, TODAY)
+                self.assertEqual(status, "oa_direct_live_source_accepted")
+                self.assertEqual(candidate["category"], "concert")
+
     def test_generic_youth_age_text_and_invalid_adult_age(self):
         from ptitesondes_oa_first_party_admission import explicit_child_age_text
         for positive in (
