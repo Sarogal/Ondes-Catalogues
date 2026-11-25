@@ -1,10 +1,12 @@
 import json
+import datetime as dt
+import copy
 import unittest
 from unittest.mock import patch
 
 from automation.concerts import existing_venue_geo_evidence as evidence
 
-URL = "https://unknown-room.example/events/metal-night"
+URL = "https://unknown-room.fr/events/metal-night"
 OSM = "https://www.openstreetmap.org/node/12345"
 VENUE = {"id": "new-room", "name": "New Room", "city": "Colmar",
          "region": "Grand Est", "department": "68",
@@ -38,7 +40,7 @@ class ExistingVenueGeoEvidenceTests(unittest.TestCase):
 
     def test_rejects_other_event_date_and_domain(self):
         for html in (document(startDate="2027-02-13"),
-                     document(url="https://other.example/events/metal-night"),
+                     document(url="https://other.fr/events/metal-night"),
                      document() + document()):
             with self.subTest(html=html), self.assertRaises(ValueError):
                 evidence.extract_address(html, EVENT, VENUE)
@@ -58,7 +60,7 @@ class ExistingVenueGeoEvidenceTests(unittest.TestCase):
         with patch.object(evidence.geo, "verify", return_value=(OSM, 48.08, 7.36, "named-site-point")), \
              patch.object(evidence.official, "official_origin", return_value=None), \
              patch.object(evidence.address_source, "website_from_address",
-                          return_value=("https://unknown-room.example/", OSM)):
+                          return_value=("https://unknown-room.fr/", OSM)):
             row = evidence.verify(EVENT, VENUE, fetch=lambda url, cache: document())
         self.assertEqual(row["venuePatch"]["geoSource"], OSM)
         self.assertEqual(row["venuePatch"]["address"], "19 rue des Jardins")
@@ -71,8 +73,8 @@ class ExistingVenueGeoEvidenceTests(unittest.TestCase):
         with patch.object(evidence.geo, "verify", return_value=(OSM, 48.08, 7.36, "named-site-point")), \
              patch.object(evidence.official, "official_origin", return_value=None):
             for homepage, feature in (
-                ("https://other-room.example/", OSM),
-                ("https://unknown-room.example/", "https://www.openstreetmap.org/node/12346"),
+                ("https://other-room.fr/", OSM),
+                ("https://unknown-room.fr/", "https://www.openstreetmap.org/node/12346"),
             ):
                 with patch.object(evidence.address_source, "website_from_address",
                                   return_value=(homepage, feature)), self.assertRaises(ValueError):
@@ -88,3 +90,54 @@ class ExistingVenueGeoEvidenceTests(unittest.TestCase):
         with patch.object(evidence.geo, "verify", side_effect=ValueError("ambiguous")):
             with self.assertRaises(ValueError):
                 evidence.verify(EVENT, VENUE, fetch=lambda url, cache: document())
+
+
+    def test_reserved_domain_is_rejected_before_network(self):
+        bad = dict(EVENT, officialUrl="https://unknown-room.example/events/metal-night")
+        with self.assertRaises(ValueError):
+            evidence.verify(bad, VENUE, fetch=lambda *args: self.fail("must not fetch"))
+
+    def test_rotation_covers_more_than_one_batch_without_mutating_catalogue(self):
+        venues = [dict(VENUE, id=f"room-{i}") for i in range(9)]
+        events = [dict(EVENT, id=f"event-{i}", venueId=f"room-{i}",
+                       status="confirmed") for i in range(9)]
+        data = {"venues": venues, "events": events}
+        original = copy.deepcopy(data)
+        seen = set()
+        def held(event, venue, **kwargs):
+            seen.add(venue["id"])
+            raise ValueError("no evidence")
+        day = dt.date(2026, 11, 25)
+        for slot in range(3):
+            report = evidence.scan(data, day, slot=slot, verify_one=held)
+            self.assertLessEqual(report["examinedVenues"], 4)
+            self.assertLessEqual(report["eventPagesExamined"], 8)
+            self.assertFalse(report["publicationAllowed"])
+            self.assertEqual(report["proposals"], [])
+        self.assertEqual(seen, {v["id"] for v in venues})
+        self.assertEqual(data, original)
+
+    def test_scan_skips_expired_cancelled_and_precise(self):
+        precise = dict(VENUE, id="precise", geoPrecision="named-site-point")
+        event = dict(EVENT, status="confirmed")
+        data = {"venues": [VENUE, precise], "events": [
+            dict(event, id="past", date="2026-01-01"),
+            dict(event, id="cancelled", status="cancelled"),
+            dict(event, id="accurate", venueId="precise"),
+            event]}
+        seen = []
+        def verify_one(e, v, **kwargs):
+            seen.append(e["id"])
+            return {"venueId": v["id"], "publicationAllowed": False}
+        report = evidence.scan(data, dt.date(2026, 11, 25), verify_one=verify_one)
+        self.assertEqual(seen, [EVENT["id"]])
+        self.assertEqual(len(report["proposals"]), 1)
+        self.assertFalse(report["publisherAuthorityGranted"])
+
+    def test_scan_enforces_budget_and_unique_venue_ids(self):
+        day = dt.date(2026, 11, 25)
+        for kwargs in ({"limit": 5}, {"per_venue": 3}, {"slot": 3}):
+            with self.assertRaises(ValueError):
+                evidence.scan({"venues": [], "events": []}, day, **kwargs)
+        with self.assertRaises(ValueError):
+            evidence.scan({"venues": [VENUE, VENUE], "events": []}, day)

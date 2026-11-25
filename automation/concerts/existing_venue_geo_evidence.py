@@ -124,3 +124,63 @@ def verify(event, venue, *, fetch=probe.safe_fetch, cache=None):
             "officialVenueSourceUrl": homepage, "originalVenue": dict(venue),
             "venuePatch": patch, "publicationAllowed": False,
             "publisherAuthorityGranted": False}
+
+
+def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify):
+    """Bounded private research. Rotate over all eligible venues and their events.
+
+    A permanent hold at the first room cannot starve the remaining rooms.
+    Never write approvals or the public catalogue; no network on accurate pins.
+    """
+    require(isinstance(today, dt.date) and not isinstance(today, dt.datetime)
+            and type(slot) is int and 0 <= slot <= 2
+            and type(limit) is int and 1 <= limit <= 4
+            and type(per_venue) is int and 1 <= per_venue <= 2,
+            "invalid bounded research budget")
+    require(isinstance(catalogue, dict)
+            and isinstance(catalogue.get("venues"), list)
+            and isinstance(catalogue.get("events"), list),
+            "invalid published catalogue")
+    venues = {v["id"]: v for v in catalogue["venues"]
+              if isinstance(v, dict) and isinstance(v.get("id"), str)}
+    require(len(venues) == len(catalogue["venues"]), "duplicate or invalid venue ID")
+    groups = {vid: [] for vid, v in venues.items() if eligible(v)}
+    for event in catalogue["events"]:
+        if (not isinstance(event, dict) or event.get("venueId") not in groups
+                or event.get("status") != "confirmed"
+                or event.get("sourceType") != "salle"
+                or not intake.valid_https(event.get("officialUrl"))):
+            continue
+        try:
+            day = dt.date.fromisoformat(event.get("date"))
+        except (ValueError, TypeError):
+            continue
+        if day >= today:
+            groups[event["venueId"]].append(event)
+    ordered = sorted((vid for vid in groups if groups[vid]),
+                     key=lambda vid: (-len(groups[vid]), vid))
+    cycle = today.toordinal() * 3 + slot
+    start = (cycle * limit) % len(ordered) if ordered else 0
+    chosen = (ordered[start:] + ordered[:start])[:limit]
+    report = {"schema": SCHEMA + ".scan", "asOf": today.isoformat(),
+              "eligibleVenues": len(groups), "venuesWithFutureOfficialEvents": len(ordered),
+              "examinedVenues": len(chosen), "eventPagesExamined": 0,
+              "proposals": [], "held": [],
+              "publicationAllowed": False, "publisherAuthorityGranted": False}
+    cache = {}
+    for vid in chosen:
+        rows = sorted(groups[vid], key=lambda e: (e["date"], e["id"]))
+        # Avoid retrying only the same event page for a room indefinitely.
+        offset = cycle % len(rows)
+        selected = (rows[offset:] + rows[:offset])[:per_venue]
+        for event in selected:
+            report["eventPagesExamined"] += 1
+            try:
+                proof = verify_one(event, venues[vid], cache=cache)
+            except (ValueError, TypeError, KeyError, OSError, TimeoutError):
+                continue
+            report["proposals"].append(proof)
+            break
+        else:
+            report["held"].append({"venueId": vid, "reason": "no_verified_address"})
+    return report
