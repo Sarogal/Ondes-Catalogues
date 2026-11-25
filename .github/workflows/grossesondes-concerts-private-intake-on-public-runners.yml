@@ -982,6 +982,8 @@ jobs:
           # compare named acts, event date and venue and construct exact rows.
           # Store private PROPOSALS only. Publisher must independently verify
           # every row before approval; do not mutate approved.json here.
+          # Never reuse a proposal file left by a previous national cycle.
+          rm -f confidential/automation/concerts/intake/published-lineup-patch-proposals.json
           if [ -s confidential/automation/concerts/intake/published-lineup-audit.json ]; then
             if ! python public/automation/concerts/published_lineup_patch_builder.py \
                 --catalogue public/docs/grossesondes/concerts.json \
@@ -993,6 +995,33 @@ jobs:
             else
               echo "Propositions de programmation vérifiées en privé, sans publication."
             fi
+          fi
+
+      - name: Prévalider une correction d'identité publiée sans bloquer les nouvelles dates
+        if: steps.access.outputs.ready == 'true' && steps.publisher_preflight.outputs.outcome == 'passed'
+        shell: bash
+        env:
+          GROSSES_ONDES_CONCERTS_AUTOREVIEW: ${{ vars.GROSSES_ONDES_CONCERTS_AUTOREVIEW }}
+        run: |
+          set -euo pipefail
+          REPORT=confidential/automation/concerts/intake/promotional-correction-preflight.json
+          rm -f "$REPORT"
+          PROPOSALS=confidential/automation/concerts/intake/published-lineup-patch-proposals.json
+          if [ ! -s "$PROPOSALS" ]; then
+            exit 0
+          fi
+          OPTIONS=()
+          if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
+            OPTIONS+=(--apply)
+          fi
+          if ! python public/automation/concerts/promotional_correction_preflight.py \
+              --before confidential/automation/concerts/approved.json \
+              --proposals "$PROPOSALS" \
+              --reference public/docs/grossesondes/concerts-reference.json \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --report "$REPORT" "${OPTIONS[@]}" \
+              > "$RUNNER_TEMP/concerts-private-logs/promotional-correction-preflight.log" 2>&1; then
+            echo "::warning::Prévalidation des identités indisponible ; collecte de concerts poursuivie."
           fi
 
       - name: Conserver les rapports sensibles uniquement dans le dépôt privé
@@ -1151,6 +1180,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/published-lineup-audit.json ]; then
             git add --sparse -- automation/concerts/intake/published-lineup-audit.json
+          fi
+          if [ -f automation/concerts/intake/promotional-correction-preflight.json ]; then
+            git add --sparse -- automation/concerts/intake/promotional-correction-preflight.json
           fi
           if [ -f automation/concerts/intake/published-lineup-patch-proposals.json ]; then
             git add --sparse -- automation/concerts/intake/published-lineup-patch-proposals.json
