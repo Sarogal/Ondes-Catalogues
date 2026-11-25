@@ -15747,10 +15747,10 @@
     },
     {
       "id": "go-c-20270107-paris-deefait-release-party",
-      "title": "DÉÉFAIT Release Party",
+      "title": "DÉÉFAIT",
       "date": "2027-01-07",
       "artistIds": [
-        "deefait-release-party"
+        "deefait"
       ],
       "venueId": "petit-bain-paris",
       "genres": [
@@ -15772,6 +15772,10 @@
         {
           "date": "2026-11-25",
           "change": "Ajout après revue des preuves officielles"
+        },
+        {
+          "date": "2026-11-25",
+          "change": "Identité artistique rectifiée après nouvelle vérification de la fiche officielle"
         }
       ]
     },
