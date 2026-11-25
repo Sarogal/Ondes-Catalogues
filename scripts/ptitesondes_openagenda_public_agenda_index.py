@@ -76,7 +76,12 @@ def read_index_page(public_read_key, after=None, *,
             or after is not None and not valid_cursor(after)
             or sort not in (None, "recentlyAddedEvents.desc")):
         raise ValueError("invalid_oa_index_request")
-    params = [("size", str(size))]
+    # The API documents a field projection. We only consume identities;
+    # schemas, images and descriptions must not inflate the bounded response.
+    params = [("size", str(size)),
+              ("includeFields[]", "uid"),
+              ("includeFields[]", "slug"),
+              ("includeFields[]", "title")]
     if sort is not None:
         params.append(("sort", sort))
     if after is not None:
