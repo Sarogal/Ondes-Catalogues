@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import http.client
 import json
+import re
 import socket
 import ssl
 import time
@@ -54,7 +55,64 @@ def assess(windows, *, finite, icy, elapsed, ended):
             "finiteResponse": finite, "icyHeaderPresent": icy, "earlyEnd": ended}
 
 
-def observe_url(raw_url, *, clock=time.monotonic, sleep=time.sleep):
+MAX_METADATA_INTERVAL = 131072
+MAX_METADATA_BLOCKS = 3
+
+
+def read_icy_titles(response, interval, deadline, clock):
+    """Read framed ICY blocks; never interpret the intervening audio as text."""
+    if not isinstance(interval, str) or not interval.isascii() or not interval.isdigit() or len(interval) > 6:
+        return {"verdict": "metadata_not_advertised", "titleHints": []}
+    n = int(interval)
+    if not 1 <= n <= MAX_METADATA_INTERVAL:
+        return {"verdict": "metadata_interval_out_of_budget", "titleHints": []}
+    def exact(count):
+        data = bytearray()
+        while len(data) < count:
+            if clock() >= deadline:
+                raise TimeoutError("metadata deadline")
+            part = response.read1(min(8192, count-len(data)))
+            if not part:
+                raise EOFError("metadata response ended")
+            data.extend(part)
+        return bytes(data)
+    hints = []
+    try:
+        for _ in range(MAX_METADATA_BLOCKS):
+            exact(n)
+            size = exact(1)[0] * 16
+            if not size:
+                continue
+            raw = exact(size).rstrip(b"\\0")
+            # The server may use UTF-8 or legacy Latin-1.
+            try:
+                text = raw.decode("utf-8")
+            except UnicodeDecodeError:
+                text = raw.decode("latin-1")
+            m = re.search(r"(?:^|;)\\s*StreamTitle='(.*?)';", text, re.S|re.I)
+            if not m:
+                continue
+            value = m.group(1).strip()
+            # Artist/title syntax is a hint, not a verified artist identity.
+            if not 0 < len(value) <= 240 or any(ord(c)<32 for c in value):
+                continue
+            if re.search(r"https?://|www\\.|@|[?=&]", value, re.I):
+                continue
+            if value.count(" - ") != 1:
+                continue
+            artist, title = (x.strip() for x in value.split(" - ", 1))
+            if not (2 <= len(artist) <= 100 and 1 <= len(title) <= 140 and any(c.isalpha() for c in artist)):
+                continue
+            item = {"artistHint": artist, "titleSha256": safe_digest(title)}
+            if item not in hints:
+                hints.append(item)
+    except (EOFError, TimeoutError, OSError, http.client.HTTPException):
+        pass
+    return {"verdict": "icy_artist_title_hint" if hints else "metadata_no_parseable_title",
+            "titleHints": hints}
+
+
+def observe_url(raw_url, *, clock=time.monotonic, sleep=time.sleep, metadata=False):
     deadline = clock() + MAX_TOTAL_SECONDS
     current = raw_url
     visited = set()
@@ -82,7 +140,7 @@ def observe_url(raw_url, *, clock=time.monotonic, sleep=time.sleep):
         try:
             connection.request("GET", urlunsplit(("", "", p.path or "/", p.query, "")),
                                headers={"Accept": "audio/*,application/octet-stream,*/*;q=0.2",
-                                        "Icy-MetaData": "0", "Accept-Encoding": "identity",
+                                        "Icy-MetaData": "1" if metadata else "0", "Accept-Encoding": "identity",
                                         "User-Agent": "GrossesOndesContinuityPreview/1.0",
                                         "Connection": "close"})
             response = connection.getresponse()
@@ -106,6 +164,10 @@ def observe_url(raw_url, *, clock=time.monotonic, sleep=time.sleep):
             mime = (response.getheader("Content-Type") or "").split(";")[0].lower()
             if "mpegurl" in mime or "scpls" in mime or "playlist" in mime:
                 return {"verdict": "playlist_requires_separate_validation", "windowCount": 0}
+            if metadata:
+                if finite or not (mime.startswith("audio/") or mime == "application/octet-stream"):
+                    return {"verdict": "metadata_non_live_response", "titleHints": []}
+                return read_icy_titles(response, response.getheader("icy-metaint"), deadline, clock)
             if finite:
                 return assess([], finite=True, icy=icy, elapsed=0, ended=False)
             windows = []
