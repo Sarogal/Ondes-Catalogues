@@ -148,8 +148,18 @@ def prioritize_unavailable(published, history, today, slot, *,
                     zip(candidates, pool.map(unavailable, candidates)) if failed]
     # Stable daily rotation through unavailable sites; do not repeatedly
     # select the first five when more than five require browser recovery.
-    selected = [url for _, url in _rotate(
-        [(url, url) for url in failures], slot, MAX_FAILURE_SLOTS)]
+    # Prioritize genuinely unlocated future editions among actual failures,
+    # without starving located editions' updates. Keep the same five-slot
+    # failure budget, and rotate within each cohort (not a named allowlist).
+    unlocated = {row.get("officialSite") for row in published["festivals"]
+                 if isinstance(row, dict)
+                 and (row.get("lat") is None or row.get("lon") is None)}
+    missing_geo = [(url, url) for url in failures if url in unlocated]
+    other = [(url, url) for url in failures if url not in unlocated]
+    geo_quota = min(len(missing_geo), MAX_FAILURE_SLOTS - min(2, len(other)))
+    selected = [url for _, url in _rotate(missing_geo, slot, geo_quota)]
+    selected += [url for _, url in _rotate(
+        other, slot, MAX_FAILURE_SLOTS - len(selected))]
     if not selected:
         return baseline, len(candidates), len(failures)
     # Reserve one rotating root from each cohort before filling spare
@@ -223,6 +233,10 @@ def main():
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False) + "\n", encoding="utf-8")
     print("SIGNED_BROWSER_TARGETS:", len(targets))
+    roots = sum(entry["officialSite"] in targets for entry in report["entries"])
+    print("SIGNED_BROWSER_ROOT_SUCCESSES:", roots)
+    print("SIGNED_BROWSER_ROOT_UNAVAILABLE:", len(targets) - roots)
+    print("SIGNED_BROWSER_LINK_SUCCESSES:", len(report["entries"]) - roots)
     print("SIGNED_BROWSER_SUCCESSES:", len(report["entries"]))
 
 
