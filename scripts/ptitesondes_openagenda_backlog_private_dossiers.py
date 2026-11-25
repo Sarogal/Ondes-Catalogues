@@ -16,6 +16,11 @@ from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, build_opener
 
 from proof import norm
+from ptitesondes_editorial_refusal_memory import (
+    digest, deferred, remember_refusal, fresh_memory, load_memory,
+    MAX_QUEUE_RECHECKS,
+)
+from ptitesondes_national_backlog_bridge import _atomic_json
 from ptitesondes_openagenda_national_event_research import _french_text
 from ptitesondes_oa_evergreen_on_demand import ambiguous_on_demand_studio_series
 from ptitesondes_openagenda_public_agenda_index import NoRedirect
@@ -316,9 +321,64 @@ def deadline_aware_backlog_batch(identities, today, batch_index):
     return selected
 
 
+def reclaim_editorial_queue(queue, clues, published, today, now, key,
+                            memory, agenda_reader, event_reader):
+    """Reclaim only exact direct-OA requests recoverable from durable history."""
+    candidates = []
+    remaining = []
+    cached = 0
+    for item in queue:
+        lead = item["lead"]
+        ident = (lead.get("agenda_slug"), lead.get("event_uid"),
+                 item.get("date_start"), lead.get("title"))
+        if ident not in clues:
+            remaining.append(item)
+            continue
+        slug, uid, day, title = ident
+        canonical = "https://openagenda.com/" + slug + "/events/" + str(uid)
+        # No municipal/other independent proof route may be suppressed.
+        if (item["official_event_url"] != canonical
+                or item["official_venue_url"] != canonical
+                or item.get("municipal_source_reference_url") is not None):
+            remaining.append(item)
+            continue
+        if deferred(memory, ident, clues[ident], today, now):
+            cached += 1
+            continue
+        candidates.append((ident, item))
+    candidates.sort(key=lambda pair: pair[0])
+    confirmed = set()
+    checked = 0
+    if candidates:
+        start = memory["cursor"] % len(candidates)
+        for offset in range(min(len(candidates), MAX_QUEUE_RECHECKS)):
+            ident, item = candidates[(start + offset) % len(candidates)]
+            slug, uid, day, _ = ident
+            try:
+                agenda = agenda_reader(slug, key)
+                if (type(agenda) is not dict
+                        or agenda.get("uid") != item["lead"]["agenda_uid"]):
+                    continue
+                event = event_reader(agenda["uid"], uid, key)
+                checked += 1
+                live = live_research_dossier(ident, today, agenda, event)
+                if live is not None and remember_refusal(
+                        memory, ident, clues[ident], live, agenda, event,
+                        published, today, now):
+                    confirmed.add(ident)
+            except (OSError, ValueError, TimeoutError, KeyError, TypeError, UnicodeError):
+                continue
+        memory["cursor"] = (memory["cursor"] + MAX_QUEUE_RECHECKS) % 10**12
+    # Preserve original queue order, not the sort used for bounded rechecks.
+    keep = {id(item) for item in remaining}
+    keep.update(id(item) for ident, item in candidates if ident not in confirmed)
+    return [item for item in queue if id(item) in keep], cached, len(confirmed), checked
+
+
 def build_backlog_dossiers(backlog, patch, published, today, key, *,
                            batch_index=0, agenda_reader=read_agenda_by_slug,
-                           event_reader=read_direct_v2):
+                           event_reader=read_direct_v2, refusal_memory=None,
+                           as_of_utc=None):
     if (type(backlog) is not list or len(backlog) > MAX_BACKLOG
             or type(today) is not date
             or type(batch_index) is not int or not 0 <= batch_index <= 3
@@ -349,6 +409,26 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
     current = dict(patch, open_world_research=future_pending)
     combined = attach_research_dossiers(
         current, [], today, published_ids=already)
+    now = as_of_utc or datetime.now(timezone.utc)
+    clues = {}
+    cached_queue = confirmed_queue = queue_reads = deferred_clues = new_refusals = 0
+    if refusal_memory is not None:
+        # All duplicates of a clue contribute to its fingerprint. A changed
+        # collector hint invalidates the deferral at the next collection.
+        by_identity = {}
+        for row in backlog:
+            identity = backlog_identity(row, today)
+            if identity is not None:
+                by_identity.setdefault(identity, set()).add(digest(row))
+        clues = {identity: digest(sorted(hashes))
+                 for identity, hashes in by_identity.items()}
+        refreshed = fresh_memory(refusal_memory, now)
+        refusal_memory.clear()
+        refusal_memory.update(refreshed)
+        queue, cached_queue, confirmed_queue, queue_reads = reclaim_editorial_queue(
+            combined["open_world_research"], clues, published, today, now,
+            key, refusal_memory, agenda_reader, event_reader)
+        combined = dict(combined, open_world_research=queue)
     # A research queue can be filled entirely by a single agenda's long
     # series before this independent historical OA backlog is examined.
     # A full queue is a *per-run work budget*, never a permanent exclusion
@@ -375,6 +455,9 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
             already_published += 1
         elif (uid, day) in queue_keys:
             already_queued += 1
+        elif refusal_memory is not None and deferred(
+                refusal_memory, identity, clues[identity], today, now):
+            deferred_clues += 1
         else:
             active.append(identity)
     # No permanent blacklist: a future run rebuilds the active view from
@@ -406,6 +489,11 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
             dossier = live_research_dossier(identity, today, agenda, event)
             if dossier is None:
                 holds += 1
+                continue
+            if refusal_memory is not None and remember_refusal(
+                    refusal_memory, identity, clues[identity], dossier, agenda,
+                    event, published, today, now):
+                new_refusals += 1
                 continue
             proposals.append(dossier)
             queue_keys.add((uid, day))
@@ -440,6 +528,11 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
         "source_read_proposals": len(proposals),
         "queued_total": len(result["open_world_research"]),
         "live_confirmed_commercial_slots_reclaimed": reclaimed,
+        "editorial_cached_queue_deferred": cached_queue,
+        "editorial_live_queue_deferred": confirmed_queue,
+        "editorial_queue_live_reads": queue_reads,
+        "editorial_cached_backlog_deferred": deferred_clues,
+        "editorial_new_live_refusals": new_refusals,
         "held_for_publisher_or_network": holds, "public_writes": 0,
     }
 
@@ -451,12 +544,25 @@ def main():
     parser.add_argument("--public-catalogue", type=Path, required=True)
     parser.add_argument("--output-file", type=Path, required=True)
     parser.add_argument("--day", type=date.fromisoformat, required=True)
+    parser.add_argument("--refusal-state", type=Path)
+    parser.add_argument("--refusal-output", type=Path)
     args = parser.parse_args()
     if (any(path.resolve().is_relative_to(ROOT)
             for path in (args.backlog_file, args.patch_file, args.output_file))
             or len({p.resolve() for p in (args.backlog_file, args.patch_file,
                                            args.output_file)}) != 3):
         raise ValueError("private_backlog_inputs_must_be_isolated")
+    if (args.refusal_state is None) != (args.refusal_output is None):
+        raise ValueError("both_private_refusal_paths_required")
+    if args.refusal_state is not None:
+        paths = [args.backlog_file, args.patch_file, args.output_file,
+                 args.public_catalogue, args.refusal_state, args.refusal_output]
+        if (len({p.resolve() for p in paths}) != len(paths)
+                or any(p.resolve().is_relative_to(ROOT)
+                       for p in (args.refusal_state, args.refusal_output))):
+            raise ValueError("private_refusal_paths_must_be_isolated")
+    now = datetime.now(timezone.utc)
+    memory = load_memory(args.refusal_state, now) if args.refusal_state is not None else None
     key = os.environ.get("OPENAGENDA_READ_KEY", "")
     with args.backlog_file.open(encoding="utf-8") as stream:
         backlog = json.load(stream)
@@ -467,10 +573,13 @@ def main():
     batch_index = review_batch_for_cron(
         os.environ.get("REVIEW_CRON", ""), datetime.now(timezone.utc).hour)
     result, summary = build_backlog_dossiers(
-        backlog, patch, published, args.day, key, batch_index=batch_index)
+        backlog, patch, published, args.day, key, batch_index=batch_index,
+        refusal_memory=memory, as_of_utc=now)
     args.output_file.write_text(
         json.dumps(result, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8")
+    if memory is not None:
+        _atomic_json(args.refusal_output, memory)
     # Only counts on public GitHub runners; private URLs/titles/UIDs hidden.
     print(json.dumps(summary, sort_keys=True))
 
