@@ -377,7 +377,7 @@ def followup_links(url, body):
             if homepage_url(candidate) != candidate or candidate == url:
                 continue
             text = normalize(p.path + " " + label)
-            if FOLLOW_EXCLUDE.search(text) or re.search(r"\\.(?:pdf|mp3|aac|m3u8?|pls|jpg|png|zip)$", p.path, re.I):
+            if FOLLOW_EXCLUDE.search(text) or re.search(r"\.(?:pdf|mp3|aac|m3u8?|pls|jpg|png|zip)$", p.path, re.I):
                 continue
             score = 2 if FOLLOW_SCOPE.search(text) else 1 if FOLLOW_PLAYER.search(text) else 0
             if score:
