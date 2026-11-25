@@ -360,17 +360,30 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
         identity for row in backlog
         if (identity := backlog_identity(row, today)) is not None
     ))
-    # Rotate four independent time slots and successive days. No named
-    # source whitelist and no permanent blacklist; all clues remain eligible.
-    review_order = deadline_aware_backlog_batch(
-        identities, today, batch_index)
-    visited = attempts = holds = 0
-    proposals = []
-    cache = {}
     queue_keys = {
         (x["lead"]["event_uid"], x["date_start"])
         for x in combined["open_world_research"]
     }
+    # Classify before reserving the bounded network slots. Published and
+    # already queued occurrences need no duplicate research read; keeping
+    # them in the historical store must not consume the active budget.
+    active = []
+    already_published = already_queued = 0
+    for identity in identities:
+        _, uid, day, _ = identity
+        if ("openagenda-" + str(uid) + "-" + day) in already:
+            already_published += 1
+        elif (uid, day) in queue_keys:
+            already_queued += 1
+        else:
+            active.append(identity)
+    # No permanent blacklist: a future run rebuilds the active view from
+    # the full history and the current public catalogue and pending queue.
+    review_order = deadline_aware_backlog_batch(
+        fair_backlog_identity_order(active), today, batch_index)
+    visited = attempts = holds = 0
+    proposals = []
+    cache = {}
     # Preserve the established append-only queue behavior while ordinary
     # free capacity exists. Only a genuinely saturated queue may fairly
     # preempt old research requests from durable source inventories.
@@ -414,7 +427,11 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
             dict(combined, open_world_research=[]),
             balanced[:MAX_DOSSIERS], today, published_ids=already)
     return result, {
-        "backlog_candidates": len(identities), "clues_examined": visited,
+        "backlog_candidates": len(identities),
+        "active_backlog_candidates": len(active),
+        "backlog_candidates_already_published": already_published,
+        "backlog_candidates_already_queued": already_queued,
+        "clues_examined": visited,
         "live_events_read": attempts,
         "new_dossiers": sum(
             1 for row in result["open_world_research"] if row in proposals),

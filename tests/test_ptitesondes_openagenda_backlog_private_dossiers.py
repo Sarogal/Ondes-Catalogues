@@ -159,6 +159,37 @@ class BacklogFirstPartyTests(unittest.TestCase):
         self.assertEqual(counts["new_dossiers"], 0)
         self.assertEqual(len(again["open_world_research"]), 1)
 
+    def test_resolved_history_does_not_consume_active_read_budget(self):
+        # Many exact published occurrences and a pending dossier coexist
+        # with fresh clues. The entire network budget remains useful.
+        published = deepcopy(self.catalogue)
+        historical = [clue(uid=810000 + i) for i in range(60)]
+        for row in historical:
+            published["events"].append({
+                "id": "openagenda-" + row["external_id"] + "-" + DAY.isoformat()
+            })
+        prior, _ = self.build([clue()])
+        fresh = [clue(uid=820000 + i) for i in range(MAX_ATTEMPTS)]
+        rows = [*historical, clue(), *fresh]
+        original = deepcopy(rows)
+        seen = []
+        def read_event(agenda_uid, uid, key):
+            seen.append(uid)
+            return dict(oa_event(), uid=uid)
+        result, counts = build_backlog_dossiers(
+            rows, prior, published, TODAY, self.key,
+            agenda_reader=lambda *_: AGENDA, event_reader=read_event)
+        self.assertEqual(counts["backlog_candidates"], 85)
+        self.assertEqual(counts["backlog_candidates_already_published"], 60)
+        self.assertEqual(counts["backlog_candidates_already_queued"], 1)
+        self.assertEqual(counts["active_backlog_candidates"], MAX_ATTEMPTS)
+        self.assertEqual(counts["live_events_read"], MAX_ATTEMPTS)
+        self.assertEqual(set(seen), {int(row["external_id"]) for row in fresh})
+        self.assertEqual(counts["new_dossiers"], MAX_ATTEMPTS)
+        self.assertEqual(rows, original)
+        self.assertEqual(result["additions"], [])
+        self.assertFalse(result["safe_to_publish"])
+
     def test_publications_from_other_cycles_reclaim_full_queue_capacity(self):
         # A full private research queue may already have been published by
         # reconciliation or another cloud sync. Historical prompts remain
