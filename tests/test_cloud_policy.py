@@ -312,6 +312,34 @@ class TestsCloud(unittest.TestCase):
 
 
 class TestsPrivateIntakeEventBridge(unittest.TestCase):
+    def test_cloud_push_scope_preserves_intake_and_avoids_unrelated_engines(self):
+        from fnmatch import fnmatchcase
+        import re
+        workflow = (Path(__file__).resolve().parents[1] /
+                    ".github/workflows/ptitesondes-cloud-sync.yml").read_text(
+                        encoding="utf-8")
+        push = workflow.split("  push:\n", 1)[1].split("  schedule:", 1)[0]
+        paths = re.findall(r"^      - '([^']+)'$", push, re.M)
+        for path in (
+                "scripts/ptitesondes_open_world_patch_bridge.py",
+                "scripts/run_cloud_sync.py", "scripts/private_intake.py",
+                "scripts/merge_policy.py", "scripts/proof_text.py",
+                "tests/test_ptitesondes_candidate_promotion.py",
+                "tests/test_cloud_policy.py", "docs/ptitesondes/lieux.json",
+                ".github/workflows/ptitesondes-cloud-sync.yml"):
+            self.assertTrue(any(fnmatchcase(path, p) for p in paths), path)
+        for path in (
+                "scripts/concert_dynamic_existing_venue.py",
+                "tests/test_concerts_dynamic_existing_venue.py",
+                "scripts/grossesondes_festivals.py",
+                "tests/test_festivals_browser.py",
+                "docs/grossesondes/festivals.json"):
+            self.assertFalse(any(fnmatchcase(path, p) for p in paths), path)
+        self.assertIn("  schedule:", workflow)
+        self.assertIn("  workflow_dispatch:", workflow)
+        self.assertIn("  group: ondes-cloud-publication", workflow)
+        self.assertIn("  cancel-in-progress: false", workflow)
+
     def test_private_intake_success_triggers_independent_public_sync(self):
         workflow = (Path(__file__).resolve().parents[1] /
                     ".github/workflows/ptitesondes-cloud-sync.yml").read_text(
