@@ -467,6 +467,49 @@ def event_genres(raw, official_url, *, fetch=None, cache=None, html=None):
     return genres, scope
 
 
+def _exact_location_description(location, venue):
+    """Accept an exact published French address in THIS Event's Place.
+
+    Some schema.org producers serialize an empty PostalAddress and put the
+    complete address in Place.description. Never use page-wide prose, another
+    Event, a city centroid, or contradict populated structured address fields.
+    Called only after the source's independent venue identity is verified.
+    """
+    from html import unescape
+
+    addr = location.get("address")
+    if not isinstance(addr, dict):
+        return False
+    street, postal, city = (venue.get(k) for k in
+                            ("address", "postalCode", "city"))
+    if (not isinstance(street, str) or len(normal(street)) < 5
+            or not isinstance(postal, str) or not re.fullmatch(r"[0-9]{5}", postal)
+            or not isinstance(city, str) or not normal(city)):
+        return False
+    for field, expected in (("streetAddress", street), ("postalCode", postal),
+                            ("addressLocality", city)):
+        value = addr.get(field)
+        if value not in (None, "") and normal(value) != normal(expected):
+            return False
+    for country in (addr.get("addressCountry"), location.get("country"),
+                    location.get("addressCountry")):
+        if country in (None, ""):
+            continue
+        if isinstance(country, dict):
+            country = country.get("name") or country.get("@id")
+        if normal(country) not in {"fr", "france", "republique francaise"}:
+            return False
+    description = location.get("description")
+    if not isinstance(description, str) or not 5 <= len(description) <= 1000:
+        return False
+    value = normal(unescape(description))
+    expected = normal(street + " " + postal + " " + city)
+    # The venue address must be the leading, contiguous complete address.
+    # A second postal code makes the physical location ambiguous.
+    return (value == expected or value.startswith(expected + " ")) and (
+        re.findall(r"(?<![0-9])[0-9]{5}(?![0-9])", value) == [postal])
+
+
 def _event(raw, event, venue, artists, *, accept_generic=False,
            fetch=None, cache=None, html=None):
     """Verify one complete first-party concert event; never join evidence."""
@@ -501,14 +544,15 @@ def _event(raw, event, venue, artists, *, accept_generic=False,
     country = addr.get("addressCountry")
     if isinstance(country, dict):
         country = country.get("name") or country.get("@id")
-    require(normal(country) in {"fr", "france", "republique francaise"},
-            "event takes place outside France")
-    require(normal(addr.get("addressLocality")) == normal(venue["city"]) and
-            str(addr.get("postalCode")) == venue.get("postalCode"),
-            "first-party postal address differs from published venue")
-    # Missing street number is acceptable. It must still identify the site.
-    require(normal(addr.get("streetAddress")) == normal(venue.get("address")),
-            "official street conflicts with published venue")
+    if not (accept_generic and _exact_location_description(location, venue)):
+        require(normal(country) in {"fr", "france", "republique francaise"},
+                "event takes place outside France")
+        require(normal(addr.get("addressLocality")) == normal(venue["city"]) and
+                str(addr.get("postalCode")) == venue.get("postalCode"),
+                "first-party postal address differs from published venue")
+        # Missing street number is acceptable. It must still identify the site.
+        require(normal(addr.get("streetAddress")) == normal(venue.get("address")),
+                "official street conflicts with published venue")
     genres, scope = event_genres(raw, event["officialUrl"],
                                  fetch=fetch if accept_generic else None,
                                  cache=cache, html=html)

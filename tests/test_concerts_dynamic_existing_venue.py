@@ -200,6 +200,54 @@ class UnlistedExistingVenueTests(unittest.TestCase):
             dynamic.validate(signed, venues, artists, TODAY,
                              fetch=fake_fetch({"primary": split}))
 
+    def test_exact_place_description_replays_when_postal_address_is_empty(self):
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        node = next(dynamic.discover.read_ld(page(EVENT, music=False)))
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+        exact = " ".join(venue[k] for k in ("address", "postalCode", "city"))
+        node["location"]["address"] = {"@type": "PostalAddress"}
+        node["location"]["description"] = exact + " Métro ligne B"
+
+        def as_html(value):
+            return ("<html><main><script type='application/ld+json'>"
+                    + json.dumps(value) + "</script>"
+                    "<p>Official concert detail</p></main></html>")
+
+        self.assertTrue(dynamic.validate(
+            signed, venues, artists, TODAY,
+            fetch=fake_fetch({"primary": as_html(node)})))
+        for field, value in (("streetAddress", "12 rue différente"),
+                             ("postalCode", "75001"),
+                             ("addressLocality", "Paris"),
+                             ("addressCountry", "BE")):
+            wrong = copy.deepcopy(node)
+            wrong["location"]["address"][field] = value
+            with self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY,
+                                 fetch=fake_fetch({"primary": as_html(wrong)}))
+        for description in (venue["city"], "Autre lieu " + exact,
+                            exact + " ou 75001 Paris", "Une adresse inconnue"):
+            wrong = copy.deepcopy(node)
+            wrong["location"]["description"] = description
+            with self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY,
+                                 fetch=fake_fetch({"primary": as_html(wrong)}))
+        wrong = copy.deepcopy(node)
+        wrong["location"]["country"] = {"@type": "Country", "name": "BE"}
+        with self.assertRaises(ValueError):
+            dynamic.validate(signed, venues, artists, TODAY,
+                             fetch=fake_fetch({"primary": as_html(wrong)}))
+        # An unrelated site never obtains authority from a correct address.
+        with self.assertRaises(ValueError):
+            dynamic.validate(signed, venues, artists, TODAY,
+                             fetch=fake_fetch({"primary": as_html(node),
+                                               "osm": osm(website="https://autre.fr")}))
+
     def test_visible_detail_single_source_replayed_with_eight_unknown_artists(self):
         from automation.concerts import dynamic_first_party_venue_proposals as proposals
         signed = signed_approval()
