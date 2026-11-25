@@ -5,6 +5,8 @@ on:
     paths:
       - 'radio-catalog-lab/flutter/lib/central_media_artwork_hydration.dart'
       - 'radio-catalog-lab/flutter/test/central_media_artwork_hydration_test.dart'
+      - 'radio-catalog-lab/flutter/lib/media_selection_intent.dart'
+      - 'radio-catalog-lab/flutter/test/media_selection_intent_test.dart'
       - '.github/workflows/go-aa-deferred-artwork-lab.yml'
 permissions:
   contents: read
@@ -30,3 +32,7 @@ jobs:
         run: flutter test --reporter expanded test/central_media_artwork_hydration_test.dart
       - name: Existing signed logo serialization and version controls
         run: flutter test --reporter expanded test/central_signed_artwork_work_queue_test.dart test/central_signed_artwork_version_guard_test.dart
+      - name: Analyze selection intent
+        run: flutter analyze --fatal-infos lib/media_selection_intent.dart test/media_selection_intent_test.dart
+      - name: Verify competing asynchronous station selections
+        run: flutter test --reporter expanded test/media_selection_intent_test.dart
