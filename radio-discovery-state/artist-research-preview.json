@@ -3,11 +3,11 @@
   "scanDate": "2026-11-25",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 6,
-  "dueNameCount": 6,
-  "attemptedCount": 3,
-  "serviceFailure": "service_or_response_held",
-  "retryAfterKey": "marc freak",
+  "observedNameCount": 9,
+  "dueNameCount": 7,
+  "attemptedCount": 1,
+  "serviceFailure": "http_503",
+  "retryAfterKey": "megadeth",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
