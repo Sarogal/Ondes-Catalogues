@@ -96,7 +96,7 @@
           "items": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 60
+            "maxLength": 128
           }
         },
         "radio_browser_uuids": {
@@ -375,8 +375,28 @@
         "reason_code": {
           "type": "string",
           "minLength": 1
+        },
+        "redirect_to": {
+          "type": "string",
+          "pattern": "^go-station-[0-9]{6,}$"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "redirect_to"
+            ]
+          },
+          "then": {
+            "properties": {
+              "reason_code": {
+                "const": "merged_into_station"
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }
