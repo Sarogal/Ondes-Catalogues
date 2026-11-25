@@ -1275,6 +1275,23 @@ class MunicipalVenueCityTests(unittest.TestCase):
         self.assertIsNone(result)
         self.assertEqual(calls, [])
 
+    def test_hidden_void_element_does_not_poison_following_visible_menu(self):
+        html = self.html.replace("<nav>", (
+            '<div hidden><input/><br/><div>hidden</div></div><nav>'))
+        self.assertIsNotNone(self.prove(html=html)[0])
+
+    def test_signed_origin_recheck_does_not_depend_on_current_agenda_index(self):
+        from unittest.mock import patch
+        from grossesondes_existing_official_updates import _reprove_signed_municipal_origin
+        mod = "national_municipal_source_research"
+        with patch(mod + ".verified_commune", return_value={
+                "city": "Ville-Test", "codeInsee": "12345"}), \
+             patch(mod + ".fetch_dila_records", return_value={}), \
+             patch(mod + ".verified_mairie_site", return_value="https://www.example.fr/"):
+            self.assertTrue(_reprove_signed_municipal_origin("Ville-Test", self.site))
+            self.assertFalse(_reprove_signed_municipal_origin(
+                "Ville-Test", "https://different.example.fr/event/"))
+
     def test_unsigned_and_cancelled_event_not_location_authority(self):
         self.assertIsNone(self.prove(row=dict(self.row, sourceConfidence="unknown"))[0])
         self.assertIsNone(self.prove(html=self.html.replace(

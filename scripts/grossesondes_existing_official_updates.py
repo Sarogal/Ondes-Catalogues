@@ -165,8 +165,30 @@ def signed_programmer_current_city(html, row):
 
 
 
+def _reprove_signed_municipal_origin(city, site):
+    """Fresh Geo/DILA attribution for an already signed and re-read URL.
+
+    Unlike discovery of an unknown edition, the exact official event page
+    is already known. Do not require the rotating agenda index to rediscover
+    that page a second time. DILA must still identify the identical origin.
+    """
+    from national_municipal_source_research import (
+        verified_commune, mairie_records_url, fetch_dila_records,
+        verified_mairie_site, INSEE,
+    )
+    admin = verified_commune(city)
+    if not isinstance(admin, dict):
+        return False
+    name, code = admin.get("city"), admin.get("codeInsee")
+    if (not isinstance(name, str) or normal_city(name) != normal_city(city)
+            or not isinstance(code, str) or not INSEE.fullmatch(code)):
+        return False
+    root = verified_mairie_site(fetch_dila_records(mairie_records_url(code)), code, name)
+    return root == "https://" + urlsplit(site).netloc + "/"
+
+
 def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
-                                municipal_prover=None):
+                                municipal_prover=None, diagnostic=None):
     """Reprove a signed municipal event and its explicitly named venue.
 
     The municipality in the page title is a search selector, not location
@@ -177,10 +199,13 @@ def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
     """
     from grossesondes_openagenda_linked_edition import (
         MUNICIPAL_PUBLIC_CONFIDENCE, _municipal_detail_dates,
-        _municipal_heading_matches, municipal_selector, prove_municipal_edition,
+        _municipal_heading_matches, municipal_selector,
     )
     from national_municipal_pages_preflight import safe_same_host_article
-    from source_qualification import Anchors
+
+    def stage(value):
+        if diagnostic is not None:
+            diagnostic["municipal_venue"] = value
 
     class MunicipalHeadings(VisibleInstitutionHeadings):
         # Site-wide navigation and legal/contact footers cannot prove a
@@ -190,15 +215,36 @@ def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
                 attrs = list(attrs) + [("hidden", "")]
             super().handle_starttag(tag, attrs)
 
-    class MunicipalAnchors(Anchors):
-        # The shared anchor reader handles display:none and hidden;
-        # this proof also excludes visibility:hidden descendants.
-        def handle_starttag(self, tag, attrs):
-            style = dict(attrs).get("style") or ""
-            if re.search(r"visibility\s*:\s*hidden", style, re.I):
-                attrs = list(attrs) + [("hidden", "")]
-            super().handle_starttag(tag, attrs)
+    class MunicipalAnchors(VisibleText):
+        # Track visible links with the same tag-aware hidden stack as the
+        # edition parser. A void/self-closing element cannot accidentally
+        # unhide a descendant or leave the rest of a large menu concealed.
+        def __init__(self):
+            super().__init__()
+            self.anchors = []
+            self.current = None
 
+        def handle_starttag(self, tag, attrs):
+            super().handle_starttag(tag, attrs)
+            if tag == "a":
+                href = dict(attrs).get("href")
+                self.current = (href, []) if (
+                    not self.hidden() and isinstance(href, str)) else None
+
+        def handle_data(self, data):
+            if self.current is not None and not self.hidden():
+                if len(self.current[1]) < 40:
+                    self.current[1].append(data)
+
+        def handle_endtag(self, tag):
+            if tag == "a":
+                if self.current is not None and not self.hidden():
+                    if len(self.anchors) < 2000:
+                        self.anchors.append((self.current[0], "".join(self.current[1])))
+                self.current = None
+            super().handle_endtag(tag)
+
+    stage("ineligible_signed_source")
     if (not isinstance(row, dict)
             or row.get("sourceConfidence") != MUNICIPAL_PUBLIC_CONFIDENCE
             or row.get("source") != row.get("officialSite")
@@ -211,8 +257,10 @@ def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
         name = row["name"]
         year = int(name.rsplit(" ", 1)[-1])
         dates = (row["startDate"], row["endDate"])
+        stage("edition_date_or_genre_not_reproved")
         if _municipal_detail_dates(html, name, year, today) != (True, dates):
             return None
+        stage("municipal_title_selector_missing")
         title = _EditionTitle()
         title.feed(html)
         title.close()
@@ -222,14 +270,16 @@ def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
         if match is None or not municipal_selector(match.group(1)):
             return None
         city = match.group(1)
+        stage("signed_city_conflict")
         if row.get("city") and normal_city(row["city"]) != normal_city(city):
             return None
+        stage("event_heading_not_unique")
         heading = MunicipalHeadings()
         heading.feed(html)
         heading.close()
         matches = [i for i, label in enumerate(heading.headings)
                    if _municipal_heading_matches(label, name, year)]
-        if len(matches) != 1:
+        if len(matches) != 1 or len(heading.headings) != len(heading.heading_starts):
             return None
         index = matches[0]
         start = heading.heading_starts[index]
@@ -240,8 +290,9 @@ def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
         anchors.feed(html)
         anchors.close()
         root = "https://" + urlsplit(site).netloc + "/"
+        stage("no_visible_same_origin_venue_link")
         candidates = {}
-        for href, label, _ in anchors.anchors[:500]:
+        for href, label in anchors.anchors:
             venue = fold(label)
             if not 7 <= len(venue) <= 100:
                 continue
@@ -252,9 +303,13 @@ def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
             url = safe_same_host_article(href, site, root)
             if url and url != site and not urlsplit(url).query:
                 candidates[url] = bare
-        if not 1 <= len(candidates) <= 3 or len(set(candidates.values())) != 1:
+        if not candidates:
+            return None
+        stage("ambiguous_venue_links")
+        if len(candidates) > 3 or len(set(candidates.values())) != 1:
             return None
         proven = []
+        stage("venue_heading_or_local_postal_address_missing")
         for url, venue in sorted(candidates.items()):
             body = fetch(url)
             if not isinstance(body, str) or not 0 < len(body) <= 650_000:
@@ -264,7 +319,7 @@ def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
             parsed.close()
             names = [i for i, label in enumerate(parsed.headings)
                      if re.sub(r"^(?:le|la|les|l)\s+", "", fold(label)) == venue]
-            if len(names) != 1:
+            if len(names) != 1 or len(parsed.headings) != len(parsed.heading_starts):
                 continue
             # Venue title and postal address must be in the same local
             # region of visible content, not an unrelated global footer.
@@ -277,9 +332,13 @@ def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
             proven.append(url)
         if len(proven) != 1:
             return None
-        recheck = municipal_prover or prove_municipal_edition
-        if recheck(city, name, today, fetch=fetch) != (site, dates):
+        stage("fresh_geo_dila_origin_not_reproved")
+        if municipal_prover is not None:
+            if municipal_prover(city, name, today, fetch=fetch) != (site, dates):
+                return None
+        elif not _reprove_signed_municipal_origin(city, site):
             return None
+        stage("accepted")
         return {"slug": row["slug"], "city": city, "source": site,
                 "venue_source": proven[0]}
     except (OSError, TimeoutError, ValueError, TypeError, UnicodeError, KeyError):
@@ -1510,6 +1569,7 @@ def apply_independently_verified_updates(
                 fields.append("price")
                 sources.extend(seasonal_sources)
             commune_diagnostic = "not_eligible"
+            municipal_diagnostic = {}
             # The signed current-edition title may explicitly name the town.
             # Publisher re-fetches the site itself, then independently resolves
             # that exact commune through the fixed government geocoding API.
@@ -1530,7 +1590,8 @@ def apply_independently_verified_updates(
                 for linked_url, html in html_pages:
                     claim = exact_edition_city(html, old)
                     if claim is None and linked_url == site:
-                        claim = signed_municipal_venue_city(html, old, today, fetch)
+                        claim = signed_municipal_venue_city(
+                            html, old, today, fetch, diagnostic=municipal_diagnostic)
                     if claim is None and linked_url != site:
                         city = current_official_ticket_city(html, old)
                         if city:
@@ -1808,6 +1869,7 @@ def apply_independently_verified_updates(
                     "seasonal_ticket_rendered_proof": rendered_ticket_offers,
                     "commune_diagnostic": ("accepted" if "geoVerification" in fields
                                            else commune_diagnostic),
+                    "municipal_venue_diagnostic": municipal_diagnostic.get("municipal_venue"),
                     "fields_proposed": list(fields),
                     "ticket_note_proof": ({
                         "old_note_outdated": (
