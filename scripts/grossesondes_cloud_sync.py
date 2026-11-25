@@ -41,6 +41,7 @@ from grossesondes_existing_official_updates import (
     COMMUNE_FIELDS as COMMUNE_UPDATE_FIELDS,
     clean_obsolete_date_notes, verified_artist_alias_cleanup,
     expected_ticket_notes_after_official_sale,
+    parsed_seasonal_ticket_summary,
 )
 from grossesondes_structured_edition import (
     PROOF_MODE as EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
@@ -372,11 +373,19 @@ def _verified_official_update_delta(old, new):
             return False
     elif "bands" in changed:
         return False
-    if ("price" in changed and
-            (not isinstance(new.get("price"), str)
-             or len(new["price"]) > 350
-             or "billetterie officielle ouverte" not in new["price"])):
-        return False
+    if "price" in changed:
+        price = new.get("price")
+        if not isinstance(price, str) or len(price) > 350:
+            return False
+        old_tiers = parsed_seasonal_ticket_summary(old.get("price"))
+        new_tiers = parsed_seasonal_ticket_summary(price)
+        if old_tiers and (not new_tiers or not set(old_tiers) <= set(new_tiers)):
+            return False
+        if ("billetterie officielle ouverte" not in price
+                and not new_tiers):
+            return False
+        if new_tiers and old.get("price") is not None and not old_tiers:
+            return False
     if "lastVerified" in changed and (
             not isinstance(new.get("lastVerified"), str)
             or new["lastVerified"] < old.get("lastVerified", "")):
