@@ -124,6 +124,125 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
             self.assertEqual(stats["newEvents"], 1, stats["held"])
             self.assertEqual(published["events"][-1]["artistIds"], ["new-act"])
 
+    def _published_legacy_promotional(self, old_name, clean):
+        # Reproduce an approval already published by the pre-#895 verifier.
+        reg = registry()
+        candidate = reg["items"]["from-openagenda"]["candidate"]
+        candidate["name"] = candidate["leadArtist"] = old_name
+        payload = official_export(
+            title={"fr": old_name}, longDescription={"fr": f"Le groupe {clean} joue du punk."},
+            keywords={"fr": ["punk"]})
+        def get(url, cache):
+            self.assertEqual(url, EXPORT)
+            return payload
+        before = {"schema": publisher.SCHEMA, "approvals": []}
+        with mock.patch.object(identity, "safe_fetch", side_effect=get), \
+                mock.patch.object(oa, "promotional_artist_candidate", return_value=None), \
+                mock.patch.object(oa, "verified_export", return_value=([old_name], ["punk"])):
+            signed, report = producer.build(reg, self.catalogue, before, TODAY, fetch=get)
+            self.assertEqual(report["stateCounts"], {"independently_verified_proposal": 1}, report)
+            current, stats = publisher.merge(self.catalogue, self.catalogue, signed, TODAY)
+            self.assertEqual(stats["newEvents"], 1, stats["held"])
+        return current, signed, payload
+
+    def test_published_promotional_reconciliation_reuse_create_and_replay(self):
+        from automation.concerts import published_lineup_patch_builder as builder
+        from scripts import concert_published_lineup_contract as contract
+        from scripts import concerts_private_approval_preview as preview
+        for old_name, clean, artist_id, new_count in (
+                ("Kamelot Release Party", "Kamelot", "kamelot", 0),
+                ("NEW ACT (ex Former Band) en concert", "NEW ACT", "new-act", 1)):
+            with self.subTest(old_name=old_name):
+                current, previous, payload = self._published_legacy_promotional(old_name, clean)
+                original = copy.deepcopy(previous)
+                old_event = current["events"][-1]
+                pristine = copy.deepcopy(current)
+                def get(url, cache=None):
+                    self.assertEqual(url, EXPORT)
+                    return payload
+                report = builder.build_promotional(current, previous, TODAY, fetch=get)
+                self.assertFalse(report["publicationAllowed"])
+                self.assertEqual(report["held"], [])
+                self.assertEqual(len(report["proposals"]), 1)
+                correction = report["proposals"][0]
+                self.assertEqual(correction["artistIds"], [artist_id])
+                self.assertEqual(len(correction["newArtists"]), new_count)
+                signed = copy.deepcopy(previous)
+                signed["lineupCorrections"] = [correction]
+                with mock.patch.object(contract, "network_fetch", side_effect=get):
+                    self.assertEqual(preview.audit(previous, signed, self.catalogue, current, TODAY), 1)
+                    updated, stats = publisher.merge(self.catalogue, current, signed, TODAY)
+                self.assertEqual(stats["correctedEvents"], 1)
+                self.assertEqual(stats["newArtists"], new_count)
+                self.assertEqual(stats["newEvents"], 0)
+                self.assertEqual(current, pristine)
+                self.assertEqual(previous, original)
+                self.assertEqual(updated["events"][:-1], current["events"][:-1])
+                self.assertEqual(updated["artists"][:len(current["artists"])], current["artists"])
+                self.assertEqual(updated["venues"], current["venues"])
+                event = updated["events"][-1]
+                self.assertEqual(event["artistIds"], [artist_id])
+                self.assertEqual(event["title"], clean)
+                self.assertEqual(event["history"][-1]["change"], contract.PROMOTIONAL_HISTORY)
+                allowed = {"title", "artistIds", "history", "lastVerified"}
+                self.assertEqual({k: v for k, v in event.items() if k not in allowed},
+                                 {k: v for k, v in old_event.items() if k not in allowed})
+                with mock.patch.object(contract, "network_fetch",
+                                       side_effect=AssertionError("replay must not fetch")):
+                    again, stats = publisher.merge(self.catalogue, updated, signed, TODAY)
+                self.assertEqual(again, updated)
+                self.assertEqual(stats["correctedEvents"], 0)
+                self.assertEqual(builder.build_promotional(updated, signed, TODAY,
+                                 fetch=lambda *_: self.fail("already corrected"))["proposals"], [])
+
+    def test_published_promotional_rejects_forgery_collisions_and_bad_evidence(self):
+        from automation.concerts import published_lineup_patch_builder as builder
+        from scripts import concert_published_lineup_contract as contract
+        current, previous, payload = self._published_legacy_promotional(
+            "NEW ACT Release Party", "NEW ACT")
+        get = lambda *_: payload
+        report = builder.build_promotional(current, previous, TODAY, fetch=get)
+        self.assertEqual(len(report["proposals"]), 1)
+        row = report["proposals"][0]
+        original = previous["approvals"][0]
+        for key, value in (
+                ("reviewedBy", "discovery-feed"), ("date", "2027-03-06"),
+                ("officialUrl", "https://openagenda.com/other/events/another"),
+                ("artistIds", ["kamelot"]), ("oldArtistIds", ["kamelot"])):
+            with self.subTest(key=key):
+                bad = copy.deepcopy(row)
+                bad[key] = value
+                with self.assertRaises(ValueError):
+                    contract.plan(bad, original, current, TODAY)
+        for changes in (
+                {"status": 2}, {"firstDate": "2027-03-06"},
+                {"uid": 12345678}, {"title": {"fr": "Another Band"}},
+                {"longDescription": {"fr": "NEW ACT Release Party"}}):
+            with self.subTest(changes=changes):
+                data = json.loads(payload)
+                data["events"][0].update(changes)
+                bad = json.dumps(data)
+                with self.assertRaises(ValueError):
+                    contract.apply(row, original, current, TODAY, fetch=lambda _: bad)
+                held = builder.build_promotional(current, previous, TODAY, fetch=lambda *_: bad)
+                self.assertEqual(held["proposals"], [])
+        collision = copy.deepcopy(current)
+        collision["artists"].extend([
+            {"id": "new-act", "name": "Different Band", "aliases": []},
+            {"id": "another-id", "name": "NEW ACT", "aliases": []},
+            {"id": "yet-another-id", "name": "New Act", "aliases": []},
+        ])
+        self.assertEqual(builder.build_promotional(collision, previous, TODAY, fetch=get)
+                         ["proposals"], [])
+        # Existing reference concerts cannot be changed even with a correction
+        # row in a supposedly signed ledger.
+        protected = copy.deepcopy(previous)
+        ref_id = self.catalogue["events"][0]["id"]
+        protected["approvals"][0]["event"]["id"] = ref_id
+        protected["lineupCorrections"] = [dict(row, eventId=ref_id)]
+        with self.assertRaises(ValueError):
+            publisher.merge(self.catalogue, current, protected, TODAY)
+
     def test_publisher_accepts_official_export_without_json_ld(self):
         observed = []
         def get(url, cache):
