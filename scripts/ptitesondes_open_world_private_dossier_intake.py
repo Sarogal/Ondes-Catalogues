@@ -19,7 +19,7 @@ from urllib.parse import urlsplit
 
 from merge_policy import ORIGIN
 from ptitesondes_national_backlog_bridge import (
-    _atomic_json, _inventory, _inventory_key, _read,
+    _atomic_json, _iter_inventory as _inventory, _inventory_key, _read,
 )
 from ptitesondes_national_openworld_research_cycle import _future_original
 from ptitesondes_open_world_municipal_bootstrap import _safe_research_lead
