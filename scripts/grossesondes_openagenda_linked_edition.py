@@ -123,6 +123,90 @@ def municipal_selector(city):
             and any(c.isalpha() for c in city))
 
 
+def _municipal_heading_matches(heading, title, year):
+    """Exact brand, optionally followed by an explicit year or edition number."""
+    brand = normalized(title.rsplit(" ", 1)[0])
+    value = normalized(heading)
+    # A bare trailing number is accepted only with a printed # or edition
+    # label. A different named event, city, artist or year cannot match.
+    if value in (brand, brand + " " + str(year)):
+        return True
+    if not re.search(r"(?:#\s*\d{1,2}|\b[ée]dition\s+\d{1,2})\s*$",
+                     heading, re.I):
+        return False
+    return re.fullmatch(re.escape(brand) +
+                        r"(?: edition)? [0-9]{1,2}", value) is not None
+
+
+def _municipal_detail_dates(html, title, year, today):
+    """A bounded named event section may contain a separate date heading.
+
+    Municipal CMS templates often place the event in h2, not h1, and give
+    its edition number rather than a year in the title. Only that section
+    may establish its explicit current dates, musical genre and format.
+    """
+    from grossesondes_institutional_edition import VisibleInstitutionHeadings, TOURING_SHOW
+    from grossesondes_official_html_edition import (
+        fold, explicit_ranges, dominant_visible_range, CANCEL,
+        administrative_calendar_dates,
+    )
+    from grossesondes_generic_directory_edition import (
+        verify_primary, ROCK_METAL_PUNK_GENRES,
+    )
+    from grossesondes_structured_edition import no_same_edition_jsonld_contradiction
+    from festival_event_kind import touring_concert_stop
+    if not isinstance(html, str) or not 0 < len(html) <= 650_000:
+        return False, None
+    parser = VisibleInstitutionHeadings()
+    parser.feed(html)
+    parser.close()
+    matches = [i for i, heading in enumerate(parser.headings)
+               if _municipal_heading_matches(heading, title, year)]
+    if len(matches) != 1 or len(parser.headings) != len(parser.heading_starts):
+        return bool(matches), None
+    index = matches[0]
+    start = parser.heading_starts[index]
+    end = (parser.heading_starts[index + 1]
+           if index + 1 < len(parser.heading_starts) else len(parser.parts))
+    section = " ".join(fold(" ".join(parser.parts[start:end])).split())
+    brand = normalized(title.rsplit(" ", 1)[0])
+    outside = re.sub(r"(?<![a-z0-9])" + re.escape(brand)
+                     + r"(?![a-z0-9])", " ", normalized(section))
+    if (not ROCK_METAL_PUNK_GENRES.search(outside)
+            or CANCEL.search(section) or TOURING_SHOW.search(outside)):
+        return True, None
+    excluded = administrative_calendar_dates(html, title, year)
+    intervals = {(a, b) for _, _, a, b in explicit_ranges(section, year)
+                 if (a, b) not in excluded}
+    target = dominant_visible_range(intervals)
+    if (target is None or target[0] < date.fromisoformat(today)
+            or touring_concert_stop(html, *target)
+            or not no_same_edition_jsonld_contradiction(html, title, *target)):
+        return True, None
+    dates = tuple(d.isoformat() for d in target)
+    if verify_primary(html, title, year, today) == dates:
+        return True, dates
+    # Fallback for a named "Fest" with no literal "festival" in the page:
+    # an explicit recurring edition or festival description plus a calendar
+    # date immediately following the event heading. Never a ticket-sale day.
+    if not (re.search(r"\bfestival\b", outside)
+            or (re.search(r"\bfest\b", brand)
+                and re.search(r"\b(?:edition|editions)\b", outside))):
+        return True, None
+    leading = section[:240]
+    for offset, _, a, b in explicit_ranges(leading, year):
+        if (a, b) != target:
+            continue
+        prefix = leading[:offset]
+        if re.search(r"\b(?:billetterie|prevente|tickets?|vente|inscription)\b", prefix):
+            continue
+        # The date must be next to the named event, not a different paragraph
+        # much further down a multi-event agenda.
+        if len(prefix) <= 120:
+            return True, dates
+    return True, None
+
+
 def prove_municipal_edition(city, title, today, *, fetch=fetch_public_html,
                             commune_lookup=None, directory_fetch=None):
     """Reconstruct a mairie origin, then read its own event-detail publication.
@@ -136,9 +220,6 @@ def prove_municipal_edition(city, title, today, *, fetch=fetch_public_html,
     )
     from national_municipal_pages_preflight import (
         _candidate_links, _visible, safe_same_host_article,
-    )
-    from grossesondes_generic_directory_edition import (
-        verify_primary, ROCK_METAL_PUNK_GENRES,
     )
     if (not municipal_selector(city) or not isinstance(title, str)
             or not re.fullmatch(r".{7,150} 20[2-4][0-9]", title)):
@@ -156,8 +237,6 @@ def prove_municipal_edition(city, title, today, *, fetch=fetch_public_html,
         root = verified_mairie_site(record, code, name)
         if root is None:
             return None
-        brand = normalized(title.rsplit(" ", 1)[0])
-        exact = normalized(title)
         pending = [(0, root)]
         seen = set()
         proofs = []
@@ -170,17 +249,10 @@ def prove_municipal_edition(city, title, today, *, fetch=fetch_public_html,
             seen.add(url)
             try:
                 html = fetch(url)
-                words = _visible(html)
-                heading = Heading()
-                heading.feed(html)
-                heading.close()
-                named = url != root and sum(
-                    h in (brand, exact) for h in heading.headings) == 1
+                _visible(html)  # reject malformed or oversized responses
+                named, dates = (_municipal_detail_dates(html, title, year, today)
+                                if url != root else (False, None))
                 if named:
-                    outside = re.sub(r"(?<![a-z0-9])" + re.escape(brand)
-                                     + r"(?![a-z0-9])", " ", words)
-                    dates = (verify_primary(html, title, year, today)
-                             if ROCK_METAL_PUNK_GENRES.search(outside) else None)
                     if dates is None:
                         unresolved_named = True
                     else:

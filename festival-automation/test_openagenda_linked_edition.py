@@ -330,6 +330,35 @@ class MunicipalDirectEditionTests(TestCase):
                 return changed if url == self.DETAIL else self.read(url)
             self.assertIsNone(self.proof(self.CITY, TITLE, D1, fetch=read))
 
+    def test_numbered_h2_with_adjacent_single_day_date(self):
+        title = "Les Forges Fest 2027"
+        detail = self.ROOT + "evenement/les-forges-fest-3/"
+        html = ('<main><h1>Agenda</h1><h2>Les Forges Fest #3</h2>'
+                '<h3>28 juin 2027 de 20:00 à 21:30</h3>'
+                '<p>Troisième édition du Les Forges Fest. '
+                'Une soirée de metal avec quatre groupes.</p><h2>Détails</h2></main>')
+        def read(url):
+            if url == self.ROOT:
+                return '<a href="' + detail + '">Les Forges Fest #3</a>'
+            self.assertEqual(url, detail)
+            return html
+        self.assertEqual(self.proof(self.CITY, title, D1, fetch=read),
+                         (detail, ("2027-06-28", "2027-06-28")))
+        for invalid in (
+                html.replace('28 juin 2027', '28 juin 2025'),
+                html.replace('<h3>28', '<h3 hidden>28'),
+                html.replace('28 juin 2027', 'Ouverture billetterie 28 juin 2027'),
+                html.replace('28 juin 2027', '28 juin 2027 et 30 juillet 2027'),
+                html.replace('Troisième édition', 'Édition annulée'),
+                html.replace('Une soirée de metal', 'Une soirée de techno'),
+                html.replace('Les Forges Fest #3</h2>',
+                             'Autre événement #3</h2>'),
+                html.replace('Une soirée de metal', 'Une tournée itinérante de metal'),
+                html.replace('<p>Troisième', '<h2>Autre spectacle</h2><p>Troisième')):
+            def bad_read(url):
+                return read(url) if url == self.ROOT else invalid
+            self.assertIsNone(self.proof(self.CITY, title, D1, fetch=bad_read))
+
     def test_discovery_handoff_on_unavailable_oa(self):
         cal, _, _ = fixtures()
         dossier_queue = queue(D1)
