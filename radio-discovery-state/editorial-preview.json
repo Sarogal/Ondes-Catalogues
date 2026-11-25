@@ -4,9 +4,10 @@
   "publicationAllowed": false,
   "editoriallyApprovedCount": 0,
   "attemptedPageCount": 8,
-  "htmlObservedCount": 23,
-  "identityTargetCount": 4,
-  "structuredProgrammeCount": 2,
+  "htmlObservedCount": 25,
+  "identityTargetCount": 5,
+  "structuredProgrammeCount": 0,
+  "programmeScopeCount": 0,
   "declaredStreamLinkedCount": 1,
   "records": [
     {
@@ -17,13 +18,21 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
-      "analyzerVersion": 2,
+      "analyzerVersion": 3,
       "streamSha256": "7f39876a8b876844369bcce72b212767153cba84bb9cf531267897d7573862c8",
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
       "signal": "identity_and_target_indication",
       "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [
+        "indie",
+        "news",
+        "talk"
+      ],
       "declaredStreamLinked": true,
       "primaryTargetTerms": [
         "punk"
@@ -54,7 +63,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "no_format_evidence",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [],
@@ -66,7 +75,40 @@
         "13ed6c80401d82d0efdd7faaa30b317aa3cbe065e585d4243870e3674440905b",
         "851f44a074b1e95cdc2f3767000e2e67bf3fb23a77c3204ac8c89e4ea3f45526",
         "c9110d1c0ab4cef37de892dea0bd4483f0e2ad8a7c05028d255c94e6e8dd1d73"
-      ]
+      ],
+      "programmeScopeEvidence": false
+    },
+    {
+      "stationuuid": "11ebd6e7-4b9f-4c93-afcd-bca082bb82a6",
+      "homepageSha256": "f4636bdd68c55c8c869546e75f55eef09d8f1f2a366be6bd490d89c2a65bf981",
+      "identityNameSha256": "1472f892d06a7f0dbf483f472a408ebface7d542af99f9f827b766a7bd39ca33",
+      "reportedHost": "live365.com",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 3,
+      "streamSha256": "58404456505af5db040c9dcc7ca0479017e676a947be85af7989133918c29164",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": true,
+      "signal": "identity_and_target_indication",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [
+        "punk rock"
+      ],
+      "visibleTargetTerms": [
+        "punk",
+        "punk rock"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "0c013926635d6ced6d547cadfe1d3d5b07a7d7173d20b6b294c0a1a85071b4af",
+      "finalPageSha256": "f4636bdd68c55c8c869546e75f55eef09d8f1f2a366be6bd490d89c2a65bf981",
+      "imageHintSha256": []
     },
     {
       "stationuuid": "158a3876-cbad-406c-b69e-edac38ae71d6",
@@ -81,7 +123,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "no_format_evidence",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [],
@@ -92,7 +134,8 @@
       "imageHintSha256": [
         "c76cce2d1fee784a440fb4aeabdffe3ca73592c068c07cfd16f53719fba79b6a",
         "d342db3977fef8f51252b45af6974e9469bd4fb146eeb667a08d7bce3a641d27"
-      ]
+      ],
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "1628187c-e965-4593-8f36-719c3dd9ad9b",
@@ -105,7 +148,10 @@
       "analyzerVersion": 2,
       "streamSha256": "82f293eacbefd38fedcc6ecf22cf301aa75392588e9f4bd1a537039c2c40a128",
       "editorialApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "signal": "stale_analyzer_or_stream_review",
+      "declaredStreamLinked": false,
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "165c260d-de4a-4728-a1dc-2ae56cad10ec",
@@ -118,7 +164,10 @@
       "analyzerVersion": 2,
       "streamSha256": "f0511ad93702fc6c07690cc286b7c7f37bb83504237315021030be72353c859b",
       "editorialApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "signal": "stale_analyzer_or_stream_review",
+      "declaredStreamLinked": false,
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "16b32eac-febf-49ee-85e4-06b559c78b96",
@@ -133,7 +182,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [],
@@ -149,7 +198,8 @@
         "90fa2498954eb058193558dcbf6d2f554c7c80bb4dbe1eb47f52041c3d668606",
         "c06f5f72009f2e708ee0b9285163f7a7d1b9dd67c1b35690d8f5dbaf37c68e51",
         "c7ba3781a66f33ee78e8799e4c8d66d133837ed675958bb4ad8239335f9c76bd"
-      ]
+      ],
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "1f951feb-544e-447b-8143-8b9656a46cf2",
@@ -164,7 +214,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "no_format_evidence",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [],
@@ -176,7 +226,8 @@
         "401353974be4895fa05f0946f35d8b4375234b5012bc1b87af6f90b6f39e46bd",
         "a7bdf559748f589fe2547515fc11fecfc6f7982421da9c22e35470bb3a478c7e",
         "f7ce6a2eebd13a08212c5c48d2646891ac651f5f5e5ad6685812fb82e2916bf2"
-      ]
+      ],
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "25de583d-8165-4a5f-8ba5-39861a77f943",
@@ -186,13 +237,20 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
-      "analyzerVersion": 2,
+      "analyzerVersion": 3,
       "streamSha256": "fcab32b81f3023cc0712a2ea56a31ca7f8c19afe57d5435849e35e665dd04f19",
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
       "signal": "identity_and_target_indication",
       "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [
+        "indie",
+        "pop"
+      ],
       "declaredStreamLinked": false,
       "primaryTargetTerms": [
         "punk"
@@ -218,7 +276,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "no_format_evidence",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [],
@@ -226,7 +284,8 @@
       "primaryElectronicTerms": [],
       "pageSha256": "c6b06a2d2040d6dc49447fb8b4a8ed80f2afb7fa515d86126705814e9936a1ec",
       "finalPageSha256": "d5877cb102556ec5a3a1cdd7305902b3b1cd8a8d55c6bd84bf53c09ea9290d25",
-      "imageHintSha256": []
+      "imageHintSha256": [],
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "418b964f-a3df-4b72-a2ff-173ec7e1c1ff",
@@ -241,7 +300,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": true,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [],
@@ -254,7 +313,8 @@
       "imageHintSha256": [
         "116ff17b28ad62c75b97abadc9df450c8fe4bbf1281319d273beaf95a6cee3e1",
         "b0625fa7d451d70f1f8ff838bf4ac92570c469ce55aa20f0a97afb17f404ce69"
-      ]
+      ],
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "542c83b8-7465-46e9-a083-c2cc417d315d",
@@ -269,7 +329,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [
@@ -287,7 +347,8 @@
         "64981c80f1bb0d049a7b339c5333a68bd5b7e2704506f4f4f7ba305ba0d4c08c",
         "7073492431bca0a476e4cedc3cc1209cef435177c68311129d48caebeb688484",
         "82ee32e68a2d43533fc5ea14b582ffb2803daf3395be87e8094dbfb44a54afaa"
-      ]
+      ],
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "652a2fa1-d3fe-4724-a3eb-3d6b7fb1e687",
@@ -297,7 +358,7 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "failed_review",
-      "analyzerVersion": 2,
+      "analyzerVersion": 3,
       "streamSha256": "d7735960dc083e55ebbcf7c294be2faf0e517ed4355da8d8c7459963cdebd976",
       "editorialApproved": false,
       "publicationAllowed": false
@@ -313,7 +374,10 @@
       "analyzerVersion": 2,
       "streamSha256": "73ab626bf03ab3f1b73fee1a89930ef24bfd4bd30f673d9a042b2da2370de07d",
       "editorialApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "signal": "stale_analyzer_or_stream_review",
+      "declaredStreamLinked": false,
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "69bc015f-acfd-4175-af3b-bbc131c5bee1",
@@ -326,7 +390,10 @@
       "analyzerVersion": 2,
       "streamSha256": "edab9d4fbf267697368affc41288833ee4d1547f2c65f8156c4ca71ae3252ec0",
       "editorialApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "signal": "stale_analyzer_or_stream_review",
+      "declaredStreamLinked": false,
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "753d2e38-194f-4fb0-9918-4263c6119188",
@@ -336,13 +403,20 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
-      "analyzerVersion": 2,
+      "analyzerVersion": 3,
       "streamSha256": "08e4121484e003dfa9074299b382beb68ab8cfb7021aec650ae9eafa5c2fcafe",
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
       "signal": "identity_and_target_indication",
       "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [
+        "indie",
+        "pop"
+      ],
       "declaredStreamLinked": false,
       "primaryTargetTerms": [
         "punk"
@@ -366,7 +440,10 @@
       "analyzerVersion": 2,
       "streamSha256": "48ffa310933f6876dbe66c587facef3fe955482c232973a03202d21c391216de",
       "editorialApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "signal": "stale_analyzer_or_stream_review",
+      "declaredStreamLinked": false,
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "7912f9a4-750e-4575-8718-37a2a2edfb16",
@@ -381,7 +458,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [],
@@ -406,7 +483,8 @@
       "imageHintSha256": [
         "79a5dd1fd84d06b31551312f78dee9332714596787dddb41d54a860c92074743",
         "d81569c799a6102a7321e7c7fdbed16996b3aacdb164741ed308d1c791094526"
-      ]
+      ],
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "8decb3ad-234d-4535-b66e-c40f0cc2179b",
@@ -419,7 +497,10 @@
       "analyzerVersion": 2,
       "streamSha256": "f4f1a56e9b309dbba9ca8daabe7f6892f1a524193733940ed9c3dbce3af19e1a",
       "editorialApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "signal": "stale_analyzer_or_stream_review",
+      "declaredStreamLinked": false,
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "955166e9-1bd6-4cd2-841f-fb7eeb09e1dc",
@@ -434,7 +515,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [],
@@ -448,7 +529,8 @@
         "b06f5b2b305444a4d2f795249b00fd794bd13a31e28fe842a9cfd9108b14fe4c",
         "b3f6be0e7decde40af4a7ac8831a954803b9f230214c97ade7a1479c184037ca",
         "e8c03ee6468ba3de1e1ee58a6f97006658db477442fba17d435ec90947566a51"
-      ]
+      ],
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "981237b0-253c-4be9-81ce-6fcb86006733",
@@ -463,7 +545,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [
@@ -475,7 +557,8 @@
       "primaryElectronicTerms": [],
       "pageSha256": "78b93ba324493e48bf989f60331bdaa8873cf7e19e56b79e62bff9fe4416149f",
       "finalPageSha256": "691c99d05c9781203e4386a07a8c85f98b085121998cc5788b3f7dd5329eff12",
-      "imageHintSha256": []
+      "imageHintSha256": [],
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "98e39928-1801-414c-b6e7-dd7b58614dd6",
@@ -490,7 +573,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
-      "signal": "no_format_evidence",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [],
@@ -501,7 +584,8 @@
       "imageHintSha256": [
         "18eb8e1671b5f9d5f8a4c9eea77e42fd7a9783896a55056fd4b77ddcb95e650e",
         "c42811f2e06318651896075a0183da59263a42a4d40bc94702c6d9eafab756c6"
-      ]
+      ],
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "9c634ba6-a5f2-47e5-858b-d4deff8071b8",
@@ -516,7 +600,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "no_format_evidence",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [],
@@ -526,7 +610,8 @@
       "finalPageSha256": "adde7b0cbb8f1a085093cb174d604d5d85f4bbaf1e5e8def6fa4e5339daf5bf7",
       "imageHintSha256": [
         "29e4fbfa79d17dffbaf6997049b2fc68b87936df886d22e561f30b2274e8d5f3"
-      ]
+      ],
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "a3f97919-2519-4e58-b0b4-386d1402e367",
@@ -539,7 +624,10 @@
       "analyzerVersion": 2,
       "streamSha256": "e7ce64edc0c9b343c33b302ab134c8126d7880518bb442353a9608452476fa7d",
       "editorialApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "signal": "stale_analyzer_or_stream_review",
+      "declaredStreamLinked": false,
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "ad0f6199-f729-4fb1-b19c-e2c6fd545ff9",
@@ -552,7 +640,10 @@
       "analyzerVersion": 2,
       "streamSha256": "b97b706ff8bb39419c7a726e4e3752d0877348106f3a35d5170cd5ce4f6d669d",
       "editorialApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "signal": "stale_analyzer_or_stream_review",
+      "declaredStreamLinked": false,
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "b3d7cfa7-8860-4bac-9626-e4eeafece502",
@@ -567,7 +658,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [
@@ -591,7 +682,8 @@
         "64981c80f1bb0d049a7b339c5333a68bd5b7e2704506f4f4f7ba305ba0d4c08c",
         "82ee32e68a2d43533fc5ea14b582ffb2803daf3395be87e8094dbfb44a54afaa",
         "e338ee75161967dfd822604df4626511c6d42663546d42d2eec437a15a286e7f"
-      ]
+      ],
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "cbb233ad-fad1-46e1-b89b-9389f457f204",
@@ -606,7 +698,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
-      "signal": "no_format_evidence",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": true,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [],
@@ -618,7 +710,8 @@
         "84d750515551019b3e6cbf2375d535ea065ec7c21a6cae0067dea80adce281f0",
         "87816adb9d888cc58ebc33074e719df6f57cf3d3b23a6b408648096cf9cf38e6",
         "939e3d8b770a18b39a0338207fb1db2d443fba3bde35feb58af2b2abfd4b97bb"
-      ]
+      ],
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "cea9bece-6c51-47a0-bcf9-02b1377824b2",
@@ -633,7 +726,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [],
@@ -650,7 +743,8 @@
         "64981c80f1bb0d049a7b339c5333a68bd5b7e2704506f4f4f7ba305ba0d4c08c",
         "7ea3b6b389af3619da68d62ed0fb8275b61d691db47c5dc25e240b01167bb19c",
         "82ee32e68a2d43533fc5ea14b582ffb2803daf3395be87e8094dbfb44a54afaa"
-      ]
+      ],
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "d469d86b-e0a7-45ac-aa94-6be76329ab82",
@@ -665,7 +759,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "no_format_evidence",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [],
@@ -673,7 +767,8 @@
       "primaryElectronicTerms": [],
       "pageSha256": "a8fdec5581373f02c9fdea38e835ae2352b29008578d6e013b669c109c692975",
       "finalPageSha256": "5c1ab6dfbb6db0ab437da44123a443d1cf18f747f45da1d3051374ba48c4aeae",
-      "imageHintSha256": []
+      "imageHintSha256": [],
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "d50796ae-a0e4-493f-b276-6b0a15b0c6dc",
@@ -683,19 +778,58 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
-      "analyzerVersion": 2,
+      "analyzerVersion": 3,
       "streamSha256": "2417987d14f785a5aea9b182f848c069da324a1e74d0b836518246ce8ce5dda3",
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
       "signal": "no_format_evidence",
       "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [],
       "declaredStreamLinked": false,
       "primaryTargetTerms": [],
       "visibleTargetTerms": [],
       "primaryElectronicTerms": [],
       "pageSha256": "360673ecd305432ab032e3c9e3b3ff6fc31f6b8818f93952e138eb9ef2532566",
       "finalPageSha256": "280d5acc0a499400ad63ef6003af60bc258581b70de6262523bd737b331cdf99",
+      "imageHintSha256": []
+    },
+    {
+      "stationuuid": "d5c6fb79-1344-43bc-a995-6524620c61ba",
+      "homepageSha256": "37bfd2124f8fdcbb0cb29866443432839bfd53ba7647e046beb9cb5cec05f618",
+      "identityNameSha256": "a5dcea7cb68bc63681eda28991cd6c78250d9c2612d89d3d7e083c9314f5b5f0",
+      "reportedHost": "live365.com",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 3,
+      "streamSha256": "9c9b03736f802f1f2e4e45ee7ed195fedfe24fbc68d1141b2782b9ff79dc38b5",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": false,
+      "signal": "unbound_target_indication",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [
+        "hard rock",
+        "heavy metal",
+        "metal"
+      ],
+      "visibleTargetTerms": [
+        "hard rock",
+        "heavy metal",
+        "metal"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "f31d20bf8be49cd1492241c214bf3db911fc1362751355692d73d9738edf3b09",
+      "finalPageSha256": "37bfd2124f8fdcbb0cb29866443432839bfd53ba7647e046beb9cb5cec05f618",
       "imageHintSha256": []
     },
     {
@@ -706,20 +840,24 @@
       "observedDate": "2026-11-25",
       "observedInScan": true,
       "retrieval": "html_observed",
-      "analyzerVersion": 2,
+      "analyzerVersion": 3,
       "streamSha256": "e0e0b5c722113931a32cee518640f4b4a816bf62695ad15a0e25546dd5a3fbd0",
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
       "signal": "identity_and_target_indication",
       "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [],
       "declaredStreamLinked": false,
       "primaryTargetTerms": [
         "metal"
       ],
       "visibleTargetTerms": [],
       "primaryElectronicTerms": [],
-      "pageSha256": "ad456bc2c8c3ac52f44e14669b063fc5d518183d4bb317631983af5d79c42cb4",
+      "pageSha256": "6ee8cdbd29624f7f0681a85c859894ccbf27c17766be764661355962c89072ea",
       "finalPageSha256": "3571089d133e00d96f32ee0e1929f91483d16960da3f5b911c259030112c6039",
       "imageHintSha256": [
         "cf2f953b2ece7ce55cf2f0acf29c790e78a55b4752aa4465d825e7fdcabaa195"
@@ -738,7 +876,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [
@@ -754,7 +892,8 @@
       "imageHintSha256": [
         "099e7fee68d817a70a1d0039659a5e0e4eb333af17480f0d965e0e3f34dedf05",
         "3b486ce4699c0b7a68ed53bc3743250c08f1a8863a6a2fc4e5e9f2eb60191f81"
-      ]
+      ],
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "ea272dde-9da1-4f42-aca7-981d91254af7",
@@ -769,7 +908,7 @@
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "unbound_target_indication",
+      "signal": "stale_analyzer_or_stream_review",
       "structuredProgrammeEvidence": false,
       "declaredStreamLinked": false,
       "primaryTargetTerms": [
@@ -783,7 +922,8 @@
         "0e64d205ee7b0509bc5c812d1f9546530d8a10e37439aa9f0bf85eb06e9ee5d4",
         "c816eb67e6e11f10a68b8609fe450acb4b85bd1615dd309df85117d454dcf587",
         "fdcd3bcc45df967f91f9c3d868469fd976c21c070f949b2a9717a27878acf0dc"
-      ]
+      ],
+      "programmeScopeEvidence": false
     },
     {
       "stationuuid": "eb3041cd-69bc-41bd-b1e0-daf2a88fe190",
@@ -796,7 +936,10 @@
       "analyzerVersion": 2,
       "streamSha256": "0e8dbdfa96a66eee36f3d0de0bbf45a369f1b37765664d74623d3b2fd2536feb",
       "editorialApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "signal": "stale_analyzer_or_stream_review",
+      "declaredStreamLinked": false,
+      "programmeScopeEvidence": false
     }
   ]
 }

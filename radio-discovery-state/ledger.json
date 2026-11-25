@@ -3,7 +3,7 @@
   "scanDate": "2026-11-25",
   "publicationAllowed": false,
   "automaticallyApprovedCount": 0,
-  "newCandidateCount": 0,
+  "newCandidateCount": 1,
   "reobservedCandidateCount": 269,
   "notSeenTodayCount": 0,
   "records": [
@@ -58,6 +58,17 @@
       "seenDays": 1,
       "name": "AIRWAVE",
       "lastStatus": "candidate_requires_qualification",
+      "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
+      "repeatedObservation": false
+    },
+    {
+      "stationuuid": "03cfdf69-e231-4b0b-ab87-ec091ff91ba8",
+      "firstSeen": "2026-11-25",
+      "lastSeen": "2026-11-25",
+      "seenDays": 1,
+      "name": "Radio Morcote International",
+      "lastStatus": "needs_stream_check",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
       "repeatedObservation": false

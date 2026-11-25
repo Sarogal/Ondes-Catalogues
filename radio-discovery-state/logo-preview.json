@@ -3,7 +3,7 @@
   "scanDate": "2026-11-25",
   "publicationAllowed": false,
   "approvedLogoCount": 0,
-  "candidateCount": 158,
+  "candidateCount": 159,
   "attemptedSourceCount": 0,
   "decodedCandidateCount": 26,
   "retainedEvidenceCount": 0,
@@ -53,6 +53,16 @@
       "height": 512,
       "byteLength": 69531,
       "observedDate": "2026-11-25"
+    },
+    {
+      "stationuuid": "03cfdf69-e231-4b0b-ab87-ec091ff91ba8",
+      "sourceClass": "missing_source",
+      "sourceSha256": null,
+      "audioEvidenceRank": 0,
+      "retrieval": "not_attempted",
+      "logoApproved": false,
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "05412426-3d22-4e8e-bee0-92b71dac20ff",

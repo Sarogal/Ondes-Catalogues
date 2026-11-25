@@ -60,6 +60,18 @@
       "publicationAllowed": false
     },
     {
+      "stationuuid": "03cfdf69-e231-4b0b-ab87-ec091ff91ba8",
+      "streamSha256": "810cd26ac3b640719b181159532a9a2ef750dd20d2262b9fa117a0bc2a8ce074",
+      "audioEvidenceDates": [],
+      "liveFrameEvidenceDates": [],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "not_confirmed_audio",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
       "stationuuid": "05412426-3d22-4e8e-bee0-92b71dac20ff",
       "streamSha256": "bf1810018392cb47db73befc7e7017085f55a36af5b1605d6407cce9112ec745",
       "audioEvidenceDates": [
