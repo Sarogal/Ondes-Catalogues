@@ -1201,5 +1201,68 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(signed_rotation(doc(external), DAY), [])
 
 
+
+
+class MunicipalVenueCityTests(unittest.TestCase):
+    def setUp(self):
+        from grossesondes_openagenda_linked_edition import MUNICIPAL_PUBLIC_CONFIDENCE
+        self.site = "https://www.example.fr/evenement/rock-fest/"
+        self.venue = "https://www.example.fr/culture/salle/"
+        self.row = festival("fictional-rock-fest-2026", self.site,
+                            dates=("2026-11-28", "2026-11-28"))
+        self.row.update(name="Fictional Rock Fest 2026", source=self.site,
+                        sourceConfidence=MUNICIPAL_PUBLIC_CONFIDENCE)
+        self.html = (
+            "<html><head><title>Fictional Rock Fest #3 - Ville-Test, "
+            "site officiel de la Mairie</title></head><body>"
+            '<nav><a href="/culture/salle/">Salle des Musiques</a></nav>'
+            "<main><h2>Fictional Rock Fest #3</h2>"
+            "<h3>28 novembre 2026</h3>"
+            "<p>Troisième édition du festival métal au Salle des Musiques.</p>"
+            "</main></body></html>")
+        self.venue_html = ("<main><p>12 rue des Lilas<br>12345 Ville-Test</p>"
+                           "<h1>Salle des Musiques</h1><p>Concerts.</p></main>")
+
+    def prove(self, html=None, venue=None, reproof=True, row=None):
+        from grossesondes_existing_official_updates import signed_municipal_venue_city
+        calls = []
+        def fetch(url):
+            calls.append(url)
+            return {self.venue: self.venue_html if venue is None else venue}[url]
+        def check(city, title, day, fetch):
+            self.assertEqual(city, "Ville-Test")
+            return (self.site, ("2026-11-28", "2026-11-28")) if reproof else None
+        result = signed_municipal_venue_city(
+            self.html if html is None else html, self.row if row is None else row,
+            DAY, fetch, municipal_prover=check)
+        return result, calls
+
+    def test_named_municipal_venue_postal_city_and_fresh_origin(self):
+        claim, calls = self.prove()
+        self.assertEqual(claim, {"slug": self.row["slug"], "city": "Ville-Test",
+                                 "source": self.site, "venue_source": self.venue})
+        self.assertEqual(calls, [self.venue])
+
+    def test_municipal_title_is_not_event_location(self):
+        self.assertIsNone(self.prove(html=self.html.replace(
+            "au Salle des Musiques", "en tournée"))[0])
+
+    def test_wrong_venue_heading_and_postal_city_rejected(self):
+        self.assertIsNone(self.prove(venue=self.venue_html.replace(
+            "Salle des Musiques", "Autre Salle"))[0])
+        self.assertIsNone(self.prove(venue=self.venue_html.replace(
+            "12345 Ville-Test", "12345 Autre-Ville"))[0])
+
+    def test_cross_host_and_failed_independent_attribution_rejected(self):
+        self.assertIsNone(self.prove(html=self.html.replace(
+            'href="/culture/salle/"', 'href="https://outside.example/salle/"'))[0])
+        self.assertIsNone(self.prove(reproof=False)[0])
+
+    def test_unsigned_and_cancelled_event_not_location_authority(self):
+        self.assertIsNone(self.prove(row=dict(self.row, sourceConfidence="unknown"))[0])
+        self.assertIsNone(self.prove(html=self.html.replace(
+            "Troisième édition", "Événement annulé. Troisième édition"))[0])
+
+
 if __name__ == "__main__":
     unittest.main()
