@@ -626,6 +626,31 @@ class NationalShadowObservationTests(unittest.TestCase):
         self.assertIn('rm -f -- "$DEST/index/$journal"', content)
         self.assertNotIn("--delete", content)
 
+    def test_observer_deployment_and_handoff_only_on_approved_main(self):
+        workflow = ROOT / ".github/workflows/ptitesondes-national-shadow-observation.yml"
+        content = workflow.read_text(encoding="utf-8")
+        self.assertIn("  push:\n    branches: [main]", content)
+        self.assertIn("github.event_name == 'push'", content)
+        self.assertIn('scripts/ptitesondes_openagenda_public_agenda_index.py', content)
+        # No private credentials are carried into the separate dispatch job.
+        before, dispatch = content.split("  request-intake:", 1)
+        self.assertIn("needs: observe-private", dispatch)
+        self.assertIn("needs.observe-private.result == 'success'", dispatch)
+        self.assertIn("needs.observe-private.outputs.research == 'true'", dispatch)
+        self.assertIn("needs.observe-private.outputs.persisted == 'true'", dispatch)
+        self.assertIn("vars.PTITESONDES_PUBLIC_INTAKE != 'paused'", dispatch)
+        self.assertIn("vars.PTITESONDES_NATIONAL_OBSERVATION != 'paused'", dispatch)
+        self.assertIn("github.ref == 'refs/heads/main'", dispatch)
+        self.assertIn("github.repository == 'Sarogal/Ondes-Catalogues'", dispatch)
+        self.assertIn("actions: write", dispatch)
+        self.assertNotIn("actions: write", before)
+        self.assertNotIn("secrets.", dispatch)
+        self.assertNotIn("gh run watch", dispatch)
+        self.assertIn("gh workflow run ptitesondes-private-intake-on-public-runners.yml", dispatch)
+        self.assertIn("-f cycle=outings -f mode=write -f recovery=none", dispatch)
+        self.assertIn('r["event_slots_examined"] > 0', before)
+        self.assertGreater(before.index('echo "persisted=true"'), before.index('push origin HEAD:automation/ptitesondes-intake'))
+
 
 if __name__ == "__main__":
     unittest.main()
