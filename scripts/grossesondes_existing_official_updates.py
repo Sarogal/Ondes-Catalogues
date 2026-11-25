@@ -745,13 +745,38 @@ def seasonal_ticket_card_offers(html, row, today):
 
 
 def seasonal_ticket_summary(offers):
-    if not offers or not any(v[2] == "disponible" for v in offers.values()):
+    if not offers:
         return None
     summary = " ; ".join(
         f"Pass {days} jour{'s' if days > 1 else ''} — {tier} : {price} ({status})"
         for (days, _), (tier, price, status) in sorted(offers.items()))
-    summary += " — billetterie officielle ouverte"
+    summary += (" — billetterie officielle ouverte"
+                if any(v[2] == "disponible" for v in offers.values())
+                else " — formules affichées épuisées")
     return summary if len(summary) <= 350 else None
+
+
+def parsed_seasonal_ticket_summary(value):
+    """Recognize only the canonical, fully status-labelled tier summary."""
+    if not isinstance(value, str) or len(value) > 350:
+        return {}
+    body, separator, suffix = value.rpartition(" — ")
+    if not separator or suffix not in (
+            "billetterie officielle ouverte", "formules affichées épuisées"):
+        return {}
+    offers = {}
+    for item in body.split(" ; "):
+        m = re.fullmatch(
+            r"Pass ([1-7]) jours? — ([^:;€]{1,65}?) : "
+            r"(\d{2,4}(?:,\d{2})? €) \((disponible|épuisé)\)", item)
+        if not m:
+            return {}
+        days, tier, price, status = int(m[1]), m[2], m[3], m[4]
+        k = (days, fold(tier))
+        if k in offers:
+            return {}
+        offers[k] = (tier, price, status)
+    return offers if seasonal_ticket_summary(offers) == value else {}
 
 
 def advertised_passes(blocks):
@@ -1238,7 +1263,8 @@ def apply_independently_verified_updates(
             raw_visible.close()
             raw_words = fold(" ".join(raw_visible.parts))
             if (not seasonal_offers and not seasonal_conflict and not prices
-                    and old.get("price") is None
+                    and (old.get("price") is None or
+                         parsed_seasonal_ticket_summary(old.get("price")))
                     and browser_fetch is not None and site in browser_sites
                     and exact_edition_city(root_html, old)
                     and re.search(r"\bdisponibilite actualisation\b", raw_words)
@@ -1285,7 +1311,8 @@ def apply_independently_verified_updates(
                 new["lineup"] = cleaned_lineup + new_names
                 new["bands"] = len(new["lineup"])
                 fields.extend(("lineup", "bands"))
-            if prices:
+            previous_tiers = parsed_seasonal_ticket_summary(old.get("price"))
+            if prices and not seasonal_offers and not previous_tiers:
                 summary = " ; ".join(
                     f"Pass {n} jour{'s' if n > 1 else ''} : {prices[n]}"
                     for n in sorted(prices, reverse=True))
@@ -1297,7 +1324,9 @@ def apply_independently_verified_updates(
                         old_price != summary):
                     new["price"] = summary
                     fields.append("price")
-            if (tier_summary is not None and old.get("price") is None
+            if (tier_summary is not None and tier_summary != old.get("price")
+                    and (old.get("price") is None or
+                         (previous_tiers and set(previous_tiers) <= set(seasonal_offers)))
                     and not prices):
                 new["price"] = tier_summary
                 fields.append("price")
