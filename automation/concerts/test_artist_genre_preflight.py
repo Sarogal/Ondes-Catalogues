@@ -122,6 +122,60 @@ class OfficialArtistGenrePreflightTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             knowledge.private_genre_review(reg, CATALOGUE, DAY, fake)
 
+    def test_rotating_cohorts_accumulate_without_refreshing_old_dates(self):
+        other = {"id": "another-band", "name": "Another Band", "aliases": []}
+        source = {**SOURCE, "artistId": other["id"],
+                  "url": "https://another.example/music"}
+        catalogue = {**CATALOGUE, "artists": [ARTIST, other]}
+        sources = {**SOURCES, "sources": [SOURCE, source]}
+        def fetch(url, **kwargs):
+            name = ARTIST["name"] if url == SOURCE["url"] else other["name"]
+            return ('<script type="application/ld+json">'
+                    + json.dumps({"@type": "MusicGroup", "name": name,
+                                  "genre": "Punk"}) + '</script>', url)
+        first = preflight.build(sources, catalogue, DAY, limit=1, scan_slot=0,
+                                fetch=fetch, robots=lambda *a: True)
+        second = preflight.build(sources, catalogue, DAY + dt.timedelta(days=1),
+                                 limit=1, scan_slot=0, prior=first,
+                                 fetch=fetch, robots=lambda *a: True)
+        self.assertEqual(second["verifiedArtistCount"], 2)
+        self.assertEqual(second["retainedEvidenceCount"], 1)
+        self.assertEqual(second["newlyVerifiedEvidenceCount"], 1)
+        self.assertEqual({r["verifiedAt"] for r in second["verifiedArtists"]},
+                         {DAY.isoformat(), (DAY + dt.timedelta(days=1)).isoformat()})
+        self.assertFalse(second["publicationAllowed"])
+
+    def test_removed_expired_forged_and_rechecked_evidence_not_retained(self):
+        prior = check()
+        candidates = [SOURCE]
+        for bad in (
+            {"verifiedAt": "2025-01-01"},
+            {"verifiedAt": "2027-01-01"},
+            {"publicationAllowed": True},
+            {"sourceUrl": "https://other.example/music"},
+            {"artistName": "Homonym"},
+            {"manifestSourceUrl": "https://other.example/music"},
+        ):
+            with self.subTest(bad=bad):
+                p = copy.deepcopy(prior)
+                p["verifiedArtists"][0].update(bad)
+                self.assertEqual(preflight.retained_facts(
+                    p, candidates, [], CATALOGUE, DAY), [])
+        self.assertEqual(preflight.retained_facts(
+            prior, [], [], CATALOGUE, DAY), [])
+        self.assertEqual(preflight.retained_facts(
+            prior, candidates, candidates, CATALOGUE, DAY), [])
+        self.assertEqual(preflight.build(
+            SOURCES, CATALOGUE, DAY, prior=prior,
+            robots=lambda *a: False)["verifiedArtists"], [])
+
+    def test_legacy_exact_structured_fact_can_be_retained(self):
+        prior = check()
+        del prior["verifiedArtists"][0]["manifestSourceUrl"]
+        retained = preflight.retained_facts(prior, [SOURCE], [], CATALOGUE, DAY)
+        self.assertEqual(len(retained), 1)
+        self.assertEqual(retained[0]["manifestSourceUrl"], SOURCE["url"])
+
     def test_invalid_manifest_and_forged_page_host_are_rejected(self):
         with self.assertRaises(ValueError):
             preflight.build({"sources": [SOURCE]}, CATALOGUE, DAY)
