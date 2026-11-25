@@ -1634,6 +1634,296 @@
       "publicationAllowed": false
     },
     {
+      "stationuuid": "bb38c058-7757-48e7-a73e-ccdc4fad7d2e",
+      "streamSha256": "88e44fba7fce43675a6ec7aadad5240840cb07aeea2af19a42c03bcbe8643586",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "liveFrameEvidenceDates": [
+        "2026-11-25"
+      ],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "bd0dc889-b736-4b75-a35b-70a606482a47",
+      "streamSha256": "281768ee2f882e47128035a230d461ef13a9a86f5732b74145a25c2f64780e3f",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "liveFrameEvidenceDates": [],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "c123bef5-256a-427f-a942-570ae9836f68",
+      "streamSha256": "ac5e132f18b64939b98ba589e2879817d636b09970400aa35b0dd01538f04016",
+      "audioEvidenceDates": [],
+      "liveFrameEvidenceDates": [],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "playlist_pending",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "c16ffe2f-a305-4f11-9d85-0aa615b9ed04",
+      "streamSha256": "3f86508357456841a1d6c279e22b25814645649f6b65f238d4a1bdda0befde8b",
+      "audioEvidenceDates": [],
+      "liveFrameEvidenceDates": [],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "playlist_pending",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "c22f97d4-26b6-46ac-a415-54b1bdd85f0d",
+      "streamSha256": "c74e3e9aabe91cf381a7ff62de555f77e0d90c91155f089b02a9652dc4b8c930",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "liveFrameEvidenceDates": [
+        "2026-11-25"
+      ],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "c62a1cf3-dd53-4f8d-ab12-3567faa4f59f",
+      "streamSha256": "3ad5d4218373f86acc3c86a2bef61d00868d3d98e7b6d71fd548dc298d3c04e4",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "liveFrameEvidenceDates": [
+        "2026-11-25"
+      ],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "c79485f1-013e-46ec-a2ef-8eb3cef2d6dd",
+      "streamSha256": "27eafc1ecfd5840a8c031a42546a9eb06095536f7b38b4ea73f04c209d736126",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "liveFrameEvidenceDates": [
+        "2026-11-25"
+      ],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "c9e17187-7b9f-48af-8454-0cf8462302c7",
+      "streamSha256": "fddf34061b7fd8ee9eb7f65671814212918fe4fd90f4302cfe31dd283ec0d04b",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "liveFrameEvidenceDates": [],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "cbb233ad-fad1-46e1-b89b-9389f457f204",
+      "streamSha256": "a17eec45505d491732e62e5cb5caa9bc079da9a14833ae04de8fb063b849af28",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "liveFrameEvidenceDates": [
+        "2026-11-25"
+      ],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "cea9bece-6c51-47a0-bcf9-02b1377824b2",
+      "streamSha256": "6a2d92122e3601de71e45c8a16f6e5ea31e064efa2a0362151fb87762acaaa05",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "liveFrameEvidenceDates": [],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "cf7a3162-64a7-461c-a7c4-10660bc41e82",
+      "streamSha256": "e2b6b00def8023b2c07c252c3ccf8c3d41cf090c18ba80b363cd1a1fcd624ed7",
+      "audioEvidenceDates": [],
+      "liveFrameEvidenceDates": [],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_mime_only",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "d0d9c01c-5e0d-11ea-be63-52543be04c81",
+      "streamSha256": "ea44c95fddde7e067e6edc6c9d959b4698436d27788eb3f8c2bf17cb338ecc6c",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "liveFrameEvidenceDates": [],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "d0fb00ac-db4b-467e-8ed5-b023c24cf213",
+      "streamSha256": "968c00372141bcc0709a1e790877ad784319584ef1c80d340c9b6bfe6a95123a",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "liveFrameEvidenceDates": [],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "d2a83065-4b07-4c1c-bc0c-75f7c29cfbe1",
+      "streamSha256": "538fbf6ded60062266485eccd9638c81fb00a186ab4b3dce8b0bbf2d4d2dad28",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "liveFrameEvidenceDates": [
+        "2026-11-25"
+      ],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "d342e328-81bb-4026-9822-cd6c02313be0",
+      "streamSha256": "bc56ddb29c4eff514166cbd9fa14d3d40c9679c76588cfd5a0979f8d182b593d",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "liveFrameEvidenceDates": [
+        "2026-11-25"
+      ],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "d469d86b-e0a7-45ac-aa94-6be76329ab82",
+      "streamSha256": "d7c204720669b4d845a2d9184f010776e2d60d305c433bbc84f856be85bbf9c7",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "liveFrameEvidenceDates": [],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "d50796ae-a0e4-493f-b276-6b0a15b0c6dc",
+      "streamSha256": "2417987d14f785a5aea9b182f848c069da324a1e74d0b836518246ce8ce5dda3",
+      "audioEvidenceDates": [],
+      "liveFrameEvidenceDates": [],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "needs_review",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "d5c6fb79-1344-43bc-a995-6524620c61ba",
+      "streamSha256": "9c9b03736f802f1f2e4e45ee7ed195fedfe24fbc68d1141b2782b9ff79dc38b5",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "liveFrameEvidenceDates": [
+        "2026-11-25"
+      ],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "d7ae2091-ed4a-4e61-aa56-4a1feb1a2a3d",
+      "streamSha256": "db62f4cd849d5c3e64a0bcdd6f9b3f4f86cde55a2ed671454e54dc5bb0ad2383",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "liveFrameEvidenceDates": [],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "d7be93d3-067b-4056-8759-fdefc607cc17",
+      "streamSha256": "5a5745576caa294d3798f33060dbf079373213f258391acde92b74a6b60f02ef",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "liveFrameEvidenceDates": [
+        "2026-11-25"
+      ],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
       "stationuuid": "f4df535d-d65b-46ad-8498-df5b56a011c7",
       "streamSha256": "e44844cc2e8cc0cfe95618a5e3229acd019f69703518d6add6c44019e890e355",
       "audioEvidenceDates": [
