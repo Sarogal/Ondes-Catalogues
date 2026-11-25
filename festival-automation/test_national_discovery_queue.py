@@ -60,7 +60,9 @@ class NationalDiscoveryTests(unittest.TestCase):
         self.assertFalse(row["edition_dates_verified"])
         self.assertFalse(row["safe_to_publish"])
         self.assertFalse(row["publication_authorized"])
-        self.assertEqual(row["date_hints"], [])
+        self.assertEqual(row["date_hints"], [{
+            "start_date": "2027-05-07", "end_date": "2027-05-08",
+            "verified": False}])
         self.assertEqual(row["sources"][0]["kind"],
                          "OPENAGENDA_PUBLIC_RESEARCH_ONLY")
         self.assertEqual(row["sources"][0]["discovered_via"],
