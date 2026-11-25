@@ -2521,6 +2521,11 @@
       "id": "el-djara",
       "name": "El Djara",
       "aliases": []
+    },
+    {
+      "id": "the-locos",
+      "name": "THE LOCOS",
+      "aliases": []
     }
   ],
   "venues": [
@@ -15781,10 +15786,10 @@
     },
     {
       "id": "go-c-20270227-nantes-the-locos-ex-ska-p-en-concert",
-      "title": "THE LOCOS (ex Ska-P) en concert",
+      "title": "THE LOCOS",
       "date": "2027-02-27",
       "artistIds": [
-        "the-locos-ex-ska-p-en-concert"
+        "the-locos"
       ],
       "venueId": "warehouse-nantes",
       "genres": [
@@ -15805,6 +15810,10 @@
         {
           "date": "2026-11-25",
           "change": "Ajout après revue des preuves officielles"
+        },
+        {
+          "date": "2026-11-25",
+          "change": "Identité artistique rectifiée après nouvelle vérification de la fiche officielle"
         }
       ]
     },
