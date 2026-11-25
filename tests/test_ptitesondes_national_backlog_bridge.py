@@ -111,6 +111,32 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(added[0]["external_id"], "102")
         self.assertEqual(next_cursor["next_index"], 3)
 
+    def test_capacity_pressure_keeps_previous_leads_and_retries_exact_slot(self):
+        items = [fixture(uid=100 + i) for i in range(3)]
+        with patch("ptitesondes_national_backlog_bridge._inventory",
+                   return_value=items), patch(
+                   "ptitesondes_national_backlog_bridge.MAX_BACKLOG", 1):
+            merged, cursor, report = bridge(
+                Path("/unused"), [], TODAY, KEY, operator=operator)
+            self.assertEqual([x["external_id"] for x in merged], ["100"])
+            self.assertEqual(report["events_rechecked"], 2)
+            self.assertEqual(report["events_completed"], 1)
+            self.assertEqual(report["capacity_deferred"], 1)
+            self.assertEqual(cursor["next_index"], 1)
+            # A repeated run with no space cannot silently skip the event.
+            unchanged, again, held = bridge(
+                Path("/unused"), merged, TODAY, KEY,
+                cursor=cursor, operator=operator)
+            self.assertEqual(unchanged, merged)
+            self.assertEqual(again, cursor)
+            self.assertEqual(held["capacity_deferred"], 1)
+            # When old leads are archived, resume precisely at event 101.
+            resumed, following, _ = bridge(
+                Path("/unused"), [], TODAY, KEY,
+                cursor=again, operator=operator)
+            self.assertEqual([x["external_id"] for x in resumed], ["101"])
+            self.assertEqual(following["next_index"], 2)
+
     def test_untrusted_operator_cannot_claim_publication(self):
         def forged(*args, **kwargs):
             value = operator(*args, **kwargs)
