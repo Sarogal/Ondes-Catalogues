@@ -22,6 +22,7 @@ from future_city_preflight import (
     current_edition_description,
 )
 from official_admin_communes import verified_commune
+from grossesondes_dated_ticket_tables import dated_ticket_table_summary, parse_dated_ticket_summary
 from grossesondes_institutional_edition import VisibleInstitutionHeadings
 from grossesondes_archived_html_intake import (
     official_date, official_structured_date, matching_official_jsonld_present,
@@ -1311,8 +1312,24 @@ def apply_independently_verified_updates(
                 new["lineup"] = cleaned_lineup + new_names
                 new["bands"] = len(new["lineup"])
                 fields.extend(("lineup", "bands"))
+            dated_grids = {}
+            for url, html in html_pages:
+                summary = dated_ticket_table_summary(html, old, today)
+                if summary:
+                    dated_grids[url] = summary
+            old_grid = parse_dated_ticket_summary(old.get("price"))
+            grid_values = set(dated_grids.values())
+            if len(grid_values) == 1 and not seasonal_offers and not prices:
+                grid = next(iter(grid_values))
+                parsed_grid = parse_dated_ticket_summary(grid)
+                if (parsed_grid and grid != old.get("price")
+                        and (old.get("price") is None or
+                             (old_grid and set(old_grid[1]) <= set(parsed_grid[1])))):
+                    new["price"] = grid
+                    fields.append("price")
+                    sources.extend(dated_grids)
             previous_tiers = parsed_seasonal_ticket_summary(old.get("price"))
-            if prices and not seasonal_offers and not previous_tiers:
+            if prices and not seasonal_offers and not previous_tiers and not old_grid and not dated_grids:
                 summary = " ; ".join(
                     f"Pass {n} jour{'s' if n > 1 else ''} : {prices[n]}"
                     for n in sorted(prices, reverse=True))
@@ -1327,7 +1344,7 @@ def apply_independently_verified_updates(
             if (tier_summary is not None and tier_summary != old.get("price")
                     and (old.get("price") is None or
                          (previous_tiers and set(previous_tiers) <= set(seasonal_offers)))
-                    and not prices):
+                    and not prices and not dated_grids):
                 new["price"] = tier_summary
                 fields.append("price")
                 sources.extend(seasonal_sources)
