@@ -4,8 +4,20 @@ on:
   push:
     branches: [main]
     paths:
-      - 'scripts/**'
-      - 'tests/**'
+      # Unrelated Concerts/Festivals pushes must not enqueue a full
+      # publication. Shared code is still checked by scheduled and
+      # successful private-intake runs, even for newly added modules.
+      - 'scripts/ptitesondes*'
+      - 'scripts/ptitesondes/**'
+      - 'scripts/run_cloud_sync.py'
+      - 'scripts/private_intake.py'
+      - 'scripts/merge_policy.py'
+      - 'scripts/proof*.py'
+      - 'scripts/official_organizer_proof.py'
+      - 'scripts/venue_registry.py'
+      - 'tests/test_ptitesondes*'
+      - 'tests/test_cloud_policy.py'
+      - 'tests/test_daily_outings_proof.py'
       - 'docs/ptitesondes/lieux.json'
       - 'docs/ptitesondes/carte-lieux.html'
       - '.github/workflows/ptitesondes-cloud-sync.yml'
