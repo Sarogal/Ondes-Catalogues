@@ -103,6 +103,54 @@ class NationalShadowObservationTests(unittest.TestCase):
         self.assertEqual(result["geographic_new_agendas_unverified"], 0)
         self.assertEqual(len(list((self.root / "index" / "reports").glob("*-geo-*.json"))), 1)
 
+    def test_geographic_status_distinguishes_empty_held_and_failed_queries(self):
+        def geo(key, *, size, search):
+            if search == "Guadeloupe":
+                return {"agendas": [], "after": None, "held_identity_rows": 2}
+            if search == "Guyane":
+                raise ValueError("oa_index_unavailable")
+            raise ValueError("private secret must not be persisted")
+        result = run_observation(self.root, DAY, "status", execute_live=True,
+            key=KEY, index_reader=Mock(return_value=index_doc()),
+            campaign_runner=self.campaign, segment_runner=self.segments,
+            geography_reader=geo)
+        status = self.root / "index" / "geographic-status"
+        rows = [json.loads((status / f"term-{i:02d}.json").read_text())
+                for i in range(3)]
+        self.assertEqual(result["geographic_queries_completed"], 1)
+        self.assertEqual(result["geographic_queries_failed"], 2)
+        self.assertEqual(result["geographic_new_agendas_unverified"], 0)
+        self.assertEqual(rows[0]["status"], "completed")
+        self.assertEqual(rows[0]["held_identity_rows"], 2)
+        self.assertEqual(rows[0]["new_agendas"], 0)
+        self.assertEqual(rows[1]["reason_code"], "oa_index_unavailable")
+        self.assertEqual(rows[2]["reason_code"], "ValueError")
+        self.assertNotIn("private secret", (status / "term-02.json").read_text())
+
+    def test_existing_geographic_cursor_recovers_missing_priority_evidence_once(self):
+        from ptitesondes_national_shadow_observation import (
+            geographic_index_sample, GEOGRAPHY_SCHEMA,
+        )
+        index = self.root / "index"
+        index.mkdir(mode=0o700)
+        reports = index / "reports"
+        reports.mkdir(mode=0o700)
+        cursor = index / "geographic-cursor.json"
+        _write_atomic_private(cursor, json.dumps({
+            "schema": GEOGRAPHY_SCHEMA, "next_term": 6}).encode())
+        calls = []
+        def geo(key, *, size, search):
+            calls.append(search)
+            return {"agendas": [], "after": None}
+        geographic_index_sample(index, reports, DAY, "recover", KEY, geo)
+        self.assertEqual(calls, list(GEOGRAPHIC_TERMS[:3]))
+        self.assertEqual(json.loads(cursor.read_text())["next_term"], 6)
+        calls.clear()
+        geographic_index_sample(index, reports, DAY, "resume", KEY, geo)
+        self.assertEqual(calls, list(GEOGRAPHIC_TERMS[6:9]))
+        self.assertEqual(json.loads(cursor.read_text())["next_term"], 9)
+        self.assertEqual(len(list((index / "geographic-status").glob("*.json"))), 6)
+
     def test_geographic_dry_run_never_reads_sources(self):
         reader = Mock(side_effect=AssertionError("unexpected network"))
         result = run_observation(self.root, DAY, "geo-dry",

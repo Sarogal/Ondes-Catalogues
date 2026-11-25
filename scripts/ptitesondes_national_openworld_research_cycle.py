@@ -14,7 +14,7 @@ from pathlib import Path
 import re
 
 from ptitesondes_national_backlog_bridge import (
-    _atomic_json, _inventory, _inventory_key, _read,
+    _atomic_json, _iter_inventory as _inventory, _inventory_key, _read,
 )
 from ptitesondes_open_world_candidate_rotation import (
     rotate_private_open_world_lead, public_redacted_rotation_summary,
