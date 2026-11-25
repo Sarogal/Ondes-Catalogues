@@ -112,6 +112,23 @@ jobs:
               "${prior[@]}" \
               --output "$RUNNER_TEMP/go-radio-discovery/candidates.json"
           fi
+      - name: Reconcile candidates against pinned TEST v8 (read-only)
+        shell: bash
+        env:
+          BASELINE_SHA256: f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40
+        run: |
+          set -euo pipefail
+          baseline="$RUNNER_TEMP/go-radio-v8-baseline.json"
+          curl --fail --silent --show-error --max-time 45 --max-filesize 2000000 \
+            "https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/feature/go-radio-test-v2-isolated-20261123/grossesondes/radio-test-v2/releases/${BASELINE_SHA256}.json" \
+            --output "$baseline"
+          printf '%s  %s\n' "$BASELINE_SHA256" "$baseline" | sha256sum --check --strict
+          # Digest is pinned to the previously signed TEST v8. This is a
+          # classification-only report, not authority to admit or sign.
+          python radio-catalog-lab/tools/radio_catalog_daily_candidate_reconcile.py \
+            --catalog "$baseline" \
+            --discovery "$RUNNER_TEMP/go-radio-discovery/candidates.json" \
+            --output "$RUNNER_TEMP/go-radio-discovery/reconciliation-v8.json"
       - name: Retain cross-day candidates without approving any stream
         shell: bash
         run: |
