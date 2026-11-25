@@ -263,7 +263,7 @@ def individual_event_nodes(html, *, accept_generic=False):
     return nodes
 
 
-def sparse_visible_event_detail(html, nodes, url, when, venue):
+def sparse_visible_event_detail(html, nodes, url, when, venue, *, tour_only=False):
     """Replay the complete visible card for one incomplete structured event.
 
     An incomplete schema is not a contradictory schema. Only a single
@@ -305,6 +305,18 @@ def sparse_visible_event_detail(html, nodes, url, when, venue):
                 country = country.get("name") or country.get("@id")
             if normal(country) not in {"fr", "france", "republique francaise"}:
                 return None
+    # The title may identify a TOUR rather than its participating artists.
+    # Verify its independently named roster in the same official detail.
+    # Do not use this new path to publish against a known municipal centroid.
+    from automation.concerts import official_visible_tour_bill
+    precision = normal(venue.get("geoPrecision"))
+    if "centre de commune" not in precision and "position indicative" not in precision:
+        tour = official_visible_tour_bill.verified_tour(
+            html, node["name"], venue["name"], venue["city"], when)
+        if tour is not None:
+            return tour
+    if tour_only:
+        return None
     from automation.concerts import open_world_visible_cards
     detail = open_world_visible_cards.verified_detail(
         html, venue["name"], venue["city"], when,
