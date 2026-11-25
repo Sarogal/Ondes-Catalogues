@@ -143,7 +143,7 @@ def dated_ticket_table_summary(html, row, today):
         parser = TicketTables()
         parser.feed(html)
         parser.close()
-        combined, openings = {}, set()
+        combined, openings, complete = {}, set(), False
         for context, table in parser.tables:
             grid = _grid(table, brand)
             if not grid:
@@ -156,7 +156,7 @@ def dated_ticket_table_summary(html, row, today):
                 ranges = {(a, b) for _, _, a, b in explicit_ranges(fold(raw), start.year)}
                 if re.search(r"\b" + re.escape(brand) + r"\b", w) and ranges:
                     anchor = i if ranges == {(start, end)} and not CANCEL.search(fold(raw)) else None
-                elif re.search(r"\b(?:edition|festival)\b", w) and re.search(r"\b20[2-4]\d\b", w) and not ranges:
+                elif (re.search(r"\b(?:edition|festival)\b", w) or re.search(r"\b" + re.escape(brand) + r"\b", w)) and re.search(r"\b20[2-4]\d\b", w) and not ranges:
                     anchor = None
             if anchor is None:
                 continue
@@ -169,10 +169,11 @@ def dated_ticket_table_summary(html, row, today):
             if len(opening) != 1 or next(iter(opening)) > start:
                 continue
             openings.update(opening)
+            complete = complete or _summary(next(iter(opening)), grid) is not None
             if any(k in combined and combined[k] != v for k, v in grid.items()):
                 return None
             combined.update(grid)
-        if len(openings) != 1:
+        if len(openings) != 1 or not complete:
             return None
         return _summary(next(iter(openings)), combined)
     except (TypeError, ValueError, KeyError, UnicodeError):
