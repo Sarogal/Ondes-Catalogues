@@ -279,6 +279,7 @@ def event_genres(raw, official_url, *, fetch=None, cache=None):
     if (fetch is None or "MusicEvent" not in bridge._event_types(raw.get("@type"))):
         return genres, scope
     from automation.concerts import open_world_artist_genre as profiles
+    from automation.concerts import artist_official_bio as biographies
     bill = bridge.official_named_bill(raw.get("performer"))
     if not bill:
         return genres, scope
@@ -309,7 +310,25 @@ def event_genres(raw, official_url, *, fetch=None, cache=None):
     for name, target in list(dict.fromkeys(linked))[:4]:
         try:
             html = fetch(target, shared)
-            labels = profiles.profile_genres(html, name)
+            try:
+                labels = profiles.profile_genres(html, name)
+            except (ValueError, TypeError, RecursionError):
+                # Only a biography explicitly linked from the venue-attributed
+                # performer page, on that same HTTPS host. At most one extra
+                # fetch per linked performer. Never search by name or trust
+                # cached directory hints here.
+                bio_url = biographies.linked_official_biography(html, target, target)
+                if not bio_url:
+                    continue
+                probe.checked_uri(bio_url, intake.valid_https(target))
+                bio_html = fetch(bio_url, shared)
+                source = {"artistId": "linked-performer", "sourceRole": "artist_official",
+                          "enabled": True, "url": target}
+                roster = {"artists": [{"id": "linked-performer", "name": name,
+                                       "aliases": []}]}
+                fact = biographies.verify_official_biography(
+                    source, roster, bio_html, bio_url, bio_url, dt.date.today())
+                labels = fact["genres"]
         except (ValueError, TypeError, KeyError, OSError, TimeoutError, RecursionError):
             continue
         if triage.genre_evidence({"classification": labels}):
