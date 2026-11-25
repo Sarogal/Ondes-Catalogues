@@ -23,9 +23,62 @@ from ptitesondes_unnumbered_official_geo_proof import (
     _exact_official_point, mint_private_unnumbered_location_proof,
 )
 
+from ptitesondes_municipal_event_venue_ban import mint_municipal_event_location_proof
+from ptitesondes_generic_venue_official_geocode import extract_official_address
+from ptitesondes_html_independent_venue_geo import _coordinates_from_ban
+from ptitesondes_delegated_source_authority import _url_host, _same_host
+from ptitesondes_independent_venue_site_proof import _osm_website_host
+from ptitesondes_generic_venue_osm_preflight import osm_hints
+
 MAX_GROUPS = 3
 MAX_PAGES = 4
+MAX_EXTERNAL_PAGES = 2
 ERRORS = (OSError, ValueError, TypeError, KeyError, TimeoutError)
+
+
+def _external_location(group, url, html, ign_get, osm_get):
+    """Research-only exact venue/address + BAN + named OSM website.
+
+    A historical source URL is an untrusted discovery hint. It becomes
+    attributable only via a separate matching named OSM object with the
+    same website host. Neither an old catalogue pin nor a city centroid
+    can supply the search centre. This returns no Publisher proof.
+    """
+    host = _url_host(url)
+    if host is None:
+        return None
+    candidate = extract_official_address(group, html)
+    if candidate is None:
+        return None
+    address = (candidate["housenumber"], candidate["street"],
+               candidate["postcode"], candidate["city"], ())
+    point = _coordinates_from_ban(ign_get(candidate), address)
+    if point is None or (candidate.get("official_coordinates_hint") is not None
+                         and meters(point, candidate["official_coordinates_hint"]) > 65):
+        return None
+    response = osm_get(point)
+    named = {**group, "key": [norm(group["city"]), norm(group["venue"])]}
+    hits = osm_hints(named, point, response)
+    if len(hits) != 1:
+        return None
+    hit = hits[0]
+    objects = [x for x in response["elements"] if isinstance(x, dict)
+               and "%s/%s" % (x.get("type"), x.get("id")) == hit["osm_object_hint"]]
+    if len(objects) != 1:
+        return None
+    tags = objects[0].get("tags")
+    if not isinstance(tags, dict):
+        return None
+    if (tags.get("addr:country") and norm(tags["addr:country"]) not in ("fr", "france")
+            or tags.get("addr:postcode") and str(tags["addr:postcode"]) != candidate["postcode"]
+            or tags.get("addr:street") and norm(tags["addr:street"]) != norm(candidate["street"])
+            or tags.get("addr:housenumber") and norm(tags["addr:housenumber"]) != norm(candidate["housenumber"])):
+        return None
+    websites = [_osm_website_host(tags[k]) for k in ("website", "contact:website") if k in tags]
+    if not websites or any(x is None or not _same_host(x, host) for x in websites):
+        return None
+    return dict(lat=hit["lat_unverified"], lng=hit["lng_unverified"],
+                official=url, geo_source="Exact venue address + IGN/BAN + named OSM website")
 
 
 def research_group(group, today, *, directory_get=fetch_dila,
@@ -37,10 +90,12 @@ def research_group(group, today, *, directory_get=fetch_dila,
     try:
         directory = directory_get(group["city"])
     except ERRORS:
-        return dict(result, status="directory_unavailable")
+        directory = {}
+        result["status"] = "directory_unavailable"
     hosts = municipal_site_hosts(group["city"], directory)
     if not hosts:
-        return dict(result, status="municipality_not_independently_identified")
+        if result["status"] != "directory_unavailable":
+            result["status"] = "municipality_not_independently_identified"
     urls = [u for u in group["source_urls"]
             if approved_municipal_page_host(u, group["city"], directory)]
     urls += ["https://" + h + "/" for h in sorted(hosts)]
@@ -56,6 +111,9 @@ def research_group(group, today, *, directory_get=fetch_dila,
             html = html_get(url)
             proof = mint_private_location_proof(
                 group, directory, url, html, ign_get, today)
+            if proof is None:
+                proof = mint_municipal_event_location_proof(
+                    group, directory, url, html, ign_get, today, source_center=None)
             # For a place without a street number, use only its explicitly
             # named official point as a search centre. No old catalogue pin
             # or street/city centroid may substitute for that source.
@@ -79,7 +137,24 @@ def research_group(group, today, *, directory_get=fetch_dila,
                 todo.insert(0, link)
         except ERRORS:
             continue
+    # Existing event source URLs are discovery hints only. Rotate a bounded
+    # selection by date so larger venue histories are not permanently cut off.
+    external = sorted({u for u in group["source_urls"]
+                       if _url_host(u) is not None
+                       and not approved_municipal_page_host(u, group["city"], directory)})
+    start = today.toordinal() % len(external) if external else 0
+    external = external[start:] + external[:start]
+    external_examined = 0
+    for url in external[:MAX_EXTERNAL_PAGES]:
+        external_examined += 1
+        try:
+            loc = _external_location(group, url, html_get(url), ign_get, osm_get)
+            if loc is not None:
+                locations.append(loc)
+        except ERRORS:
+            continue
     result["pages_examined"] = len(seen)
+    result["external_pages_examined"] = external_examined
     if not locations:
         return result
     first = locations[0]
