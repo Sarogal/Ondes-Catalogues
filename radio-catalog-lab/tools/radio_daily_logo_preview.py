@@ -76,6 +76,7 @@ def review(discovery: dict, reconciliation: dict, stream: dict, *, limit: int = 
         raise ValueError("Candidate/reconciliation mismatch")
     day = parse_day(discovery["scanDate"])
     cached = {}
+    failed = {}
     if previous is not None:
         if (previous.get("schemaVersion") != 1 or previous.get("publicationAllowed") is not False
                 or previous.get("approvedLogoCount") != 0 or parse_day(previous["scanDate"]) > day):
@@ -84,6 +85,13 @@ def review(discovery: dict, reconciliation: dict, stream: dict, *, limit: int = 
             if old.get("logoApproved") is not False or old.get("publicationAllowed") is not False:
                 raise ValueError("Invalid previous artwork approval")
             source = old.get("sourceSha256")
+            if old.get("retrieval") == "failed_review":
+                observed = parse_day(old.get("observedDate") or previous["scanDate"])
+                if observed > day:
+                    raise ValueError("Future image failure")
+                if isinstance(source, str) and re.fullmatch("[0-9a-f]{64}", source):
+                    failed[source] = observed
+                continue
             if old.get("retrieval") != "decoded_unapproved":
                 continue
             image = old.get("imageSha256")
@@ -113,6 +121,8 @@ def review(discovery: dict, reconciliation: dict, stream: dict, *, limit: int = 
         if url and rank and row.get("editorialSignal") == "target_genre_indication":
             if digest(url) in cached:
                 result.update(cached[digest(url)])
+            elif failed.get(digest(url)) == day:
+                result.update({"retrieval": "failed_review", "observedDate": day})
             else:
                 queue.append((-rank, uid, url, result))
     # Group identical URLs for one network request; never imply shared station identity.
@@ -130,7 +140,7 @@ def review(discovery: dict, reconciliation: dict, stream: dict, *, limit: int = 
                         "mime": decoded, "width": width, "height": height,
                         "byteLength": len(data), "observedDate": day}
         except Exception:
-            metadata = {"retrieval": "failed_review"}
+            metadata = {"retrieval": "failed_review", "observedDate": day}
         for row in group:
             row.update(metadata)
     return {"schemaVersion": 1, "scanDate": discovery["scanDate"],

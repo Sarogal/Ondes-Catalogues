@@ -87,5 +87,22 @@ class LogoPreviewTests(unittest.TestCase):
         self.assertEqual(again["approvedLogoCount"], 0)
 
 
+    def test_failed_source_does_not_starve_other_sources_same_day(self):
+        d, r, s = inputs()
+        d["candidates"][1]["favicon"] = "https://radio.example.org/other.png"
+        def fail(*a):
+            raise OSError("temporary outage")
+        first = review(d, r, s, limit=1, fetch=fail)
+        calls = []
+        def fetch(url, host):
+            calls.append(url)
+            return b"fake", "image/png"
+        second = review(d, r, s, limit=1, previous=first, fetch=fetch,
+                        decode=lambda b: ("image/png", 128, 128))
+        self.assertEqual(calls, ["https://radio.example.org/other.png"])
+        self.assertEqual(second["decodedCandidateCount"], 1)
+        self.assertEqual(second["records"][0]["retrieval"], "failed_review")
+
+
 if __name__ == "__main__":
     unittest.main()
