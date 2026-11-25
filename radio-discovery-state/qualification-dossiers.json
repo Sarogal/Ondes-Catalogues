@@ -749,7 +749,29 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "q1043.iheart.com",
+        "homepageSha256": "b32e883ccde6958e207e7428c540008587e060089b24567165eed129793e0171",
+        "identityNameSha256": "a710b5eb48f0f424139bbec5b3830875a43acde59c66e3f7bc6754564ddd0ae2",
+        "observedDate": "2026-11-25",
+        "retrieval": "html_observed",
+        "identityNameMatch": true,
+        "signal": "no_format_evidence",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [],
+        "primaryElectronicTerms": [],
+        "pageSha256": "aa83af9c6b2bd317359c15a4ef865d0dc3d71733c1c162f486a5ad4c322fdf1d",
+        "finalPageSha256": "b32e883ccde6958e207e7428c540008587e060089b24567165eed129793e0171",
+        "imageHintSha256": [],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": false,
+        "programmeScopeEvidence": false,
+        "programmeScopeSources": [],
+        "programmeScopeTerms": [],
+        "otherFormatTerms": [],
+        "declaredStreamLinked": false,
+        "streamSha256": "0e61f2ea0afc5d375fa933b4e03084c37d10bacb40505709ffa8e2d9d5eb7a51"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1259,7 +1281,29 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "q1033.iheart.com",
+        "homepageSha256": "96f763ba9ab13c880157ea6609b2644e614cbf5c6f20f53a9688991b8de07dc6",
+        "identityNameSha256": "43e908c0b914743eadb0438558617da23a7c9701e98e3dc34fc4347bb5d08dc3",
+        "observedDate": "2026-11-25",
+        "retrieval": "html_observed",
+        "identityNameMatch": false,
+        "signal": "no_format_evidence",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [],
+        "primaryElectronicTerms": [],
+        "pageSha256": "d49273ba3f8aeec7f0d5c92f893d81cb3756248d5c7cd4d9c2515869f6c89363",
+        "finalPageSha256": "96f763ba9ab13c880157ea6609b2644e614cbf5c6f20f53a9688991b8de07dc6",
+        "imageHintSha256": [],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": false,
+        "programmeScopeEvidence": false,
+        "programmeScopeSources": [],
+        "programmeScopeTerms": [],
+        "otherFormatTerms": [],
+        "declaredStreamLinked": false,
+        "streamSha256": "d5665c05a035495396973e43df736a2c25978c53fa5a682408a2655f9d4f4520"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -2261,7 +2305,29 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "play.you.radio",
+        "homepageSha256": "435ced9d21e2d3ace150f80c9272a9f8dbb5126ac260c6a68f0e375d9bbd7186",
+        "identityNameSha256": "26a21c9283db7ed469bb0cec88e55f6d72896673f8a15694e46600f87a3d839d",
+        "observedDate": "2026-11-25",
+        "retrieval": "failed_review",
+        "identityNameMatch": null,
+        "signal": null,
+        "primaryTargetTerms": null,
+        "visibleTargetTerms": null,
+        "primaryElectronicTerms": null,
+        "pageSha256": null,
+        "finalPageSha256": null,
+        "imageHintSha256": null,
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": null,
+        "programmeScopeEvidence": null,
+        "programmeScopeSources": null,
+        "programmeScopeTerms": null,
+        "otherFormatTerms": null,
+        "declaredStreamLinked": null,
+        "streamSha256": "51e61b525da09c931dbe0598dcb00a2af4d49d0013ed592bae01fcb25fd806e3"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -8756,7 +8822,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "f4f1a56e9b309dbba9ca8daabe7f6892f1a524193733940ed9c3dbce3af19e1a",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-25"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4398,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "same_reported_host",
         "sourceSha256": "6510210d3cb784ae740cd8f9097f4c3d933b1510da4c4cd40b9a2a001468c7dc",
@@ -8888,7 +8970,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "ffd43159ad703308a2fa2c3bf95f8a0eb0cc20cfeb3abec28010e6fdb90744b3",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-25"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4000,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "same_reported_host",
         "sourceSha256": "bb54ab38b4e828f08fdc014c8172f3bb02f642de58af1937e95ad74c35731126",
@@ -8975,7 +9073,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": false,
-        "signal": "stale_analyzer_or_stream_review",
+        "signal": "unbound_target_indication",
         "primaryTargetTerms": [],
         "visibleTargetTerms": [
           "punk"
@@ -8988,7 +9086,7 @@
           "b3f6be0e7decde40af4a7ac8831a954803b9f230214c97ade7a1479c184037ca",
           "e8c03ee6468ba3de1e1ee58a6f97006658db477442fba17d435ec90947566a51"
         ],
-        "analyzerVersion": 3,
+        "analyzerVersion": 4,
         "structuredProgrammeEvidence": false,
         "programmeScopeEvidence": false,
         "programmeScopeSources": [],
@@ -9016,7 +9114,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "77c568b0dc217ce0d3a91aa837a1e0bd62a237a2df76771f6e5f48220022bc73",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-25"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4001,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "missing_source",
         "sourceSha256": null,
@@ -9407,7 +9521,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "728d8a9c5da25b798772fe7765b2b6b6b3b8944dd557e34f3115eeb469ba2607",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-25"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4003,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "missing_source",
         "sourceSha256": null,
@@ -9465,7 +9595,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "3fb5100820dbce72c63887681d35b8d9e63ac9a346d7a990d49cf7c6d3d3cb63",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-25"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4001,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "aac_adts",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "same_reported_host",
         "sourceSha256": "3f6ec40f87537d833c4680db925b3f755dab4dac535016cd1a4dbc1ac07090e1",
@@ -9720,7 +9866,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": false,
-        "signal": "stale_analyzer_or_stream_review",
+        "signal": "unbound_target_indication",
         "primaryTargetTerms": [
           "metal"
         ],
@@ -9728,10 +9874,10 @@
           "metal"
         ],
         "primaryElectronicTerms": [],
-        "pageSha256": "c9e15a457353bb22d8d36241e7832ec099e598a150dbc799ab3f108188119501",
+        "pageSha256": "975239d3575c001fec33b1fd971f7b3123d2c6f11b0daf7199e0bba9b444f1bc",
         "finalPageSha256": "691c99d05c9781203e4386a07a8c85f98b085121998cc5788b3f7dd5329eff12",
         "imageHintSha256": [],
-        "analyzerVersion": 3,
+        "analyzerVersion": 4,
         "structuredProgrammeEvidence": false,
         "programmeScopeEvidence": false,
         "programmeScopeSources": [],
@@ -9804,17 +9950,17 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": true,
-        "signal": "stale_analyzer_or_stream_review",
+        "signal": "no_format_evidence",
         "primaryTargetTerms": [],
         "visibleTargetTerms": [],
         "primaryElectronicTerms": [],
-        "pageSha256": "8298d0b25eb783777882dfdf110c3fb76590da1061a097732edfc8e8dcde4751",
+        "pageSha256": "36cea67689fc198a4922a1c37db0b5479a1c9a3815793c9c770ab94ebf04eeb9",
         "finalPageSha256": "755ca68139ff87dfa17ef373c6b84b17373faa801ed2e1242d476bd60488278a",
         "imageHintSha256": [
-          "40b8d41e469fd5e4d5250935d0c42b2d68517e6491b3e415f89c4777e35e0b89",
+          "568244328fbf0923d68832d44ad18cc65b67f30d99c022afc7f581895d408b7e",
           "c42811f2e06318651896075a0183da59263a42a4d40bc94702c6d9eafab756c6"
         ],
-        "analyzerVersion": 3,
+        "analyzerVersion": 4,
         "structuredProgrammeEvidence": false,
         "programmeScopeEvidence": false,
         "programmeScopeSources": [],
@@ -9985,7 +10131,40 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "punkirratia.net",
+        "homepageSha256": "27d801e8f5d55416a7b02a28cc43ba26e3a8d4e75a590c3f5089efbb97938ae2",
+        "identityNameSha256": "3067dd0cbaa72f3828fc53b29f163d5b239332d35d2887d2243c951764320816",
+        "observedDate": "2026-11-25",
+        "retrieval": "html_observed",
+        "identityNameMatch": true,
+        "signal": "identity_and_target_indication",
+        "primaryTargetTerms": [
+          "punk"
+        ],
+        "visibleTargetTerms": [
+          "hardcore punk",
+          "punk",
+          "punk rock",
+          "punkrock"
+        ],
+        "primaryElectronicTerms": [],
+        "pageSha256": "95c5b73ae2496ded67763890e7ea77c813732b5ea81821bc5bb9005b428a410a",
+        "finalPageSha256": "27d801e8f5d55416a7b02a28cc43ba26e3a8d4e75a590c3f5089efbb97938ae2",
+        "imageHintSha256": [
+          "e1c2ddec00b246ff9bc01fcb0a562e1ee61563f3b3ffe02eb4aea5ba3d671038"
+        ],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": false,
+        "programmeScopeEvidence": false,
+        "programmeScopeSources": [],
+        "programmeScopeTerms": [],
+        "otherFormatTerms": [
+          "country"
+        ],
+        "declaredStreamLinked": true,
+        "streamSha256": "8d2fe0fb9b75e04770be57aea6cbd03e5506e2c7a42e1a2a69ff62966f4adaf4"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -9997,7 +10176,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "8d2fe0fb9b75e04770be57aea6cbd03e5506e2c7a42e1a2a69ff62966f4adaf4",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-25"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4139,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "same_reported_host",
         "sourceSha256": "e1c2ddec00b246ff9bc01fcb0a562e1ee61563f3b3ffe02eb4aea5ba3d671038",
@@ -13866,7 +14061,7 @@
         "observedDate": "2026-11-25",
         "retrieval": "html_observed",
         "identityNameMatch": false,
-        "signal": "stale_analyzer_or_stream_review",
+        "signal": "unbound_target_indication",
         "primaryTargetTerms": [
           "metal"
         ],
@@ -13881,7 +14076,7 @@
           "099e7fee68d817a70a1d0039659a5e0e4eb333af17480f0d965e0e3f34dedf05",
           "3b486ce4699c0b7a68ed53bc3743250c08f1a8863a6a2fc4e5e9f2eb60191f81"
         ],
-        "analyzerVersion": 3,
+        "analyzerVersion": 4,
         "structuredProgrammeEvidence": false,
         "programmeScopeEvidence": false,
         "programmeScopeSources": [],
