@@ -263,11 +263,71 @@ def individual_event_nodes(html, *, accept_generic=False):
     return nodes
 
 
-def event_genres(raw, official_url, *, fetch=None, cache=None):
-    """Replay a venue-attributed performer profile, never a name-only match.
+def _direct_artist_description(name, description):
+    """Accept a literal named subject + musical identity, not influences."""
+    from automation.concerts import artist_official_bio as biographies
 
-    The authenticated individual MusicEvent must explicitly link its named
-    performer to the external profile. A fresh profile must describe that
+    if (not isinstance(description, str) or not 0 < len(description) <= 8000
+            or not isinstance(name, str) or not normal(name)
+            or "<" in description or ">" in description):
+        return []
+    first = re.split(r"[.!?;\n](?:\s|$)", description.strip(), maxsplit=1)[0]
+    text = normal(first)
+    subject = re.escape(normal(name))
+    # Restrict to the opening assertion, not mere proximity of a genre
+    # to a name. No influence, comparison, support act or negation inference.
+    if re.search(r"\b(?:not|never|pas|sans|rather|tribute|hommage|"
+                 r"influence|influenced|influences|inspire|inspiree)\b", text):
+        return []
+    suffix = r"(?: (?:from|based in|formed in|originaire de|forme en|base a) [a-z0-9 ]{1,100})?"
+    for genre in sorted(biographies.BIO_GENRES, key=len, reverse=True):
+        label = re.escape(normal(genre))
+        patterns = (
+            subject + r" (?:is|are) (?:an? )?" + label
+            + r" (?:band|group|duo|trio|artist|musician|singer)" + suffix,
+            subject + r" (?:est|sont) (?:un|une) (?:groupe|duo|trio|artiste|musicien|musicienne|chanteur|chanteuse) (?:de|du|d) "
+            + label + suffix,
+            subject + r" (?:plays|play|joue|jouent|pratique|pratiquent) (?:du |de la )?"
+            + label,
+        )
+        if any(re.fullmatch(pattern, text) for pattern in patterns):
+            return [genre.title()]
+    return []
+
+
+def _visible_artist_description(html, title, name):
+    """One named artist subsection inside the exact current event heading."""
+    import official_html_evidence as visible
+
+    if not isinstance(html, str) or not 0 < len(html) <= probe.MAX_BYTES:
+        return []
+    parsed = visible.VisibleBlocks()
+    parsed.feed(html)
+    parsed.close()
+    headings = [(i, text) for i, (kind, text) in enumerate(parsed.blocks)
+                if kind == "h1"]
+    if len(headings) != 1 or not normal(title) or normal(headings[0][1]) != normal(title):
+        return []
+    section = []
+    for kind, text in parsed.blocks[headings[0][0] + 1:]:
+        if normal(text) in visible.END_SECTION:
+            break
+        section.append((kind, text))
+    matches = [i for i, (kind, text) in enumerate(section)
+               if kind in ("h2", "h3", "h4") and normal(text) == normal(name)]
+    if len(matches) != 1:
+        return []
+    index = matches[0] + 1
+    if index >= len(section) or section[index][0] != "p":
+        return []
+    return _direct_artist_description(name, section[index][1])
+
+
+def event_genres(raw, official_url, *, fetch=None, cache=None, html=None):
+    """Replay a venue-attributed performer identity, never a name-only match.
+
+    The authenticated individual MusicEvent may describe its named performer
+    directly or explicitly link to a fresh external profile describing that
     same MusicGroup or musician and a relevant genre. No registry tags,
     MusicBrainz match, unrelated Event, or general venue genre is authority.
     """
@@ -286,6 +346,9 @@ def event_genres(raw, official_url, *, fetch=None, cache=None):
     names = set(bill[0])
     people = raw.get("performer")
     people = people if isinstance(people, list) else [people]
+    # The authenticated event may describe a named artist directly, with
+    # no artist URL or external directory. Structured genre conflicts cannot
+    # be replaced by prose. All fields are replayed by the Publisher.
     linked = []
     for person in people:
         if not isinstance(person, dict):
@@ -295,6 +358,11 @@ def event_genres(raw, official_url, *, fetch=None, cache=None):
                 or not bridge._event_types(person.get("@type")) & {"MusicGroup", "Person"}
                 or person.get("genre") not in (None, "", [])):
             continue
+        inline_labels = _direct_artist_description(name, person.get("description"))
+        if not inline_labels:
+            inline_labels = _visible_artist_description(html, raw.get("name"), name)
+        if inline_labels:
+            return inline_labels, "official_artist_in_event_detail"
         target = person.get("url")
         host = intake.valid_https(target)
         if not host or host == intake.valid_https(official_url):
@@ -337,7 +405,7 @@ def event_genres(raw, official_url, *, fetch=None, cache=None):
 
 
 def _event(raw, event, venue, artists, *, accept_generic=False,
-           fetch=None, cache=None):
+           fetch=None, cache=None, html=None):
     """Verify one complete first-party concert event; never join evidence."""
     types = bridge._event_types(raw.get("@type")) if isinstance(raw, dict) else set()
     require("MusicEvent" in types or (accept_generic and "Event" in types),
@@ -380,7 +448,7 @@ def _event(raw, event, venue, artists, *, accept_generic=False,
             "official street conflicts with published venue")
     genres, scope = event_genres(raw, event["officialUrl"],
                                  fetch=fetch if accept_generic else None,
-                                 cache=cache)
+                                 cache=cache, html=html)
     require(bool(triage.genre_evidence({
         "classification": genres,
         "genreEvidenceScope": scope,
@@ -559,7 +627,7 @@ def validate(approval, venues, artists, today, *, fetch=None):
         try:
             valid.append(_event(raw, event, venue, resolved,
                                 accept_generic=(is_single_osm or is_address or is_official),
-                                fetch=fetch, cache=cache))
+                                fetch=fetch, cache=cache, html=html))
         except (ValueError, KeyError, TypeError):
             continue
     require(len(valid) == 1, "no unique exact first-party MusicEvent")
