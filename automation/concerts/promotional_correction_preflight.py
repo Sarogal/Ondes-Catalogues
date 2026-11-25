@@ -24,7 +24,52 @@ from scripts import concert_published_lineup_contract as contract
 from scripts import concerts_private_approval_preview as preview
 
 
-def select(previous, report, reference, current, today, *, audit=preview.audit):
+def audit_correction(previous, proposed, reference, current, today):
+    """Replay an exact correction even when a new-event batch is waiting.
+
+    Compare the real Publisher with and without the sole appended correction.
+    New concerts, venues, held decisions and other historical changes must
+    be identical. This preserves the pending batch rather than bypassing it.
+    """
+    published_ids = {e["id"] for e in current["events"]}
+    if all(a["event"]["id"] in published_ids for a in previous["approvals"]):
+        return preview.audit(previous, proposed, reference, current, today)
+    fresh, statuses = preview.approved_delta(previous, proposed, current)
+    added = proposed.get("lineupCorrections", [])[len(previous.get("lineupCorrections", [])):]
+    preview.require(not fresh and not statuses and len(added) == 1,
+                    "Expected exactly one appended correction")
+    row = added[0]
+    original = next(a for a in previous["approvals"] if a["event"]["id"] == row["eventId"])
+    plan = contract.plan(row, original, current, today)
+    before, before_counts = preview.sync.merge(reference, current, previous, today)
+    after, after_counts = preview.sync.merge(reference, current, proposed, today)
+    old = next(e for e in current["events"] if e["id"] == row["eventId"])
+    preview.require(next((e for e in before["events"] if e["id"] == old["id"]), None) == old,
+                    "Pending batch independently changes corrected event")
+    expected_events = [contract.expected(e, plan) if e["id"] == old["id"] else e
+                       for e in before["events"]]
+    # Publisher applies lineup corrections before admitting pending events.
+    n = len(current["artists"])
+    preview.require(before["artists"][:n] == current["artists"],
+                    "Pending batch modifies historical artist identities")
+    expected_artists = (before["artists"][:n] + plan["newArtists"] +
+                        before["artists"][n:])
+    expected_counts = dict(before_counts)
+    expected_counts["correctedEvents"] += 1
+    expected_counts["newArtists"] += len(plan["newArtists"])
+    preview.require(after["events"] == expected_events
+                    and after["artists"] == expected_artists
+                    and after["venues"] == before["venues"]
+                    and after_counts == expected_counts,
+                    "Correction alters independently validated pending publication")
+    ignored = {"events", "artists", "venues", "updatedAt", "edition"}
+    preview.require({k: v for k, v in before.items() if k not in ignored} ==
+                    {k: v for k, v in after.items() if k not in ignored},
+                    "Unrelated catalogue metadata modified")
+    return 1
+
+
+def select(previous, report, reference, current, today, *, audit=audit_correction):
     """Return an unchanged or one-row-extended ledger and private diagnostics."""
     result = {"status": "no_changes", "validatedByPublisher": False,
               "applied": False, "examined": 0, "held": 0}
@@ -44,9 +89,6 @@ def select(previous, report, reference, current, today, *, audit=preview.audit):
     approvals = {a["event"]["id"]: a for a in previous["approvals"]}
     if len(approvals) != len(previous["approvals"]):
         raise ValueError("Duplicate historical approval ID")
-    if not approvals.keys() <= events.keys():
-        result["status"] = "deferred_new_events_pending"
-        return previous, result
     old = previous.get("lineupCorrections", [])
     corrected = {r["eventId"] for r in old}
     if len(corrected) != len(old):

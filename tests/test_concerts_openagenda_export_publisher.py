@@ -292,14 +292,50 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
         pending["event"]["id"] = "unpublished-new-event"
         backlog["approvals"].append(pending)
         unchanged, stats = auto.select(backlog, report, self.catalogue, current, TODAY,
-                                       audit=lambda *_: self.fail("new events take priority"))
-        self.assertEqual(stats["status"], "deferred_new_events_pending")
+                                       audit=lambda *_: 0)
+        self.assertEqual(stats["status"], "held")
         self.assertEqual(unchanged, backlog)
         unchanged, stats = auto.select(previous, report, self.catalogue, current, TODAY,
                                        audit=lambda *_: 0)
         self.assertEqual(stats["status"], "held")
         self.assertFalse(stats["validatedByPublisher"])
         self.assertEqual(unchanged, previous)
+
+    def test_automatic_correction_does_not_starve_with_real_pending_new_artists(self):
+        from automation.concerts import published_lineup_patch_builder as builder
+        from automation.concerts import promotional_correction_preflight as auto
+        from scripts import concert_published_lineup_contract as contract
+        current, previous, old_payload = self._published_legacy_promotional(
+            "NEW ACT Release Party", "NEW ACT")
+        report = builder.build_promotional(current, previous, TODAY,
+                                           fetch=lambda *_: old_payload)
+        reg = registry()
+        candidate = reg["items"]["from-openagenda"]["candidate"]
+        next_url = URL.replace("87654321", "87654322")
+        next_export = EXPORT.replace("87654321", "87654322")
+        next_day = "2027-03-06"
+        candidate.update(sourceUrl=next_url, sourcePage=next_url, eventDetailUrl=next_url,
+                         openAgendaEventUid="87654322", date=next_day)
+        new_payload = official_export(uid=87654322, firstDate=next_day, lastDate=next_day,
+                                      canonicalUrl=next_url.replace("/fr/", "/"))
+        def get(url, cache=None):
+            self.assertEqual(url, next_export)
+            return new_payload
+        with mock.patch.object(identity, "safe_fetch", side_effect=get):
+            backlog, _ = producer.build(reg, current, previous, TODAY, fetch=get)
+            self.assertEqual(len(backlog["approvals"]), len(previous["approvals"]) + 1)
+            self.assertTrue(backlog["approvals"][-1]["newArtists"])
+            pristine = copy.deepcopy(backlog)
+            with mock.patch.object(contract, "network_fetch", return_value=old_payload):
+                selected, stats = auto.select(backlog, report, self.catalogue, current, TODAY)
+                self.assertTrue(stats["validatedByPublisher"], stats)
+                self.assertEqual(backlog, pristine)
+                self.assertEqual(selected["approvals"], backlog["approvals"])
+                published, counts = publisher.merge(self.catalogue, current, selected, TODAY)
+            self.assertEqual(counts["newEvents"], 1, counts)
+            self.assertEqual(counts["correctedEvents"], 1, counts)
+            self.assertEqual(published["events"][-2]["title"], "NEW ACT")
+            self.assertEqual(published["events"][-1]["artistIds"], fixture.IDS)
 
     def test_publisher_accepts_official_export_without_json_ld(self):
         observed = []
