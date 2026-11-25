@@ -3,11 +3,11 @@
   "scanDate": "2026-11-25",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 9,
-  "dueNameCount": 7,
+  "observedNameCount": 14,
+  "dueNameCount": 12,
   "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "megadeth",
+  "retryAfterKey": "never obey again",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",

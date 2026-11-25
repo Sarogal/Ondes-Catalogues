@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 9,
-  "distinctArtistHints": 9,
+  "stationsWithArtistHints": 14,
+  "distinctArtistHints": 14,
   "records": [
     {
       "stationuuid": "035ed365-f6dc-46a2-901d-7ac97880e875",
@@ -238,6 +238,96 @@
           "date": "2026-11-25",
           "artistHint": "Megadeth",
           "titleSha256": "39378ff293c0f9c812ce19917f22a7bc64cf93d5993e9ef94d1c28c0c9d7c82d"
+        }
+      ]
+    },
+    {
+      "stationuuid": "517b189e-46eb-4156-bf93-905f7934c838",
+      "streamSha256": "a0723ce1b5898b068d2a1d2a5b4c171b1e8aaad5a8fe0e7a45ce2701ac011733",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-25",
+          "artistHint": "Klaxons",
+          "titleSha256": "7b178cc8fef84c3b3c0cafce6526ee9997c6762b9d043ec6d971b05d395dff65"
+        }
+      ]
+    },
+    {
+      "stationuuid": "53cf8dd0-be8f-4186-96d2-767e751459a4",
+      "streamSha256": "0c2be1d8943747a4af28b3709105cefa09ca3067759a809221d21d98bed0c6a1",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-25",
+          "artistHint": "Lars Frederiksen And The Bastards",
+          "titleSha256": "565d8d7337ed0051e62a099d777db6ca1355cbcabc6c94447a2518410f94a169"
+        }
+      ]
+    },
+    {
+      "stationuuid": "53f8aadb-cb61-4132-9240-dac5b76e0095",
+      "streamSha256": "73883f4c1fc1d4fa0cf0f47d95cc86c697b9e90f40f75081c8570373d4439337",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-25",
+          "artistHint": "Норвежская Сказка: Читает Воронмрак (Улан-Удэ)",
+          "titleSha256": "7f9b8ec0584663e10d5a7d6314236416056ced9f5ef49a8ef9ad3786a895e784"
+        }
+      ]
+    },
+    {
+      "stationuuid": "575c08a2-4325-4173-8373-b922c7438436",
+      "streamSha256": "da95f8dfefcfb2cba1e77a27368b78c9ccc1b20a6055a347dcd23644e3ebadb9",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": []
+    },
+    {
+      "stationuuid": "59a3411a-e5bc-4ff9-9341-bb949f09a230",
+      "streamSha256": "2b7014e394f5e7e21cb764adc4b6896a54ebf7af9ca9bc47b89d423d49f1bee9",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-25",
+          "artistHint": "Aisyk",
+          "titleSha256": "84f4d6ba50f01f9c1812e8ec1e03df432c85e8d2c54f810469e6c29bccec22e5"
+        }
+      ]
+    },
+    {
+      "stationuuid": "5c8f8628-58bd-433b-b3a2-9bdd63e64cef",
+      "streamSha256": "3e297cdb425f47ba6944c96fb68ece4e35db6e95374c581fabde0dc8e7164ea4",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-25",
+          "artistHint": "Poison",
+          "titleSha256": "6750fb1cd0060333c9ac4fc56329fc7901a202f3ad56d6c0c4574da001337a3d"
         }
       ]
     }
