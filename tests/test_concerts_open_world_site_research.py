@@ -65,6 +65,32 @@ def music_event(url, room="New Room", artist="New Act", city="Lyon",
 
 
 class OpenWorldSiteResearchTests(unittest.TestCase):
+    def test_balanced_site_budget_rotates_both_categories_without_starvation(self):
+        seeds = [{"kind": kind, "identity": {"key": f"{kind}:{i:02}"},
+                  "host": f"{kind}{i}.example.org"}
+                 for kind, count in (("artist", 24), ("venue", 12))
+                 for i in range(count)]
+        visited = set()
+        for cycle in range(15):
+            day = DAY + dt.timedelta(days=cycle // 3)
+            selected = research.balanced_sites(seeds, day, cycle % 3, 5)
+            self.assertEqual(len(selected), 5)
+            self.assertIn(sum(s["kind"] == "artist" for s in selected), (2, 3))
+            visited.update(s["identity"]["key"] for s in selected)
+        self.assertEqual(visited, {s["identity"]["key"] for s in seeds})
+        for budget in (1, 3, 5):
+            only = [s for s in seeds if s["kind"] == "artist"]
+            self.assertEqual(len(research.balanced_sites(only, DAY, 0, budget)), budget)
+
+    def test_shared_host_does_not_consume_multiple_places(self):
+        seeds = [{"kind": kind, "identity": {"key": f"{kind}:{i}"},
+                  "host": "shared.example.org" if i < 4 else f"{kind}{i}.example.org"}
+                 for kind in ("artist", "venue") for i in range(7)]
+        selected = research.balanced_sites(seeds, DAY, 0, 5)
+        self.assertEqual(len(selected), 5)
+        self.assertEqual(len({s["host"] for s in selected}), 5)
+        self.assertEqual({s["kind"] for s in selected}, {"artist", "venue"})
+
     def test_unlisted_venue_produces_structured_lead_without_host_manifest(self):
         url = "https://newroom.example.org/agenda"
         html = '<script type="application/ld+json">' + music_event(url) + '</script>'

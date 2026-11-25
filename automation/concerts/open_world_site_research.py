@@ -187,13 +187,53 @@ def select_sources(frontier_report, registry, day, *, slot=0, limit=3,
                         "kind": "artist", "identity": row, "url": target,
                         "host": host, "claimedOfficial": False,
                     })
-    ordered = sorted(seeds.values(),
-                     key=lambda x: (x["kind"], x["identity"]["key"], x["host"]))
-    if not ordered:
-        return []
-    offset = ((day.toordinal() * 3 + slot) * limit) % len(ordered)
-    return [ordered[(offset + j) % len(ordered)]
-            for j in range(min(limit, len(ordered)))]
+    return balanced_sites(seeds.values(), day, slot, limit)
+
+
+def balanced_sites(seeds, day, slot, limit):
+    """Rotate each category independently; reserve capacity for both.
+
+    The same official host may represent multiple artists/rooms. Avoid
+    consuming the whole cycle with aliases on one domain; rotate identities
+    before deduplication and only count actual selected site identities.
+    """
+    tick = day.toordinal() * 3 + slot
+    pools = {kind: sorted((s for s in seeds if s["kind"] == kind),
+                          key=lambda s: (s["identity"]["key"], s["host"]))
+             for kind in ("artist", "venue")}
+    both = all(pools.values())
+    for kind, rows in pools.items():
+        if not rows:
+            continue
+        # Advance by the cumulative nominal quota, not by the full budget
+        # or a single position. On a stable queue this covers consecutive
+        # identities even when queue size is a multiple of the budget.
+        if both:
+            extra = (tick + (kind == "artist")) // 2 if limit % 2 else 0
+            offset = (tick * (limit // 2) + extra) % len(rows)
+        else:
+            offset = (tick * limit) % len(rows)
+        pools[kind] = rows[offset:] + rows[:offset]
+    chosen, hosts = [], set()
+    # Alternate which category gets the odd extra place. Empty pools never
+    # waste capacity, and one host is visited at most once per cycle.
+    order = ("artist", "venue") if tick % 2 == 0 else ("venue", "artist")
+    while len(chosen) < limit:
+        progressed = False
+        for kind in order:
+            while pools[kind] and pools[kind][0]["host"] in hosts:
+                pools[kind].pop(0)
+            if not pools[kind]:
+                continue
+            row = pools[kind].pop(0)
+            chosen.append(row)
+            hosts.add(row["host"])
+            progressed = True
+            if len(chosen) == limit:
+                break
+        if not progressed:
+            break
+    return chosen
 
 
 def performer_links(body, url, lead):
@@ -394,6 +434,8 @@ def scan(catalogue, registry, frontier_report, day, *, slot=0,
         "publicationAllowed": False, "automaticPublication": False,
         "sourceChannel": "open_world_research",
         "sitesConsidered": len(seeds), "sourceChecks": dict(counters),
+        "siteBudget": max_sites, "detailBudgetPerSite": max_details,
+        "siteKindsConsidered": dict(Counter(s["kind"] for s in seeds)),
         "triageCounts": counts, "shortlistReviewCount": len(shortlist),
         "candidates": classified,
     }
