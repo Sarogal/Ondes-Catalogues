@@ -31,25 +31,29 @@ def normalize(value):
     return "".join(re.findall(r"[a-z0-9]+", fold(value)))
 
 
-def search_url(city):
+def search_url(city, *, delegated=False):
     if (not isinstance(city, str) or not 2 <= len(city.strip()) <= 80
             or not re.fullmatch(r"[\wÀ-ÿ .'()\-]+", city, re.U)
             or any(x in city for x in ("?", "&", "#", "/", "\\", "\r", "\n"))):
         raise ValueError("Invalid administrative commune search")
-    query = urlencode({
+    fields = {
         "nom": city.strip(),
         "fields": "nom,code,codeDepartement,departement,centre",
         "format": "geojson",
         "geometry": "centre",
-        "zone": "metro,drom,com",
-    })
-    return f"https://{HOST}/communes?{query}"
+    }
+    if delegated:
+        fields["fields"] += ",type,chefLieu"
+        path = "/communes_associees_deleguees"
+    else:
+        fields["zone"] = "metro,drom,com"
+        path = "/communes"
+    return f"https://{HOST}{path}?{urlencode(fields)}"
 
 
 def fetch_admin_communes(url):
     """Only this one exact API may be requested; never follow redirects."""
-    if (not isinstance(url, str) or not url.startswith(f"https://{HOST}/communes?")
-            or url != search_url_from_existing(url)):
+    if (not isinstance(url, str) or url != search_url_from_existing(url)):
         raise ValueError("Unexpected administrative API request")
     conn = DNSPinnedHTTPSConnection(HOST, port=443, timeout=10,
                                     context=ssl.create_default_context())
@@ -76,21 +80,26 @@ def search_url_from_existing(url):
     try:
         parts = urlsplit(url)
         if (parts.scheme != "https" or parts.hostname != HOST
-                or parts.netloc != HOST or parts.path != "/communes"
+                or parts.netloc != HOST or parts.path not in (
+                    "/communes", "/communes_associees_deleguees")
                 or parts.fragment or parts.username is not None):
             raise ValueError("Invalid api origin")
         fields = parse_qs(parts.query, strict_parsing=True, keep_blank_values=True)
-        if set(fields) != {"nom", "fields", "format", "geometry", "zone"}:
+        delegated = parts.path == "/communes_associees_deleguees"
+        allowed = {"nom", "fields", "format", "geometry"}
+        if not delegated:
+            allowed.add("zone")
+        if set(fields) != allowed:
             raise ValueError("Unapproved API query")
         if any(len(values) != 1 for values in fields.values()):
             raise ValueError("Duplicate query")
-        return search_url(fields["nom"][0])
+        return search_url(fields["nom"][0], delegated=delegated)
     except (TypeError, AttributeError, ValueError) as exc:
         raise ValueError("Unapproved API query") from exc
 
 
 def verified_commune(city, known_department=None, reader=fetch_admin_communes,
-                     *, department_label=None):
+                     *, department_label=None, delegated_reader=None):
     """Return a UNIQUE exact administrative commune centre or None.
 
     Department codes in signed rows disambiguate same-name communes. A
@@ -118,6 +127,23 @@ def verified_commune(city, known_department=None, reader=fetch_admin_communes,
             dept_code = known_department.strip().upper()
         else:
             dept_code = None
+        # Only a well-formed ordinary response without ANY exact-name
+        # match may trigger the delegated/associated commune fallback.
+        # Ambiguity or an invalid exact match is not permission to guess.
+        exact = [f for f in features if isinstance(f, dict)
+                 and isinstance(f.get("properties"), dict)
+                 and isinstance(f["properties"].get("nom"), str)
+                 and normalize(f["properties"]["nom"]) == expected]
+        delegated = False
+        if not exact:
+            url = search_url(city, delegated=True)
+            source = (delegated_reader or reader)(url)
+            if not isinstance(source, dict) or source.get("type") != "FeatureCollection":
+                return None
+            features = source.get("features")
+            if not isinstance(features, list) or len(features) > MAX_RESULTS:
+                return None
+            delegated = True
         matches = []
         for feature in features:
             if not isinstance(feature, dict) or feature.get("type") != "Feature":
@@ -127,6 +153,11 @@ def verified_commune(city, known_department=None, reader=fetch_admin_communes,
                 continue
             nom, code, dep = (props.get("nom"), props.get("code"),
                               props.get("codeDepartement"))
+            if delegated and (
+                    props.get("type") not in ("commune-deleguee", "commune-associee")
+                    or not isinstance(props.get("chefLieu"), str)
+                    or INSEE.fullmatch(props["chefLieu"]) is None):
+                continue
             coords = geometry.get("coordinates")
             department = props.get("departement")
             if department_label is not None and (

@@ -265,7 +265,8 @@ def published_patch_duplicate(proposal, published_calendar):
         and signed.get("geoPrecision") == "commune"
         and signed.get("geoCity") == signed.get("city")
         and signed.get("geoSource", "").startswith(
-            "https://geo.api.gouv.fr/communes?")
+            ("https://geo.api.gouv.fr/communes?",
+                "https://geo.api.gouv.fr/communes_associees_deleguees?"))
         and isinstance(signed.get("geoInsee"), str)
         and re.fullmatch(r"[0-9AB]{5}", signed["geoInsee"])
         and (proposal.get("city") is None
