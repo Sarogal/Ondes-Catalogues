@@ -112,5 +112,25 @@ class StreamRecheckTests(unittest.TestCase):
                               if x["stationuuid"] == B)["repeatAudioSample"])
 
 
+    def test_strong_evidence_requires_frames_and_live_hint_on_separate_days(self):
+        strong = dict(row(), frameChain="mpeg_layer3", liveTransportHint=True)
+        first = next_evidence_report(probe(checks=[strong]))
+        self.assertFalse(first["records"][0]["repeatLiveFrameEvidence"])
+        second = next_evidence_report(probe("2026-11-21", [strong]), first)
+        self.assertEqual(second["repeatLiveFrameEvidenceCount"], 1)
+        self.assertEqual(second["technicallyQualifiedCount"], 0)
+        self.assertFalse(second["publicationAllowed"])
+        changed = next_evidence_report(probe("2026-11-22", [
+            dict(strong, streamSha256=SHA2)]), second)
+        self.assertEqual(changed["records"][0]["liveFrameEvidenceDates"], ["2026-11-22"])
+        self.assertEqual(changed["repeatLiveFrameEvidenceCount"], 0)
+
+    def test_finite_or_header_only_sample_is_not_strong_evidence(self):
+        first = next_evidence_report(probe(checks=[
+            dict(row(), frameChain="mpeg_layer3", liveTransportHint=False),
+            dict(row(B), frameChain="", liveTransportHint=True)]))
+        self.assertTrue(all(not r["liveFrameEvidenceDates"] for r in first["records"]))
+
+
 if __name__ == "__main__":
     unittest.main()

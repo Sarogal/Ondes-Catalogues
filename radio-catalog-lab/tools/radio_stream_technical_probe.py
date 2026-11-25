@@ -27,7 +27,7 @@ from typing import Callable
 from radio_stream_playlist_preview import playlist_hint
 from radio_stream_recheck_ledger import MAX_PROBE_CHECKS
 
-MAX_BYTES = 512
+MAX_BYTES = 4096
 MAX_REDIRECTS = 3
 CONNECT_TIMEOUT = 7.0
 MAX_CANDIDATES = MAX_PROBE_CHECKS
@@ -43,6 +43,7 @@ class ResponseSample:
     content_type: str
     location: str
     body: bytes
+    live_transport_hint: bool = False
 
 
 @dataclass(frozen=True)
@@ -133,6 +134,54 @@ def public_resolved_ips(host: str, port: int, resolver=socket.getaddrinfo) -> li
     if not addresses:
         raise UnsafeEndpoint("dns_empty")
     return addresses
+
+
+def _frame_header(data: bytes, offset: int) -> tuple[str, int, int] | None:
+    """Return codec, sample rate and frame length for MPEG layer III or ADTS."""
+    if offset + 7 > len(data):
+        return None
+    a, b, c, d, e, f, g = data[offset:offset + 7]
+    if a != 255:
+        return None
+    if b & 0xF6 == 0xF0:
+        index = (c >> 2) & 15
+        rates = (96000, 88200, 64000, 48000, 44100, 32000, 24000,
+                 22050, 16000, 12000, 11025, 8000, 7350)
+        length = ((d & 3) << 11) | (e << 3) | (f >> 5)
+        if index < len(rates) and length >= (7 if b & 1 else 9):
+            return ("aac_adts", rates[index], length)
+        return None
+    if b & 0xE0 != 0xE0 or (b >> 1) & 3 != 1:
+        return None
+    version = (b >> 3) & 3
+    bitrate_index, rate_index = c >> 4, (c >> 2) & 3
+    if version == 1 or bitrate_index in (0, 15) or rate_index == 3:
+        return None
+    rates = (44100, 48000, 32000)
+    rate = rates[rate_index] // (1 if version == 3 else 2 if version == 2 else 4)
+    bitrates = ((0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320)
+                if version == 3 else
+                (0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160))
+    length = (144000 if version == 3 else 72000) * bitrates[bitrate_index] // rate + ((c >> 1) & 1)
+    return ("mpeg_layer3", rate, length) if length >= 7 else None
+
+
+def frame_chain(body: bytes) -> str:
+    """Three consecutive coherent headers; no arbitrary sync-bit promotion."""
+    data = body[:MAX_BYTES]
+    for offset in range(max(0, len(data) - 6)):
+        first = _frame_header(data, offset)
+        if not first:
+            continue
+        second_offset = offset + first[2]
+        second = _frame_header(data, second_offset)
+        if not second or second[:2] != first[:2]:
+            continue
+        third_offset = second_offset + second[2]
+        third = _frame_header(data, third_offset)
+        if third and third[:2] == first[:2] and third_offset + third[2] <= len(data):
+            return first[0]
+    return ""
 
 
 def classify_sample(body: bytes, content_type: str) -> tuple[str, str]:
@@ -248,18 +297,22 @@ class PinnedHttpTransport:
                 "User-Agent": USER_AGENT,
                 "Accept": "audio/*,application/octet-stream,*/*;q=0.2",
                 "Icy-MetaData": "0",
-                "Range": "bytes=0-511",
                 "Connection": "close",
             })
             response = connection.getresponse()
-            # read1() requests only one bounded socket read, rather than
-            # waiting for the full 512 bytes on a live stream.
+            # One bounded socket read; do not wait for a full buffer.
+            # An unbounded ICY HTTP response is an indication, not proof of live radio.
             data = response.read1(MAX_BYTES) if response.status in (200, 206) else b""
             return ResponseSample(
                 status=int(response.status),
                 content_type=response.getheader("Content-Type", "") or "",
                 location=response.getheader("Location", "") or "",
                 body=data,
+                live_transport_hint=(response.status == 200
+                    and not response.getheader("Content-Length")
+                    and not response.getheader("Content-Range")
+                    and bool(response.getheader("icy-name") or response.getheader("icy-br")
+                             or response.getheader("icy-metaint"))),
             )
         finally:
             connection.close()
@@ -298,6 +351,9 @@ def probe_url(raw_url: str, request: Callable[[str], ResponseSample]) -> dict:
                 verdict, reason = "needs_review", "http_not_successful"
                 break
             verdict, reason = classify_sample(sample.body[:MAX_BYTES], sample.content_type)
+            chain = "" if verdict == "playlist_pending" else frame_chain(sample.body)
+            if chain:
+                verdict, reason = "audio_sample_ok", "coherent_" + chain
             if verdict == "playlist_pending":
                 hint = playlist_hint(
                     sample.body[:MAX_BYTES], sample.content_type, current)
@@ -319,6 +375,8 @@ def probe_url(raw_url: str, request: Callable[[str], ResponseSample]) -> dict:
                 "verdict": verdict, "reason": reason, "formatHint": reason,
                 "redirectCount": redirects, "sampleBytes": min(MAX_BYTES, len(sample.body)),
                 "streamSha256": fingerprint,
+                "frameChain": chain,
+                "liveTransportHint": sample.live_transport_hint,
             }
     except UnsafeEndpoint as error:
         verdict, reason = "blocked_unsafe", str(error)
@@ -433,6 +491,8 @@ def probe_candidates(
         "publicationAllowed": False,
         "checkedCount": len(rows),
         "audioEvidenceCount": sum(x["verdict"] == "audio_sample_ok" for x in rows),
+        "liveFrameEvidenceCount": sum(bool(x.get("frameChain")) and
+                                      x.get("liveTransportHint") is True for x in rows),
         "technicalVerifiedCount": 0,
         "checks": rows,
     }

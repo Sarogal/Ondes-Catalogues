@@ -530,5 +530,32 @@ class TechnicalStreamProbeTests(unittest.TestCase):
                         limit=limit, workers=workers)
 
 
+    def test_three_mpeg_frames_detected_after_midstream_prefix(self):
+        from radio_stream_technical_probe import frame_chain
+        frame = b"\xff\xfb\x90\x64" + b"\0" * 413
+        data = b"prefix" + frame * 3
+        self.assertEqual(frame_chain(data), "mpeg_layer3")
+        result = probe_url("https://radio.example.org/live", lambda _: ResponseSample(
+            200, "audio/mpeg", "", data, True))
+        self.assertEqual(result["frameChain"], "mpeg_layer3")
+        self.assertTrue(result["liveTransportHint"])
+        self.assertEqual(result["verdict"], "audio_sample_ok")
+        self.assertEqual(frame_chain(frame * 2), "")
+        self.assertEqual(frame_chain(b"ID3" + b"\0" * 2000), "")
+
+    def test_finite_file_can_have_frames_but_no_live_hint(self):
+        frame = b"\xff\xfb\x90\x64" + b"\0" * 413
+        result = probe_url("https://radio.example.org/file.mp3",
+                           lambda _: sample(data=frame * 3))
+        self.assertEqual(result["frameChain"], "mpeg_layer3")
+        self.assertFalse(result["liveTransportHint"])
+
+    def test_three_adts_frames_require_consistent_rate(self):
+        from radio_stream_technical_probe import frame_chain
+        frame = b"\xff\xf1\x50\x80\x0c\x9f\xfc" + b"\0" * 93
+        self.assertEqual(frame_chain(frame * 3), "aac_adts")
+        self.assertEqual(frame_chain(frame * 2 + frame[:20]), "")
+
+
 if __name__ == "__main__":
     unittest.main()

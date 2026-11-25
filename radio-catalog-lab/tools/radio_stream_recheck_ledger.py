@@ -68,6 +68,12 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
             dates = [parse_day(value) for value in dates]
             if dates != sorted(set(dates)) or any(value > day for value in dates):
                 raise ValueError("Invalid previous evidence days")
+            strong_days = row.get("liveFrameEvidenceDates", [])
+            if not isinstance(strong_days, list) or len(strong_days) > 30:
+                raise ValueError("Invalid live frame evidence days")
+            strong_days = [parse_day(value) for value in strong_days]
+            if strong_days != sorted(set(strong_days)) or any(value not in dates for value in strong_days):
+                raise ValueError("Live frame evidence must be a subset of audio evidence")
             last = parse_day(row.get("lastObservedDate"))
             if last > day or uid in records:
                 raise ValueError("Future or repeated evidence record")
@@ -75,6 +81,7 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
                 "stationuuid": uid,
                 "streamSha256": sha,
                 "audioEvidenceDates": dates,
+                "liveFrameEvidenceDates": strong_days,
                 "lastObservedDate": last,
                 "lastVerdict": str(row.get("lastVerdict") or ""),
             }
@@ -96,7 +103,7 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
         if old is None or old["streamSha256"] != sha:
             old = {
                 "stationuuid": uid, "streamSha256": sha,
-                "audioEvidenceDates": [], "lastObservedDate": day,
+                "audioEvidenceDates": [], "liveFrameEvidenceDates": [], "lastObservedDate": day,
                 "lastVerdict": verdict,
             }
             records[uid] = old
@@ -105,6 +112,11 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
         if verdict == "audio_sample_ok" and day not in old["audioEvidenceDates"]:
             old["audioEvidenceDates"] = sorted(
                 (old["audioEvidenceDates"] + [day])[-30:])
+        if (verdict == "audio_sample_ok" and item.get("frameChain") in ("mpeg_layer3", "aac_adts")
+                and item.get("liveTransportHint") is True and day not in old["liveFrameEvidenceDates"]):
+            old["liveFrameEvidenceDates"] = sorted((old["liveFrameEvidenceDates"] + [day])[-30:])
+        old["liveFrameEvidenceDates"] = [d for d in old["liveFrameEvidenceDates"]
+                                          if d in old["audioEvidenceDates"]]
     output_rows = []
     for uid, row in sorted(records.items()):
         # Repeat evidence is a prompt for extended live-radio checks, not
@@ -116,6 +128,9 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
                 and row["lastObservedDate"] == day
                 and row["lastVerdict"] == "audio_sample_ok"
             ),
+            "repeatLiveFrameEvidence": (len(row["liveFrameEvidenceDates"]) >= 2
+                and row["lastObservedDate"] == day and row["lastVerdict"] == "audio_sample_ok"
+                and day in row["liveFrameEvidenceDates"]),
             "technicalQualified": False,
             "publicationAllowed": False,
         })
@@ -124,6 +139,7 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
         "publicationAllowed": False, "technicallyQualifiedCount": 0,
         "repeatAudioCandidateCount": sum(
             x["repeatAudioSample"] for x in output_rows),
+        "repeatLiveFrameEvidenceCount": sum(x["repeatLiveFrameEvidence"] for x in output_rows),
         "notObservedTodayCount": sum(
             x["lastObservedDate"] != day for x in output_rows),
         "records": output_rows,
