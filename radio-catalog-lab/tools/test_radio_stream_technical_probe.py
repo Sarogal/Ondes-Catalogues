@@ -1,5 +1,6 @@
 """No-network regression tests for bounded, pinned radio stream evidence."""
 import datetime as dt
+import hashlib
 import json
 import io
 import socket
@@ -441,6 +442,52 @@ class TechnicalStreamProbeTests(unittest.TestCase):
         out = probe_url(raw, lambda _: sample())
         self.assertNotIn("token=", json.dumps(out))
         self.assertEqual(len(out["streamSha256"]), 64)
+
+
+    def test_durable_queue_prioritizes_confirmation_and_fresh_streams(self):
+        from radio_stream_recheck_ledger import next_evidence_report
+        day = dt.date(2026, 11, 21)
+        url_a = "https://a.example.org/live"
+        url_b = "https://b.example.org/live"
+        before = probe_candidates(report([station(A, url_a), station(B, url_b)]),
+                                  lambda _: sample(), limit=2,
+                                  observation_day=day - dt.timedelta(days=1))
+        previous = next_evidence_report(before)
+        out = probe_candidates(report([station(A, url_a), station(B, url_b),
+                                       station(C, "https://c.example.org/live")]),
+                               lambda _: sample(), limit=2,
+                               observation_day=day, previous_evidence=previous)
+        self.assertEqual([x["stationuuid"] for x in out["checks"]], [A, C])
+        after = next_evidence_report(out, previous)
+        self.assertEqual(after["repeatAudioCandidateCount"], 1)
+        self.assertFalse(after["publicationAllowed"])
+
+    def test_same_day_replay_skips_unchanged_and_rechecks_changed_url(self):
+        from radio_stream_recheck_ledger import next_evidence_report
+        day = dt.date(2026, 11, 21)
+        url = "https://radio.example.org/live"
+        previous = next_evidence_report(probe_candidates(
+            report([station(A, url)]), lambda _: sample(), limit=1,
+            observation_day=day))
+        out = probe_candidates(report([station(A, url), station(B)]),
+                               lambda _: sample(), limit=2,
+                               observation_day=day, previous_evidence=previous)
+        self.assertEqual([x["stationuuid"] for x in out["checks"]], [B])
+        changed = url + "2"
+        out = probe_candidates(report([station(A, changed)]), lambda _: sample(),
+                               limit=1, observation_day=day, previous_evidence=previous)
+        self.assertEqual(out["checks"][0]["streamSha256"],
+                         hashlib.sha256(changed.encode()).hexdigest())
+        after = next_evidence_report(out, previous)
+        self.assertEqual(after["records"][0]["audioEvidenceDates"], [day.isoformat()])
+
+    def test_untrusted_previous_evidence_stops_before_network(self):
+        with self.assertRaises(ValueError):
+            probe_candidates(report([station()]),
+                             lambda _: self.fail("network must not be called"),
+                             previous_evidence={"schemaVersion": 1,
+                                                "publicationAllowed": True,
+                                                "records": []})
 
 
 if __name__ == "__main__":
