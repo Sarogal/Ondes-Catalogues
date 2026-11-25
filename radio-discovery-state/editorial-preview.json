@@ -4,9 +4,9 @@
   "publicationAllowed": false,
   "editoriallyApprovedCount": 0,
   "attemptedPageCount": 8,
-  "htmlObservedCount": 17,
-  "identityTargetCount": 3,
-  "structuredProgrammeCount": 0,
+  "htmlObservedCount": 23,
+  "identityTargetCount": 4,
+  "structuredProgrammeCount": 2,
   "declaredStreamLinkedCount": 1,
   "records": [
     {
@@ -229,6 +229,67 @@
       "imageHintSha256": []
     },
     {
+      "stationuuid": "418b964f-a3df-4b72-a2ff-173ec7e1c1ff",
+      "homepageSha256": "37b87f48bd2155be951827b9e4113d840f9ea6d2275c0a6af89b7cd1a11a3a58",
+      "identityNameSha256": "8f36a92df5baab8b60698ec1759627f0abd648d8180fffafc058600ff39f975c",
+      "reportedHost": "kyclopsradio.com",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "ee105dc19818e10b108cf9eb99ce662922d5dba7b074ef7aa8f392669dea95b0",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": true,
+      "signal": "unbound_target_indication",
+      "structuredProgrammeEvidence": true,
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [
+        "metal"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "473af4edf105de1d2d0f04b750c2e4e1b1e4eb4c3c7bb066ce3d421a3db53d5a",
+      "finalPageSha256": "37b87f48bd2155be951827b9e4113d840f9ea6d2275c0a6af89b7cd1a11a3a58",
+      "imageHintSha256": [
+        "116ff17b28ad62c75b97abadc9df450c8fe4bbf1281319d273beaf95a6cee3e1",
+        "b0625fa7d451d70f1f8ff838bf4ac92570c469ce55aa20f0a97afb17f404ce69"
+      ]
+    },
+    {
+      "stationuuid": "542c83b8-7465-46e9-a083-c2cc417d315d",
+      "homepageSha256": "bff8262ab28b09343e99110fd2cfd9e46ac568cb1fe78eb8022b3ecc7f37b562",
+      "identityNameSha256": "76f206df6d05a42d7b9ef64763f6affdade9a65868003a3c6f1ce88b3b03b241",
+      "reportedHost": "kracradio.com",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "4477bed328d8490928df46a3ec2023cbe492cce000c9e3d9d31566172770020f",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": false,
+      "signal": "unbound_target_indication",
+      "structuredProgrammeEvidence": false,
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [
+        "punk"
+      ],
+      "visibleTargetTerms": [
+        "metal",
+        "punk"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "2ea9729c27e98ef972294ed68140d6660f9b6712f6935ec259ee704441d45940",
+      "finalPageSha256": "bff8262ab28b09343e99110fd2cfd9e46ac568cb1fe78eb8022b3ecc7f37b562",
+      "imageHintSha256": [
+        "56c852148bd953360fbfce1b6cd2ff66a175145027bcdcc32a6c35530fabe931",
+        "64981c80f1bb0d049a7b339c5333a68bd5b7e2704506f4f4f7ba305ba0d4c08c",
+        "7073492431bca0a476e4cedc3cc1209cef435177c68311129d48caebeb688484",
+        "82ee32e68a2d43533fc5ea14b582ffb2803daf3395be87e8094dbfb44a54afaa"
+      ]
+    },
+    {
       "stationuuid": "652a2fa1-d3fe-4724-a3eb-3d6b7fb1e687",
       "homepageSha256": "def0f3aa138343c4e0ed59453f66de576c2d9fdbd9e063e88dc64ee9cbab441a",
       "identityNameSha256": "eb1594ae7780087d034af677c620102e00896d468128187284e98f9b1912a1f2",
@@ -293,6 +354,19 @@
       "pageSha256": "e0ea791ca7cdefcd5e406868908788b835dee49b103d9f25949ac13b9c8ba46d",
       "finalPageSha256": "b69cc21ed68fc3a032b1de2304be0628ee44b70c252308bc7b72e9a311f75a1b",
       "imageHintSha256": []
+    },
+    {
+      "stationuuid": "77337406-99c4-11e9-a605-52543be04c81",
+      "homepageSha256": "299505eab26347b65d9a0c14a37686ee4eee3be13ce6f25e6de00e3c0b22c9db",
+      "identityNameSha256": "47a276b530f35c2a6c34e550b98da9376047c9325a8ae3cd4229bfec72acc33f",
+      "reportedHost": "laut.fm",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "failed_review",
+      "analyzerVersion": 2,
+      "streamSha256": "48ffa310933f6876dbe66c587facef3fe955482c232973a03202d21c391216de",
+      "editorialApproved": false,
+      "publicationAllowed": false
     },
     {
       "stationuuid": "7912f9a4-750e-4575-8718-37a2a2edfb16",
@@ -430,6 +504,31 @@
       ]
     },
     {
+      "stationuuid": "9c634ba6-a5f2-47e5-858b-d4deff8071b8",
+      "homepageSha256": "adde7b0cbb8f1a085093cb174d604d5d85f4bbaf1e5e8def6fa4e5339daf5bf7",
+      "identityNameSha256": "42f8140264782ab34b154ac4793562650ca7321636f71855c13dcd10ec3f690a",
+      "reportedHost": "latehome.de",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "3aa0ad7bdd1da97b23357424f97f458c1ec7df16543dc61b9825a4124e84d481",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": false,
+      "signal": "no_format_evidence",
+      "structuredProgrammeEvidence": false,
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [],
+      "primaryElectronicTerms": [],
+      "pageSha256": "0d0adecafa04cdcb879808cd7122ead467127417f8cecd31b4da87b282a659fd",
+      "finalPageSha256": "adde7b0cbb8f1a085093cb174d604d5d85f4bbaf1e5e8def6fa4e5339daf5bf7",
+      "imageHintSha256": [
+        "29e4fbfa79d17dffbaf6997049b2fc68b87936df886d22e561f30b2274e8d5f3"
+      ]
+    },
+    {
       "stationuuid": "a3f97919-2519-4e58-b0b4-386d1402e367",
       "homepageSha256": "8d89d2e5f34f746d0b8200dbb94df958a7f83eeb337f768f278f25f35c767707",
       "identityNameSha256": "5a8046b12dc9d62e01fed9ffac55e1d3ce5a235c769fdb119d93815341593516",
@@ -495,6 +594,65 @@
       ]
     },
     {
+      "stationuuid": "cbb233ad-fad1-46e1-b89b-9389f457f204",
+      "homepageSha256": "f1cbb50fa932a49e9cfcbcbcffe1ed0ddf13f6e42427ba9b527ecc1c67a0acf1",
+      "identityNameSha256": "9dab93f522baba9ccddbc89aa6011e54e31d8e1796ff13984b862c0a9ebe327c",
+      "reportedHost": "laantiradio.com",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "a17eec45505d491732e62e5cb5caa9bc079da9a14833ae04de8fb063b849af28",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": true,
+      "signal": "no_format_evidence",
+      "structuredProgrammeEvidence": true,
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [],
+      "primaryElectronicTerms": [],
+      "pageSha256": "c0322d7dd101abae4db67a2c19405db9c1ad1189021cf7bc65e4ee46914bbc42",
+      "finalPageSha256": "f1cbb50fa932a49e9cfcbcbcffe1ed0ddf13f6e42427ba9b527ecc1c67a0acf1",
+      "imageHintSha256": [
+        "84d750515551019b3e6cbf2375d535ea065ec7c21a6cae0067dea80adce281f0",
+        "87816adb9d888cc58ebc33074e719df6f57cf3d3b23a6b408648096cf9cf38e6",
+        "939e3d8b770a18b39a0338207fb1db2d443fba3bde35feb58af2b2abfd4b97bb"
+      ]
+    },
+    {
+      "stationuuid": "cea9bece-6c51-47a0-bcf9-02b1377824b2",
+      "homepageSha256": "3f07162e34be2f7df9384ed2dda98eb0e0b255de7fe45d71aaf85d14c1128b8e",
+      "identityNameSha256": "ad869c1dc600733bf15ad616edaa71da74d2fbf4d3a59d58207ab0780363ab25",
+      "reportedHost": "kracradio.com",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "6a2d92122e3601de71e45c8a16f6e5ea31e064efa2a0362151fb87762acaaa05",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": false,
+      "signal": "unbound_target_indication",
+      "structuredProgrammeEvidence": false,
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [
+        "hard rock",
+        "metal",
+        "punk"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "379c0597251bfc3976c5c71f8efcff8212740a597f2eef474da57c851c255f66",
+      "finalPageSha256": "3f07162e34be2f7df9384ed2dda98eb0e0b255de7fe45d71aaf85d14c1128b8e",
+      "imageHintSha256": [
+        "56c852148bd953360fbfce1b6cd2ff66a175145027bcdcc32a6c35530fabe931",
+        "64981c80f1bb0d049a7b339c5333a68bd5b7e2704506f4f4f7ba305ba0d4c08c",
+        "7ea3b6b389af3619da68d62ed0fb8275b61d691db47c5dc25e240b01167bb19c",
+        "82ee32e68a2d43533fc5ea14b582ffb2803daf3395be87e8094dbfb44a54afaa"
+      ]
+    },
+    {
       "stationuuid": "d469d86b-e0a7-45ac-aa94-6be76329ab82",
       "homepageSha256": "5c1ab6dfbb6db0ab437da44123a443d1cf18f747f45da1d3051374ba48c4aeae",
       "identityNameSha256": "f5640ae27c856d70ff674a6ed80b4479acd6a15c135deb433511bdf08f683a13",
@@ -539,6 +697,33 @@
       "pageSha256": "360673ecd305432ab032e3c9e3b3ff6fc31f6b8818f93952e138eb9ef2532566",
       "finalPageSha256": "280d5acc0a499400ad63ef6003af60bc258581b70de6262523bd737b331cdf99",
       "imageHintSha256": []
+    },
+    {
+      "stationuuid": "e45779db-541b-49af-a4d6-7ac84200a3f2",
+      "homepageSha256": "3571089d133e00d96f32ee0e1929f91483d16960da3f5b911c259030112c6039",
+      "identityNameSha256": "1602f1b1b0f3823ab8dba24ecba9ce69a0642882c87e8628e029c901503b0d56",
+      "reportedHost": "lesonunique.com",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "e0e0b5c722113931a32cee518640f4b4a816bf62695ad15a0e25546dd5a3fbd0",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": true,
+      "signal": "identity_and_target_indication",
+      "structuredProgrammeEvidence": false,
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [
+        "metal"
+      ],
+      "visibleTargetTerms": [],
+      "primaryElectronicTerms": [],
+      "pageSha256": "ad456bc2c8c3ac52f44e14669b063fc5d518183d4bb317631983af5d79c42cb4",
+      "finalPageSha256": "3571089d133e00d96f32ee0e1929f91483d16960da3f5b911c259030112c6039",
+      "imageHintSha256": [
+        "cf2f953b2ece7ce55cf2f0acf29c790e78a55b4752aa4465d825e7fdcabaa195"
+      ]
     },
     {
       "stationuuid": "e4fc3a81-354d-420c-b204-affc7e307891",
@@ -599,6 +784,19 @@
         "c816eb67e6e11f10a68b8609fe450acb4b85bd1615dd309df85117d454dcf587",
         "fdcd3bcc45df967f91f9c3d868469fd976c21c070f949b2a9717a27878acf0dc"
       ]
+    },
+    {
+      "stationuuid": "eb3041cd-69bc-41bd-b1e0-daf2a88fe190",
+      "homepageSha256": "9b96dc6ec3ffd3ff5395c2af962cd50100ce2e2da6fc27284431264cc4d7e739",
+      "identityNameSha256": "f92ce61ecb5a97a920e0d540a7b9dab2a8545e778728e46bbc9048802e0849a2",
+      "reportedHost": "laut.fm",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "failed_review",
+      "analyzerVersion": 2,
+      "streamSha256": "0e8dbdfa96a66eee36f3d0de0bbf45a369f1b37765664d74623d3b2fd2536feb",
+      "editorialApproved": false,
+      "publicationAllowed": false
     }
   ]
 }

@@ -3,7 +3,7 @@
   "scanDate": "2026-11-25",
   "publicationAllowed": false,
   "technicallyQualifiedCount": 0,
-  "attemptedCount": 4,
+  "attemptedCount": 0,
   "advancingManifestCount": 4,
   "audioFrameCount": 2,
   "records": [
@@ -21,7 +21,10 @@
       "segmentSampleBytes": 4096,
       "frameCodec": "aac_adts",
       "firstManifestSha256": "e07fad60d604c6419b2565bfad4ecfefffc295efb56cd0c50db7431578171542",
-      "secondManifestSha256": "90d790558b13fc43ee1edd75b7c9c987c1831a34bc5c327e16c5520c010dfdea"
+      "secondManifestSha256": "90d790558b13fc43ee1edd75b7c9c987c1831a34bc5c327e16c5520c010dfdea",
+      "positiveObservationDates": [
+        "2026-11-25"
+      ]
     },
     {
       "stationuuid": "1c6dcd6f-88c6-4fd4-8191-078435168e85",
@@ -37,7 +40,8 @@
       "segmentSampleBytes": 4096,
       "frameCodec": null,
       "firstManifestSha256": "adb06cb3e938d05ee39472f70aadaeb91a00193e00ad8ac86779d4d8e37cc5ad",
-      "secondManifestSha256": "f3689f90c0711dc12097348e4b7c2d58d929faf658a159d76cfe22e9b7f717df"
+      "secondManifestSha256": "f3689f90c0711dc12097348e4b7c2d58d929faf658a159d76cfe22e9b7f717df",
+      "positiveObservationDates": []
     },
     {
       "stationuuid": "c123bef5-256a-427f-a942-570ae9836f68",
@@ -53,7 +57,8 @@
       "segmentSampleBytes": 4096,
       "frameCodec": null,
       "firstManifestSha256": "8bd3762e64ecedb34ee51c278810d0ac1e93ba06a4d526fcb0efd8bcf3bb8bbf",
-      "secondManifestSha256": "cebc4f7a0472aace5fb954f61c48a29748336d2607f83ce84e3d9bf3b4a562d3"
+      "secondManifestSha256": "cebc4f7a0472aace5fb954f61c48a29748336d2607f83ce84e3d9bf3b4a562d3",
+      "positiveObservationDates": []
     },
     {
       "stationuuid": "c16ffe2f-a305-4f11-9d85-0aa615b9ed04",
@@ -69,7 +74,10 @@
       "segmentSampleBytes": 4096,
       "frameCodec": "aac_adts",
       "firstManifestSha256": "41ffce2f0636e432ced04e620aa8949b2ba877074edcf0a713a0c91901f886a5",
-      "secondManifestSha256": "0614d489cdc4e3bb8eec5d1acb3d41403cc9f3b707486efaa8a0259a00b2b97b"
+      "secondManifestSha256": "0614d489cdc4e3bb8eec5d1acb3d41403cc9f3b707486efaa8a0259a00b2b97b",
+      "positiveObservationDates": [
+        "2026-11-25"
+      ]
     }
   ]
 }
