@@ -111,6 +111,9 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         self.assertNotIn("lat", row)
         self.assertNotIn("artists", row)
         self.assertNotIn("date_hints", row)
+        self.assertEqual(row["calendar_hint_review_only"], {
+            "start_date": "2027-04-23", "end_date": "2027-04-24",
+            "verified": False})
 
     def test_city_hint_is_not_geocoding_or_municipal_authority(self):
         from national_discovery_queue import build_queue
@@ -129,8 +132,30 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         self.assertFalse(dossier["safe_to_publish"])
         self.assertFalse(dossier["source_independence_verified"])
         self.assertFalse(dossier["edition_dates_verified"])
-        self.assertEqual(dossier["date_hints"], [])
+        self.assertEqual(dossier["date_hints"], [{
+            "start_date": "2027-04-23", "end_date": "2027-04-24",
+            "verified": False}])
         self.assertIn("place_and_department", dossier["missing_checks"])
+
+    def test_calendar_hint_never_authorizes_dates_and_rejects_tampering(self):
+        current = state()
+        scan(current, DAY, fetch=lambda _: payload([EVENT]))
+        good = current[STATE_KEY]["leads"][0]["calendar_hint_review_only"]
+        for invalid in (
+            dict(good, verified=True), dict(good, start_date="2028-04-23"),
+            dict(good, end_date="2027-04-22"),
+            dict(good, start_date="20270423"),
+            dict(good, end_date="2030-04-24"), dict(good, authority=True),
+            [], "2027-04-23",
+        ):
+            with self.subTest(invalid=invalid):
+                forged = deepcopy(current)
+                forged[STATE_KEY]["leads"][0]["calendar_hint_review_only"] = invalid
+                self.assertEqual(validated_leads(forged, DAY), [])
+        self.assertFalse(validated_leads(current, DAY)[0]["edition_dates_verified"])
+        broad = candidate(dict(EVENT, lastdate_begin="2029-04-24T20:00:00+02:00"), DAY)
+        self.assertIsNotNone(broad)
+        self.assertIsNone(broad["calendar_hint_review_only"])
 
     def test_provider_city_metadata_cannot_add_unsafe_geo_fetch(self):
         for city in (
@@ -158,7 +183,7 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
     def test_compound_festival_names_and_fixed_subgenres_remain_private(self):
         from urllib.parse import parse_qs, urlsplit
         from national_openagenda_research import RESEARCH_RULESET
-        self.assertTrue(RESEARCH_RULESET.endswith(".v4"))
+        self.assertTrue(RESEARCH_RULESET.endswith(".v5"))
         where = [parse_qs(urlsplit(url).query)["where"][0]
                  for url in fixed_query_urls(DAY)]
         for keyword in (
