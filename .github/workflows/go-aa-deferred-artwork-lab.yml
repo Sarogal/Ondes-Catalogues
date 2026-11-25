@@ -1,0 +1,32 @@
+name: GO AA deferred artwork unit tests
+on:
+  push:
+    branches: [audit/go-aa-deferred-artwork-lab-20261125]
+    paths:
+      - 'radio-catalog-lab/flutter/lib/central_media_artwork_hydration.dart'
+      - 'radio-catalog-lab/flutter/test/central_media_artwork_hydration_test.dart'
+      - '.github/workflows/go-aa-deferred-artwork-lab.yml'
+permissions:
+  contents: read
+jobs:
+  flutter-lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    defaults:
+      run:
+        working-directory: radio-catalog-lab/flutter
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Analyze deferred hydration
+        run: flutter analyze --fatal-infos lib/central_media_artwork_hydration.dart test/central_media_artwork_hydration_test.dart
+      - name: Test generation-aware nonblocking artwork hydration
+        run: flutter test --reporter expanded test/central_media_artwork_hydration_test.dart
+      - name: Existing signed logo serialization and version controls
+        run: flutter test --reporter expanded test/central_signed_artwork_work_queue_test.dart test/central_signed_artwork_version_guard_test.dart
