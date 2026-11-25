@@ -112,6 +112,8 @@ jobs:
           assert r["public_writes"] == 0
           assert r["publication_ready"] is False
           keys = ("stored_index_batches", "new_index_census",
+                  "geographic_queries_completed", "geographic_queries_failed",
+                  "geographic_new_agendas_unverified",
                   "index_batches_examined", "segments_examined",
                   "event_slots_examined", "held_for_research",
                   "agenda_attempts", "agenda_held_for_research",
