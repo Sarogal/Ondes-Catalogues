@@ -30,6 +30,7 @@ from grossesondes_preview import (
     ROOT, CAL_URL, HIS_URL, load_patch, require, index
 )
 from grossesondes_stage import official_text, stage, PROOF_MODE, norm
+from grossesondes_official_status import CANCELLED, POSTPONED, valid_status_delta
 from grossesondes_admin_marker import valid_commune_marker_identity
 from grossesondes_future_geo_publisher import (
     apply_independently_verified_geo, private_geo_report,
@@ -277,6 +278,8 @@ def _verified_official_update_delta(old, new):
         return False
     changed = {k for k in set(old) | set(new)
                if (k not in old) != (k not in new) or old.get(k) != new.get(k)}
+    if new.get("status") in (CANCELLED, POSTPONED) and "status" in changed:
+        return valid_status_delta(old, new)
     newly_dated = {"startDate", "endDate"} <= changed
     if (not changed or not changed <= OFFICIAL_UPDATE_FIELDS or
             not ({"lineup", "price"} & changed)
@@ -422,6 +425,16 @@ def safe_target(baseline, candidate, currently_published,
     require(set(live).issubset(set(target)),"édition publique absente du patch cumulatif")
     require(list(original)==list(target)[:len(original)],
             "ordre ou identité des anciennes éditions altéré")
+    # A legacy baseline or private patch is not authority for status transitions.
+    for slug, current in live.items():
+        new = target[slug]
+        if (current.get("status") != new.get("status") or
+                current.get("cancelled") != new.get("cancelled")) and (
+                current.get("status") in (CANCELLED, POSTPONED) or
+                new.get("status") in (CANCELLED, POSTPONED) or
+                current.get("cancelled") is True or new.get("cancelled") is True):
+            require(slug in verified_official_updates and valid_status_delta(current, new),
+                    "statut officiel sans preuve independante : " + slug)
     for slug, old in original.items():
         new=target[slug]
         current=live[slug]

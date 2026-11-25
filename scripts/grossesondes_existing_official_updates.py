@@ -22,6 +22,9 @@ from future_city_preflight import (
     current_edition_description,
 )
 from official_admin_communes import verified_commune
+from grossesondes_official_status import (
+    CANCELLED, POSTPONED, explicit_statuses, apply_status,
+)
 from grossesondes_admin_marker import historical_proof
 from grossesondes_dated_ticket_tables import dated_ticket_table_summary, parse_dated_ticket_summary
 from grossesondes_institutional_edition import VisibleInstitutionHeadings
@@ -46,7 +49,8 @@ DATE_FIELDS = frozenset((
 CHANGEABLE = (frozenset(("lineup", "bands", "price", "notes", "lastVerified", "auditSources"))
               | COMMUNE_FIELDS | DATE_FIELDS)
 ROLE = re.compile(r"\b(?:programmation|line up|lineup|groupes?|noms|artistes?|"
-                  r"annonce|affiche|actualites?|news|billetterie|tarifs?|pass|202[7-9])\b")
+                  r"annonce|affiche|actualites?|news|billetterie|tarifs?|pass|"
+                  r"annulation|annule|report|reporte|cancelled|postponed|202[7-9])\b")
 GENRE_LIST = re.compile(r"\b(?:groupes?|noms|artistes?|programmation|lineup|affiche|ils seront)\b")
 ANNOUNCE = re.compile(r"\b(?:nouveaux?|annonces?|programmation|affiche|ils seront|trois groupes)\b")
 SENSITIVE = re.compile(r"\b(?:annule|annulee|reportee|cancelled|postponed)\b")
@@ -489,7 +493,8 @@ def linked_pages(site, parsed):
         label = fold(label + " " + bits.path.replace("-", " "))
         if not ROLE.search(label):
             continue
-        rank = (0 if re.search(r"nouveaux? noms|groupes? annonces?|annonce|affiche", label)
+        rank = (-1 if re.search(r"annulation|annule|report|reporte|cancelled|postponed", label)
+                else 0 if re.search(r"nouveaux? noms|groupes? annonces?|annonce|affiche", label)
                 else 1 if re.search(r"programmation|lineup|groupes", label)
                 else 2 if re.search(r"billetterie|pass|tarif", label)
                 else 3)
@@ -1219,6 +1224,39 @@ def apply_independently_verified_updates(
                         "reason": "different_from_current_signed_edition"})
                 continue
             before_official = deepcopy(new)
+            # An explicit edition status is independent of the normal
+            # edition matcher, which correctly refuses cancelled editions.
+            # Conflicting first-party statements are held, never guessed.
+            status_sources = {}
+            for url, doc in pages:
+                for status in explicit_statuses(doc.blocks, old):
+                    status_sources.setdefault(status, set()).add(url)
+            if status_sources.keys() & {CANCELLED, POSTPONED}:
+                if len(status_sources) != 1:
+                    continue
+                status = next(iter(status_sources))
+                updated = apply_status(new, status)
+                if updated is None:
+                    continue
+                previous = old.get("auditSources")
+                previous = list(previous) if isinstance(previous, list) else []
+                used = previous + sorted(status_sources[status] - set(previous))
+                if len(used) > 20:
+                    continue
+                updated["auditSources"] = used
+                updated["lastVerified"] = today
+                result["festivals"][positions[slug]] = updated
+                report["accepted"].append(slug)
+                report["accepted_changes"].append({
+                    "slug": slug, "fields": sorted(k for k in set(new) | set(updated)
+                        if (k in new) != (k in updated) or new.get(k) != updated.get(k)),
+                    "artists_added": 0})
+                continue
+            # A later stale artist/ticket page cannot resurrect a closed
+            # edition. Reinstatement and newly confirmed dates need their
+            # own explicitly verified transition.
+            if old.get("cancelled") is True or old.get("status") in (CANCELLED, POSTPONED):
+                continue
             root_ok = (home_matches_edition(root, old, today)
                        or matches_edition(current_home, old, today,
                                           root_ok=False))
