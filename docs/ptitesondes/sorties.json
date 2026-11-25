@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-25T15:36:37+01:00",
+  "updated_at": "2026-11-25T15:54:02+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -19883,6 +19883,46 @@
       "geo_precision": "venue",
       "lat": 44.841464,
       "lng": -0.570493
+    },
+    {
+      "id": "openagenda-39958338-2026-12-05",
+      "title": "Bébé Bouquine",
+      "category": "lecture-jeunesse",
+      "category_label": "Lecture jeunesse",
+      "date_start": "2026-12-05",
+      "date_end": "2026-12-05",
+      "time": "10:30 ; 11:00",
+      "city": "Bordeaux",
+      "department": "Gironde",
+      "region": "Nouvelle-Aquitaine",
+      "venue": "Bibliothèque Pierre Veilletet",
+      "source_url": "https://openagenda.com/bordeaux-bibliotheques/events/39958338_bebe-bouquine-1928512",
+      "source_label": "Bibliothèques de Bordeaux — Licence Ouverte 2.0 — données mises à jour le 22/10/2026",
+      "verified_at": "2026-11-25",
+      "geo_verified_at": "2026-11-25",
+      "geo_precision": "venue",
+      "lat": 44.857443,
+      "lng": -0.623403
+    },
+    {
+      "id": "openagenda-42930451-2027-02-17",
+      "title": "HEURE DU CONTE",
+      "category": "lecture-jeunesse",
+      "category_label": "Lecture jeunesse",
+      "date_start": "2027-02-17",
+      "date_end": "2027-02-17",
+      "time": "11:00",
+      "city": "Wervicq-Sud",
+      "department": "Nord",
+      "region": "Hauts-de-France",
+      "venue": "Médiathèque municipale de Wervicq-Sud",
+      "source_url": "https://openagenda.com/mediatheque-municipale-de-wervicq-sud/events/42930451_heure-du-conte-1707545",
+      "source_label": "Médiathèque municipale de WERVICQ-SUD — Licence Ouverte 2.0 — données mises à jour le 28/08/2026",
+      "verified_at": "2026-11-25",
+      "geo_verified_at": "2026-11-25",
+      "geo_precision": "venue",
+      "lat": 50.773013,
+      "lng": 3.048191
     }
   ]
 }
