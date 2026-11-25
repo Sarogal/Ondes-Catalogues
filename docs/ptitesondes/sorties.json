@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-25T05:11:26+01:00",
+  "updated_at": "2026-11-25T08:51:35+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -18103,6 +18103,66 @@
       "geo_precision": "venue",
       "lat": 48.763057,
       "lng": 2.225483
+    },
+    {
+      "id": "openagenda-88464730-2026-11-28",
+      "title": "Les Journées polyglottes",
+      "category": "concert",
+      "category_label": "Concert",
+      "date_start": "2026-11-28",
+      "date_end": "2026-11-28",
+      "time": "10:00",
+      "city": "Nantes",
+      "department": "Loire-Atlantique",
+      "region": "Pays de la Loire",
+      "venue": "Bibliothèque Emilienne Leroux",
+      "source_url": "https://openagenda.com/vie-associative-nantes-ville-et-metropole/events/88464730_les-journees-polyglottes-8332015",
+      "source_label": "Vie associative Nantes ville et métropole — Licence Ouverte 2.0 — données mises à jour le 18/11/2026",
+      "verified_at": "2026-11-25",
+      "geo_verified_at": "2026-11-25",
+      "geo_precision": "venue",
+      "lat": 47.22307,
+      "lng": -1.597651
+    },
+    {
+      "id": "openagenda-18081466-2026-12-17",
+      "title": "Mon Doudou",
+      "category": "eveil-musical",
+      "category_label": "Éveil musical",
+      "date_start": "2026-12-17",
+      "date_end": "2026-12-17",
+      "time": "09:30",
+      "city": "Bordeaux",
+      "department": "Gironde",
+      "region": "Nouvelle-Aquitaine",
+      "venue": "MDSI Roye",
+      "source_url": "https://openagenda.com/rncap/events/18081466_mon-doudou-5130789",
+      "source_label": "Bulles de Théâtre — Licence Ouverte 2.0 — données mises à jour le 18/11/2026",
+      "verified_at": "2026-11-25",
+      "geo_verified_at": "2026-11-25",
+      "geo_precision": "venue",
+      "lat": 44.845063,
+      "lng": -0.60044
+    },
+    {
+      "id": "openagenda-84257622-2026-12-09",
+      "title": "Eveil musical",
+      "category": "eveil-musical",
+      "category_label": "Éveil musical",
+      "date_start": "2026-12-09",
+      "date_end": "2026-12-09",
+      "time": "09:30",
+      "city": "Charleville-Mézières",
+      "department": "Ardennes",
+      "region": "Grand Est",
+      "venue": "Micro Folie",
+      "source_url": "https://openagenda.com/villedecmz/events/84257622_eveil-musical-5696998",
+      "source_label": "1000 premiers jours à CMZ — Licence Ouverte 2.0 — données mises à jour le 15/09/2026",
+      "verified_at": "2026-11-25",
+      "geo_verified_at": "2026-11-25",
+      "geo_precision": "venue",
+      "lat": 49.74703,
+      "lng": 4.722469
     }
   ]
 }
