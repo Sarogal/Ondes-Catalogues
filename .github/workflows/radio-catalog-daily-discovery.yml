@@ -30,6 +30,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_hls_preview.py"
       - "radio-catalog-lab/tools/radio_daily_decision_preview.py"
       - "radio-catalog-lab/tools/test_radio_daily_decision_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_v9_generator.py"
+      - "radio-catalog-lab/tools/test_radio_daily_v9_generator.py"
       - ".github/workflows/radio-catalog-daily-discovery.yml"
   workflow_dispatch:
     inputs:
@@ -307,6 +309,18 @@ jobs:
           python radio-catalog-lab/tools/radio_daily_decision_preview.py \
             --discovery "$root/candidates.json" --dossiers "$root/qualification-dossiers.json" \
             --baseline-sha256 "$BASELINE_SHA256" --output "$root/decision-preview.json"
+      - name: Generate unsigned additive v9 candidate (artifact only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          python radio-catalog-lab/tools/radio_daily_v9_generator.py \
+            --baseline "$RUNNER_TEMP/go-radio-v8-baseline.json" \
+            --discovery "$root/candidates.json" \
+            --dossiers "$root/qualification-dossiers.json" \
+            --decisions "$root/decision-preview.json" \
+            --output-dir "$root/v9-preview"
       - name: Prepare safe durable genre hints
         shell: bash
         run: |
