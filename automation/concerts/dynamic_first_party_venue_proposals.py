@@ -108,6 +108,8 @@ def _individual_event(html, url, when, venue, *, accept_generic=False,
         if node.get("performer") in (None, "", []):
             recovered = pairs._visible_artist_genres_from_this_event(
                 html, node.get("name"))
+            if recovered is None and accept_generic:
+                recovered = dynamic.visible_named_bill(html, node.get("name"))
             if recovered is not None:
                 node = {**node, "performer": recovered}
         bill = bridge.official_named_bill(node.get("performer"))
