@@ -333,10 +333,10 @@ def persistent_backlog_batch(identities, today, memory, clues):
                      memory["attempts"].get(attempt_key(identity, clues[identity]), 0))
     urgent = [row for row in ordered if row[2] <= threshold]
     ordinary = [row for row in ordered if row[2] > threshold]
-    chosen = urgent[:URGENT_CYCLE_BUDGET]
+    urgent_count = min(URGENT_CYCLE_BUDGET, len(urgent))
+    chosen = urgent[:urgent_count]
     chosen.extend(ordinary[:MAX_ATTEMPTS - len(chosen)])
-    chosen.extend(urgent[len(urgent[:URGENT_CYCLE_BUDGET]):
-                         len(urgent[:URGENT_CYCLE_BUDGET]) + MAX_ATTEMPTS - len(chosen)])
+    chosen.extend(urgent[urgent_count:urgent_count + MAX_ATTEMPTS - len(chosen)])
     return chosen
 
 
