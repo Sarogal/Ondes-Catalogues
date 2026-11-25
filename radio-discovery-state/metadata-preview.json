@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "scanDate": "2026-11-25",
+  "publicationAllowed": false,
+  "approvedCount": 0,
+  "attemptedCount": 6,
+  "stationsWithArtistHints": 2,
+  "distinctArtistHints": 2,
+  "records": [
+    {
+      "stationuuid": "035ed365-f6dc-46a2-901d-7ac97880e875",
+      "streamSha256": "7f39876a8b876844369bcce72b212767153cba84bb9cf531267897d7573862c8",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": []
+    },
+    {
+      "stationuuid": "25de583d-8165-4a5f-8ba5-39861a77f943",
+      "streamSha256": "fcab32b81f3023cc0712a2ea56a31ca7f8c19afe57d5435849e35e665dd04f19",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-25",
+          "artistHint": "Marc Freak",
+          "titleSha256": "b6e7c265ed25993d99220938092ba7671fddcd2fc3ca5fc247213df041d3a2cc"
+        }
+      ]
+    },
+    {
+      "stationuuid": "2f76081c-dbf0-4b40-bb30-63987abe744e",
+      "streamSha256": "1fd1278b4e3b5b760b2afa150d0059c6f3256a2d8f707505f0be8fc0767e0f2c",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-25",
+          "artistHint": "Johnny Hates Jazz",
+          "titleSha256": "0230ccbe64be6046e1a58f74be4f122d9b4f1a9f84caac6e6c1525ff0b5dfbe8"
+        }
+      ]
+    },
+    {
+      "stationuuid": "32955656-5a38-40c0-ab1f-e059496bfda6",
+      "streamSha256": "ed2a3274edc9092547074120bac8f194320d86bfaa21989d4dd89c5cde525d1c",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": []
+    },
+    {
+      "stationuuid": "3446b04f-839f-4367-b119-b85842787b97",
+      "streamSha256": "cf9456eb48746077c2743b972d475238f611c9da63a84c430c49892e8ed9f3d8",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": []
+    },
+    {
+      "stationuuid": "35080d89-d7b9-4e1e-af80-ae4a50420f67",
+      "streamSha256": "49ad66de7ab731d5dfd7d4a726e439856c73f3f336de0397fff71bbdf37f11ff",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": []
+    }
+  ]
+}
