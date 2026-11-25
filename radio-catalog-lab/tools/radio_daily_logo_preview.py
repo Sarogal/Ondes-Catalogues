@@ -9,11 +9,12 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 from urllib.parse import urlsplit
 
 from radio_catalog_logo_pilot_probe import checked_https_url, decode_image, fetch_strict_https
-from radio_stream_recheck_ledger import valid_uuid
+from radio_stream_recheck_ledger import valid_uuid, parse_day
 
 MAX_IMAGES = 8
 MAX_INPUT_BYTES = 10_000_000
@@ -46,7 +47,7 @@ def source_class(home: object, image: object) -> tuple[str, str | None]:
 
 
 def review(discovery: dict, reconciliation: dict, stream: dict, *, limit: int = 0,
-           fetch=fetch_strict_https, decode=decode_image) -> dict:
+           fetch=fetch_strict_https, decode=decode_image, previous=None) -> dict:
     if not 0 <= limit <= MAX_IMAGES:
         raise ValueError("Image probe budget exceeded")
     if (discovery.get("schemaVersion") != 1 or discovery.get("publicationAllowed") is not False
@@ -73,6 +74,27 @@ def review(discovery: dict, reconciliation: dict, stream: dict, *, limit: int = 
     evidence = index(stream["records"])
     if set(candidates) != set(reconciled):
         raise ValueError("Candidate/reconciliation mismatch")
+    day = parse_day(discovery["scanDate"])
+    cached = {}
+    if previous is not None:
+        if (previous.get("schemaVersion") != 1 or previous.get("publicationAllowed") is not False
+                or previous.get("approvedLogoCount") != 0 or parse_day(previous["scanDate"]) > day):
+            raise ValueError("Invalid previous artwork evidence")
+        for old in index(previous["records"]).values():
+            if old.get("logoApproved") is not False or old.get("publicationAllowed") is not False:
+                raise ValueError("Invalid previous artwork approval")
+            source = old.get("sourceSha256")
+            if old.get("retrieval") != "decoded_unapproved":
+                continue
+            image = old.get("imageSha256")
+            observed = parse_day(old.get("observedDate"))
+            if (not isinstance(source, str) or not re.fullmatch("[0-9a-f]{64}", source)
+                    or not isinstance(image, str) or not re.fullmatch("[0-9a-f]{64}", image)
+                    or observed > day or old.get("mime") not in ("image/png", "image/jpeg", "image/webp")
+                    or any(type(old.get(k)) is not int or not 64 <= old[k] <= 4096 for k in ("width", "height"))
+                    or type(old.get("byteLength")) is not int or not 1 <= old["byteLength"] <= 2097152):
+                raise ValueError("Malformed previous artwork evidence")
+            cached[source] = {k: old[k] for k in ("retrieval", "imageSha256", "mime", "width", "height", "byteLength", "observedDate")}
     rows, queue = [], []
     for uid, row in sorted(candidates.items()):
         if reconciled[uid]["classification"] != "unmapped_candidate":
@@ -89,7 +111,10 @@ def review(discovery: dict, reconciliation: dict, stream: dict, *, limit: int = 
                   "logoApproved": False, "publicationAllowed": False}
         rows.append(result)
         if url and rank and row.get("editorialSignal") == "target_genre_indication":
-            queue.append((-rank, uid, url, result))
+            if digest(url) in cached:
+                result.update(cached[digest(url)])
+            else:
+                queue.append((-rank, uid, url, result))
     # Group identical URLs for one network request; never imply shared station identity.
     groups = {}
     for _, uid, url, row in sorted(queue):
@@ -103,7 +128,7 @@ def review(discovery: dict, reconciliation: dict, stream: dict, *, limit: int = 
             metadata = {"retrieval": "decoded_unapproved",
                         "imageSha256": hashlib.sha256(data).hexdigest(),
                         "mime": decoded, "width": width, "height": height,
-                        "byteLength": len(data)}
+                        "byteLength": len(data), "observedDate": day}
         except Exception:
             metadata = {"retrieval": "failed_review"}
         for row in group:
@@ -119,6 +144,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     for name in ("discovery", "reconciliation", "stream", "output"):
         p.add_argument("--" + name, type=Path, required=True)
+    p.add_argument("--previous", type=Path)
     p.add_argument("--limit", type=int, default=0)
     p.add_argument("--allow-network", action="store_true")
     a = p.parse_args()
@@ -128,7 +154,8 @@ def main():
         if path.stat().st_size > MAX_INPUT_BYTES:
             raise ValueError("Input too large")
         return json.loads(path.read_text(encoding="utf-8"))
-    result = review(load(a.discovery), load(a.reconciliation), load(a.stream), limit=a.limit)
+    result = review(load(a.discovery), load(a.reconciliation), load(a.stream), limit=a.limit,
+                    previous=load(a.previous) if a.previous else None)
     a.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print("RADIO_LOGO_PREVIEW_ONLY candidates=%d sources_attempted=%d decoded=%d approved=0 published=false"
           % (result["candidateCount"], result["attemptedSourceCount"], result["decodedCandidateCount"]))

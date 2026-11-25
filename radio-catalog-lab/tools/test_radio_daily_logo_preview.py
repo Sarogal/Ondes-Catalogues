@@ -77,5 +77,15 @@ class LogoPreviewTests(unittest.TestCase):
             review(*inputs(), limit=9)
 
 
+    def test_unchanged_decoded_source_reuses_evidence_not_image_bytes(self):
+        first = review(*inputs(), limit=1, fetch=lambda *a: (b"fake", "image/png"),
+                       decode=lambda b: ("image/png", 128, 128))
+        again = review(*inputs(), limit=1, previous=first,
+                       fetch=lambda *a: self.fail("already decoded"))
+        self.assertEqual(again["attemptedSourceCount"], 0)
+        self.assertEqual(again["decodedCandidateCount"], 2)
+        self.assertEqual(again["approvedLogoCount"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()
