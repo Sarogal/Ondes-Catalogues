@@ -80,6 +80,77 @@ class VisibleText(HTMLParser):
         if not self.hidden():
             self.parts.append(data)
 
+
+class _FestivalContent(VisibleText):
+    """Isolate explicitly off-festival programming, never all event cards.
+
+    A generic annual agenda alone is not proof of exclusion. Require a
+    visible section heading explicitly saying hors festival, or an annual
+    programming heading corroborated by its own hors-festival category link.
+    This is negative scope information, not a new event or a trusted URL.
+    """
+    def __init__(self):
+        super().__init__()
+        self.sections = []
+        self.headings = []
+        self.excluded = []
+
+    def handle_starttag(self, tag, attrs):
+        super().handle_starttag(tag, attrs)
+        if self.hidden():
+            return
+        if tag in ("section", "article"):
+            self.sections.append({
+                "depth": len(self.stack), "start": len(self.parts),
+                "heading": None, "outside_link": False,
+            })
+        if not self.sections:
+            return
+        section = self.sections[-1]
+        if tag in ("h1", "h2", "h3") and section["heading"] is None:
+            self.headings.append((len(self.stack), len(self.parts), section))
+        if tag == "a":
+            href = dict(attrs).get("href")
+            if isinstance(href, str) and re.search(
+                    r"(?:^|/)hors-festival(?:/|$|[?#])", href, re.I):
+                section["outside_link"] = True
+
+    def handle_endtag(self, tag):
+        super().handle_endtag(tag)
+        depth = len(self.stack)
+        while self.headings and self.headings[-1][0] > depth:
+            _, begin, section = self.headings.pop()
+            section["heading"] = " ".join(re.findall(
+                r"[a-z0-9]+", fold(" ".join(self.parts[begin:]))))
+        while self.sections and self.sections[-1]["depth"] > depth:
+            section = self.sections.pop()
+            heading = section["heading"]
+            if (heading in ("hors festival", "evenements hors festival",
+                            "concerts hors festival", "programmation hors festival")
+                    or (heading == "programmation a l annee"
+                        and section["outside_link"])):
+                self.excluded.append((section["start"], len(self.parts)))
+
+
+def festival_visible_content(html):
+    """Return only visible festival-context text and isolated outside dates.
+
+    A named festival's actual edition remains readable on the same homepage.
+    Only explicit bounded sections are excluded, never the entire organizer.
+    """
+    parser = _FestivalContent()
+    parser.feed(html)
+    parser.close()
+    ignored = set()
+    for begin, end in parser.excluded:
+        ignored.update(range(begin, end))
+    remaining = " ".join(fold(" ".join(
+        " " if i in ignored else part for i, part in enumerate(parser.parts))).split())
+    outside = [" ".join(fold(" ".join(parser.parts[a:b])).split())
+               for a, b in parser.excluded]
+    return remaining, outside
+
+
 def explicit_ranges(text, year):
     """Only printed calendar dates with an explicit month and edition year."""
     for match in DATE_EXPRESSION.finditer(text):
@@ -240,13 +311,10 @@ def visible_official_edition(html, edition_title, start, end):
             or not isinstance(start, date) or not isinstance(end, date)
             or start.year != end.year):
         return False
-    text_parser = VisibleText()
     try:
-        text_parser.feed(html)
-        text_parser.close()
+        text, _outside = festival_visible_content(html)
     except (ValueError, TypeError):
         return False
-    text = " ".join(fold(" ".join(text_parser.parts)).split())
     words = re.findall(r"[a-z0-9]+", re.sub(r"\b20[2-4]\d\b", "", fold(edition_title)))
     if not words or len("".join(words)) < 8:
         return False

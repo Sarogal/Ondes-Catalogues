@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo
 
 from grossesondes_official_html_edition import (
     VisibleText, CANCEL, fold, explicit_ranges, visible_official_edition,
+    festival_visible_content,
 )
 from grossesondes_stage import official_text
 from grossesondes_structured_roster import (
@@ -308,10 +309,7 @@ def pinned_first_party(site, proof):
 def official_date(html, parent, year):
     if not isinstance(html, str) or not 0 < len(html) <= 1_400_000:
         return None
-    parser = VisibleText()
-    parser.feed(html)
-    parser.close()
-    content = " ".join(fold(" ".join(parser.parts)).split())
+    content, _outside = festival_visible_content(html)
     title = str(parent.get("name") or "").strip() + " " + str(year)
     unique = {(first, last) for _a, _b, first, last
               in explicit_ranges(content, year)}
