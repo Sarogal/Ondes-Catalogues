@@ -69,6 +69,7 @@ jobs:
           python-version: '3.12'
 
       - name: Restaurer les fichiers privés hors checkout
+        id: restore
         shell: bash
         run: |
           set -euo pipefail
@@ -130,7 +131,7 @@ jobs:
           PY
 
       - name: Conserver uniquement les checkpoints sur la branche privée
-        if: always()
+        if: always() && steps.restore.outcome == 'success'
         shell: bash
         env:
           PRIVATE_WRITE_TOKEN: ${{ secrets.PTITESONDES_INTAKE_WRITE_TOKEN }}
@@ -150,6 +151,16 @@ jobs:
               cp -a "$OBS/$dirname/." "$DEST/$dirname/"
             fi
           done
+          # Copying with cp -a does not propagate journal removal. Only remove
+          # these two transient transaction markers after Python removed them;
+          # reports, cursors, and research history remain append-only.
+          if [[ -d "$OBS/index" ]]; then
+            for journal in pending-index-transaction.json pending-recent-index-transaction.json; do
+              if [[ ! -e "$OBS/index/$journal" && ! -L "$OBS/index/$journal" ]]; then
+                rm -f -- "$DEST/index/$journal"
+              fi
+            done
+          fi
           if [[ -f "$OBS/controller.json" ]]; then
             cp "$OBS/controller.json" "$DEST/controller.json"
           fi
