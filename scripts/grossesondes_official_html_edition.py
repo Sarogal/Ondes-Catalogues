@@ -94,11 +94,15 @@ class _FestivalContent(VisibleText):
         self.sections = []
         self.headings = []
         self.excluded = []
+        self.heading_stack = []
+        self.heading_spans = []
 
     def handle_starttag(self, tag, attrs):
         super().handle_starttag(tag, attrs)
         if self.hidden():
             return
+        if re.fullmatch(r"h[1-6]", tag):
+            self.heading_stack.append((len(self.stack), int(tag[1]), len(self.parts)))
         if tag in ("section", "article"):
             self.sections.append({
                 "depth": len(self.stack), "start": len(self.parts),
@@ -118,6 +122,9 @@ class _FestivalContent(VisibleText):
     def handle_endtag(self, tag):
         super().handle_endtag(tag)
         depth = len(self.stack)
+        while self.heading_stack and self.heading_stack[-1][0] > depth:
+            _, level, begin = self.heading_stack.pop()
+            self.heading_spans.append((begin, len(self.parts), level))
         while self.headings and self.headings[-1][0] > depth:
             _, begin, section = self.headings.pop()
             section["heading"] = " ".join(re.findall(
@@ -141,6 +148,22 @@ def festival_visible_content(html):
     parser = _FestivalContent()
     parser.feed(html)
     parser.close()
+    # Some CMS builders use only nested divs instead of section/article.
+    # An annual-programme heading plus an explicit visible contrast with
+    # the festival is negative scope proof, even without a local category
+    # link. Require the next same/higher heading to bound the exclusion.
+    headings = sorted(parser.heading_spans)
+    for i, (begin, end, level) in enumerate(headings):
+        heading = " ".join(re.findall(r"[a-z0-9]+", fold(" ".join(parser.parts[begin:end]))))
+        if heading != "programmation a l annee":
+            continue
+        stop = next((a for a, _, n in headings[i+1:] if n <= level), None)
+        if stop is None:
+            continue
+        introduction = " ".join(re.findall(r"[a-z0-9]+", fold(" ".join(parser.parts[end:stop]))))[:350]
+        if (re.search(r"\bce n est pas (?:uniquement|seulement) le festival\b", introduction)
+                and re.search(r"\b(?:aussi|egalement) une programmation a l annee\b", introduction)):
+            parser.excluded.append((begin, stop))
     ignored = set()
     for begin, end in parser.excluded:
         ignored.update(range(begin, end))
