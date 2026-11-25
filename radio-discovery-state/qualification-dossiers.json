@@ -30,6 +30,7 @@
       },
       "editorialSignal": "electronic_context_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -82,6 +83,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -133,6 +135,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -189,6 +192,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -221,6 +225,31 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": {
+        "reportedHost": "airwave.dogma19811981.workers.dev",
+        "homepageSha256": "3057496ab7533b741af1c0219487073fde84cedeadd38072c4840488bf297082",
+        "identityNameSha256": "5accf5c86bcfa3cf2f761624d975204d984dbb47b48541582af09ce530eb9859",
+        "observedDate": "2026-11-25",
+        "retrieval": "html_observed",
+        "identityNameMatch": true,
+        "signal": "identity_and_target_indication",
+        "primaryTargetTerms": [
+          "punk"
+        ],
+        "visibleTargetTerms": [
+          "metal",
+          "punk",
+          "punk rock",
+          "punkrock",
+          "rock metal"
+        ],
+        "primaryElectronicTerms": [],
+        "pageSha256": "abfd843942de275975b8262feb7727f26e2f6c1c071da0ef28327cdea8620b9a",
+        "finalPageSha256": "3057496ab7533b741af1c0219487073fde84cedeadd38072c4840488bf297082",
+        "imageHintSha256": [
+          "cfeb2e7fb5481114319a3a8216b452578dd8137395854b06926a946b4152ba05"
+        ]
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -274,6 +303,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -329,6 +359,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -361,6 +392,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -395,6 +427,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -429,6 +462,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -482,6 +516,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -533,6 +568,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -586,6 +622,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -639,6 +676,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -673,6 +711,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -709,6 +748,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -745,6 +785,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -779,6 +820,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -833,6 +875,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -886,6 +929,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -937,6 +981,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -991,6 +1036,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -1025,6 +1071,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1078,6 +1125,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1131,6 +1179,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1184,6 +1233,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1237,6 +1287,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1290,6 +1341,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1345,6 +1397,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -1377,6 +1430,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1430,6 +1484,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1485,6 +1540,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -1517,6 +1573,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1571,6 +1628,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1622,6 +1680,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1674,6 +1733,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1729,6 +1789,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -1761,6 +1822,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1812,6 +1874,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1867,6 +1930,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -1901,6 +1965,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -1935,6 +2000,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -1967,6 +2033,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -2018,6 +2085,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -2073,6 +2141,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -2105,6 +2174,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -2158,6 +2228,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -2211,6 +2282,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -2264,6 +2336,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -2296,6 +2369,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -2354,6 +2428,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -2386,6 +2461,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -2441,6 +2517,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -2492,6 +2569,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -2547,6 +2625,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -2602,6 +2681,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -2655,6 +2735,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -2710,6 +2791,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -2744,6 +2826,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -2776,6 +2859,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -2827,6 +2911,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -2880,6 +2965,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -2937,6 +3023,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -2973,6 +3060,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -3007,6 +3095,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -3041,6 +3130,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -3075,6 +3165,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -3130,6 +3221,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -3183,6 +3275,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -3238,6 +3331,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -3291,6 +3385,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -3346,6 +3441,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -3380,6 +3476,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -3412,6 +3509,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -3469,6 +3567,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -3501,6 +3600,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -3556,6 +3656,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -3613,6 +3714,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -3645,6 +3747,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -3702,6 +3805,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -3736,6 +3840,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -3770,6 +3875,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -3802,6 +3908,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -3836,6 +3943,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -3893,6 +4001,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -3925,6 +4034,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -3978,6 +4088,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -4033,6 +4144,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -4088,6 +4200,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -4143,6 +4256,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -4198,6 +4312,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -4253,6 +4368,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -4309,6 +4425,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -4364,6 +4481,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -4396,6 +4514,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -4449,6 +4568,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -4485,6 +4605,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -4517,6 +4638,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -4573,6 +4695,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -4629,6 +4752,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -4682,6 +4806,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -4737,6 +4862,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -4794,6 +4920,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -4828,6 +4955,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -4860,6 +4988,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -4915,6 +5044,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -4949,6 +5079,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -5004,6 +5135,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -5036,6 +5168,21 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": {
+        "reportedHost": "0nlineradio.com",
+        "homepageSha256": "def0f3aa138343c4e0ed59453f66de576c2d9fdbd9e063e88dc64ee9cbab441a",
+        "identityNameSha256": "eb1594ae7780087d034af677c620102e00896d468128187284e98f9b1912a1f2",
+        "observedDate": "2026-11-25",
+        "retrieval": "failed_review",
+        "identityNameMatch": null,
+        "signal": null,
+        "primaryTargetTerms": null,
+        "visibleTargetTerms": null,
+        "primaryElectronicTerms": null,
+        "pageSha256": null,
+        "finalPageSha256": null,
+        "imageHintSha256": null
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -5091,6 +5238,21 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": {
+        "reportedHost": "deecibel.com",
+        "homepageSha256": "240f6d71ef0bd4c65e669ea99c729aa618fc45a780500ef6da219e07d9fad2e3",
+        "identityNameSha256": "5d0722d4fee4ea1333f02531a6ee4654bb2ff3726cc9c8b9e1f700944c20d0fb",
+        "observedDate": "2026-11-25",
+        "retrieval": "failed_review",
+        "identityNameMatch": null,
+        "signal": null,
+        "primaryTargetTerms": null,
+        "visibleTargetTerms": null,
+        "primaryElectronicTerms": null,
+        "pageSha256": null,
+        "finalPageSha256": null,
+        "imageHintSha256": null
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -5142,6 +5304,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -5197,6 +5360,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -5250,6 +5414,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -5284,6 +5449,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -5318,6 +5484,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -5352,6 +5519,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -5384,6 +5552,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -5441,6 +5610,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -5475,6 +5645,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -5509,6 +5680,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -5543,6 +5715,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -5575,6 +5748,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -5626,6 +5800,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -5660,6 +5835,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -5716,6 +5892,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -5774,6 +5951,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -5806,6 +5984,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -5861,6 +6040,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -5916,6 +6096,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -5973,6 +6154,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -6005,6 +6187,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -6060,6 +6243,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -6117,6 +6301,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -6149,6 +6334,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -6204,6 +6390,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -6257,6 +6444,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -6314,6 +6502,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -6348,6 +6537,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -6382,6 +6572,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -6416,6 +6607,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -6450,6 +6642,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -6484,6 +6677,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -6518,6 +6712,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -6573,6 +6768,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -6628,6 +6824,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -6683,6 +6880,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -6736,6 +6934,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -6789,6 +6988,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -6823,6 +7023,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -6874,6 +7075,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -6929,6 +7131,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -6963,6 +7166,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -6997,6 +7201,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -7055,6 +7260,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -7087,6 +7293,27 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": {
+        "reportedHost": "captainbaltimore.com",
+        "homepageSha256": "46523b7c52383a19bdd2934772eb9569d1ad6473373e49e8d3d904ed0a3c6c8a",
+        "identityNameSha256": "dffb4f4dd32868bc1053408d983750a5de8fd030394357579c89951539bad050",
+        "observedDate": "2026-11-25",
+        "retrieval": "html_observed",
+        "identityNameMatch": false,
+        "signal": "unbound_target_indication",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [
+          "punk"
+        ],
+        "primaryElectronicTerms": [],
+        "pageSha256": "0746ffa8a048d4fd47c50ab1019801880e5d5db204f49e3ee5ec3bff1767e32c",
+        "finalPageSha256": "46523b7c52383a19bdd2934772eb9569d1ad6473373e49e8d3d904ed0a3c6c8a",
+        "imageHintSha256": [
+          "b06f5b2b305444a4d2f795249b00fd794bd13a31e28fe842a9cfd9108b14fe4c",
+          "b3f6be0e7decde40af4a7ac8831a954803b9f230214c97ade7a1479c184037ca",
+          "e8c03ee6468ba3de1e1ee58a6f97006658db477442fba17d435ec90947566a51"
+        ]
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -7144,6 +7371,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -7176,6 +7404,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -7212,6 +7441,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -7246,6 +7476,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -7280,6 +7511,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -7314,6 +7546,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -7348,6 +7581,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -7380,6 +7614,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -7416,6 +7651,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -7448,6 +7684,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -7503,6 +7740,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -7558,6 +7796,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -7615,6 +7854,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -7649,6 +7889,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -7683,6 +7924,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -7715,6 +7957,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -7749,6 +7992,25 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": {
+        "reportedHost": "channel989.org",
+        "homepageSha256": "691c99d05c9781203e4386a07a8c85f98b085121998cc5788b3f7dd5329eff12",
+        "identityNameSha256": "7f2ef616910a79c69aa6f941cecdcdddeb398b2d633c9d3333542e733e8543f2",
+        "observedDate": "2026-11-25",
+        "retrieval": "html_observed",
+        "identityNameMatch": false,
+        "signal": "unbound_target_indication",
+        "primaryTargetTerms": [
+          "nigel metal"
+        ],
+        "visibleTargetTerms": [
+          "nigel metal"
+        ],
+        "primaryElectronicTerms": [],
+        "pageSha256": "91b66f0f19cf24ce446149d1cbc725aaa8802da1d2d10b551610a52684a118dc",
+        "finalPageSha256": "691c99d05c9781203e4386a07a8c85f98b085121998cc5788b3f7dd5329eff12",
+        "imageHintSha256": []
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -7804,6 +8066,29 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": {
+        "reportedHost": "azuracast.javidai.uk",
+        "homepageSha256": "755ca68139ff87dfa17ef373c6b84b17373faa801ed2e1242d476bd60488278a",
+        "identityNameSha256": "e306e4c4329600630f43e7ae0299436094d5be742acca2357f6f058d83bbbba6",
+        "observedDate": "2026-11-25",
+        "retrieval": "html_observed",
+        "identityNameMatch": true,
+        "signal": "identity_and_target_indication",
+        "primaryTargetTerms": [
+          "azuracast metal",
+          "metal"
+        ],
+        "visibleTargetTerms": [
+          "metal"
+        ],
+        "primaryElectronicTerms": [],
+        "pageSha256": "8158ee7368f69c54e6377f8c5d9de2ff57ce451623893c333164bce558c43cb1",
+        "finalPageSha256": "755ca68139ff87dfa17ef373c6b84b17373faa801ed2e1242d476bd60488278a",
+        "imageHintSha256": [
+          "c42811f2e06318651896075a0183da59263a42a4d40bc94702c6d9eafab756c6",
+          "e01214ea9aebf59f2cb3054e3f9008ca3ad37c6b81e4ba1faf55038ad81e96c3"
+        ]
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -7855,6 +8140,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -7889,6 +8175,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -7923,6 +8210,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -7955,6 +8243,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -8006,6 +8295,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -8040,6 +8330,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -8094,6 +8385,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -8128,6 +8420,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -8160,6 +8453,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -8196,6 +8490,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -8228,6 +8523,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -8283,6 +8579,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -8339,6 +8636,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -8371,6 +8669,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -8422,6 +8721,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -8479,6 +8779,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -8511,6 +8812,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -8566,6 +8868,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -8600,6 +8903,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -8632,6 +8936,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -8683,6 +8988,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -8717,6 +9023,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -8774,6 +9081,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -8808,6 +9116,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -8861,6 +9170,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -8916,6 +9226,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -8973,6 +9284,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -9005,6 +9317,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -9056,6 +9369,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -9111,6 +9425,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -9168,6 +9483,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -9200,6 +9516,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -9255,6 +9572,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -9291,6 +9609,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -9325,6 +9644,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -9357,6 +9677,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -9408,6 +9729,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -9459,6 +9781,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -9516,6 +9839,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -9548,6 +9872,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -9603,6 +9928,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -9660,6 +9986,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -9692,6 +10019,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -9747,6 +10075,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -9781,6 +10110,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -9839,6 +10169,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -9871,6 +10202,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -9926,6 +10258,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -9958,6 +10291,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10009,6 +10343,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10024,13 +10359,13 @@
       "logoEvidence": {
         "sourceClass": "same_reported_host",
         "sourceSha256": "98f094237c9d8ff9158c1262b72d4bc5700577532d3013e54ec7ee30a8af619f",
-        "retrieval": "not_attempted",
-        "imageSha256": null,
-        "mime": null,
-        "width": null,
-        "height": null,
-        "byteLength": null,
-        "observedDate": null
+        "retrieval": "decoded_unapproved",
+        "imageSha256": "16ab0ac2d658f5268ed6b926b183ea89f7e5d16729a3397573b456a03e77adca",
+        "mime": "image/png",
+        "width": 400,
+        "height": 400,
+        "byteLength": 17849,
+        "observedDate": "2026-11-25"
       },
       "logoIdentityVerified": false,
       "status": "awaiting_evidence",
@@ -10064,6 +10399,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -10096,6 +10432,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10151,6 +10488,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -10185,6 +10523,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -10217,6 +10556,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10275,6 +10615,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -10307,6 +10648,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10362,6 +10704,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10416,6 +10759,21 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": {
+        "reportedHost": "24-7nicheradio.com",
+        "homepageSha256": "280d5acc0a499400ad63ef6003af60bc258581b70de6262523bd737b331cdf99",
+        "identityNameSha256": "3a1886ae400f2f8125ab796dd0e51d021fc2b038a1ea84a357910bed78307ea1",
+        "observedDate": "2026-11-25",
+        "retrieval": "html_observed",
+        "identityNameMatch": false,
+        "signal": "no_format_evidence",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [],
+        "primaryElectronicTerms": [],
+        "pageSha256": "360673ecd305432ab032e3c9e3b3ff6fc31f6b8818f93952e138eb9ef2532566",
+        "finalPageSha256": "280d5acc0a499400ad63ef6003af60bc258581b70de6262523bd737b331cdf99",
+        "imageHintSha256": []
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10467,6 +10825,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10522,6 +10881,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10575,6 +10935,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10630,6 +10991,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10684,6 +11046,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10741,6 +11104,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -10773,6 +11137,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10824,6 +11189,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10879,6 +11245,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10934,6 +11301,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10989,6 +11357,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11044,6 +11413,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11099,6 +11469,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11154,6 +11525,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11205,6 +11577,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11260,6 +11633,29 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": {
+        "reportedHost": "begoodradio.com",
+        "homepageSha256": "0704a613691624243ed5ac0e750cd0eb117af0897f362d70fa2d281c653cd581",
+        "identityNameSha256": "f0a2ea8777f019545027e4f5a5609dbb21789371ce44607b7fd001c3e8b7ccdc",
+        "observedDate": "2026-11-25",
+        "retrieval": "html_observed",
+        "identityNameMatch": false,
+        "signal": "unbound_target_indication",
+        "primaryTargetTerms": [
+          "wave metal"
+        ],
+        "visibleTargetTerms": [
+          "hair metal",
+          "wave metal"
+        ],
+        "primaryElectronicTerms": [],
+        "pageSha256": "642918dc37917429f561a7ef8510b42395a48feee774fa83668bcb0ccaefb316",
+        "finalPageSha256": "0704a613691624243ed5ac0e750cd0eb117af0897f362d70fa2d281c653cd581",
+        "imageHintSha256": [
+          "099e7fee68d817a70a1d0039659a5e0e4eb333af17480f0d965e0e3f34dedf05",
+          "3b486ce4699c0b7a68ed53bc3743250c08f1a8863a6a2fc4e5e9f2eb60191f81"
+        ]
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11315,6 +11711,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11370,6 +11767,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11425,6 +11823,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11480,6 +11879,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11535,6 +11935,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11588,6 +11989,7 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11644,6 +12046,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11699,6 +12102,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11756,6 +12160,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -11790,6 +12195,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11845,6 +12251,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -11879,6 +12286,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11934,6 +12342,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11989,6 +12398,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -12044,6 +12454,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,
@@ -12076,6 +12487,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -12129,6 +12541,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -12161,6 +12574,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -12216,6 +12630,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -12250,6 +12665,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": null,
@@ -12282,6 +12698,7 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
+      "homepageEvidence": null,
       "officialHomepageVerified": false,
       "duplicateRisk": true,
       "streamEvidence": null,

@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedLogoCount": 0,
   "candidateCount": 158,
-  "attemptedSourceCount": 8,
-  "decodedCandidateCount": 25,
+  "attemptedSourceCount": 1,
+  "decodedCandidateCount": 26,
   "retainedEvidenceCount": 0,
   "records": [
     {
@@ -1382,10 +1382,16 @@
       "sourceClass": "same_reported_host",
       "sourceSha256": "98f094237c9d8ff9158c1262b72d4bc5700577532d3013e54ec7ee30a8af619f",
       "audioEvidenceRank": 1,
-      "retrieval": "not_attempted",
+      "retrieval": "decoded_unapproved",
       "logoApproved": false,
       "publicationAllowed": false,
-      "observedInScan": true
+      "observedInScan": true,
+      "imageSha256": "16ab0ac2d658f5268ed6b926b183ea89f7e5d16729a3397573b456a03e77adca",
+      "mime": "image/png",
+      "width": 400,
+      "height": 400,
+      "byteLength": 17849,
+      "observedDate": "2026-11-25"
     },
     {
       "stationuuid": "d0fb00ac-db4b-467e-8ed5-b023c24cf213",
