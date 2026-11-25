@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-25T20:57:39+01:00",
+  "updated_at": "2026-11-25T22:37:30+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -21123,6 +21123,26 @@
       "geo_precision": "venue",
       "lat": 50.620622,
       "lng": 3.131018
+    },
+    {
+      "id": "openagenda-67905728-2027-03-06",
+      "title": "Musicâlins (2)",
+      "category": "eveil-musical",
+      "category_label": "Éveil musical",
+      "date_start": "2027-03-06",
+      "date_end": "2027-03-06",
+      "time": "11:00",
+      "city": "Villeurbanne",
+      "department": "Rhône",
+      "region": "Auvergne-Rhône-Alpes",
+      "venue": "Maison du livre, de l'image et du son",
+      "source_url": "https://openagenda.com/villeurbanne-mediatheques/events/67905728_musicalins-2-6184707",
+      "source_label": "Villeurbanne Médiathèques — Licence Ouverte 2.0 — données mises à jour le 21/11/2026",
+      "verified_at": "2026-11-25",
+      "geo_verified_at": "2026-11-25",
+      "geo_precision": "venue",
+      "lat": 45.768033,
+      "lng": 4.887698
     }
   ]
 }

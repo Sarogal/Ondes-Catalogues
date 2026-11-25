@@ -1,0 +1,27 @@
+{
+  "schema": "ptitesondes.official_reconciliation.v1",
+  "checked_on": "2026-11-25",
+  "slot": 3,
+  "source_series_checked": 30,
+  "total_source_series": 107,
+  "before_count": 1024,
+  "after_count": 1025,
+  "source_summary": {
+    "official_new_session_admitted": 1,
+    "official_new_session_on_demand_review": 1,
+    "official_unavailable": 1,
+    "official_unchanged": 27
+  },
+  "catalogue_before_sha256": "2354f1a8db92f4a9d75bb76a79b12103ed0cd13943e68b28a8e46818274127ad",
+  "catalogue_after_sha256": "1fa3cbc4773535894a322e70fc51b7b7c2bd6a5a75f4de7a2b1c67ff713cdfd6",
+  "operations": [
+    {
+      "id": "openagenda-67905728-2027-03-06",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/villeurbanne-mediatheques/events/67905728_musicalins-2-6184707",
+      "new_event_sha256": "850a8f1b5bd4af55bf33c12d3404db93440aec76a0c864c97f2f5669324d844b"
+    }
+  ],
+  "unrelated_public_records_preserved": true
+}
