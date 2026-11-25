@@ -15,6 +15,7 @@
       "name": "Sprawl FM - RAVE | Hardcore, Breakbeat, Jungle, Acid",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "electronic_context_review",
       "repeatedObservation": false
     },
     {
@@ -25,6 +26,7 @@
       "name": "MIX Hard Rock (iHeart Radio) - Online - ACIR Online / iHeart Radio - Ciudad de México",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -35,6 +37,7 @@
       "name": "New Release Underground",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -45,6 +48,7 @@
       "name": "RadCap - Thrash Metal (48)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -55,6 +59,7 @@
       "name": "AIRWAVE",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -65,6 +70,7 @@
       "name": "Punk Rock Demonstration",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -75,6 +81,7 @@
       "name": "Rockaxis Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -85,6 +92,7 @@
       "name": "FluxFM - Hard Rock",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -95,6 +103,7 @@
       "name": "FluxFM - Hard Rock",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -105,6 +114,7 @@
       "name": "RadioU Battery",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -115,6 +125,7 @@
       "name": "[GTA IV] Liberty City Hardcore [GTARadio.net]",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -125,6 +136,7 @@
       "name": "Flux Hard Rock FM (320)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -135,6 +147,7 @@
       "name": "Q104.3",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -145,6 +158,7 @@
       "name": "Nu Metal Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -155,6 +169,7 @@
       "name": "Heavy Metal History Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -165,6 +180,7 @@
       "name": "FIP Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -175,6 +191,7 @@
       "name": "idobi Howl",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -185,6 +202,7 @@
       "name": "WYML 99.9",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -195,6 +213,7 @@
       "name": "Bates FM Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -205,6 +224,7 @@
       "name": "Church Punks",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -215,6 +235,7 @@
       "name": "M&N RADYJO",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -225,6 +246,7 @@
       "name": "Radio Caprice - Progressive Heavy Metal",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -235,6 +257,7 @@
       "name": "Q103.3 KTMQ",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -245,6 +268,7 @@
       "name": "Louder Than War",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -255,6 +279,7 @@
       "name": "RadCap - Horror Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -265,6 +290,7 @@
       "name": "KNON Now - Dallas",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -275,6 +301,7 @@
       "name": "Doom Stew Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -285,6 +312,7 @@
       "name": "Hard Rock FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -295,6 +323,7 @@
       "name": "Radio Caprice",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -305,6 +334,7 @@
       "name": "HEAVY.RADIO -- Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -315,6 +345,7 @@
       "name": "Insane Realm Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -325,6 +356,7 @@
       "name": "Ad Infinitum",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -335,6 +367,7 @@
       "name": "Booty Bay Pirate Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -345,6 +378,7 @@
       "name": "Radio Caprice - AOR / Melodic Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -355,6 +389,7 @@
       "name": "BBC Radio 6 Music",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -365,6 +400,7 @@
       "name": "Metal Hammer",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -375,6 +411,7 @@
       "name": "Radio Metal On: Toxic",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -385,6 +422,7 @@
       "name": "HearMe - Classic Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -395,6 +433,7 @@
       "name": "Exclusively ZZ Top",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -405,6 +444,7 @@
       "name": "Radio Diabolus",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -415,6 +455,7 @@
       "name": "Radio BOB - Nu Metal (aac 64)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -425,6 +466,7 @@
       "name": "X Transmission FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -435,6 +477,7 @@
       "name": "RadCap - Crust Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -445,6 +488,7 @@
       "name": "Iron Voice Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -455,6 +499,7 @@
       "name": "RadCap - Gothic Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -465,6 +510,7 @@
       "name": "Virgin Radio Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -475,6 +521,7 @@
       "name": "Fuzzy Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -485,6 +532,7 @@
       "name": "Radio Mutation",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -495,6 +543,7 @@
       "name": "The Pit | NTS",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -505,6 +554,7 @@
       "name": "High Fi Dream Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -515,6 +565,7 @@
       "name": "Radio Metal On: The Thrasher",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -525,6 +576,7 @@
       "name": "RadCap - Russian Punk Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -535,6 +587,7 @@
       "name": "RadCap - Ska Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -545,6 +598,7 @@
       "name": "__12PUNKS.FM__ by rautemusik (rm.fm)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -555,6 +609,7 @@
       "name": "Virgin Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -565,6 +620,7 @@
       "name": "DankFM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -575,6 +631,7 @@
       "name": "Radio Caprice - Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -585,6 +642,7 @@
       "name": "Thrashking Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -595,6 +653,7 @@
       "name": "RADCAP: ATMOSPHERIC / AMBIENT BLACK METAL",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -605,6 +664,7 @@
       "name": "Nocturne Vault Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -615,6 +675,7 @@
       "name": "Rock Antenne Punkrock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -625,6 +686,7 @@
       "name": "KBHQ-LP \"Q-Rock 100.7\" Harrison, Arkansas",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -635,6 +697,7 @@
       "name": "Hard Rock Heaven",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -645,6 +708,7 @@
       "name": "CRnet Hard Rock (32)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -655,6 +719,7 @@
       "name": "Metalcore",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -665,6 +730,7 @@
       "name": "Radio Caprice - Nu Metal (128)",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -675,6 +741,7 @@
       "name": "Radio Caprice - Ska Punk / Core / Two Tone",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -685,6 +752,7 @@
       "name": "Radio BOB Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -695,6 +763,7 @@
       "name": "Radio Paranoid",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -705,6 +774,7 @@
       "name": "De Tijdloze",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -715,6 +785,7 @@
       "name": "Kyclops Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -725,6 +796,7 @@
       "name": "Svartkrog Black Metal Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -735,6 +807,7 @@
       "name": "SomaFM Metal Detector (32k AAC)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -745,6 +818,7 @@
       "name": "Metal Zone Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -755,6 +829,7 @@
       "name": "RadCap - Thrash Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -765,6 +840,7 @@
       "name": "3Chords allez Ist Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -775,6 +851,7 @@
       "name": "Spoon Radio - Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -785,6 +862,7 @@
       "name": "Radio Caprice - Nu Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -795,6 +873,7 @@
       "name": "Nova + KK Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -805,6 +884,7 @@
       "name": "RadCap - Pagan Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -815,6 +895,7 @@
       "name": "True Black Metal Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -825,6 +906,7 @@
       "name": "laut.fm - Endzeit FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -835,6 +917,7 @@
       "name": "Sonora Classic Rock (Hard & Metal)",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -845,6 +928,7 @@
       "name": "Metal Radio GR",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -855,6 +939,7 @@
       "name": "Rock Antenne Heavy Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -865,6 +950,7 @@
       "name": "RADIO BOB Classic Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -875,6 +961,7 @@
       "name": "Freies Radio FRATZ - Flensburg",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -885,6 +972,7 @@
       "name": "Radio Boomerang",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -895,6 +983,7 @@
       "name": "Metal FM Lebanon",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -905,6 +994,7 @@
       "name": "RadCap - Dance Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -915,6 +1005,7 @@
       "name": "Punk4Punks Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -925,6 +1016,7 @@
       "name": "СИБИРСКАЯ СТАНЦИЯ 2.0",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -935,6 +1027,7 @@
       "name": "KracRadio Post-Punk & Cold Wave",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -945,6 +1038,7 @@
       "name": "REAL PUNK RADIO",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -955,6 +1049,7 @@
       "name": "Alt Xmas (Stupid Potato)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -965,6 +1060,7 @@
       "name": "Hotmix Hard Rock",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -975,6 +1071,7 @@
       "name": "Exclusive - Scorpions",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -985,6 +1082,7 @@
       "name": "+Radioactivo 98 1/2 (CDMX) - Online - zeno.fm/radio/radioactivo-98-5/ - Ciudad de México",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -995,6 +1093,7 @@
       "name": "Dogmazic Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -1005,6 +1104,7 @@
       "name": "delta radio HARD ROCK & HEAVY METAL",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1015,6 +1115,7 @@
       "name": "ROCK 957",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1025,6 +1126,7 @@
       "name": "We Love the Eighties Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1035,6 +1137,7 @@
       "name": "Radio Caprice - Depressive Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1045,6 +1148,7 @@
       "name": "Studio Brussel Zware Gitaren",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1055,6 +1159,7 @@
       "name": "Rock The World - Punk Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1065,6 +1170,7 @@
       "name": "Progressive Rock and Metal (PRM)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1075,6 +1181,7 @@
       "name": "Weymouth Rocks (Medium Bitrate)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1085,6 +1192,7 @@
       "name": "SomaFM Metal Detector (64k AAC)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1095,6 +1203,7 @@
       "name": "0R - 80s ROCK || Classic Rock, Hard Rock, Pop Rock, Rock Hits, Guitar, Ballads, Hair Metal, Rock Anthems, Retro, Vintage, Arena Rock, Party Rock, Rock Classics, Melodic Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1105,6 +1214,7 @@
       "name": "Deecibel Rock Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1115,6 +1225,7 @@
       "name": "Russian Punk rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1125,6 +1236,7 @@
       "name": "hard rock FM surabaya",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1135,6 +1247,7 @@
       "name": "DrGnu - Death Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1145,6 +1258,7 @@
       "name": "Mosh Head Black Metal ID",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1155,6 +1269,7 @@
       "name": "Radio Caprice - Pagan Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1165,6 +1280,7 @@
       "name": "PunkRockRadio.ca",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1175,6 +1291,7 @@
       "name": "Radio Caprice - BEATDOWN / MOSHCORE / DOWNTEMPO HARDCORE / METALCORE",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1185,6 +1302,7 @@
       "name": "DrGnu - 20th Century Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -1195,6 +1313,7 @@
       "name": "666 Forgotten Castle",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1205,6 +1324,7 @@
       "name": "0nlineradio METAL",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1215,6 +1335,7 @@
       "name": "rock.irk.ru :: main-mix",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1225,6 +1346,7 @@
       "name": "Indie X FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1235,6 +1357,7 @@
       "name": "AI Metal Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1245,6 +1368,7 @@
       "name": "RADIOACTIVO 98 1/2: Fuck Everyone Else!",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -1255,6 +1379,7 @@
       "name": "Punk4all",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -1265,6 +1390,7 @@
       "name": "RadCap - Symphonic Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1275,6 +1401,7 @@
       "name": "Hard Rock Hell Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1285,6 +1412,7 @@
       "name": "RadCap - Post Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1295,6 +1423,7 @@
       "name": "Inferno FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1305,6 +1434,7 @@
       "name": "MaximusRockFM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1315,6 +1445,7 @@
       "name": "radiodellaconcia-rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1325,6 +1456,7 @@
       "name": "Big Sonic Heaven",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1335,6 +1467,7 @@
       "name": "ChroniX AGGRESSION",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1345,6 +1478,7 @@
       "name": "Hard Rock by Rock FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1355,6 +1489,7 @@
       "name": "FLUX FM Hard Rock FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1365,6 +1500,7 @@
       "name": "RockRadio32",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1375,6 +1511,7 @@
       "name": "DJ 666 Geordieblackcore",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1385,6 +1522,7 @@
       "name": "Dark Symphony Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1395,6 +1533,7 @@
       "name": "RADIO BOB! 2000er Rock [64 kbit/s AAC]",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1405,6 +1544,7 @@
       "name": "RadCap - Avantgarde Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1415,6 +1555,7 @@
       "name": "Radio Caprice - Viking Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1425,6 +1566,7 @@
       "name": "Tangra Mega Rock",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1435,6 +1577,7 @@
       "name": "Gold Radio UK/Metal Radio UK",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1445,6 +1588,7 @@
       "name": "Radio Smash",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1455,6 +1599,7 @@
       "name": "The Wolf 104.9 (CFWF)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1465,6 +1610,7 @@
       "name": "Radio SAR - Studencka Agencja Radiowa",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1475,6 +1621,7 @@
       "name": "Rock Connection 77 CLOUD",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1485,6 +1632,7 @@
       "name": "HARD ROCK PALACE",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1495,6 +1643,7 @@
       "name": "Space Coast Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1505,6 +1654,7 @@
       "name": "HEAVY.RADIO -- Punkrock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1515,6 +1665,7 @@
       "name": "Hotmix Hard Rock",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1525,6 +1676,7 @@
       "name": "AI Metal Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1535,6 +1687,7 @@
       "name": "Rockcorner",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -1545,6 +1698,7 @@
       "name": "RadCap - Thrash Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1555,6 +1709,7 @@
       "name": "Captain Baltimore - Pop, Rock and Alternative",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1565,6 +1720,7 @@
       "name": "Rock Antenne - Punk Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1575,6 +1731,7 @@
       "name": "punkrockers-radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1585,6 +1742,7 @@
       "name": "SomaFM Metal Detector (128k AAC)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1595,6 +1753,7 @@
       "name": "ChroniX Radio Metalcore",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1605,6 +1764,7 @@
       "name": "Tangra Mega Rock",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1615,6 +1775,7 @@
       "name": "RADIO BOB! BOBs Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1625,6 +1786,7 @@
       "name": "Radio todamax",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -1635,6 +1797,7 @@
       "name": "Sonora Classic Rock (Hard & Metal)",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1645,6 +1808,7 @@
       "name": "core-mix",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1655,6 +1819,7 @@
       "name": "2000 FM - Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1665,6 +1830,7 @@
       "name": "Christian Hard Rock Dot Net",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1675,6 +1841,7 @@
       "name": "Radio Caprice - Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1685,6 +1852,7 @@
       "name": "Hard Rock Heaven",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1695,6 +1863,7 @@
       "name": "Radio Caprice - Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1705,6 +1874,7 @@
       "name": "Radio Caprice - Thrash Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1715,6 +1885,7 @@
       "name": "Radio Caprice - Progressive Heavy Metal",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1725,6 +1896,7 @@
       "name": "WHYP-LP \"Channel 98.9\" Corry, Pennsylvania",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1735,6 +1907,7 @@
       "name": "METAL BROTHERS",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1745,6 +1918,7 @@
       "name": "SomaFM Metal Detector (128k MP3)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1755,6 +1929,7 @@
       "name": "Gadingharjo Core",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1765,6 +1940,7 @@
       "name": "Hard Rock Radio FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1775,6 +1951,7 @@
       "name": "punk irratia",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1785,6 +1962,7 @@
       "name": "Josema Metal Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1795,6 +1973,7 @@
       "name": "Latehome Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -1805,6 +1984,7 @@
       "name": "RadCap - Atmospheric Ambient Black Metal",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1815,6 +1995,7 @@
       "name": "Radio Caprice - Folk Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1825,6 +2006,7 @@
       "name": "Punkrockers Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1835,6 +2017,7 @@
       "name": "Metalourgio Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1845,6 +2028,7 @@
       "name": "Radio Caprice - Melodic Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1855,6 +2039,7 @@
       "name": "Exclusively Daft Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -1865,6 +2050,7 @@
       "name": "Australian Digital Radio Network - Punk and Metal Mix (MP3)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1875,6 +2061,7 @@
       "name": "RadCap - Pop Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1885,6 +2072,7 @@
       "name": "MOTORADIO, Low AAC 24 kbps",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1895,6 +2083,7 @@
       "name": "laut.fm - Dark Sound United",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1905,6 +2094,7 @@
       "name": "Rock Antenne - Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1915,6 +2105,7 @@
       "name": "RadCap - Nu Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1925,6 +2116,7 @@
       "name": "Hotmix meal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1935,6 +2127,7 @@
       "name": "HITS MUSIC RADIO ROCK",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1945,6 +2138,7 @@
       "name": "FluxFM - Hard Rock",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1955,6 +2149,7 @@
       "name": "Hard Rock Heaven",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1965,6 +2160,7 @@
       "name": "ROCK FM METAL",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1975,6 +2171,7 @@
       "name": "KracRadio Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1985,6 +2182,7 @@
       "name": "zzz-rock-zzz",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -1995,6 +2193,7 @@
       "name": "NRJ Métal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2005,6 +2204,7 @@
       "name": "Radio Bob! Nu Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2015,6 +2215,7 @@
       "name": "Radio Caprice - Symphonic Gothic Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2025,6 +2226,7 @@
       "name": "Rock The Bones Radio - Rock & Metal Chile",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2035,6 +2237,7 @@
       "name": "Radio Rock (NO)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2045,6 +2248,7 @@
       "name": "Hotmix Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2055,6 +2259,7 @@
       "name": "Music Radio Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2065,6 +2270,7 @@
       "name": "Tangra Mega Rock",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2075,6 +2281,7 @@
       "name": "RadCap - Crossover Thrash Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2085,6 +2292,7 @@
       "name": "Radio Narcan",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2095,6 +2303,7 @@
       "name": "Radio La Metro Stereo 88.5 FM Quito / 95.7 FM Guayaquil",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2105,6 +2314,7 @@
       "name": "Q 103.3 - Rockin' the Temecula Valley!",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2115,6 +2325,7 @@
       "name": "AItocha Rock (AI music)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2125,6 +2336,7 @@
       "name": "Radio BOB - Nu Metal (mp3 192)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2135,6 +2347,7 @@
       "name": "The Rock! (Hard Rock)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2145,6 +2358,7 @@
       "name": "Známka Punku",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2155,6 +2369,7 @@
       "name": "BurnFM - musik intensiv!",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2165,6 +2380,7 @@
       "name": "Real Rock Revival",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2175,6 +2391,7 @@
       "name": "Rádio Metal Heads",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2185,6 +2402,7 @@
       "name": "La Antiradio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -2195,6 +2413,7 @@
       "name": "Radio Caprice - Gothic Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2205,6 +2424,7 @@
       "name": "KracRadio Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2215,6 +2435,7 @@
       "name": "RadCap - Depressive Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2225,6 +2446,7 @@
       "name": "RadCap - Oi Punk Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2235,6 +2457,7 @@
       "name": "88.6 Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2245,6 +2468,7 @@
       "name": "# 100 GREATEST HEAVY METAL",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2255,6 +2479,7 @@
       "name": "MetalFM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2265,6 +2490,7 @@
       "name": "NRJ LINKIN PARK",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2275,6 +2501,7 @@
       "name": "Radio Maximum - Heavy Monday",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2285,6 +2512,7 @@
       "name": "Nevermore Radio - Nevermore Network",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -2295,6 +2523,7 @@
       "name": "METALchet",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2305,6 +2534,7 @@
       "name": "KZAO \"Z89.3\" Ajo, Arizona",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2315,6 +2545,7 @@
       "name": "Haze Pub Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -2325,6 +2556,7 @@
       "name": "24-7 Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2335,6 +2567,7 @@
       "name": "Hard Rock Halloween",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2345,6 +2578,7 @@
       "name": "Best of Rock FM - Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2355,6 +2589,7 @@
       "name": "Rádio ROCK - Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2365,6 +2600,7 @@
       "name": "Radio Flo",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -2375,6 +2611,7 @@
       "name": "Real Rock Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2385,6 +2622,7 @@
       "name": "Best Of Rock.FM Metallica (mp3-256)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2395,6 +2633,7 @@
       "name": "PUNK FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2405,6 +2644,7 @@
       "name": "RadCap - Folk Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2415,6 +2655,7 @@
       "name": "Flatlines Radio Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2425,6 +2666,7 @@
       "name": "Rock Radio Metalomanie",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2435,6 +2677,7 @@
       "name": "radio.XES – Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2445,6 +2688,7 @@
       "name": "The Metallica Report",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2455,6 +2699,7 @@
       "name": "Metal Radio UK",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2465,6 +2710,7 @@
       "name": "SUN Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2475,6 +2721,7 @@
       "name": "RadCap - Punk 1",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2485,6 +2732,7 @@
       "name": "Big R Radio - 80s Punk Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2495,6 +2743,7 @@
       "name": "Ze Rock Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2505,6 +2754,7 @@
       "name": "Rock Connection 77",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2515,6 +2765,7 @@
       "name": "FreaksOnly",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2525,6 +2776,7 @@
       "name": "Laut.FM - Punk and Disorderly The 80s",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2535,6 +2787,7 @@
       "name": "RADIO BOB - Death Metal (aac-64)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2545,6 +2798,7 @@
       "name": ">> *TOP 100 CHARTS* <<  || Pop, Rock, Dance, House, Techno, Trance, Electro, Hip-Hop, Rap, RnB, Reggaeton, Latin, Jazz, Blues, Soul, Funk, Metal, Punk, Indie, Alternative, Chillout, Lounge, Ambient, Classical, Acoustic, Singer-Songwriter, P",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "mixed_genre_review",
       "repeatedObservation": false
     },
     {
@@ -2555,6 +2809,7 @@
       "name": "105.1 rock TAO",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2565,6 +2820,7 @@
       "name": "Montiel Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2575,6 +2831,7 @@
       "name": "Nu Metal Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2585,6 +2842,7 @@
       "name": "Australian Digital Radio Network - Punk (MP3)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2595,6 +2853,7 @@
       "name": "Josema Metal Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2605,6 +2864,7 @@
       "name": "KCUT 102.9 Moab Rocks Community Radio - Moab, Utah",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2615,6 +2875,7 @@
       "name": "Heavy Metal Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2625,6 +2886,7 @@
       "name": "ROCK & METAL",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2635,6 +2897,7 @@
       "name": "Radio Caprice - Nu Metal",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2645,6 +2908,7 @@
       "name": "Midnight Madness Metal eradio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2655,6 +2919,7 @@
       "name": "CRnet Hard Rock (128)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2665,6 +2930,7 @@
       "name": "Vinyl-Valley Rock Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2675,6 +2941,7 @@
       "name": "Bandung Death Metal Syndicate",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2685,6 +2952,7 @@
       "name": "Radio Caprice - Atmospheric/Ambient Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     },
     {
@@ -2695,6 +2963,7 @@
       "name": "Svartkrog Black Metal Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
+      "editorialSignal": "target_genre_indication",
       "repeatedObservation": false
     }
   ]

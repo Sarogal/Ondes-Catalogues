@@ -85,6 +85,62 @@
       "publicationAllowed": false
     },
     {
+      "stationuuid": "0ccdab5a-e2d4-46c1-988e-00bb53378b33",
+      "streamSha256": "dcb022eb38657531f34bfc76035e014a3ae5baddbf4a4d72c825b2c6990913a6",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "0cd363a2-d26f-4957-bc69-9b1f85b5f173",
+      "streamSha256": "0e61f2ea0afc5d375fa933b4e03084c37d10bacb40505709ffa8e2d9d5eb7a51",
+      "audioEvidenceDates": [],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "playlist_pending",
+      "repeatAudioSample": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "10d01aca-f5de-4591-b4e0-441ce8e1ddfe",
+      "streamSha256": "557aaa2ff12b76757fa71e73ac8c531052135e5f5927e64558aa2af1165fd00f",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "11d1fe19-b237-4bfc-95fb-fd9757f40916",
+      "streamSha256": "ff612bdb6c540027b35e41a6056fbfe68b817dfecbe8b98382c14b3b3e551599",
+      "audioEvidenceDates": [
+        "2026-11-25"
+      ],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "11ebd6e7-4b9f-4c93-afcd-bca082bb82a6",
+      "streamSha256": "58404456505af5db040c9dcc7ca0479017e676a947be85af7989133918c29164",
+      "audioEvidenceDates": [],
+      "lastObservedDate": "2026-11-25",
+      "lastVerdict": "audio_mime_only",
+      "repeatAudioSample": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
       "stationuuid": "f4df535d-d65b-46ad-8498-df5b56a011c7",
       "streamSha256": "e44844cc2e8cc0cfe95618a5e3229acd019f69703518d6add6c44019e890e355",
       "audioEvidenceDates": [
