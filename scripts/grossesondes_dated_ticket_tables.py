@@ -35,7 +35,10 @@ class TicketTables(VisibleText):
             if tag == "tr":
                 self.row = []
             elif tag in ("td", "th") and self.row is not None:
-                if any(k in ("rowspan", "colspan") and v != "1" for k, v in attrs):
+                # CMS templates often emit empty span attributes. HTML treats
+                # those as the default single cell, not a merged cell.
+                if any(k in ("rowspan", "colspan") and (v or "").strip() not in ("", "1")
+                       for k, v in attrs):
                     self.invalid = True
                 self.cell = []
         elif tag in ("p", "h1", "h2", "h3", "h4", "h5", "h6"):
