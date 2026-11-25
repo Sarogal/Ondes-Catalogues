@@ -66,6 +66,7 @@ def _individual_event(html, url, when, venue, *, accept_generic=False,
     Bad JSON-LD cannot be hidden by microdata.
     """
     matches = []
+    rejected = Counter()
     nodes = dynamic.individual_event_nodes(html, accept_generic=accept_generic)
     if accept_generic and not nodes:
         from automation.concerts import open_world_visible_cards
@@ -79,28 +80,35 @@ def _individual_event(html, url, when, venue, *, accept_generic=False,
         require(False, "visible detail: " + diagnostics.get("visibleDetail", "unknown"))
     for node in nodes:
         if not isinstance(node, dict):
+            rejected["invalid_node"] += 1
             continue
         types = bridge._event_types(node.get("@type"))
         if not ("MusicEvent" in types or
                 (accept_generic and "Event" in types)):
+            rejected["event_type"] += 1
             continue
         status = str(node.get("eventStatus") or "").casefold()
         if any(part in status for part in
                ("cancel", "postpon", "resched", "report", "annul")):
+            rejected["cancelled_or_postponed"] += 1
             continue
         # A MusicEvent can still represent a festival. This route must never
         # misclassify a festival edition as a single concert.
         if discover.reject_listing(node.get("name")):
+            rejected["festival_or_nonconcert_title"] += 1
             continue
         canonical = node.get("url")
         if canonical is not None and canonical != url:
+            rejected["canonical_url_mismatch"] += 1
             continue
         if discover.iso_day(node.get("startDate")) != when:
+            rejected["event_date_mismatch"] += 1
             continue
         place = node.get("location")
         if not isinstance(place, dict) or (
                 intake.normalized(place.get("name")) !=
                 intake.normalized(venue["name"])):
+            rejected["venue_name_or_location_mismatch"] += 1
             continue
         # Complete the missing schema.org bill only from THIS exact
         # first-party Event detail's unique H1 and per-artist genre labels.
@@ -112,6 +120,7 @@ def _individual_event(html, url, when, venue, *, accept_generic=False,
                 node = {**node, "performer": recovered}
         bill = bridge.official_named_bill(node.get("performer"))
         if not bill:
+            rejected["named_bill_missing_or_ambiguous"] += 1
             continue
         names, unnamed = bill
         genres, scope = dynamic.event_genres(
@@ -122,9 +131,28 @@ def _individual_event(html, url, when, venue, *, accept_generic=False,
                 "classification": genres,
                 "genreEvidenceScope": scope,
                 "officialDetailFound": True}):
+            rejected["relevant_artist_or_event_genre_missing"] += 1
             continue
         matches.append((names, genres))
-    require(len(matches) == 1, "unique first-party music event not found")
+    if len(matches) != 1:
+        # Fixed, bounded codes only. Prefer the deepest verified stage of
+        # the current individual candidate, rather than a recommendation
+        # card's earlier mismatch. Never put source text or names in logs.
+        stages = (
+            "relevant_artist_or_event_genre_missing",
+            "named_bill_missing_or_ambiguous",
+            "venue_name_or_location_mismatch",
+            "event_date_mismatch",
+            "canonical_url_mismatch",
+            "festival_or_nonconcert_title",
+            "cancelled_or_postponed",
+            "event_type",
+            "invalid_node",
+        )
+        reason = ("multiple_matching_events" if len(matches) > 1 else
+                  next((stage for stage in stages if rejected[stage]),
+                       "no_structured_event"))
+        require(False, "unique first-party music event not found: " + reason)
     return matches[0]
 
 
