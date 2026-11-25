@@ -69,6 +69,7 @@ jobs:
           python-version: '3.12'
 
       - name: Restaurer les fichiers privés hors checkout
+        id: restore
         shell: bash
         run: |
           set -euo pipefail
@@ -130,7 +131,7 @@ jobs:
           PY
 
       - name: Conserver uniquement les checkpoints sur la branche privée
-        if: always()
+        if: always() && steps.restore.outcome == 'success'
         shell: bash
         env:
           PRIVATE_WRITE_TOKEN: ${{ secrets.PTITESONDES_INTAKE_WRITE_TOKEN }}
