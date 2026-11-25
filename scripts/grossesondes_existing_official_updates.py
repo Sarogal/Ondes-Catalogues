@@ -22,6 +22,7 @@ from future_city_preflight import (
     current_edition_description,
 )
 from official_admin_communes import verified_commune
+from grossesondes_admin_marker import historical_proof
 from grossesondes_dated_ticket_tables import dated_ticket_table_summary, parse_dated_ticket_summary
 from grossesondes_institutional_edition import VisibleInstitutionHeadings
 from grossesondes_archived_html_intake import (
@@ -1399,7 +1400,7 @@ def apply_independently_verified_updates(
                         new.update({
                             "city": commune["city"],
                             "lat": commune["lat"], "lon": commune["lon"],
-                            "geoCity": commune["city"],
+                            "geoCity": commune.get("geoCity", commune["city"]),
                             "geoPrecision": "commune",
                             "geoInsee": commune["codeInsee"],
                             "geoSource": commune["geoSource"],
@@ -1410,6 +1411,7 @@ def apply_independently_verified_updates(
                                 "verifiedAt": today,
                                 "officialSite": site,
                                 "markerMeaning": "centre_indicatif_de_commune",
+                                **historical_proof(commune),
                             },
                         })
                         fields.extend(sorted(COMMUNE_FIELDS))
@@ -1503,7 +1505,7 @@ def apply_independently_verified_updates(
                         new.update({
                             "city": commune["city"],
                             "lat": commune["lat"], "lon": commune["lon"],
-                            "geoCity": commune["city"],
+                            "geoCity": commune.get("geoCity", commune["city"]),
                             "geoPrecision": "commune",
                             "geoInsee": commune["codeInsee"],
                             "geoSource": commune["geoSource"],
@@ -1514,6 +1516,7 @@ def apply_independently_verified_updates(
                                 "verifiedAt": today,
                                 "officialSite": site,
                                 "markerMeaning": "centre_indicatif_de_commune",
+                                **historical_proof(commune),
                             },
                         })
                         fields.extend(sorted(COMMUNE_FIELDS))

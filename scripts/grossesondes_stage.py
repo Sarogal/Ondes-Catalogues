@@ -18,6 +18,7 @@ from grossesondes_preview import (
     ROOT,CAL_URL,HIS_URL,fetch_json,load_patch,audit,require
 )
 from grossesondes_generic_roster import validate_roster
+from grossesondes_admin_marker import valid_commune_marker_identity
 from grossesondes_structured_roster import PROOF_MODE, validate_structured_roster
 from grossesondes_structured_tickets import (
     PROOF_MODE as TICKET_PROOF_MODE, validate_structured_tickets,
@@ -248,9 +249,7 @@ def published_patch_duplicate(proposal, published_calendar):
     # Never confuse that coarse marker with this edition's precise venue.
     if (
         isinstance(record, dict)
-        and set(record) == {
-            "proofMode", "firstObserved", "verifiedAt",
-            "officialSite", "markerMeaning"}
+        and valid_commune_marker_identity(signed)
         and record.get("proofMode") == "current-edition-commune-two-day.v1"
         and record.get("markerMeaning") == "centre_indicatif_de_commune"
         and record.get("officialSite") == signed.get("officialSite")
@@ -263,10 +262,6 @@ def published_patch_duplicate(proposal, published_calendar):
         and signed.get("showOnMap") is True
         and signed.get("futureVenueConfirmed") is not True
         and signed.get("geoPrecision") == "commune"
-        and signed.get("geoCity") == signed.get("city")
-        and signed.get("geoSource", "").startswith(
-            ("https://geo.api.gouv.fr/communes?",
-                "https://geo.api.gouv.fr/communes_associees_deleguees?"))
         and isinstance(signed.get("geoInsee"), str)
         and re.fullmatch(r"[0-9AB]{5}", signed["geoInsee"])
         and (proposal.get("city") is None

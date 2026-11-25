@@ -84,6 +84,38 @@ class FirstPartyCityTitleTests(unittest.TestCase):
         self.assertFalse(_verified_official_update_delta(
             row, dict(new, lat=-91.0)))
 
+    def test_historical_locality_is_preserved_and_proof_is_required(self):
+        from official_admin_communes import search_url
+        from official_historical_communes import COG_URL
+        row = {**ROW, "lineup": [], "bands": 0, "price": None,
+               "showOnMap": False, "venue": None, "lat": None, "lon": None,
+               "lastVerified": "2026-11-18", "department": "57"}
+        signed = {"schema": 1, "generatedAt": "2026-11-18", "festivals": [row]}
+        def commune(city, department):
+            self.assertEqual(city, "Insming")
+            return {"city": city, "geoCity": "Commune Nouvelle",
+                    "lat": 48.953, "lon": 6.87, "codeInsee": "57347",
+                    "historicalInsee": "57346", "historicalSource": COG_URL,
+                    "geoSource": search_url("Commune Nouvelle")}
+        out, report = apply_independently_verified_updates(
+            signed, signed, "2026-11-22", fetch=lambda _: TITLE,
+            limit=1, tick=0, commune_resolver=commune)
+        new = out["festivals"][0]
+        self.assertEqual(report["accepted"], [ROW["slug"]])
+        self.assertEqual(new["city"], "Insming")
+        self.assertEqual(new["geoCity"], "Commune Nouvelle")
+        self.assertIsNone(new["venue"])
+        self.assertTrue(_verified_official_update_delta(row, new))
+        proof = new["geoVerification"]
+        for bad in (
+            dict(new, geoCity="Autre Commune"),
+            dict(new, geoSource=search_url("Autre Commune")),
+            dict(new, geoVerification={k: v for k, v in proof.items()
+                                       if not k.startswith("historical")}),
+            dict(new, geoVerification=dict(proof, historicalSource="https://example.com")),
+        ):
+            self.assertFalse(_verified_official_update_delta(row, bad))
+
     def test_no_geo_without_current_edition_in_visible_first_party_content(self):
         row = {
             **ROW, "lineup": [], "bands": 0, "showOnMap": False,

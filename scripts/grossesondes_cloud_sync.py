@@ -30,6 +30,7 @@ from grossesondes_preview import (
     ROOT, CAL_URL, HIS_URL, load_patch, require, index
 )
 from grossesondes_stage import official_text, stage, PROOF_MODE, norm
+from grossesondes_admin_marker import valid_commune_marker_identity
 from grossesondes_future_geo_publisher import (
     apply_independently_verified_geo, private_geo_report,
 )
@@ -217,10 +218,7 @@ def _certified_new_commune_delta(old, new, *, allow_direct=False):
         return False
     proof = new.get("geoVerification")
     if (not isinstance(proof, dict)
-            or set(proof) != {
-                "proofMode", "firstObserved", "verifiedAt",
-                "officialSite", "markerMeaning",
-            }
+            or not valid_commune_marker_identity(new)
             or proof.get("proofMode") not in (
                 ("current-edition-commune-two-day.v1",) +
                 (("current-edition-commune-direct-official.v1",
@@ -240,15 +238,10 @@ def _certified_new_commune_delta(old, new, *, allow_direct=False):
             or old.get("futureVenueConfirmed") is True
             or new.get("showOnMap") is not True
             or new.get("geoPrecision") != "commune"
-            or new.get("geoCity") != new.get("city")
             or not isinstance(new.get("city"), str)
             or not 2 <= len(new["city"]) <= 160
             or (old.get("city") is not None
                 and norm(old["city"]) != norm(new["city"]))
-            or not isinstance(new.get("geoSource"), str)
-            or not new["geoSource"].startswith(
-                ("https://geo.api.gouv.fr/communes?",
-                "https://geo.api.gouv.fr/communes_associees_deleguees?"))
             or not isinstance(new.get("geoInsee"), str)
             or re.fullmatch(r"[0-9AB]{5}", new["geoInsee"]) is None):
         return False

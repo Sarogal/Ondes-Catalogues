@@ -19,6 +19,7 @@ if SCRIPTS not in sys.path:
     sys.path.insert(0, SCRIPTS)
 from dns_pinned_https import DNSPinnedHTTPSConnection
 from grossesondes_official_html_edition import fold
+from official_historical_communes import COG_URL, historical_parent, read_movements
 
 HOST = "geo.api.gouv.fr"
 MAX_BYTES = 160_000
@@ -99,7 +100,7 @@ def search_url_from_existing(url):
 
 
 def verified_commune(city, known_department=None, reader=fetch_admin_communes,
-                     *, department_label=None, delegated_reader=None):
+                     *, department_label=None, delegated_reader=None, historical_reader=None):
     """Return a UNIQUE exact administrative commune centre or None.
 
     Department codes in signed rows disambiguate same-name communes. A
@@ -144,6 +145,33 @@ def verified_commune(city, known_department=None, reader=fetch_admin_communes,
             if not isinstance(features, list) or len(features) > MAX_RESULTS:
                 return None
             delegated = True
+            # Do not fall back from an exact but invalid or ambiguous record.
+            # Historical names are only considered after two valid searches
+            # have returned no exact name at all.
+            if not any(isinstance(f, dict)
+                       and isinstance(f.get("properties"), dict)
+                       and isinstance(f["properties"].get("nom"), str)
+                       and normalize(f["properties"]["nom"]) == expected
+                       for f in features):
+                history = historical_reader
+                if history is None and reader is fetch_admin_communes and delegated_reader is None:
+                    history = read_movements
+                if history is None:
+                    return None
+                parent = historical_parent(city, dept_code, history())
+                if parent is None:
+                    return None
+                historical_code, parent_name, parent_code = parent
+                current = verified_commune(
+                    parent_name, dept_code, reader,
+                    department_label=department_label,
+                    delegated_reader=delegated_reader,
+                    historical_reader=lambda: "")
+                if (current is None or current["codeInsee"] != parent_code
+                        or current["geoSource"] != search_url(parent_name)):
+                    return None
+                return dict(current, city=city.strip(), geoCity=current["city"],
+                            historicalInsee=historical_code, historicalSource=COG_URL)
         matches = []
         for feature in features:
             if not isinstance(feature, dict) or feature.get("type") != "Feature":

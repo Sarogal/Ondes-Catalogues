@@ -164,6 +164,43 @@ class AdminCommuneTests(unittest.TestCase):
             "Village Ancien", None, lambda _: response(original, original),
             delegated_reader=lambda _: self.fail("unexpected fallback")))
 
+    def test_historical_locality_uses_only_verified_current_commune_center(self):
+        from official_historical_communes import COG_URL, HEADER
+        import csv
+        import io
+        stream = io.StringIO()
+        writer = csv.writer(stream)
+        writer.writerow(HEADER)
+        writer.writerow(["32", "2017-01-01", "COM", "39161", "0",
+                         "VILLAGE ANCIEN", "Village Ancien", "Village Ancien",
+                         "COM", "39162", "0", "COMMUNE NOUVELLE",
+                         "Commune Nouvelle", "Commune Nouvelle"])
+        history = stream.getvalue()
+        calls = []
+        def reader(url):
+            calls.append(url)
+            if url == search_url("Commune Nouvelle"):
+                return response(feature("Commune Nouvelle", "39162", "39"))
+            return response()
+        result = verified_commune("Village Ancien", "39", reader,
+                                  historical_reader=lambda: history)
+        self.assertEqual(result["city"], "Village Ancien")
+        self.assertEqual(result["geoCity"], "Commune Nouvelle")
+        self.assertEqual(result["historicalInsee"], "39161")
+        self.assertEqual(result["codeInsee"], "39162")
+        self.assertEqual(result["historicalSource"], COG_URL)
+        self.assertEqual(result["geoSource"], search_url("Commune Nouvelle"))
+        self.assertEqual(len(calls), 3)
+        self.assertIsNone(verified_commune(
+            "Village Ancien", "39", lambda url: response(feature(
+                "Commune Nouvelle", "39163", "39")) if url == search_url(
+                    "Commune Nouvelle") else response(),
+            historical_reader=lambda: history))
+        self.assertIsNone(verified_commune(
+            "Village Ancien", "39", lambda _: response(feature(
+                "Village Ancien", "39161", "39", lon=float("nan"))),
+            historical_reader=lambda: self.fail("Exact invalid match cannot fall back")))
+
     def test_transport_has_no_redirect_fallback_and_bounded_bytes(self):
         from unittest.mock import patch
         class Response:

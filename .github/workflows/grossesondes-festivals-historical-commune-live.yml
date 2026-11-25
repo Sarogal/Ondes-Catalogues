@@ -1,0 +1,46 @@
+name: Grosses Ondes — preuve géographique historique réelle
+
+on:
+  pull_request:
+    paths:
+      - 'festival-automation/official_historical_communes.py'
+      - 'festival-automation/official_admin_communes.py'
+      - '.github/workflows/grossesondes-festivals-historical-commune-live.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  historical-centre-live:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Contrôler le téléchargement officiel et le centre historique
+        run: |
+          PYTHONPATH=festival-automation:scripts python - <<'PY'
+          from hashlib import sha256
+          from official_historical_communes import read_movements, historical_parent
+          from official_admin_communes import verified_commune
+          text = read_movements()
+          print("COG characters:", len(text), "rows:", len(text.splitlines()))
+          print("COG SHA256 (decoded UTF-8):", sha256(text.encode("utf-8")).hexdigest())
+          assert len(text.splitlines()) > 1000, "Unexpected incomplete COG"
+          expected = ("39290", "Valzin en Petite Montagne", "39290")
+          assert historical_parent("Légna", "39", text) == expected
+          assert historical_parent("Légna", "75", text) is None
+          # The festival row has no signed department. Test the actual path.
+          assert historical_parent("Légna", None, text) == expected
+          hit = verified_commune("Légna")
+          print("Live independently verified historical centre:", hit)
+          assert hit and hit["city"] == "Légna"
+          assert hit["geoCity"] == expected[1] and hit["codeInsee"] == expected[2]
+          assert hit["historicalInsee"] == expected[0]
+          assert hit["geoPrecision"] == "commune"
+          PY
