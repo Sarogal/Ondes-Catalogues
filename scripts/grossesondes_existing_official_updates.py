@@ -182,6 +182,23 @@ def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
     from national_municipal_pages_preflight import safe_same_host_article
     from source_qualification import Anchors
 
+    class MunicipalHeadings(VisibleInstitutionHeadings):
+        # Site-wide navigation and legal/contact footers cannot prove a
+        # particular event or venue address. Keep local content headers.
+        def handle_starttag(self, tag, attrs):
+            if tag in ("nav", "footer") or dict(attrs).get("role") == "contentinfo":
+                attrs = list(attrs) + [("hidden", "")]
+            super().handle_starttag(tag, attrs)
+
+    class MunicipalAnchors(Anchors):
+        # The shared anchor reader handles display:none and hidden;
+        # this proof also excludes visibility:hidden descendants.
+        def handle_starttag(self, tag, attrs):
+            style = dict(attrs).get("style") or ""
+            if re.search(r"visibility\s*:\s*hidden", style, re.I):
+                attrs = list(attrs) + [("hidden", "")]
+            super().handle_starttag(tag, attrs)
+
     if (not isinstance(row, dict)
             or row.get("sourceConfidence") != MUNICIPAL_PUBLIC_CONFIDENCE
             or row.get("source") != row.get("officialSite")
@@ -207,7 +224,7 @@ def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
         city = match.group(1)
         if row.get("city") and normal_city(row["city"]) != normal_city(city):
             return None
-        heading = VisibleInstitutionHeadings()
+        heading = MunicipalHeadings()
         heading.feed(html)
         heading.close()
         matches = [i for i, label in enumerate(heading.headings)
@@ -219,7 +236,7 @@ def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
         end = (heading.heading_starts[index + 1]
                if index + 1 < len(heading.heading_starts) else len(heading.parts))
         section = fold(" ".join(heading.parts[start:end]))
-        anchors = Anchors()
+        anchors = MunicipalAnchors()
         anchors.feed(html)
         anchors.close()
         root = "https://" + urlsplit(site).netloc + "/"
@@ -235,14 +252,14 @@ def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
             url = safe_same_host_article(href, site, root)
             if url and url != site and not urlsplit(url).query:
                 candidates[url] = bare
-        if not 1 <= len(candidates) <= 3:
+        if not 1 <= len(candidates) <= 3 or len(set(candidates.values())) != 1:
             return None
         proven = []
         for url, venue in sorted(candidates.items()):
             body = fetch(url)
             if not isinstance(body, str) or not 0 < len(body) <= 650_000:
                 return None
-            parsed = VisibleInstitutionHeadings()
+            parsed = MunicipalHeadings()
             parsed.feed(body)
             parsed.close()
             names = [i for i, label in enumerate(parsed.headings)

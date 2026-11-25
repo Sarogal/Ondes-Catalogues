@@ -1258,6 +1258,23 @@ class MunicipalVenueCityTests(unittest.TestCase):
             'href="/culture/salle/"', 'href="https://outside.example/salle/"'))[0])
         self.assertIsNone(self.prove(reproof=False)[0])
 
+    def test_footer_address_and_hidden_link_are_not_location_evidence(self):
+        self.assertIsNone(self.prove(venue=(
+            "<main><h1>Salle des Musiques</h1><p>Concerts.</p></main>"
+            "<footer>12 rue des Lilas 12345 Ville-Test</footer>"))[0])
+        self.assertIsNone(self.prove(html=self.html.replace(
+            '<nav><a href=', '<nav style="visibility: hidden"><a href='))[0])
+        self.assertIsNone(self.prove(html=self.html.replace(
+            '<nav><a href=', '<nav hidden><a href='))[0])
+
+    def test_two_distinct_named_venues_are_not_resolved_arbitrarily(self):
+        html = self.html.replace(
+            "</nav>", '<a href="/culture/autre/">Autre Salle</a></nav>').replace(
+            "au Salle des Musiques.", "au Salle des Musiques et a Autre Salle.")
+        result, calls = self.prove(html=html)
+        self.assertIsNone(result)
+        self.assertEqual(calls, [])
+
     def test_unsigned_and_cancelled_event_not_location_authority(self):
         self.assertIsNone(self.prove(row=dict(self.row, sourceConfidence="unknown"))[0])
         self.assertIsNone(self.prove(html=self.html.replace(
