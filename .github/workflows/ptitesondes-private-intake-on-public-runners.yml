@@ -84,6 +84,9 @@ jobs:
           assert "ptitesondes_schedule_catchup.py" in s
           assert "ptitesondes_national_openworld_research_cycle.py" in s
           assert 'automation-intake/ptitesondes/national-observation/research' in s
+          assert 'archive_args+=(--archive-expired)' in s
+          assert s.rindex('cp "$OUT/backlog-archive/"*.json') < s.rindex('cp "$OUT/backlog.json"')
+          assert s.rindex('git -C state add -- "automation-intake/ptitesondes/backlog-archive"') < s.rindex("push_private 'data(ptitesondes): collecter")
           # The recent ODS cursor is private state, never part of public Pages.
           assert s.count('cp "$OUT/ods-recent-cursor.json" "$STATE/ods-recent-cursor.json"') == 2
           assert s.count('git -C state add -- "automation-intake/ptitesondes/ods-recent-cursor.json"') == 2
@@ -278,7 +281,13 @@ jobs:
               exit 1
             fi
           }
-          if ! python src/automation/outings_intake.py --config src/automation/sources.json --patch-dir "$STATE" --output-dir "$OUT" > "$LOG/collecte-sorties.log" 2>&1; then
+          # Backwards-compatible rollout: the private collector must explicitly
+          # support archival before activation. Old main continues unchanged.
+          archive_args=()
+          if python src/automation/outings_intake.py --help | grep -q -- '--archive-expired'; then
+            archive_args+=(--archive-expired)
+          fi
+          if ! python src/automation/outings_intake.py --config src/automation/sources.json --patch-dir "$STATE" --output-dir "$OUT" "${archive_args[@]}" > "$LOG/collecte-sorties.log" 2>&1; then
             echo "::error::Collecte sorties échouée ; journal confidentiel non exposé."
             exit 1
           fi
@@ -339,12 +348,21 @@ jobs:
             fi
             mv "$OUT/patch-carried-$DAY.json" "$OUT/patch-$DAY.json"
           fi
+          # Preserve exact archive partitions before replacing the active
+          # queue. A private commit below contains both or neither.
+          if [[ -d "$OUT/backlog-archive" ]]; then
+            mkdir -p "$STATE/backlog-archive"
+            cp "$OUT/backlog-archive/"*.json "$STATE/backlog-archive/"
+          fi
           cp "$OUT/backlog.json" "$STATE/backlog.json"
           cp "$OUT/patch-$DAY.json" "$STATE/patch-$DAY.json"
           mkdir -p "$STATE/reports"
           cp "$OUT/daily-report.json" "$STATE/reports/$DAY.json"
           if [[ "$RUN_MODE" == "write" ]]; then
             git -C state add -- "automation-intake/ptitesondes/backlog.json" "automation-intake/ptitesondes/patch-$DAY.json" "automation-intake/ptitesondes/reports/$DAY.json"
+            if [[ -d "$OUT/backlog-archive" ]]; then
+              git -C state add -- "automation-intake/ptitesondes/backlog-archive"
+            fi
             if [[ -s "$STATE/ods-recent-cursor.json" ]]; then
               git -C state add -- "automation-intake/ptitesondes/ods-recent-cursor.json"
             fi
@@ -954,5 +972,37 @@ jobs:
             echo "Private ODS discovery tests passed on private main." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "::error::Private ODS discovery offline tests failed; confidential diagnostics withheld."
+            exit 1
+          fi
+
+  # One reviewed, immutable private candidate is tested on the free public
+  # runner after this workflow reaches trusted main, never in a public PR job.
+  test-private-backlog-archive-candidate:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: 46b9be295cb36ffa0a8d78a9dd8eb415e5e6e09f
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          path: private-archive-test
+          sparse-checkout: |
+            automation
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate private archive candidate offline without publishing diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          if python -m unittest discover -s private-archive-test/automation -p 'test_outings_intake.py' -v > "$RUNNER_TEMP/archive-private-test.log" 2>&1; then
+            echo "Private archive candidate offline tests passed." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::error::Private archive candidate tests failed; confidential diagnostics withheld."
             exit 1
           fi

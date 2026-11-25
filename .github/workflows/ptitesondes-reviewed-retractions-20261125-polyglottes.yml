@@ -1,0 +1,170 @@
+name: "P'tites Ondes — retrait audité de six journées polyglottes"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_reviewed_retractions.py'
+      - 'tests/test_ptitesondes_reviewed_retractions_polyglottes_20261125.py'
+      - 'tests/test_ptitesondes_oa_evergreen_on_demand.py'
+      - 'scripts/ptitesondes_oa_evergreen_on_demand.py'
+      - 'scripts/ptitesondes_oa_first_party_admission.py'
+      - 'config/ptitesondes-reviewed-retractions-20261125-polyglottes.json'
+      - '.github/workflows/ptitesondes-reviewed-retractions-20261125-polyglottes.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'config/ptitesondes-reviewed-retractions-20261125-polyglottes.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ondes-cloud-publication
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Compile and test the immutable review contract
+        env:
+          PYTHONPATH: scripts:tests
+        run: |
+          python -m py_compile scripts/ptitesondes_reviewed_retractions.py
+          python -m unittest -v test_ptitesondes_reviewed_retractions_polyglottes_20261125
+          python -m unittest -v test_ptitesondes_reviewed_retractions test_ptitesondes_reviewed_retractions_20261123 test_ptitesondes_oa_evergreen_on_demand
+      - name: Preview exact reviewed edits without filesystem mutation
+        run: |
+          python scripts/ptitesondes_reviewed_retractions.py \
+            --catalogue docs/ptitesondes/sorties.json \
+            --manifest config/ptitesondes-reviewed-retractions-20261125-polyglottes.json \
+            --audit-out /tmp/ptitesondes-review-preview.json
+
+  apply:
+    needs: validate
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      changed: ${{ steps.review.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 2
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Retirer seulement les identifiants revus et écrire l'audit
+        id: review
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Refuse the withdrawal until the prevention rule is on trusted main.
+          PYTHONPATH=scripts python - <<'PY'
+          from ptitesondes_primary_editorial import primary_out_of_scope
+          description = ("Au programme : un atelier d'écriture en ukrainien, "
+                         "des lectures d'albums pour enfants, une animation autour "
+                         "de la culture vénézuélienne, un concert de chants du monde "
+                         "et des expositions.")
+          assert primary_out_of_scope("Les Journées polyglottes", description) == "mixed_umbrella_programme_primary"
+          assert primary_out_of_scope("Concert de chants du monde pour enfants", description) is None
+          PY
+          python scripts/ptitesondes_reviewed_retractions.py \
+            --catalogue docs/ptitesondes/sorties.json \
+            --manifest config/ptitesondes-reviewed-retractions-20261125-polyglottes.json \
+            --audit-out docs/ptitesondes/retractions/reviewed-20261125-polyglottes-audit.json \
+            --apply | tee /tmp/ptitesondes-reviewed-summary.txt
+          if grep -qx 'changed=true' /tmp/ptitesondes-reviewed-summary.txt; then
+            test -s docs/ptitesondes/retractions/reviewed-20261125-polyglottes-audit.json
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Commit atomiquement catalogue et registre de retrait
+        if: steps.review.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- docs/ptitesondes/sorties.json docs/ptitesondes/retractions/reviewed-20261125-polyglottes-audit.json
+          test "$(git diff --cached --name-only | wc -l)" -eq 2
+          git commit -m "data(ptitesondes): retirer six journées polyglottes mal classées après audit exact"
+          git push origin HEAD:main
+
+  deploy:
+    needs: apply
+    if: needs.apply.outputs.changed == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      actions: write
+    environment:
+      name: github-pages
+      url: ${{ steps.publication.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/
+      - name: Publication du catalogue corrigé
+        id: publication
+        uses: actions/deploy-pages@v5
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Vérifier la réalité du JSON public après déploiement
+        run: |
+          python - <<'PY'
+          import json, time
+          from pathlib import Path
+          from urllib.request import urlopen, Request
+          local = json.loads(Path('docs/ptitesondes/sorties.json').read_text())
+          expected = {x['id'] for x in local['events']}
+          assert expected
+          url = 'https://sarogal.github.io/Ondes-Catalogues/ptitesondes/sorties.json'
+          for attempt in range(12):
+              try:
+                  req = Request(url, headers={'User-Agent':'PO-Reviewed-Deploy-Check/1.0'})
+                  with urlopen(req, timeout=20) as resp:
+                      remote = json.loads(resp.read(9_000_001))
+                  actual = {x['id'] for x in remote['events']}
+                  if (len(remote['events']) == len(local['events'])
+                          and actual == expected and remote == local):
+                      print('Public GitHub Pages: count and identities verified', len(actual))
+                      break
+              except (OSError, ValueError, KeyError):
+                  pass
+              time.sleep(10)
+          else:
+              raise SystemExit('Public GitHub Pages did not match the corrected catalogue')
+          PY
+
+      - name: Reconstruire les dossiers privés depuis le catalogue corrigé
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # This is a research dispatch, never a direct publication.
+          # It happens ONLY after complete GitHub Pages equality was proven.
+          # Refresh the private queue against the exact corrected catalogue.
+          gh workflow run ptitesondes-private-intake-on-public-runners.yml \
+            --repo Sarogal/Ondes-Catalogues --ref main \
+            -f cycle=outings -f mode=write -f recovery=none
+          echo 'Fresh private national intake requested after verified retraction.'
