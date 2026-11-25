@@ -151,6 +151,31 @@ def genre_evidence(name: str, tags: str) -> list[str]:
     })
 
 
+# Discovery remains inclusive. Editorial signals are evidence, not an
+# admission decision. Ambiguous words such as hardcore/rock alone cannot
+# certify a station, and electronic context must not erase explicit punk
+# or metal evidence (mixed-format stations remain review candidates).
+def editorial_signal(name: str, tags: str, matches: list[str]) -> str:
+    text = " " + normalize(name + " " + tags) + " "
+    electronic = any(" " + marker + " " in text for marker in (
+        "rave", "breakbeat", "jungle", "techno", "hardstyle", "gabber",
+        "drum and bass", "drum n bass", "dubstep", "hardcore techno",
+        "happy hardcore", "electronic", "speedcore", "uptempo hardcore",
+    ))
+    specific = any(
+        "metal" in genre or "punk" in genre or genre in {
+            "hard rock", "deathcore", "grindcore", "mathcore", "djent",
+            "nwobhm", "dsbm", "blackgaze", "goregrind", "screamo",
+            "beatdown hardcore", "melodic hardcore", "post hardcore",
+        } for genre in matches
+    )
+    if electronic:
+        return "mixed_genre_review" if specific else "electronic_context_review"
+    if specific:
+        return "target_genre_indication"
+    return "ambiguous_genre_review"
+
+
 def candidate(raw: object, known_ids: set[str]) -> dict | None:
     if not isinstance(raw, dict):
         return None
@@ -182,6 +207,7 @@ def candidate(raw: object, known_ids: set[str]) -> dict | None:
         "countrycode": code,
         "tags": tags,
         "genreEvidence": matches,
+        "editorialSignal": editorial_signal(name, tags, matches),
         "streamUrl": stream if safe_stream else None,
         "homepage": str(raw.get("homepage") or "")[:1500],
         "favicon": str(raw.get("favicon") or "")[:1500],
