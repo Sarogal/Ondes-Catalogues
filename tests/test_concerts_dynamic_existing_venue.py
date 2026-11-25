@@ -359,6 +359,39 @@ class UnlistedExistingVenueTests(unittest.TestCase):
                 dynamic.validate(signed, venues, artists, TODAY,
                                  fetch=fake_fetch({"primary": body}))
 
+    def test_visible_genre_badges_with_missing_or_named_structured_bill(self):
+        from automation.concerts import dynamic_first_party_venue_proposals as proposals
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        signed["event"]["genres"] = proof["officialGenreLabels"] = ["Post Punk"]
+        title = " + ".join(NAMES)
+        headings = "".join("<h4>" + n + "</h4><p>Jazz</p>" for n in NAMES[:-1])
+        last = "<h4>" + NAMES[-1] + "</h4><span>Darkwave</span><span>Post-punk</span>"
+        primary = page(EVENT, music=False, genres=False).replace(
+            "<h1>Nouvel événement</h1>", "<h1>" + title + "</h1>" + headings + last)
+        no_bill = primary.replace(json.dumps(
+            [{"@type": "MusicGroup", "name": n} for n in NAMES]), "[]")
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+        for body in (primary, no_bill):
+            fetch = fake_fetch({"primary": body})
+            self.assertEqual(proposals._individual_event(
+                body, EVENT, signed["event"]["date"], venue,
+                accept_generic=True, fetch=fetch, cache={}), (NAMES, ["Post Punk"]))
+            self.assertTrue(dynamic.validate(signed, venues, artists, TODAY, fetch=fetch))
+        for body in (no_bill.replace(last, "<h4>Other Artist</h4><span>Post-punk</span>"),
+                     no_bill.replace(last, "<h4>Related events</h4>" + last),
+                     primary.replace("<span>Darkwave</span>", "<span>not</span>"),
+                     primary.replace("Post-punk", "Influenced by post-punk"),
+                     primary.replace("Post-punk", "Hardcore techno"),
+                     no_bill.replace("<h4>" + NAMES[0] + "</h4>", "<h4>Wrong artist</h4>")):
+            with self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY,
+                                 fetch=fake_fetch({"primary": body}))
+
     def test_signed_published_osm_api_node_sources_are_rechecked_without_allowlist(self):
         # Five real published venues use the API-node spelling; the old
         # validator rejected these even though it fetches that exact API.
