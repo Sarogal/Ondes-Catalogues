@@ -15,6 +15,7 @@ discoveries remain in research until independently tied to their real sites.
 from __future__ import annotations
 
 import argparse
+import time
 import copy
 import datetime as dt
 import json
@@ -41,7 +42,7 @@ from automation.concerts import openagenda_official_concert as openagenda
 from scripts import concert_dynamic_existing_venue as verified
 
 SCHEMA = "grossesondes.concert.single-official-osm-proposals.v1"
-MAX_CHECKS = 12  # bounded network rechecks, never a cap on sources or bands
+MAX_CHECKS = 16  # bounded network rechecks, never a cap on sources or bands
 REVIEW_BUCKETS = frozenset({"genre_tag_review", "genre_unknown"})
 
 
@@ -365,15 +366,15 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
     window = [fast[(fstart + i) % len(fast)] for i in range(reserved)]
     # A venue with one explicitly labelled first-party metal/punk show
     # should not wait through dozens of unrelated genre-unknown cards.
-    # Reserve at most TWO of the remaining daily probes for genre-tagged
-    # official leads. The rest still rotates across EVERY other venue and
+    # Reserve up to four of the remaining probes for genre-tagged
+    # official leads, scaled to the available budget. The rest still rotates across EVERY other venue and
     # previously unknown group; registry tags are NAVIGATION ONLY.
     tagged = [row for row in regular
               if row[3].get("reviewBucket") == "genre_tag_review"]
     other = [row for row in regular
              if row[3].get("reviewBucket") != "genre_tag_review"]
     spare = limit - len(window)
-    take_tagged = min(len(tagged), spare if not other else min(2, spare))
+    take_tagged = min(len(tagged), spare if not other else min(4, max(1, spare // 3), spare))
     tstart = (tick * take_tagged) % len(tagged) if tagged else 0
     window.extend(tagged[(tstart + i) % len(tagged)]
                   for i in range(take_tagged))
@@ -402,6 +403,7 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
     counts = Counter()
     reason_counts = Counter()
     checks = []
+    started = time.monotonic()
     for row in window:
         candidate = row[3]
         identifier = str(candidate.get("candidateId", ""))[:120]
@@ -438,6 +440,8 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         "scanSlot": slot,
         "eligibleQueue": len(selected),
         "examined": len(window),
+        "reviewBudget": limit,
+        "reviewElapsedSeconds": round(time.monotonic() - started, 2),
         "openAgendaExamined": sum(
             row[3].get("source") == "agenda_officiel_openagenda"
             for row in window),
