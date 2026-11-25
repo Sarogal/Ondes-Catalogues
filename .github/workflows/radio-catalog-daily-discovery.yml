@@ -38,6 +38,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_metadata_preview.py"
       - "radio-catalog-lab/tools/radio_daily_artist_research.py"
       - "radio-catalog-lab/tools/test_radio_daily_artist_research.py"
+      - "radio-catalog-lab/tools/radio_daily_programme_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_programme_preview.py"
       - "radio-catalog-lab/schemas/radio_catalog_v1.schema.json"
       - ".github/workflows/radio-catalog-daily-discovery.yml"
   workflow_dispatch:
@@ -359,6 +361,15 @@ jobs:
           python radio-catalog-lab/tools/radio_daily_artist_research.py \
             --metadata "$root/metadata-preview.json" --output "$root/artist-research-preview.json" \
             --limit 8 --allow-network "${previous[@]}"
+      - name: Summarize cumulative programme hints without admission
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          python radio-catalog-lab/tools/radio_daily_programme_preview.py \
+            --metadata "$root/metadata-preview.json" --research "$root/artist-research-preview.json" \
+            --decisions "$root/decision-preview.json" --output "$root/programme-preview.json"
       - name: Generate unsigned additive v9 candidate (artifact only)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
         shell: bash
@@ -428,9 +439,9 @@ jobs:
           src = Path(os.environ["RUNNER_TEMP"]) / "go-radio-state-input"
           dst = Path("radio-discovery-state")
           dst.mkdir(exist_ok=True)
-          for name in ("ledger.json", "genre-hints.json", "stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json", "decision-preview.json", "metadata-preview.json", "artist-research-preview.json"):
+          for name in ("ledger.json", "genre-hints.json", "stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json", "decision-preview.json", "metadata-preview.json", "artist-research-preview.json", "programme-preview.json"):
               path = src / name
-              if name in ("stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json", "decision-preview.json", "metadata-preview.json", "artist-research-preview.json") and not path.exists():
+              if name in ("stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json", "decision-preview.json", "metadata-preview.json", "artist-research-preview.json", "programme-preview.json") and not path.exists():
                   continue
               assert path.stat().st_size <= 12 * 1024 * 1024
               data = json.loads(path.read_text())
@@ -447,6 +458,9 @@ jobs:
               if name in ("decision-preview.json", "metadata-preview.json"):
                   assert data.get("approvedCount") == 0
                   assert all(r.get("approved") is False and r.get("publicationAllowed") is False for r in data["records"])
+              if name == "programme-preview.json":
+                  assert data.get("approvedCount") == 0 and data.get("verifiedArtistCount") == 0
+                  assert all(r.get("approved") is False and r.get("publicationAllowed") is False and r.get("verifiedArtistCount") == 0 for r in data["records"])
               if name == "artist-research-preview.json":
                   assert data.get("approvedCount") == 0
                   assert isinstance(data.get("entries"), dict)

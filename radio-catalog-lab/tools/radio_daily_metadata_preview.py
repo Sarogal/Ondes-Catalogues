@@ -19,8 +19,31 @@ def valid_hint(h):
     return (isinstance(h,dict) and isinstance(h.get("artistHint"),str)
             and 2 <= len(h["artistHint"]) <= 100
             and not any(ord(c)<32 for c in h["artistHint"])
-            and not re.search(r"https?://|www\.|@|[?=&]",h["artistHint"],re.I)
+            and not re.search(r"https?://|www\.|@|[?=]",h["artistHint"],re.I)
             and isinstance(h.get("titleSha256"),str) and SHA256_RE.fullmatch(h["titleSha256"]))
+
+def select_queue(queue, retained, limit):
+    """Reserve capacity for advanced, old and new streams; no UUID starvation."""
+    if not limit:
+        return []
+    def order(item):
+        _, _, uid, _, _ = item
+        return (retained.get(uid, {}).get("observedDate", ""), uid)
+    advanced = sorted((x for x in queue if not x[0]), key=order)
+    old = sorted((x for x in queue if x[1]), key=order)
+    new = sorted((x for x in queue if not x[1]), key=order)
+    selected, used = [], set()
+    for _ in range(limit):
+        for lane in (advanced, old, new):
+            if len(selected) >= limit:
+                break
+            while lane and lane[0][2] in used:
+                lane.pop(0)
+            if lane:
+                item = lane.pop(0)
+                selected.append(item)
+                used.add(item[2])
+    return selected
 
 def collect(discovery, reconciliation, continuity, decisions, *, previous=None, limit=0, observe=None):
     if observe is None:
@@ -76,7 +99,7 @@ def collect(discovery, reconciliation, continuity, decisions, *, previous=None, 
         except ValueError:
             continue
         queue.append((d["decision"]!="advanced_candidate",uid in retained,uid,url,sha))
-    selected=sorted(queue)[:limit]
+    selected=select_queue(queue, retained, limit)
     def check(item):
         _,_,uid,url,sha=item
         try:

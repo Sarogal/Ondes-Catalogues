@@ -96,7 +96,7 @@ def read_icy_titles(response, interval, deadline, clock):
             # Artist/title syntax is a hint, not a verified artist identity.
             if not 0 < len(value) <= 240 or any(ord(c)<32 for c in value):
                 continue
-            if re.search(r"https?://|www\.|@|[?=&]", value, re.I):
+            if re.search(r"https?://|www\.|@|[?=]", value, re.I):
                 continue
             if value.count(" - ") != 1:
                 continue

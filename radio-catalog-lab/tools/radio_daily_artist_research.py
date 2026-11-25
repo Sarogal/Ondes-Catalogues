@@ -8,6 +8,7 @@ import time
 import unicodedata
 import uuid
 from pathlib import Path
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import build_opener, HTTPRedirectHandler, ProxyHandler, Request
 
@@ -39,7 +40,7 @@ def safe_name(name):
     return (isinstance(name, str) and 2 <= len(name) <= 100
             and any(c.isalpha() for c in name)
             and not any(unicodedata.category(c).startswith("C") for c in name)
-            and not re.search(r"https?://|www\.|@|[?=&]", name, re.I))
+            and not re.search(r"https?://|www\.|@|[?=]", name, re.I))
 
 class Client:
     """Fixed HTTPS origin, no redirects/proxies, sequential rate-limited requests."""
@@ -155,9 +156,17 @@ def build(metadata, *, prior=None, limit=0, request=None):
         attempted += 1
         try:
             result = research(name, request)
-        except (ValueError, OSError, TypeError, KeyError, TimeoutError):
-            # Never overwrite old evidence or treat service failure as absence.
-            failure, retry = "service_or_response_held", k
+        except (ValueError, OSError, TypeError, KeyError, TimeoutError) as exc:
+            # Bounded diagnostics: never persist exception strings or request URLs.
+            if isinstance(exc, HTTPError):
+                failure = "http_" + str(exc.code)
+            elif isinstance(exc, TimeoutError) or (isinstance(exc, URLError) and isinstance(exc.reason, TimeoutError)):
+                failure = "timeout"
+            elif isinstance(exc, OSError):
+                failure = "network_error"
+            else:
+                failure = "invalid_response"
+            retry = k
             break
         entries[k] = dict(result, artistName=name, source=SOURCE, checkedAt=day,
                           identityVerified=False, publicationAllowed=False)
