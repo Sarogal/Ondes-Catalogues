@@ -22,10 +22,10 @@ on:
   workflow_dispatch:
     inputs:
       run_stream_probes:
-        description: "Manual opt-in: at most 2 safe audio sample probes (preview only)"
+        description: "Enable up to 5 safe audio sample probes (preview only)"
         required: false
         type: boolean
-        default: false
+        default: true
   # Only GitHub's default branch executes scheduled workflows. This schedule
   # is dormant on this isolated review branch until explicitly approved.
   schedule:
@@ -154,17 +154,31 @@ jobs:
               --scan "$RUNNER_TEMP/go-radio-discovery/candidates.json" \
               --output "$RUNNER_TEMP/go-radio-discovery/ledger.json"
           fi
-      - name: Optional bounded audio byte sampling (manual only)
-        if: github.event_name == 'workflow_dispatch' && inputs.run_stream_probes == true
+      - name: Bounded audio byte sampling of new candidates
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
         shell: bash
         run: |
           set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "go-radio-discovery"
+          discovery = json.loads((root / "candidates.json").read_text())
+          reconciliation = json.loads((root / "reconciliation-v8.json").read_text())
+          assert discovery["publicationAllowed"] is False
+          assert reconciliation["automaticAdmissionAllowed"] is False
+          candidates = {r["stationuuid"] for r in reconciliation["candidates"]
+                        if r["classification"] == "unmapped_candidate"}
+          discovery["candidates"] = [r for r in discovery["candidates"]
+                                     if r["stationuuid"] in candidates]
+          (root / "probe-candidates.json").write_text(json.dumps(discovery))
+          PY
           python radio-catalog-lab/tools/radio_stream_technical_probe.py \
-            --discovery "$RUNNER_TEMP/go-radio-discovery/candidates.json" \
+            --discovery "$RUNNER_TEMP/go-radio-discovery/probe-candidates.json" \
             --output "$RUNNER_TEMP/go-radio-discovery/technical-probes.json" \
-            --limit 2 --allow-network
+            --limit 5 --allow-network
       - name: Track technical samples over separate days (never approve streams)
-        if: github.event_name == 'workflow_dispatch' && inputs.run_stream_probes == true
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
         shell: bash
         run: |
           set -euo pipefail
