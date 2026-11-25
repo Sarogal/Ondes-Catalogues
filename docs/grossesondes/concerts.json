@@ -2486,6 +2486,16 @@
       "id": "klone",
       "name": "Klone",
       "aliases": []
+    },
+    {
+      "id": "deefait-release-party",
+      "name": "DÉÉFAIT Release Party",
+      "aliases": []
+    },
+    {
+      "id": "the-locos-ex-ska-p-en-concert",
+      "name": "THE LOCOS (ex Ska-P) en concert",
+      "aliases": []
     }
   ],
   "venues": [
@@ -15698,6 +15708,65 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Le Trabendo",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-25",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-25",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270107-paris-deefait-release-party",
+      "title": "DÉÉFAIT Release Party",
+      "date": "2027-01-07",
+      "artistIds": [
+        "deefait-release-party"
+      ],
+      "venueId": "petit-bain-paris",
+      "genres": [
+        "psychedelic rock",
+        "punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://openagenda.com/shotgun/events/deefait-release-party",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Petit Bain",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-25",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-25",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270227-nantes-the-locos-ex-ska-p-en-concert",
+      "title": "THE LOCOS (ex Ska-P) en concert",
+      "date": "2027-02-27",
+      "artistIds": [
+        "the-locos-ex-ska-p-en-concert"
+      ],
+      "venueId": "warehouse-nantes",
+      "genres": [
+        "punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://openagenda.com/shotgun/events/the-locos-ex-ska-p-en-concert",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Warehouse",
       "ticketUrl": null,
       "lastVerified": "2026-11-25",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
