@@ -243,6 +243,63 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
         with self.assertRaises(ValueError):
             publisher.merge(self.catalogue, current, protected, TODAY)
 
+    def test_automatic_promotional_correction_preflight(self):
+        from automation.concerts import published_lineup_patch_builder as builder
+        from automation.concerts import promotional_correction_preflight as auto
+        from scripts import concert_published_lineup_contract as contract
+        current, previous, payload = self._published_legacy_promotional(
+            "NEW ACT Release Party", "NEW ACT")
+        pristine = copy.deepcopy(previous)
+        report = builder.build_promotional(current, previous, TODAY,
+                                           fetch=lambda *_: payload)
+        self.assertEqual(len(report["proposals"]), 1)
+        with mock.patch.object(contract, "network_fetch", return_value=payload):
+            selected, stats = auto.select(previous, report, self.catalogue, current, TODAY)
+        self.assertTrue(stats["validatedByPublisher"])
+        self.assertFalse(stats["applied"])
+        self.assertEqual(previous, pristine)
+        self.assertEqual(selected["approvals"], previous["approvals"])
+        self.assertEqual(selected["lineupCorrections"], report["proposals"])
+        with mock.patch.object(contract, "network_fetch", return_value=payload):
+            updated, _ = publisher.merge(self.catalogue, current, selected, TODAY)
+        unchanged, stats = auto.select(selected, report, self.catalogue, updated, TODAY,
+                                       audit=lambda *_: self.fail("already corrected"))
+        self.assertEqual(unchanged, selected)
+        self.assertEqual(stats["status"], "no_changes")
+        unchanged, stats = auto.select(selected, report, self.catalogue, current, TODAY,
+                                       audit=lambda *_: self.fail("pending correction"))
+        self.assertEqual(stats["status"], "deferred_previous_correction_pending")
+        self.assertEqual(unchanged, selected)
+
+    def test_automatic_promotional_correction_refuses_stale_and_pending(self):
+        from automation.concerts import published_lineup_patch_builder as builder
+        from automation.concerts import promotional_correction_preflight as auto
+        current, previous, payload = self._published_legacy_promotional(
+            "NEW ACT Release Party", "NEW ACT")
+        report = builder.build_promotional(current, previous, TODAY,
+                                           fetch=lambda *_: payload)
+        for field, value in (("asOf", "2026-11-21"),
+                             ("publicationAllowed", True),
+                             ("publisherAuthorityGranted", True)):
+            bad = dict(report, **{field: value})
+            unchanged, stats = auto.select(previous, bad, self.catalogue, current, TODAY,
+                                           audit=lambda *_: self.fail("untrusted report"))
+            self.assertEqual(unchanged, previous)
+            self.assertEqual(stats["status"], "invalid_or_stale_proposals")
+        backlog = copy.deepcopy(previous)
+        pending = copy.deepcopy(previous["approvals"][0])
+        pending["event"]["id"] = "unpublished-new-event"
+        backlog["approvals"].append(pending)
+        unchanged, stats = auto.select(backlog, report, self.catalogue, current, TODAY,
+                                       audit=lambda *_: self.fail("new events take priority"))
+        self.assertEqual(stats["status"], "deferred_new_events_pending")
+        self.assertEqual(unchanged, backlog)
+        unchanged, stats = auto.select(previous, report, self.catalogue, current, TODAY,
+                                       audit=lambda *_: 0)
+        self.assertEqual(stats["status"], "held")
+        self.assertFalse(stats["validatedByPublisher"])
+        self.assertEqual(unchanged, previous)
+
     def test_publisher_accepts_official_export_without_json_ld(self):
         observed = []
         def get(url, cache):
