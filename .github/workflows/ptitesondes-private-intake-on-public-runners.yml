@@ -615,11 +615,26 @@ jobs:
                 --patch-file "$STATE/patch-$DAY.json" \
                 --public-catalogue public/docs/ptitesondes/sorties.json \
                 --output-file "$OUT/patch-oa-backlog-$DAY.json" \
+                --refusal-state "$STATE/editorial-refusal-memory.json" \
+                --refusal-output "$OUT/editorial-refusal-memory.json" \
                 --day "$DAY" \
                 > "$LOG/openagenda-backlog-first-party.log" 2>&1; then
               cp "$OUT/patch-oa-backlog-$DAY.json" "$STATE/patch-$DAY.json"
-              git -C state add -- "automation-intake/ptitesondes/patch-$DAY.json"
+              cp "$OUT/editorial-refusal-memory.json" "$STATE/editorial-refusal-memory.json"
+              git -C state add -- "automation-intake/ptitesondes/patch-$DAY.json" "automation-intake/ptitesondes/editorial-refusal-memory.json"
               push_private 'data(ptitesondes): transmettre les pistes OA du backlog au Publisher'
+              python - "$LOG/openagenda-backlog-first-party.log" <<'PY'
+              import json, os, sys
+              r = json.load(open(sys.argv[1], encoding="utf-8"))
+              fields = ("editorial_cached_queue_deferred", "editorial_live_queue_deferred",
+                        "editorial_queue_live_reads", "editorial_cached_backlog_deferred",
+                        "editorial_new_live_refusals")
+              assert all(type(r.get(k)) is int and r[k] >= 0 for k in fields)
+              with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+                  out.write("### Réexamen éditorial temporaire (état privé)\n")
+                  for k in fields:
+                      out.write(f"- {k}: {r[k]}\n")
+              PY
             else
               echo "::warning::Réexamen du backlog OpenAgenda indisponible ; les anciens dossiers sont conservés."
             fi
