@@ -102,6 +102,102 @@ def _described_official_genres(record):
     return labels[:8]
 
 
+class _LongDescriptionText(HTMLParser):
+    """Keep sentence/block boundaries; ignore scripts and explicitly hidden HTML."""
+    _VOID = frozenset({"area", "base", "br", "col", "embed", "hr", "img",
+                       "input", "link", "meta", "param", "source", "track", "wbr"})
+    _SKIP = frozenset({"script", "style", "noscript", "template", "nav", "aside",
+                       "footer", "form", "svg"})
+    _BREAK = frozenset({"p", "div", "section", "article", "li", "h1", "h2",
+                        "h3", "h4", "h5", "br", "hr"})
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.stack = []
+        self.parts = []
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        hidden = ((self.stack and self.stack[-1][1]) or tag in self._SKIP
+                  or "hidden" in attrs
+                  or str(attrs.get("aria-hidden", "")).lower() == "true"
+                  or re.search(r"(?:display\s*:\s*none|visibility\s*:\s*hidden)\b",
+                               str(attrs.get("style", "")), re.I))
+        if not hidden and tag in self._BREAK:
+            self.parts.append("\n")
+        if tag not in self._VOID:
+            self.stack.append((tag, bool(hidden)))
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+        if tag not in self._VOID:
+            self.handle_endtag(tag)
+
+    def handle_endtag(self, tag):
+        for i in range(len(self.stack) - 1, -1, -1):
+            if self.stack[i][0] == tag:
+                hidden = self.stack[i][1]
+                del self.stack[i:]
+                if not hidden and tag in self._BREAK:
+                    self.parts.append("\n")
+                return
+
+    def handle_data(self, data):
+        if not self.stack or not self.stack[-1][1]:
+            self.parts.append(data)
+
+
+def _long_description_genres(record, names):
+    """Recover an explicit named performer's genre, not influences or mentions.
+
+    The original OpenAgenda export is already bound to the event UID, date
+    and physical venue. A long biography can mention other musicians,
+    comparisons, or recommendations, so only complete positive assertions
+    about an artist on THIS verified bill are eligible. No new artist names
+    are inferred and no individual genre is assigned to the other acts.
+    """
+    from automation.concerts.artist_official_bio import BIO_GENRES
+    content = record.get("longDescription")
+    if not isinstance(content, dict):
+        return []
+    content = content.get("fr") or content.get("en")
+    if not isinstance(content, str) or not 4 <= len(content) <= 20000:
+        return []
+    reader = _LongDescriptionText()
+    try:
+        reader.feed(content)
+        reader.close()
+    except (ValueError, TypeError, RecursionError):
+        return []
+    labels = sorted(set(BIO_GENRES) | {"punk", "metal", "hardcore punk",
+                                      "industrial metal", "metal indus"},
+                    key=lambda label: (-len(label), label))
+    identities = {normalized(name) for name in names if normalized(name)}
+    genres = []
+    for part in re.split(r"[\n.!?;]+", "".join(reader.parts)):
+        sentence = normalized(part)
+        if not sentence or len(sentence) > 350:
+            continue
+        if re.search(r"\b(?:not|never|pas|sans|influence|influences|influenced|"
+                     r"inspire|inspiree|tribute|hommage|techno|gabber|hardstyle)\b",
+                     sentence):
+            continue
+        for name in identities:
+            subject = re.escape(name)
+            for genre in labels:
+                label = re.escape(normalized(genre))
+                patterns = (
+                    subject + r" (?:est|sont) (?:un|une) (?:groupe|duo|trio|formation|artiste) (?:de|du|d) " + label,
+                    subject + r" (?:joue|jouent|pratique|pratiquent) (?:du |de la |de l )?" + label,
+                    subject + r" (?:is|are) (?:an? )?" + label + r" (?:band|group|duo|trio|artist)",
+                    subject + r" (?:plays|play) " + label,
+                )
+                if any(re.fullmatch(pattern, sentence) for pattern in patterns):
+                    if genre not in genres and contract.relevant_genres([genre]):
+                        genres.append(genre)
+    return sorted(genres)[:8]
+
+
 def _electronic_hardcore_only(record, raw_keywords, genres):
     """Disambiguate electronic hardcore from metal/punk hardcore.
 
@@ -526,6 +622,11 @@ def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
     genres = list(dict.fromkeys(genres))
     if not genres:
         genres = _described_official_genres(record)
+    if not genres:
+        # Use exactly the same named bill as the final identity verification.
+        candidates = _bill({"@type": "MusicEvent", "name": title})
+        names_for_genre = [promotional_artist_candidate(n) or n for n in candidates]
+        genres = _long_description_genres(record, names_for_genre)
     if _electronic_hardcore_only(
             record, raw_genres if isinstance(raw_genres, list) else [], genres):
         genres = []

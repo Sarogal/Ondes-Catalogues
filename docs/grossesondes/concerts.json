@@ -2511,6 +2511,16 @@
       "id": "august-angst",
       "name": "August Angst",
       "aliases": []
+    },
+    {
+      "id": "sarab",
+      "name": "Sarāb",
+      "aliases": []
+    },
+    {
+      "id": "el-djara",
+      "name": "El Djara",
+      "aliases": []
     }
   ],
   "venues": [
@@ -15809,6 +15819,36 @@
       ],
       "status": "confirmed",
       "officialUrl": "https://lemetronum.fr/evenement/martin-dupont-estetica-noir-august-angst/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Metronum",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-25",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-25",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261204-toulouse-sarab",
+      "title": "Sarāb + El Djara",
+      "date": "2026-12-04",
+      "artistIds": [
+        "sarab",
+        "el-djara"
+      ],
+      "venueId": "le-metronum",
+      "genres": [
+        "Post Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lemetronum.fr/evenement/sarab/",
       "sourceType": "salle",
       "time": null,
       "timeMeaning": "non confirmé",

@@ -169,7 +169,8 @@ def bridge(root, backlog, today, key, *, cursor=None, limit=MAX_EVENTS_PER_RUN,
                 "openagenda-v2", "opendatasoft-index"):
             ident = _identity(row)
             known.setdefault(ident, row)
-    examined = accepted_as_leads = duplicates = holds = 0
+    examined = completed = accepted_as_leads = duplicates = holds = 0
+    capacity_deferred = 0
     for step in range(min(limit, len(inventory))):
         doc, digest, segment, scan_day, offset = inventory[
             (start + step) % len(inventory)]
@@ -194,19 +195,31 @@ def bridge(root, backlog, today, key, *, cursor=None, limit=MAX_EVENTS_PER_RUN,
                     duplicates += 1
                 continue
             if len(result) >= MAX_BACKLOG:
-                raise ValueError("private_backlog_full")
+                # Commit earlier private leads, but retain this exact event
+                # as the next cursor slot. A fresh read after space frees
+                # up deduplicates the partial results and resumes the series.
+                capacity_deferred = 1
+                break
             known[ident] = row
             result.append(row)
             accepted_as_leads += 1
         holds += len(outcome["research_holds"])
-    next_index = (start + examined) % len(inventory) if inventory else 0
+        if capacity_deferred:
+            break
+        completed += 1
+    next_index = (start + completed) % len(inventory) if inventory else 0
+    # If the inventory changed, the last completed reference must correspond
+    # to the item immediately before the unfinished slot in the new order.
     last_completed = (_inventory_key(inventory[
-        (start + examined - 1) % len(inventory)])
-        if inventory and examined else cursor.get("last_completed_ref"))
+        (start + completed - 1) % len(inventory)])
+        if inventory and (completed or capacity_deferred)
+        else cursor.get("last_completed_ref"))
     state = {"schema": SCHEMA, "inventory_sha256": fingerprint,
              "next_index": next_index, "last_completed_ref": last_completed}
     summary = {"mode": "private_leads_not_approved",
-               "events_rechecked": examined, "new_unverified_leads": accepted_as_leads,
+               "events_rechecked": examined, "events_completed": completed,
+               "capacity_deferred": capacity_deferred,
+               "new_unverified_leads": accepted_as_leads,
                "existing_leads_skipped": duplicates, "research_holds": holds,
                "total_private_leads": len(result), "public_writes": 0,
                "publication_ready": False}
