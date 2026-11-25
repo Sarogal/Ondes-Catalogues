@@ -622,12 +622,61 @@ class OpenWorldPublisherBridgeTests(unittest.TestCase):
             ref, first, private_patch(ref), TODAY, KEY, **readers())
         self.assertEqual(again, first)
         self.assertEqual(next_audit["ajoutes"], 0)
-        self.assertEqual(next_report["held"], 1)
+        self.assertEqual(next_report["held"], 0)
+        self.assertEqual(next_report["already_published_dossiers_skipped"], 1)
         forged = deepcopy(first)
         forged["events"][0]["title"] = "Historical tampering"
         with self.assertRaisesRegex(ValueError, "historique"):
             merge_verified_open_world(
                 ref, forged, private_patch(ref), TODAY, KEY, **readers())
+
+    def test_exact_published_occurrence_requires_no_network_even_without_key(self):
+        ref = base()
+        first, audit, _ = merge_verified_open_world(
+            ref, ref, private_patch(ref), TODAY, KEY, **readers())
+        self.assertEqual(audit["ajoutes"], 1)
+        oa_url = "https://openagenda.com/" + AGENDA["slug"] + "/events/999401"
+        direct = dossier(official_event_url=oa_url, official_venue_url=oa_url)
+        calls = Mock(side_effect=AssertionError("published event network read"))
+        x = readers()
+        for name in ("event_reader", "agenda_reader", "directory_reader",
+                     "official_reader", "ign_reader", "osm_reader"):
+            x[name] = calls
+        result, audit, report = merge_verified_open_world(
+            ref, first, private_patch(ref, [direct, dossier()]), TODAY, "", **x)
+        self.assertEqual(result, first)
+        self.assertEqual(audit["ajoutes"], 0)
+        self.assertEqual(report["dossiers"], 2)
+        self.assertEqual(report["already_published_dossiers_skipped"], 2)
+        self.assertEqual(report["held"], 0)
+        calls.assert_not_called()
+        # An invalid research record is not hidden by a published ID.
+        invalid = dict(direct, official_event_url="http://invalid.example/event")
+        with self.assertRaisesRegex(ValueError, "invalid_private_open_world_dossier"):
+            merge_verified_open_world(ref, first, private_patch(ref, [invalid]),
+                                      TODAY, "", **x)
+
+    def test_unpublished_uid_day_still_requires_live_verification(self):
+        ref = base()
+        first, _, _ = merge_verified_open_world(
+            ref, ref, private_patch(ref), TODAY, KEY, **readers())
+        other = dossier()
+        other["lead"] = dict(other["lead"], event_uid=999402)
+        x = readers()
+        read = Mock(return_value=oa_event())
+        x["event_reader"] = read
+        result, audit, report = merge_verified_open_world(
+            ref, first, private_patch(ref, [dossier(), other]), TODAY, KEY, **x)
+        self.assertEqual(report["already_published_dossiers_skipped"], 1)
+        self.assertEqual(audit["ajoutes"], 0)
+        self.assertEqual(result, first)
+        # Municipal proof may independently reread the same live UID.
+        # The invariant is no read of the already-published occurrence,
+        # not an arbitrary limit on proof reads for a new UID.
+        self.assertGreater(read.call_count, 0)
+        self.assertTrue(all(args == (AGENDA["uid"], 999402, KEY)
+                            and not kwargs
+                            for args, kwargs in read.call_args_list))
 
     def test_empty_open_world_queue_uses_legacy_route_without_credentials(self):
         ref = base()

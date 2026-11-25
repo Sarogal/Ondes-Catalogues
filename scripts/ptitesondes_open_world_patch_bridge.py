@@ -170,6 +170,22 @@ def prepare_open_world_patch(
             continue
         raise ValueError("invalid_private_open_world_dossier")
     research = active_research
+    # Only an exact UID/day already present in the current public catalogue
+    # can bypass network work. Structural validation above and the final
+    # append-only merge still run; this grants no candidate approval.
+    if (type(published) is not dict or type(published.get("events")) is not list
+            or any(type(row) is not dict or type(row.get("id")) is not str
+                   for row in published["events"])):
+        raise ValueError("invalid_public_catalogue_snapshot")
+    published_ids = {row["id"] for row in published["events"]}
+    already_published = 0
+    unresolved = []
+    for row in research:
+        eid = f"openagenda-{row['lead']['event_uid']}-{row['date_start']}"
+        if eid in published_ids:
+            already_published += 1
+        else:
+            unresolved.append(row)
     for reader in (agenda_reader, event_reader, directory_reader,
                    official_reader, ign_reader, osm_reader, legacy_checker,
                    named_venue_resolver):
@@ -185,6 +201,7 @@ def prepare_open_world_patch(
         "dossiers": len(research), "admitted_to_merge": 0,
         "held": 0, "held_reason_counts": {},
         "expired_dossiers_skipped": expired_dossiers,
+        "already_published_dossiers_skipped": already_published,
         "publication_complete": False,
     }
 
@@ -193,6 +210,7 @@ def prepare_open_world_patch(
         report["held_reason_counts"][reason] = (
             report["held_reason_counts"].get(reason, 0) + 1)
 
+    research = unresolved
     # The normal legacy patch is valid without an OA secret. A queue is not:
     # no incomplete proof may advance on an unset or non-public API key.
     if research and not _valid_public_read_key(public_key):
