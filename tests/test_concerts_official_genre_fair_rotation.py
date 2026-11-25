@@ -141,6 +141,45 @@ class FairGenreReviewSlots(unittest.TestCase):
             with self.assertRaises(ValueError):
                 pipeline.build({}, CATALOGUE, BEFORE, TODAY, slot=0, limit=33)
 
+    def test_seen_priority_lanes_spill_into_unseen_general_queue(self):
+        queue = ([row("oa", i) for i in range(2)] +
+                 [row("tag", i, "genre_tag_review") for i in range(4)] +
+                 [row("unknown", i) for i in range(122)])
+        prior = None
+        seen = set()
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose", side_effect=ValueError("Held")):
+            for cycle in range(4):
+                _, report = pipeline.build({}, CATALOGUE, BEFORE, TODAY,
+                                           slot=0, limit=32, prior=prior)
+                ids = {c["candidateId"] for c in report["candidateChecks"]}
+                self.assertEqual(len(ids), 32)
+                self.assertFalse(seen & ids)
+                self.assertEqual(report["firstReviewInMemory"], 32)
+                self.assertEqual(report["previouslyReviewed"], 0)
+                seen.update(ids)
+                prior = report
+            self.assertEqual(len(seen), 128)
+            self.assertEqual(len(prior["recentReviewKeys"]), 128)
+            _, report = pipeline.build({}, CATALOGUE, BEFORE, TODAY,
+                                       slot=0, limit=32, prior=prior)
+            self.assertEqual(report["previouslyReviewed"], 32)
+            self.assertGreater(report["openAgendaExamined"], 0)
+            self.assertGreater(report["officialGenreTaggedExamined"], 0)
+            self.assertFalse(report["publicationAllowed"])
+
+    def test_malformed_legacy_review_history_is_only_advisory(self):
+        queue = [row("unknown", i) for i in range(40)]
+        header = {"schema": pipeline.SCHEMA, "publicationAllowed": False,
+                  "privateApprovalApplied": False}
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose", side_effect=ValueError("Held")):
+            for checks in (None, 3, [{"candidateId": [], "date": {}, "venueId": "x"}]):
+                _, report = pipeline.build({}, CATALOGUE, BEFORE, TODAY,
+                                           slot=0, prior={**header, "candidateChecks": checks})
+                self.assertEqual(report["examined"], 16)
+                self.assertEqual(report["firstReviewInMemory"], 16)
+
     def test_double_budget_reuses_unused_lanes(self):
         queue = [row("unknown", i) for i in range(40)]
         with mock.patch.object(pipeline, "eligible", return_value=queue), \
