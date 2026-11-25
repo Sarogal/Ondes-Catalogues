@@ -1,0 +1,54 @@
+name: Concerts — diagnostic ponctuel des données officielles brutes
+on:
+  push:
+    branches: [diagnostic/concerts-raw-event-schema-20261125]
+    paths: ['.github/workflows/concerts-raw-event-schema-diagnostic-20261125.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Examiner les mêmes données que le Publisher sans aucun accès privé
+        run: |
+          python - <<'PY'
+          import json
+          from scripts import concert_dynamic_existing_venue as dynamic
+          from automation.concerts import dynamic_first_party_venue_proposals as proposals
+          from pathlib import Path
+          catalogue = json.loads(Path("docs/grossesondes/concerts.json").read_text())
+          examples = [
+              ("https://grillen.colmar.fr/programmation/motocultor-across-europe-tour-2027", "2027-01-24", "le-grillen-colmar"),
+              ("https://lemetronum.fr/evenement/martin-dupont-estetica-noir-august-angst/", "2026-12-05", "le-metronum"),
+              ("https://theblacklab.fr/agenda/the-rasmus/", "2027-02-24", "the-black-lab-wasquehal"),
+          ]
+          for url, date, venue_id in examples:
+              result = {"url": url, "expectedDate": date}
+              try:
+                  cache = {}
+                  html = dynamic.safe_fetch(url, cache)
+                  nodes = dynamic.individual_event_nodes(html, accept_generic=True)
+                  result["nodes"] = [
+                      {k: n.get(k) for k in ("@type", "name", "startDate", "url", "eventStatus", "location", "performer", "genre")}
+                      for n in nodes[:8]
+                  ]
+                  result["nodeCount"] = len(nodes)
+                  venue = next(v for v in catalogue["venues"] if v["id"] == venue_id)
+                  result["expectedVenue"] = {k: venue.get(k) for k in ("name", "address", "city", "postalCode")}
+                  try:
+                      result["admission"] = proposals._individual_event(html, url, date, venue, accept_generic=True, fetch=dynamic.safe_fetch, cache=cache)
+                  except (ValueError, TypeError, KeyError, OSError) as exc:
+                      result["admission"] = str(exc)[:240]
+              except (ValueError, TypeError, KeyError, OSError) as exc:
+                  result["fetchError"] = type(exc).__name__
+              # One-line ASCII JSON, capped; no private registry, tokens, or writes.
+              print(json.dumps(result, ensure_ascii=True)[:16000])
+          PY
+          git diff --exit-code
