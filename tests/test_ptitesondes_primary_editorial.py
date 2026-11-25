@@ -148,6 +148,23 @@ class PrimaryEditorialTests(unittest.TestCase):
         self.assertIsNone(item)
         self.assertEqual(reason, "primary_activity_outside_editorial_scope")
 
+    def test_mixed_umbrella_programme_does_not_publish_all_days_as_concerts(self):
+        title = "Les Journées polyglottes"
+        desc = ("Au programme : un atelier d'écriture en ukrainien, "
+                "des lectures d'albums pour enfants, une animation autour "
+                "de la culture vénézuélienne, un concert de chants du monde "
+                "et des expositions.")
+        self.assertEqual(primary_out_of_scope(title, desc),
+                         "mixed_umbrella_programme_primary")
+        self.assertIsNone(category_for(title, desc))
+        candidate, reason = live_case(title, desc, category="concert")
+        self.assertIsNone(candidate)
+        self.assertEqual(reason, "oa_direct_primary_activity_outside_scope")
+        self.assertIsNone(primary_out_of_scope(
+            "Concert de chants du monde pour enfants", desc))
+        self.assertIsNone(primary_out_of_scope(
+            "Journées musicales pour enfants", desc))
+
     def test_no_session_count_cap_on_real_youth_workshops(self):
         self.assertIsNone(primary_out_of_scope(
             "Éveil musical pour les tout-petits",
