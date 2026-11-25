@@ -106,7 +106,8 @@ class PublishedToursTests(unittest.TestCase):
 
     def test_reviewed_retraction_transfers_once_without_republishing(self):
         previous = festival("Montpellier", "2027-02-04", "wrong-festival",
-                            lineup=[], city=None, venue=None)
+                            lineup=[], venue=None)
+        previous["city"] = None
         detail = "https://festival-tour.example.fr/event/tour/"
         correction = {
             "schema": 1, "action": "retract_false_edition_only",
