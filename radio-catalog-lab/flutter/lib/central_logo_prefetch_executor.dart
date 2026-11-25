@@ -25,10 +25,13 @@ class CentralLogoPrefetchPolicy {
     Set<String> allowedHosts = const <String>{},
     this.maxObjects = 12,
     this.maxBytes = 8 * 1024 * 1024,
+    this.maxConcurrent = 1,
+    this.maxNetworkDuration,
   }) : allowedHosts = Set<String>.unmodifiable(
           allowedHosts.map((host) => host.toLowerCase()),
         ) {
-    if (maxObjects < 0 || maxBytes < 0) {
+    if (maxObjects < 0 || maxBytes < 0 ||
+        maxConcurrent < 1 || maxConcurrent > 8) {
       throw const CentralCatalogException('Invalid prefetch budget');
     }
     if (allowNetwork) {
@@ -54,6 +57,8 @@ class CentralLogoPrefetchPolicy {
   final Set<String> allowedHosts;
   final int maxObjects;
   final int maxBytes;
+  final int maxConcurrent;
+  final Duration? maxNetworkDuration;
 }
 
 class CentralLogoPrefetchEntry {
@@ -77,8 +82,8 @@ class CentralLogoPrefetchReport {
 
   final List<CentralLogoPrefetchEntry> entries;
 
-  // Conservative maximum reservations, not a measure of HTTP traffic.
-  // Store-level persistent cooldown can suppress a reserved request.
+  // Conservative network reservations; known cooldown/offline outcomes
+  // return their quota after the batch. Late cache hits remain charged.
   final int reservedAttempts;
   final int reservedBytes;
 
@@ -97,7 +102,8 @@ class CentralLogoPrefetchExecutor {
   /// supplied. Tests inject an in-memory fetcher; no default HTTP client is
   /// created here. Production activation requires separate approval.
   ///
-  /// One object at a time. Cache hits are verified before checking budget.
+  /// Bounded batches; cache hits are verified before checking budget.
+  /// Budget reservations are synchronous and precede each network transfer.
   /// Network is impossible unless policy.allowNetwork AND fetch are supplied.
   Future<CentralLogoPrefetchReport> execute({
     required CentralLogoPreparationPlan plan,
@@ -129,66 +135,74 @@ class CentralLogoPrefetchExecutor {
       final entries = <CentralLogoPrefetchEntry>[];
       var reservedAttempts = 0;
       var reservedBytes = 0;
+      final elapsed = Stopwatch()..start();
 
-      for (final item in plan.items) {
-        final descriptor = item.descriptor;
-        final cached = await store.findVerified(descriptor);
-        if (cached != null) {
-          entries.add(CentralLogoPrefetchEntry(
-            planned: item,
-            outcome: CentralLogoPrefetchOutcome.cached,
-            file: cached,
-          ));
-          continue;
-        }
-        if (!controls.allowNetwork) {
-          entries.add(CentralLogoPrefetchEntry(
-            planned: item,
-            outcome: CentralLogoPrefetchOutcome.offline,
-          ));
-          continue;
-        }
-        final uri = Uri.tryParse(descriptor.url);
-        if (uri == null ||
-            !isSafeCentralLogoUrl(uri) ||
-            !controls.allowedHosts.contains(uri.host.toLowerCase()) ||
-            uri.port != 443) {
-          entries.add(CentralLogoPrefetchEntry(
-            planned: item,
-            outcome: CentralLogoPrefetchOutcome.hostBlocked,
-          ));
-          continue;
-        }
-        if (reservedAttempts >= controls.maxObjects ||
-            descriptor.byteSize > controls.maxBytes - reservedBytes) {
-          entries.add(CentralLogoPrefetchEntry(
-            planned: item,
-            outcome: CentralLogoPrefetchOutcome.budgetExceeded,
-          ));
-          continue;
-        }
+      // Keep report ordering deterministic and wait for every admitted
+      // operation before starting a new batch. Unique digests cannot race
+      // each other on the same permanent file.
+      for (var offset = 0; offset < plan.items.length;
+          offset += controls.maxConcurrent) {
+        final batch = plan.items.skip(offset).take(controls.maxConcurrent).toList();
+        final cachedFiles = await Future.wait(
+          batch.map((item) => store.findVerified(item.descriptor)),
+        );
+        final pending = <Future<CentralLogoPrefetchEntry>>[];
+        for (var i = 0; i < batch.length; i++) {
+          final item = batch[i];
+          final descriptor = item.descriptor;
+          final cached = cachedFiles[i];
+          Future<CentralLogoPrefetchEntry> entry(
+            CentralLogoPrefetchOutcome outcome, [File? file]
+          ) async => CentralLogoPrefetchEntry(
+            planned: item, outcome: outcome, file: file,
+          );
+          if (cached != null) {
+            pending.add(entry(CentralLogoPrefetchOutcome.cached, cached));
+            continue;
+          }
+          if (!controls.allowNetwork) {
+            pending.add(entry(CentralLogoPrefetchOutcome.offline));
+            continue;
+          }
+          final uri = Uri.tryParse(descriptor.url);
+          if (uri == null || !isSafeCentralLogoUrl(uri) ||
+              !controls.allowedHosts.contains(uri.host.toLowerCase()) ||
+              uri.port != 443) {
+            pending.add(entry(CentralLogoPrefetchOutcome.hostBlocked));
+            continue;
+          }
+          if ((controls.maxNetworkDuration != null &&
+                  elapsed.elapsed >= controls.maxNetworkDuration!) ||
+              reservedAttempts >= controls.maxObjects ||
+              descriptor.byteSize > controls.maxBytes - reservedBytes) {
+            pending.add(entry(CentralLogoPrefetchOutcome.budgetExceeded));
+            continue;
+          }
 
-        // Reserve before any awaited network operation.
-        reservedAttempts++;
-        reservedBytes += descriptor.byteSize;
-        final result = await store.ensure(target: descriptor, fetch: fetch);
-        final outcome = switch (result.status) {
-          CentralLogoCacheStatus.cacheHit =>
-            CentralLogoPrefetchOutcome.cached,
-          CentralLogoCacheStatus.downloaded =>
-            CentralLogoPrefetchOutcome.downloaded,
-          CentralLogoCacheStatus.retryDeferred =>
-            CentralLogoPrefetchOutcome.retryDeferred,
-          CentralLogoCacheStatus.downloadRejected =>
-            CentralLogoPrefetchOutcome.rejected,
-          CentralLogoCacheStatus.offline =>
-            CentralLogoPrefetchOutcome.offline,
-        };
-        entries.add(CentralLogoPrefetchEntry(
-          planned: item,
-          outcome: outcome,
-          file: result.image,
-        ));
+          // No await between the quota check and reservation.
+          reservedAttempts++;
+          reservedBytes += descriptor.byteSize;
+          pending.add(() async {
+            final result = await store.ensure(target: descriptor, fetch: fetch);
+            if (result.status == CentralLogoCacheStatus.retryDeferred ||
+                result.status == CentralLogoCacheStatus.offline) {
+              // No transport was attempted. Return the quota for later batches.
+              reservedAttempts--;
+              reservedBytes -= descriptor.byteSize;
+            }
+            final outcome = switch (result.status) {
+              CentralLogoCacheStatus.cacheHit => CentralLogoPrefetchOutcome.cached,
+              CentralLogoCacheStatus.downloaded => CentralLogoPrefetchOutcome.downloaded,
+              CentralLogoCacheStatus.retryDeferred => CentralLogoPrefetchOutcome.retryDeferred,
+              CentralLogoCacheStatus.downloadRejected => CentralLogoPrefetchOutcome.rejected,
+              CentralLogoCacheStatus.offline => CentralLogoPrefetchOutcome.offline,
+            };
+            return CentralLogoPrefetchEntry(
+              planned: item, outcome: outcome, file: result.image,
+            );
+          }());
+        }
+        entries.addAll(await Future.wait(pending));
       }
       return CentralLogoPrefetchReport(
         entries: entries,
