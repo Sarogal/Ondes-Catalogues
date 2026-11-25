@@ -263,7 +263,9 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published,
     if EXCLUSIVELY_ADULT.search(audience) or NOT_PUBLIC_ACCESS.search(audience):
         return fail("oa_direct_restricted_access")
     child_age = isinstance(age, dict) and type(age.get("max")) is int and age["max"] <= 17
-    if not CHILD.search(audience) and not child_age and not explicit_child_age_text(source_text):
+    if (not CHILD.search(audience) and not child_age
+            and not explicit_child_age_text(source_text)
+            and not CONCERT_AUDIENCE.search(audience)):
         return fail("oa_direct_child_audience_missing")
     category = category_for(title, source_text)
     if category is None:
