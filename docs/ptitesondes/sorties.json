@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-25T19:50:42+01:00",
+  "updated_at": "2026-11-25T20:57:39+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -21083,6 +21083,46 @@
       "geo_precision": "venue",
       "lat": 50.773013,
       "lng": 3.048191
+    },
+    {
+      "id": "openagenda-29820418-2026-11-28",
+      "title": "Spectacle enfants : La drôle de vie de Léonard Celé",
+      "category": "spectacle-jeunesse",
+      "category_label": "Spectacle jeune public",
+      "date_start": "2026-11-28",
+      "date_end": "2026-11-28",
+      "time": "16:00",
+      "city": "Lagardelle-sur-Lèze",
+      "department": "Haute-Garonne",
+      "region": "Occitanie",
+      "venue": "Café culturel \"La Grange\"",
+      "source_url": "https://openagenda.com/haute-garonne-le-departement/events/29820418_spectacle-enfants-la-drole-de-vie-de-leonard-cele",
+      "source_label": "Agenda de Lagardelle-sur-Lèze — Licence Ouverte 2.0 — données mises à jour le 23/11/2026",
+      "verified_at": "2026-11-25",
+      "geo_verified_at": "2026-11-25",
+      "geo_precision": "venue",
+      "lat": 43.413887,
+      "lng": 1.388103
+    },
+    {
+      "id": "openagenda-37131770-2026-12-09",
+      "title": "Eclisse Totale – Quatuor Léonis",
+      "category": "spectacle-musical",
+      "category_label": "Spectacle musical",
+      "date_start": "2026-12-09",
+      "date_end": "2026-12-09",
+      "time": "20:00",
+      "city": "Villeneuve-d'Ascq",
+      "department": "Nord",
+      "region": "Hauts-de-France",
+      "venue": "Espace Rose des Vents",
+      "source_url": "https://openagenda.com/espace-rose-des-vents/events/37131770_eclisse-totale-quatuor-leonis-7745872",
+      "source_label": "Espace Rose des Vents — Licence Ouverte 2.0 — données mises à jour le 23/11/2026",
+      "verified_at": "2026-11-25",
+      "geo_verified_at": "2026-11-25",
+      "geo_precision": "venue",
+      "lat": 50.620622,
+      "lng": 3.131018
     }
   ]
 }
