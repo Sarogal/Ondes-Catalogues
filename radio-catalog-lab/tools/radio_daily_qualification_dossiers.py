@@ -167,7 +167,8 @@ def build_dossiers(discovery, reconciliation, ledger, stream, logo, baseline_sha
                 "reportedHost", "homepageSha256", "identityNameSha256", "observedDate",
                 "retrieval", "identityNameMatch", "signal", "primaryTargetTerms",
                 "visibleTargetTerms", "primaryElectronicTerms", "pageSha256",
-                "finalPageSha256", "imageHintSha256")} if e else None,
+                "finalPageSha256", "imageHintSha256", "analyzerVersion",
+                "structuredProgrammeEvidence", "declaredStreamLinked", "streamSha256")} if e else None,
             "officialHomepageVerified": False, "duplicateRisk": h.get("duplicateRisk") is True,
             "streamEvidence": {k: a.get(k) for k in (
                 "streamSha256", "audioEvidenceDates", "liveFrameEvidenceDates", "lastObservedDate",

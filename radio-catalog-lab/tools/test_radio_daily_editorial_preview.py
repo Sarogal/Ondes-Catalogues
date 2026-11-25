@@ -70,5 +70,44 @@ class EditorialPreviewTests(unittest.TestCase):
         self.assertEqual(result["htmlObservedCount"], 0)
 
 
+    def test_name_alone_is_not_programme_evidence(self):
+        result = inspect_page("Azuracast Metal", URL, b"<title>Azuracast Metal</title>")
+        self.assertEqual(result["signal"], "no_format_evidence")
+        self.assertNotIn("azuracast metal", result["primaryTargetTerms"])
+
+    def test_typed_jsonld_binds_genre_to_station(self):
+        body = b'<script type="application/ld+json">{"@graph":[{"@type":"RadioStation","name":"Iron Test Radio","genre":["heavy metal","punk"]},{"@type":"RadioStation","name":"Other Radio","genre":"techno"}]}</script>'
+        result = inspect_page("Iron Test Radio", URL, body)
+        self.assertTrue(result["structuredProgrammeEvidence"])
+        self.assertEqual(result["signal"], "identity_and_target_indication")
+        self.assertEqual(inspect_page("Other Radio", URL, body)["signal"], "electronic_indication")
+
+    def test_unrelated_jsonld_not_genre_evidence(self):
+        body = b'<script type="application/ld+json">{"@type":"MusicAlbum","name":"Iron Test Radio","genre":"metal"}</script>'
+        self.assertEqual(inspect_page("Iron Test Radio", URL, body)["signal"], "no_format_evidence")
+
+    def test_declared_stream_link_matches_exact_url(self):
+        body = b'<audio src="/live"></audio>'
+        self.assertTrue(inspect_page("Iron Test Radio", URL, body, URL+"live")["declaredStreamLinked"])
+        self.assertFalse(inspect_page("Iron Test Radio", URL, body, URL+"other")["declaredStreamLinked"])
+
+    def test_old_analyzer_evidence_requires_refresh(self):
+        first = collect(*inputs(), limit=1, fetch=lambda url: (url, HTML))
+        for row in first["records"]:
+            row.pop("analyzerVersion")
+        again = collect(*inputs(), limit=0, previous=first)
+        self.assertEqual(again["identityTargetCount"], 0)
+        self.assertEqual(again["records"][0]["signal"], "stale_analyzer_or_stream_review")
+
+    def test_changed_stream_does_not_reuse_link(self):
+        d,r = inputs()
+        d["candidates"][0]["streamUrl"] = URL+"live"
+        first = collect(d,r,limit=1,fetch=lambda url:(url,b'<audio src="/live"></audio>'))
+        self.assertEqual(first["declaredStreamLinkedCount"], 1)
+        d["candidates"][0]["streamUrl"] = URL+"new"
+        again = collect(d,r,limit=0,previous=first)
+        self.assertEqual(again["declaredStreamLinkedCount"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()

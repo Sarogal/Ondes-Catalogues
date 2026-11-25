@@ -29,7 +29,8 @@ from radio_daily_qualification_dossiers import index, safe_digest
 MAX_BYTES = 256 * 1024
 MAX_PAGES = 8
 MAX_INPUT = 12 * 1024 * 1024
-TARGET = re.compile(r"\b(?:[a-z]+\s+metal|metal|metalcore|deathcore|grindcore|hard\s+rock|punk(?:\s+rock)?|hardcore\s+punk|punkrock|thrash|djent|nwobhm)\b")
+ANALYZER_VERSION = 2
+TARGET = re.compile(r"\b(?:(?:heavy|black|death|thrash|doom|power|folk|pagan|nu|glam|hair|speed|progressive|symphonic|industrial|groove|alternative|extreme|sludge|stoner|gothic|viking|melodic)\s+metal|metal|metalcore|deathcore|grindcore|hard\s+rock|punk(?:\s+rock)?|hardcore\s+punk|punkrock|thrash|djent|nwobhm)\b")
 ELECTRONIC = re.compile(r"\b(?:techno|electronic|edm|gabber|hardstyle|happy hardcore|drum and bass|rave|speedcore|uptempo hardcore|dubstep)\b")
 
 
@@ -116,9 +117,14 @@ class Page(HTMLParser):
         self.descriptions = []
         self.body = []
         self.images = []
+        self.structured = []
+        self.jsonld = None
+        self.audio_urls = []
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
+        if tag == "script" and not self.ignored and (a.get("type") or "").lower().split(";")[0].strip() == "application/ld+json":
+            self.jsonld = [] if len(self.structured) < 12 else None
         if tag in ("script", "style", "noscript", "template", "svg"):
             self.ignored.append(tag)
         if self.ignored:
@@ -135,6 +141,8 @@ class Page(HTMLParser):
                 self.descriptions.append(value[:1000])
             if key in ("og:image", "og:image:secure_url"):
                 self.images.append(value)
+        if tag in ("audio", "source") and a.get("src") and len(self.audio_urls) < 32:
+            self.audio_urls.append(a["src"])
         if tag == "link" and "icon" in (a.get("rel") or "").lower().split():
             self.images.append(a.get("href") or "")
 
@@ -142,12 +150,22 @@ class Page(HTMLParser):
         if self.ignored:
             if self.ignored[-1] == tag:
                 self.ignored.pop()
+                if tag == "script" and self.jsonld is not None:
+                    raw = "".join(self.jsonld)
+                    if len(raw) <= 32768:
+                        try:
+                            self.structured.append(json.loads(raw))
+                        except (ValueError, RecursionError):
+                            pass
+                    self.jsonld = None
             return
         if tag == self.section:
             self.section = None
 
     def handle_data(self, data):
         if self.ignored:
+            if self.jsonld is not None and self.ignored[-1] == "script":
+                self.jsonld.append(data[:32769])
             return
         if self.section and self.identity:
             self.identity[-1] = (self.identity[-1] + " " + data)[:500]
@@ -155,16 +173,71 @@ class Page(HTMLParser):
             self.body.append(data[:500])
 
 
-def inspect_page(name, url, body):
+def station_nodes(documents):
+    """Only station/service entities, not unrelated articles or music albums."""
+    pending = [(x, 0) for x in documents]
+    count = 0
+    while pending and count < 256:
+        value, depth = pending.pop()
+        count += 1
+        if depth > 8:
+            continue
+        if isinstance(value, list):
+            pending.extend((x, depth + 1) for x in value[:64])
+        elif isinstance(value, dict):
+            kinds = value.get("@type", [])
+            if isinstance(kinds, str):
+                kinds = [kinds]
+            if isinstance(kinds, list) and any(
+                isinstance(k, str) and k.rsplit("/", 1)[-1] in ("RadioStation", "BroadcastService")
+                for k in kinds
+            ):
+                yield value
+            for key in ("@graph", "mainEntity", "broadcastService"):
+                if key in value:
+                    pending.append((value[key], depth + 1))
+
+
+def matches_identity(identity, value):
+    return (len(identity) >= 5 and identity not in {"radio", "metal", "punk", "hard rock"}
+            and " " + identity + " " in " " + normalize(value) + " ")
+
+
+def format_text(value, identity):
+    normalized = normalize(value)
+    if identity:
+        normalized = (" " + normalized + " ").replace(" " + identity + " ", " ").strip()
+    return normalized
+
+
+def inspect_page(name, url, body, stream_url=None):
     page = Page()
     page.feed(body.decode("utf-8", errors="replace"))
     identity = normalize(name)
     # Full normalized name, not arbitrary individual common words.
     # Very short names and generic labels are not enough to bind identity.
-    identity_hit = (len(identity) >= 5 and identity not in {"radio", "metal", "punk", "hard rock"}
-                    and any(" " + identity + " " in " " + normalize(x) + " " for x in page.identity))
-    primary = normalize(" ".join(page.identity + page.descriptions))
-    visible = normalize(" ".join(page.body))
+    identity_hit = any(matches_identity(identity, x) for x in page.identity)
+    structured = []
+    for node in station_nodes(page.structured):
+        if isinstance(node.get("name"), str) and normalize(node["name"]) == identity and matches_identity(identity, node["name"]):
+            genres = node.get("genre", [])
+            if isinstance(genres, str):
+                genres = [genres]
+            if isinstance(genres, list):
+                structured.extend(x[:200] for x in genres[:20] if isinstance(x, str))
+            if isinstance(node.get("description"), str):
+                structured.append(node["description"][:1000])
+            identity_hit = True
+    # A genre in the station name alone is not independent programme evidence.
+    primary = " ".join(format_text(x, identity) for x in page.identity + page.descriptions + structured)
+    visible = format_text(" ".join(page.body), identity)
+    stream_match = False
+    if isinstance(stream_url, str):
+        try:
+            validate_endpoint(stream_url)
+            stream_match = any(urljoin(url, x) == stream_url for x in page.audio_urls)
+        except ValueError:
+            pass
     # Explicit terms in descriptions/title are stronger than body/navigation
     # hits, but never sufficient to approve editorial format.
     strong = sorted(set(m.group() for m in TARGET.finditer(primary)))[:20]
@@ -192,6 +265,8 @@ def inspect_page(name, url, body):
         except (ValueError, TypeError):
             continue
     return {"identityNameMatch": bool(identity_hit), "signal": signal,
+            "structuredProgrammeEvidence": bool(structured),
+            "declaredStreamLinked": stream_match,
             "primaryTargetTerms": strong, "visibleTargetTerms": weak,
             "primaryElectronicTerms": electronic, "pageSha256": hashlib.sha256(body).hexdigest(),
             "finalPageSha256": safe_digest(url), "imageHintSha256": sorted(set(images))[:8]}
@@ -231,11 +306,18 @@ def collect(discovery, reconciliation, *, previous=None, limit=0, fetch=fetch_ht
         if prior and prior["homepageSha256"] == digest and prior.get("identityNameSha256") == safe_digest(normalize(row.get("name"))):
             result[uid] = dict(prior, observedInScan=True)
             age = (dt.date.fromisoformat(day) - dt.date.fromisoformat(prior["observedDate"])).days
-            if age < (7 if prior.get("retrieval") == "html_observed" else 1):
-                continue
+            if prior.get("analyzerVersion") == ANALYZER_VERSION and age < (7 if prior.get("retrieval") == "html_observed" else 1):
+                # A changed stream URL invalidates even a cached link match.
+                if prior.get("streamSha256") == safe_digest(row.get("streamUrl")):
+                    continue
+            if prior.get("analyzerVersion") != ANALYZER_VERSION or prior.get("streamSha256") != safe_digest(row.get("streamUrl")):
+                result[uid] = dict(result[uid], signal="stale_analyzer_or_stream_review", declaredStreamLinked=False)
         groups.setdefault(url, []).append((uid, row))
     # Previously untested URLs first; repeated failures cannot monopolize queue.
-    queue = sorted(groups, key=lambda u: (all(uid in result for uid, _ in groups[u]), u))[:limit]
+    queue = sorted(groups, key=lambda u: (
+        not any(uid in result and result[uid].get("signal") == "stale_analyzer_or_stream_review"
+                for uid, _ in groups[u]),
+        all(uid in result for uid, _ in groups[u]), u))[:limit]
     def request(url):
         try:
             final, data = fetch(url)
@@ -248,19 +330,32 @@ def collect(discovery, reconciliation, *, previous=None, limit=0, fetch=fetch_ht
     with ThreadPoolExecutor(max_workers=3) as pool:
         for url, final, data in pool.map(request, queue):
             for uid, row in groups[url]:
-                evidence = inspect_page(row.get("name"), final, data) if data else {}
+                try:
+                    evidence = inspect_page(row.get("name"), final, data, row.get("streamUrl")) if data else {}
+                except (ValueError, TypeError, RecursionError):
+                    data_for_row = None
+                    evidence = {}
+                else:
+                    data_for_row = data
                 result[uid] = {"stationuuid": uid, "homepageSha256": safe_digest(url),
                     "identityNameSha256": safe_digest(normalize(row.get("name"))),
                     "reportedHost": urlsplit(url).hostname, "observedDate": day,
-                    "observedInScan": True, "retrieval": "html_observed" if data else "failed_review",
+                    "observedInScan": True, "retrieval": "html_observed" if data_for_row else "failed_review",
+                    "analyzerVersion": ANALYZER_VERSION, "streamSha256": safe_digest(row.get("streamUrl")),
                     "editorialApproved": False, "publicationAllowed": False, **evidence}
     records = [result[uid] for uid in sorted(result)]
+    for row in records:
+        if row.get("analyzerVersion") != ANALYZER_VERSION:
+            row["signal"] = "stale_analyzer_or_stream_review"
+            row["declaredStreamLinked"] = False
     if len(records) > 20000:
         raise ValueError("editorial register capacity")
     return {"schemaVersion": 1, "scanDate": day, "publicationAllowed": False,
             "editoriallyApprovedCount": 0, "attemptedPageCount": len(queue),
             "htmlObservedCount": sum(x["retrieval"] == "html_observed" for x in records),
             "identityTargetCount": sum(x.get("signal") == "identity_and_target_indication" for x in records),
+            "structuredProgrammeCount": sum(x.get("analyzerVersion") == ANALYZER_VERSION and x.get("structuredProgrammeEvidence") is True for x in records),
+            "declaredStreamLinkedCount": sum(x.get("declaredStreamLinked") is True for x in records),
             "records": records}
 
 
