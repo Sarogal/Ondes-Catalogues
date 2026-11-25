@@ -101,7 +101,7 @@ def plan(row, catalogue, today):
             "eventDay": event_day}
 
 
-def prepare(catalogue, approvals, today, *, verify_one=None):
+def prepare(catalogue, approvals, today, *, verify_one=None, defer_unavailable=False):
     """Return normalized original view and validated correction plans.
 
     The original view MUST pass the unchanged Publisher historical checks.
@@ -114,19 +114,31 @@ def prepare(catalogue, approvals, today, *, verify_one=None):
     require(all(isinstance(i, str) for i in ids) and len(set(ids)) == len(ids),
             "duplicate or malformed correction venue ID")
     plans = {row["venueId"]: plan(row, catalogue, today) for row in rows}
-    require(sum(not p["already"] for p in plans.values()) <= MAX_PENDING,
-            "pending corrections exceed review budget")
     verify_one = evidence.verify if verify_one is None else verify_one
-    for row in rows:
+    pending = [row for row in rows if not plans[row["venueId"]]["already"]]
+    # Expired anchors do not consume network budget; structural corruption
+    # still fails closed. Rotate live candidates to avoid starvation.
+    live = [row for row in pending
+            if plans[row["venueId"]]["event"].get("status") == "confirmed"
+            and plans[row["venueId"]]["eventDay"] >= today
+            and (today - plans[row["venueId"]]["checked"]).days <= 7]
+    if not defer_unavailable:
+        require(len(pending) <= MAX_PENDING, "pending corrections exceed review budget")
+    offset = (today.toordinal() * MAX_PENDING) % len(live) if live else 0
+    selected = {row["venueId"] for row in
+                (live[offset:] + live[:offset])[:MAX_PENDING]}
+    for row in pending:
         p = plans[row["venueId"]]
-        if p["already"]:
-            continue
-        require(p["event"]["status"] == "confirmed" and p["eventDay"] >= today
-                and (today - p["checked"]).days <= 7,
-                "first application needs fresh confirmed event proof")
-        fresh = verify_one(p["event"], p["original"])
-        require(signed_proposal(fresh, p["checked"]) == row,
-                "fresh independent evidence disagrees with signed correction")
+        try:
+            require(row["venueId"] in selected,
+                    "first application needs fresh confirmed event proof or next review slot")
+            fresh = verify_one(p["event"], p["original"])
+            require(signed_proposal(fresh, p["checked"]) == row,
+                    "fresh independent evidence disagrees with signed correction")
+        except (ValueError, TypeError, KeyError, OSError, TimeoutError):
+            if not defer_unavailable:
+                raise
+            p["deferred"] = True
     return restore_originals(catalogue, plans), plans
 
 
@@ -159,7 +171,8 @@ def apply(catalogue, plans):
             continue
         require(venue == p["original"],
                 "original conflicts with another signed venue change")
-        catalogue["venues"][i] = copy.deepcopy(p["target"])
+        if not p.get("deferred"):
+            catalogue["venues"][i] = copy.deepcopy(p["target"])
         seen.add(venue["id"])
     require(seen == set(plans), "signed venue missing after original validation")
-    return sum(not p["already"] for p in plans.values())
+    return sum(not p["already"] and not p.get("deferred") for p in plans.values())

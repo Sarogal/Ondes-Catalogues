@@ -130,3 +130,19 @@ class GenericVenueGeoContractTests(unittest.TestCase):
             sync.protect_reference(reference, repeated, approvals=ledger, today=dt.date(2027, 5, 1))
         self.assertEqual(stats2["correctedVenues"], 0)
         self.assertEqual(changed, repeated)
+
+
+    def test_unavailable_or_expired_proof_defers_without_changing_catalogue(self):
+        original, proof, row = fixture()
+        for today in (TODAY, TODAY + dt.timedelta(days=8)):
+            with self.subTest(today=today):
+                normalized, plans = contract.prepare(
+                    original, {contract.KEY: [row]}, today, defer_unavailable=True,
+                    verify_one=lambda *args: (_ for _ in ()).throw(OSError("offline")))
+                self.assertTrue(plans[row["venueId"]]["deferred"])
+                self.assertEqual(contract.apply(normalized, plans), 0)
+                self.assertEqual(normalized, original)
+        bad = copy.deepcopy(row)
+        bad["originalVenue"]["name"] = "Wrong"
+        with self.assertRaises(ValueError):
+            contract.prepare(original, {contract.KEY: [bad]}, TODAY, defer_unavailable=True)

@@ -1779,7 +1779,7 @@ def validate_catalogue(data):
 def protect_reference(reference, current, *, approvals=None, today=None):
     if approvals is not None and approvals.get("existingVenueGeoCorrections"):
         from scripts import concert_existing_venue_geo_contract as geo_contract
-        current, _ = geo_contract.prepare(current, approvals, today)
+        current, _ = geo_contract.prepare(current, approvals, today, defer_unavailable=True)
     validate_catalogue(reference)
     validate_catalogue(current)
     for kind in ("events", "venues", "artists"):
@@ -7897,7 +7897,7 @@ def merge(reference, current, approvals, today):
     from scripts import concert_existing_venue_geo_contract as geo_contract
     # Restore only exact signed old/new states before the original historical
     # guards, including the original approval for post-reference venues.
-    current, geo_plans = geo_contract.prepare(current, approvals, today)
+    current, geo_plans = geo_contract.prepare(current, approvals, today, defer_unavailable=True)
     protect_reference(reference, current)
     # Signed approval IDs must be unique even after the historical queue
     # exceeds 400 records. Duplicating a signature cannot mask a conflict.
@@ -8137,6 +8137,8 @@ def merge(reference, current, approvals, today):
     # Original historic and appended venues have now passed their existing
     # guards. Apply only signed geography fields before evaluating new gigs.
     counts["correctedVenues"] += geo_contract.apply(result, geo_plans)
+    if any(p.get("deferred") for p in geo_plans.values()):
+        counts["deferredGeoCorrections"] = sum(bool(p.get("deferred")) for p in geo_plans.values())
     venues = {v["id"]: v for v in result["venues"]}
     # Approved records are cumulative, not a single deployment batch.
     for entry in approvals["approvals"]:
