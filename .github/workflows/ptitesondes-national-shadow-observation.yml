@@ -210,7 +210,23 @@ jobs:
         run: |
           set -euo pipefail
           # Dispatch only: never wait while holding the shared private-state lock.
-          gh workflow run ptitesondes-private-intake-on-public-runners.yml \
-            --repo Sarogal/Ondes-Catalogues --ref main \
-            -f cycle=outings -f mode=write -f recovery=none
-          echo "Collecte indépendante demandée après observation persistée ; aucune approbation accordée." >> "$GITHUB_STEP_SUMMARY"
+          # A transient API failure does not invalidate the saved observation.
+          # Retrying a dispatch can enqueue a duplicate if GitHub accepted
+          # the request before returning an error. Intake is serialized and
+          # rechecks the private backlog, so repeated dispatches are safe.
+          for attempt in 1 2 3; do
+            if gh workflow run ptitesondes-private-intake-on-public-runners.yml \
+              --repo Sarogal/Ondes-Catalogues --ref main \
+              -f cycle=outings -f mode=write -f recovery=none \
+              > "$RUNNER_TEMP/po-dispatch.log" 2>&1; then
+              echo "Collecte indépendante demandée après observation persistée ; aucune approbation accordée." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            if ! grep -Eq 'HTTP (429|5[0-9][0-9])' "$RUNNER_TEMP/po-dispatch.log"; then
+              echo "::error::Dispatch refused; observation remains stored privately."
+              exit 1
+            fi
+            if [[ "$attempt" -lt 3 ]]; then sleep "$((attempt * 15))"; fi
+          done
+          echo "::error::Dispatch temporarily unavailable after three attempts; checkpoints retained."
+          exit 1
