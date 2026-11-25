@@ -21,6 +21,7 @@ import discover
 import independent_named_site_geo as geo
 import official_rss_jsonld_bridge as bridge
 import official_venue_single_source as official
+import official_html_evidence as visible
 import source_admission_intake as intake
 import source_evidence_probe as probe
 import triage
@@ -42,6 +43,127 @@ def eligible(venue):
             precision == "salle a recontroler")
 
 
+
+# A street number is optional: BAN independently checks the exact street,
+# municipality and named OSM site. Do not guess an address from arbitrary text.
+STREET = re.compile(
+    r"(?:(?:[0-9]{1,4}(?:\s*(?:bis|ter|quater|[a-z]))?)\s+)?"
+    r"(?:rue|avenue|av\.|boulevard|bd\.|place|route|chemin|impasse|allée|allee|"
+    r"quai|cours|passage|square|parvis|promenade|voie|esplanade|sentier|"
+    r"montée|montee|lieu-dit)\s+[\wÀ-ÿ'’ .\-]{2,120}", re.I)
+ADDRESS = re.compile(r"(?P<street>.+?)\s*[,;–—]?\s+(?P<postcode>\d{5})\s+(?P<city>.+)", re.I)
+NONVENUE = re.compile(r"\b(?:billetterie|ticket(?:s|ing)?|administration|siege social|"
+                       r"bureau(?:x)?|correspondance|facturation|reservation|"
+                       r"parking|restaurant|hebergement)\b")
+PLACE_LABELS = {"lieu", "salle", "adresse", "lieu du concert",
+                "salle du concert", "adresse de la salle", "adresse du concert"}
+STOP = visible.END_SECTION | {"billetterie", "reservations", "autres dates",
+                              "autres lieux", "autres evenements"}
+
+
+class AddressBlocks(visible.VisibleBlocks):
+    """Keep explicit address blocks and inline break-delimited address lines."""
+    def __init__(self):
+        super().__init__(leaf_divs=True)
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "br" and not self.ignored:
+            self.handle_data(" \u241e ")
+        super().handle_starttag(tag, attrs)
+        if tag == "address" and not self.ignored:
+            self.frames.append([tag, []])
+
+    def handle_endtag(self, tag):
+        if tag == "address" and not self.ignored:
+            for i in range(len(self.frames) - 1, -1, -1):
+                if self.frames[i][0] == tag:
+                    frame = self.frames.pop(i)
+                    value = " ".join(" ".join(frame[1]).split())
+                    if value:
+                        self.blocks.append((tag, value[:1000]))
+                    return
+        super().handle_endtag(tag)
+
+
+def _postal_line(line, city):
+    # Recognize a complete postal address, never silently select the first
+    # number or the first municipality mentioned in a free-form paragraph.
+    line = " ".join(line.replace("\u241e", " ").split()).strip(" ,;")
+    match = ADDRESS.fullmatch(line)
+    if not match:
+        return None
+    street = match["street"].strip(" ,;–—")
+    actual_city = match["city"].strip(" ,;")
+    # France is redundant with the independently established French venue,
+    # but another explicit country must not be discarded.
+    actual_city = re.sub(r"\s*[,–—]?\s+France$", "", actual_city, flags=re.I)
+    if (triage.words(actual_city) != triage.words(city)
+            or not STREET.fullmatch(street)
+            or NONVENUE.search(triage.words(street))):
+        return None
+    return street, match["postcode"]
+
+
+def _named_location(text, venue):
+    """Exact named venue heading or explicit venue label, not a substring."""
+    name = triage.words(venue["name"])
+    value = triage.words(text)
+    return bool(name and (value == name or any(
+        value == label + " " + name for label in PLACE_LABELS)))
+
+
+def visible_address(html, event, venue):
+    """Only a dated exact event heading and an explicitly named address.
+
+    Footer/menu addresses and recommendations are ignored. A street is
+    accepted only in the same named venue block or immediately following
+    its exact heading, and still needs independent BAN and named OSM proof.
+    """
+    parser = AddressBlocks()
+    parser.feed(html)
+    parser.close()
+    headings = [(i, text) for i, (tag, text) in enumerate(parser.blocks)
+                if tag == "h1"]
+    require(len(headings) == 1 and triage.words(event.get("title"))
+            and triage.words(headings[0][1]) == triage.words(event["title"]),
+            "visible event heading differs from published concert")
+    detail = parser.blocks[headings[0][0] + 1:][:160]
+    cut = next((i for i, (tag, text) in enumerate(detail)
+                if tag in {"h2", "h3", "h4"} and triage.words(text) in STOP),
+               len(detail))
+    detail = detail[:cut]
+    day = next((visible._date_in(text) for _, text in detail[:20]
+                if visible._date_in(text)), None)
+    require(day == event["date"], "visible event date differs")
+    addresses = set()
+    for i, (tag, text) in enumerate(detail):
+        if NONVENUE.search(triage.words(text)):
+            continue
+        # An explicit venue block with line breaks, punctuation or address
+        # label may contain the entire address without any special CSS.
+        lines = [part.strip() for part in text.split("\u241e") if part.strip()]
+        if len(lines) >= 2 and _named_location(lines[0], venue):
+            address = _postal_line(" ".join(lines[1:]), venue["city"])
+            if address:
+                addresses.add(address)
+        if _named_location(text, venue):
+            for n in (1, 2):
+                following = detail[i+1:i+1+n]
+                if len(following) != n or any(
+                        kind.startswith("h") or NONVENUE.search(triage.words(value))
+                        for kind, value in following):
+                    continue
+                address = _postal_line(" ".join(value for _, value in following),
+                                       venue["city"])
+                if address:
+                    addresses.add(address)
+    require(len(addresses) == 1, "one explicit visible named-venue address required")
+    street, postcode = next(iter(addresses))
+    site = dict(venue, address=street, postalCode=postcode)
+    require(address_source.eligible_address(site), "non-geocodable visible address")
+    return site
+
+
 def extract_address(html, event, venue):
     """Only an unambiguous, exact, dated event and its own physical Place."""
     url = event.get("officialUrl")
@@ -53,6 +175,8 @@ def extract_address(html, event, venue):
             "invalid event response")
     nodes = [n for n in discover.read_ld(html) if isinstance(n, dict)
              and bridge._event_types(n.get("@type")) & {"MusicEvent", "Event"}]
+    if not nodes:
+        return visible_address(html, event, venue)
     require(len(nodes) == 1, "single structured event required")
     node = nodes[0]
     raw_url = node.get("url")
@@ -69,6 +193,9 @@ def extract_address(html, event, venue):
             and triage.words(place.get("name")) == triage.words(venue.get("name"))
             and bool(triage.words(venue.get("name"))), "named place mismatch")
     address = place.get("address")
+    # Fall back only for absent address, never contradict an explicit one.
+    if address is None:
+        return visible_address(html, event, venue)
     require(isinstance(address, dict)
             and "PostalAddress" in bridge._event_types(address.get("@type")),
             "structured postal address missing")

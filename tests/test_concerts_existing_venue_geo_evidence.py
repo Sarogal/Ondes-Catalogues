@@ -141,3 +141,57 @@ class ExistingVenueGeoEvidenceTests(unittest.TestCase):
                 evidence.scan({"venues": [], "events": []}, day, **kwargs)
         with self.assertRaises(ValueError):
             evidence.scan({"venues": [VENUE, VENUE], "events": []}, day)
+
+
+    def test_visible_address_without_jsonld_and_without_street_number(self):
+        event = dict(EVENT, title="Metal night")
+        for street in ("19 rue des Jardins", "rue des Jardins"):
+            html = ("<h1>Metal night</h1><p>12 février 2027</p>"
+                    "<h2>Lieu : New Room</h2><address>" + street +
+                    "<br>68000 Colmar</address>")
+            site = evidence.extract_address(html, event, VENUE)
+            self.assertEqual(site["address"], street)
+            self.assertEqual(site["postalCode"], "68000")
+
+    def test_visible_address_requires_exact_event_title_date_and_named_room(self):
+        event = dict(EVENT, title="Metal night")
+        template = "<h1>{title}</h1><p>{day}</p><h2>{room}</h2><p>19 rue des Jardins, 68000 Colmar</p>"
+        for title, day, room in (
+            ("Other gig", "12 février 2027", "New Room"),
+            ("Metal night", "13 février 2027", "New Room"),
+            ("Metal night", "12 février 2027", "Other Room"),
+        ):
+            with self.assertRaises(ValueError):
+                evidence.extract_address(template.format(title=title, day=day, room=room), event, VENUE)
+
+    def test_visible_footer_ticket_office_and_recommendations_never_supply_address(self):
+        event = dict(EVENT, title="Metal night")
+        prefix = "<h1>Metal night</h1><p>12 février 2027</p>"
+        for fragment in (
+            "<footer><h2>New Room</h2><p>19 rue des Jardins, 68000 Colmar</p></footer>",
+            "<h2>New Room</h2><p>Billetterie 19 rue des Jardins, 68000 Colmar</p>",
+            "<h2>Autres concerts</h2><h3>New Room</h3><p>19 rue des Jardins, 68000 Colmar</p>",
+            "<h2>New Room</h2><p>19 rue des Jardins, 68000 Paris</p>",
+        ):
+            with self.assertRaises(ValueError):
+                evidence.extract_address(prefix + fragment, event, VENUE)
+
+    def test_visible_conflicting_addresses_are_rejected(self):
+        event = dict(EVENT, title="Metal night")
+        html = ("<h1>Metal night</h1><time datetime='2027-02-12'>12 février</time>"
+                "<h2>New Room</h2><p>19 rue des Jardins, 68000 Colmar</p>"
+                "<h2>New Room</h2><p>21 rue des Jardins, 68000 Colmar</p>")
+        with self.assertRaises(ValueError):
+            evidence.extract_address(html, event, VENUE)
+
+    def test_visible_fallback_never_masks_conflicting_structured_claim(self):
+        event = dict(EVENT, title="Metal night")
+        html = ("<h1>Metal night</h1><p>12 février 2027</p>"
+                "<h2>New Room</h2><p>19 rue des Jardins, 68000 Colmar</p>")
+        absent = document(location={"@type": "Place", "name": "New Room"})
+        self.assertEqual(evidence.extract_address(absent + html, event, VENUE)["postalCode"], "68000")
+        for structured in (document(startDate="2027-02-13"),
+                           document(location={"@type": "Place", "name": "Other Room"}),
+                           document(location={"@type": "Place", "name": "New Room", "address": {}})):
+            with self.assertRaises(ValueError):
+                evidence.extract_address(structured + html, event, VENUE)
