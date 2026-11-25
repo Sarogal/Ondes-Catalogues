@@ -183,7 +183,7 @@ def verified_detail(html, room, city, when, *, address=None, postal=None,
         return held("invalid_date")
     if not isinstance(html, str) or len(html) > MAX_HTML:
         return held("invalid_html")
-    parsed = visible.VisibleBlocks()
+    parsed = visible.VisibleBlocks(leaf_divs=True)
     try:
         parsed.feed(html)
         parsed.close()
@@ -213,7 +213,7 @@ def verified_detail(html, room, city, when, *, address=None, postal=None,
         "vous devriez aimer", "recommandations", "related concerts"
     }
     cutoff = next((i for i, (tag, t) in enumerate(section)
-                   if tag in {"p", "h2", "h3", "h4"}
+                   if tag in {"p", "h2", "h3", "h4", "h5", "div", "span", "strong", "text"}
                    and words(t) in end_labels), len(section))
     section = section[:min(cutoff, 160)]
     if CANCELLED.search(words(" ".join(t for _, t in section))):
@@ -222,7 +222,7 @@ def verified_detail(html, room, city, when, *, address=None, postal=None,
         # A venue's calendar list is NOT an individual event detail. Only a
         # presenter's dedicated show page can supply this second HTML shape.
         first_date_idx = next((i for i, (tag, t) in enumerate(section)
-                               if tag in {"p", "time", "strong", "text"}
+                               if tag in {"p", "time", "strong", "text", "div", "span", "h2", "h3", "h4", "h5"}
                                and _date(t)), len(section))
         preceding = section[:first_date_idx]
         if not any(tag in {"h2", "h3"}
@@ -233,15 +233,17 @@ def verified_detail(html, room, city, when, *, address=None, postal=None,
         # The page must not contain several distinct announced show dates
         # inside its primary event section. Repeated SAME date is fine.
         observed = {_date(t) for tag, t in section if tag in {
-            "p", "time", "strong", "text"} and _date(t)}
+            "p", "time", "strong", "text", "div", "span", "h2", "h3", "h4", "h5"} and _date(t)}
         if observed != {when}:
             return held("primary_date_missing_or_ambiguous")
     else:
         dates = [_date(t) for tag, t in section[:16]
-                 if tag in {"p", "time", "strong", "text"} and _date(t)]
+                 if tag in {"p", "time", "strong", "text", "div", "span"} and _date(t)]
         if not dates or dates[0] != when:
             return held("artist_heading_date_mismatch")
-    paras = [t for tag, t in section if tag == "p"]
+    # A complete field can be a paragraph or a generic leaf div. Inline
+    # fragments and wrapper divs must not form synthetic event cards.
+    paras = [t for tag, t in section if tag in {"p", "div"}]
     matches = {}
     for i in range(max(0, len(paras) - 3)):
         if _date(paras[i]) != when:
