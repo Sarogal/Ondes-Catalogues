@@ -187,23 +187,28 @@ def select_sources(frontier_report, registry, day, *, slot=0, limit=3,
 
 def balanced_sites(seeds, day, slot, limit):
     """Rotate each category independently; reserve capacity for both.
-    
+
     The same official host may represent multiple artists/rooms. Avoid
     consuming the whole cycle with aliases on one domain; rotate identities
     before deduplication and only count actual selected site identities.
     """
     tick = day.toordinal() * 3 + slot
-    pools = {}
-    for kind in ("artist", "venue"):
-        rows = sorted((s for s in seeds if s["kind"] == kind),
-                      key=lambda s: (s["identity"]["key"], s["host"]))
-        if rows:
-            # A coprime stride is not guaranteed for arbitrary queue sizes.
-            # Moving by one per scan ensures every identity gets a turn.
-            offset = tick % len(rows)
-            pools[kind] = rows[offset:] + rows[:offset]
+    pools = {kind: sorted((s for s in seeds if s["kind"] == kind),
+                          key=lambda s: (s["identity"]["key"], s["host"]))
+             for kind in ("artist", "venue")}
+    both = all(pools.values())
+    for kind, rows in pools.items():
+        if not rows:
+            continue
+        # Advance by the cumulative nominal quota, not by the full budget
+        # or a single position. On a stable queue this covers consecutive
+        # identities even when queue size is a multiple of the budget.
+        if both:
+            extra = (tick + (kind == "artist")) // 2 if limit % 2 else 0
+            offset = (tick * (limit // 2) + extra) % len(rows)
         else:
-            pools[kind] = []
+            offset = (tick * limit) % len(rows)
+        pools[kind] = rows[offset:] + rows[:offset]
     chosen, hosts = [], set()
     # Alternate which category gets the odd extra place. Empty pools never
     # waste capacity, and one host is visited at most once per cycle.
