@@ -74,6 +74,23 @@ class DailyDiscoveryTests(unittest.TestCase):
             station(ID_B, name="Pop Hits", tags="dance,jazz")]})
         self.assertEqual(report["candidates"], [])
 
+    def test_electronic_hardcore_remains_review_not_target_genre(self):
+        row = candidate(station(name="Sprawl FM - RAVE | Hardcore, Breakbeat, Jungle, Acid",
+                                tags="hardcore,breakbeat,jungle"), set())
+        self.assertEqual(row["editorialSignal"], "electronic_context_review")
+        self.assertIn("hardcore", row["genreEvidence"])
+
+    def test_hardcore_punk_and_mixed_format_remain_candidates(self):
+        for tags, expected in (
+            ("hardcore punk", "target_genre_indication"),
+            ("hardcore", "ambiguous_genre_review"),
+            ("metal,techno", "mixed_genre_review"),
+            ("black metal", "target_genre_indication"),
+        ):
+            with self.subTest(tags=tags):
+                row = candidate(station(name="New Radio", tags=tags), set())
+                self.assertEqual(row["editorialSignal"], expected)
+
     def test_lastcheck_fail_is_not_automatically_admitted(self):
         report, _ = self.scan({("tag", "metal", 0): [
             station(last_ok=False)]})
