@@ -104,5 +104,40 @@ class LogoPreviewTests(unittest.TestCase):
         self.assertEqual(second["records"][0]["retrieval"], "failed_review")
 
 
+    def test_rotated_discovery_retains_unseen_image_evidence(self):
+        first = review(*inputs(), limit=1, fetch=lambda *a: (b"fake", "image/png"),
+                       decode=lambda b: ("image/png", 128, 128))
+        d, r, s = inputs()
+        d["candidates"] = d["candidates"][1:]
+        r["candidates"] = r["candidates"][1:]
+        for obj, key in ((d, "scanDate"), (r, "scanDate"), (s, "observationDate")):
+            obj[key] = "2026-11-26"
+        again = review(d, r, s, previous=first, limit=1,
+                       fetch=lambda *a: self.fail("already decoded"))
+        self.assertEqual(again["candidateCount"], 1)
+        self.assertEqual(again["retainedEvidenceCount"], 1)
+        self.assertFalse(again["records"][0]["observedInScan"])
+        self.assertEqual(again["records"][0]["imageSha256"], first["records"][0]["imageSha256"])
+        self.assertEqual(again["approvedLogoCount"], 0)
+
+    def test_audio_regression_does_not_erase_image_evidence(self):
+        first = review(*inputs(), limit=1, fetch=lambda *a: (b"fake", "image/png"),
+                       decode=lambda b: ("image/png", 128, 128))
+        d, r, s = inputs()
+        s["records"][0]["lastVerdict"] = "needs_review"
+        again = review(d, r, s, previous=first, limit=1,
+                       fetch=lambda *a: self.fail("already decoded"))
+        self.assertEqual(again["decodedCandidateCount"], 2)
+        self.assertEqual(again["records"][0]["audioEvidenceRank"], 0)
+
+    def test_current_known_candidate_does_not_retain_unmapped_record(self):
+        first = review(*inputs(), limit=1, fetch=lambda *a: (b"fake", "image/png"),
+                       decode=lambda b: ("image/png", 128, 128))
+        d, r, s = inputs()
+        r["candidates"][0]["classification"] = "already_mapped"
+        again = review(d, r, s, previous=first)
+        self.assertEqual([x["stationuuid"] for x in again["records"]], [B])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -77,6 +77,7 @@ def review(discovery: dict, reconciliation: dict, stream: dict, *, limit: int = 
     day = parse_day(discovery["scanDate"])
     cached = {}
     failed = {}
+    historical = {}
     if previous is not None:
         if (previous.get("schemaVersion") != 1 or previous.get("publicationAllowed") is not False
                 or previous.get("approvedLogoCount") != 0 or parse_day(previous["scanDate"]) > day):
@@ -90,7 +91,8 @@ def review(discovery: dict, reconciliation: dict, stream: dict, *, limit: int = 
                 if observed > day:
                     raise ValueError("Future image failure")
                 if isinstance(source, str) and re.fullmatch("[0-9a-f]{64}", source):
-                    failed[source] = observed
+                    failed[source] = max(observed, failed.get(source, observed))
+                    historical[old["stationuuid"]] = (source, {"retrieval": "failed_review", "observedDate": observed})
                 continue
             if old.get("retrieval") != "decoded_unapproved":
                 continue
@@ -102,7 +104,10 @@ def review(discovery: dict, reconciliation: dict, stream: dict, *, limit: int = 
                     or any(type(old.get(k)) is not int or not 64 <= old[k] <= 4096 for k in ("width", "height"))
                     or type(old.get("byteLength")) is not int or not 1 <= old["byteLength"] <= 2097152):
                 raise ValueError("Malformed previous artwork evidence")
-            cached[source] = {k: old[k] for k in ("retrieval", "imageSha256", "mime", "width", "height", "byteLength", "observedDate")}
+            metadata = {k: old[k] for k in ("retrieval", "imageSha256", "mime", "width", "height", "byteLength", "observedDate")}
+            if source not in cached or observed >= cached[source]["observedDate"]:
+                cached[source] = metadata
+            historical[old["stationuuid"]] = (source, metadata)
     rows, queue = [], []
     for uid, row in sorted(candidates.items()):
         if reconciled[uid]["classification"] != "unmapped_candidate":
@@ -116,15 +121,19 @@ def review(discovery: dict, reconciliation: dict, stream: dict, *, limit: int = 
         result = {"stationuuid": uid, "sourceClass": kind,
                   "sourceSha256": digest(url) if url else None,
                   "audioEvidenceRank": rank, "retrieval": "not_attempted",
-                  "logoApproved": False, "publicationAllowed": False}
+                  "logoApproved": False, "publicationAllowed": False,
+                  "observedInScan": True}
         rows.append(result)
-        if url and rank and row.get("editorialSignal") == "target_genre_indication":
-            if digest(url) in cached:
-                result.update(cached[digest(url)])
-            elif failed.get(digest(url)) == day:
-                result.update({"retrieval": "failed_review", "observedDate": day})
-            else:
-                queue.append((-rank, uid, url, result))
+        # Reuse historical evidence without requiring a fresh positive audio
+        # verdict. This is evidence of retrieval only, not logo identity.
+        if url and digest(url) in cached:
+            result.update(cached[digest(url)])
+        elif url and failed.get(digest(url)) == day:
+            result.update({"retrieval": "failed_review", "observedDate": day})
+        elif url and rank and row.get("editorialSignal") == "target_genre_indication":
+            queue.append((-rank, uid, url, result))
+        elif url and uid in historical and historical[uid][0] == digest(url):
+            result.update(historical[uid][1])
     # Group identical URLs for one network request; never imply shared station identity.
     groups = {}
     for _, uid, url, row in sorted(queue):
@@ -143,11 +152,25 @@ def review(discovery: dict, reconciliation: dict, stream: dict, *, limit: int = 
             metadata = {"retrieval": "failed_review", "observedDate": day}
         for row in group:
             row.update(metadata)
+    current_count = len(rows)
+    decoded_count = sum(x["retrieval"] == "decoded_unapproved" for x in rows)
+    # Rotated discovery pages do not contain every previously seen UUID.
+    # Preserve validated evidence, explicitly marked historical. Never retain
+    # rows which were reconciled as known/duplicate in this scan.
+    for uid, (source, metadata) in sorted(historical.items()):
+        if uid not in candidates:
+            rows.append({"stationuuid": uid, "sourceClass": "same_reported_host",
+                         "sourceSha256": source, "audioEvidenceRank": 0,
+                         "observedInScan": False, "logoApproved": False,
+                         "publicationAllowed": False, **metadata})
+    if len(rows) > 20000:
+        raise ValueError("Artwork evidence capacity exceeded")
     return {"schemaVersion": 1, "scanDate": discovery["scanDate"],
             "publicationAllowed": False, "approvedLogoCount": 0,
-            "candidateCount": len(rows), "attemptedSourceCount": min(limit, len(groups)),
-            "decodedCandidateCount": sum(x["retrieval"] == "decoded_unapproved" for x in rows),
-            "records": rows}
+            "candidateCount": current_count, "attemptedSourceCount": min(limit, len(groups)),
+            "decodedCandidateCount": decoded_count,
+            "retainedEvidenceCount": len(rows) - current_count,
+            "records": sorted(rows, key=lambda x: x["stationuuid"])}
 
 
 def main():
