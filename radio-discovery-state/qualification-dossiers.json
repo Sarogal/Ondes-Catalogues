@@ -41,6 +41,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -95,6 +96,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -150,6 +152,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -200,6 +203,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -269,6 +273,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "7f39876a8b876844369bcce72b212767153cba84bb9cf531267897d7573862c8",
         "observedDate": "2026-11-25",
@@ -337,6 +342,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -386,6 +392,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -420,6 +427,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -456,6 +464,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -500,6 +509,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -575,6 +585,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -630,6 +641,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -683,6 +695,18 @@
         "lastVerdict": "playlist_pending"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": {
+        "streamSha256": "0e61f2ea0afc5d375fa933b4e03084c37d10bacb40505709ffa8e2d9d5eb7a51",
+        "observedDate": "2026-11-25",
+        "verdict": "advancing_hls_audio_frame_indication",
+        "firstLastSequence": 179849542,
+        "secondLastSequence": 179849543,
+        "targetDuration": 10,
+        "segmentSampleBytes": 4096,
+        "frameCodec": "aac_adts",
+        "firstManifestSha256": "e07fad60d604c6419b2565bfad4ecfefffc295efb56cd0c50db7431578171542",
+        "secondManifestSha256": "90d790558b13fc43ee1edd75b7c9c987c1831a34bc5c327e16c5520c010dfdea"
+      },
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "query_source_review",
@@ -732,6 +756,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -768,6 +793,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -806,6 +832,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -844,6 +871,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -888,6 +916,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -944,6 +973,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -997,6 +1027,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -1052,6 +1083,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -1100,6 +1132,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -1144,6 +1177,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "query_source_review",
@@ -1199,6 +1233,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "query_source_review",
@@ -1254,6 +1289,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -1296,7 +1332,28 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "knonnow.org",
+        "homepageSha256": "e710abf9a398e11b794ebc9c46a69b987162fa3e6b87d89e947517fd3afe9822",
+        "identityNameSha256": "e4ccbfe5916b6afa35a4cfe52f307a8c02cb396fbb7e24c50738d49d54aa0da9",
+        "observedDate": "2026-11-25",
+        "retrieval": "html_observed",
+        "identityNameMatch": false,
+        "signal": "no_format_evidence",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [],
+        "primaryElectronicTerms": [],
+        "pageSha256": "23e77bbf23ccbc1ad57b2be987243eb52ba2a8e77a5fb4c792c50e70d6f17da3",
+        "finalPageSha256": "e710abf9a398e11b794ebc9c46a69b987162fa3e6b87d89e947517fd3afe9822",
+        "imageHintSha256": [
+          "c76cce2d1fee784a440fb4aeabdffe3ca73592c068c07cfd16f53719fba79b6a",
+          "d342db3977fef8f51252b45af6974e9469bd4fb146eeb667a08d7bce3a641d27"
+        ],
+        "analyzerVersion": 2,
+        "structuredProgrammeEvidence": false,
+        "declaredStreamLinked": false,
+        "streamSha256": "a6ca0ecea5a93b5af1c7810c9768a173e36814192b234e449f4719dcdb535c27"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1309,6 +1366,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -1364,6 +1422,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -1437,6 +1496,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -1486,6 +1546,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -1515,7 +1576,25 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "heavy.radio",
+        "homepageSha256": "06a7153938cda20ab7bacdcaf9259d08eafec63db199c9f312981b53b7b97c39",
+        "identityNameSha256": "9f9f23e0904870df1e7c23baab4ee6d57aa4b46b69efeb820d22c84ed9fa7eed",
+        "observedDate": "2026-11-25",
+        "retrieval": "failed_review",
+        "identityNameMatch": null,
+        "signal": null,
+        "primaryTargetTerms": null,
+        "visibleTargetTerms": null,
+        "primaryElectronicTerms": null,
+        "pageSha256": null,
+        "finalPageSha256": null,
+        "imageHintSha256": null,
+        "analyzerVersion": 2,
+        "structuredProgrammeEvidence": null,
+        "declaredStreamLinked": null,
+        "streamSha256": "f0511ad93702fc6c07690cc286b7c7f37bb83504237315021030be72353c859b"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1528,6 +1607,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -1570,7 +1650,33 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "insanerealmradio.com",
+        "homepageSha256": "04e235db0c0765da98321bf56928018b0c4291f85a909068c7cbec119a877fd0",
+        "identityNameSha256": "f2aaf365ecb4abff16b597dbef2e3358c116665e25bf71fbf83592cabfe47496",
+        "observedDate": "2026-11-25",
+        "retrieval": "html_observed",
+        "identityNameMatch": true,
+        "signal": "unbound_target_indication",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [
+          "metal",
+          "progressive metal",
+          "symphonic metal"
+        ],
+        "primaryElectronicTerms": [],
+        "pageSha256": "2dbcbb114c7acb778e19f0ccd7e9072fadc23454b1f93252a278f2ec227ffb34",
+        "finalPageSha256": "04e235db0c0765da98321bf56928018b0c4291f85a909068c7cbec119a877fd0",
+        "imageHintSha256": [
+          "90fa2498954eb058193558dcbf6d2f554c7c80bb4dbe1eb47f52041c3d668606",
+          "c06f5f72009f2e708ee0b9285163f7a7d1b9dd67c1b35690d8f5dbaf37c68e51",
+          "c7ba3781a66f33ee78e8799e4c8d66d133837ed675958bb4ad8239335f9c76bd"
+        ],
+        "analyzerVersion": 2,
+        "structuredProgrammeEvidence": false,
+        "declaredStreamLinked": false,
+        "streamSha256": "b9d32e7acc7bb239fc082edfee61e5b16891f38e7fdde0ca02f32aaba62af468"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -1583,6 +1689,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "unsafe_or_unsupported_source",
@@ -1632,6 +1739,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -1674,6 +1782,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -1728,6 +1837,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -1781,6 +1891,18 @@
         "lastVerdict": "playlist_pending"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": {
+        "streamSha256": "d8920caf1b7dfb954476c237a6f7007a3801a376f5e7357e1015c054b6bed0c8",
+        "observedDate": "2026-11-25",
+        "verdict": "advancing_hls_manifest_only",
+        "firstLastSequence": 280565289,
+        "secondLastSequence": 280565290,
+        "targetDuration": 6,
+        "segmentSampleBytes": 4096,
+        "frameCodec": null,
+        "firstManifestSha256": "adb06cb3e938d05ee39472f70aadaeb91a00193e00ad8ac86779d4d8e37cc5ad",
+        "secondManifestSha256": "f3689f90c0711dc12097348e4b7c2d58d929faf658a159d76cfe22e9b7f717df"
+      },
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -1837,6 +1959,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -1886,6 +2009,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -1948,6 +2072,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -2003,6 +2128,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "query_source_review",
@@ -2052,6 +2178,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -2088,6 +2215,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -2124,6 +2252,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -2164,6 +2293,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -2219,6 +2349,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -2268,6 +2399,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -2310,6 +2442,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "query_source_review",
@@ -2387,6 +2520,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -2440,6 +2574,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -2489,6 +2624,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -2518,7 +2654,25 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "highfidream.com",
+        "homepageSha256": "d5877cb102556ec5a3a1cdd7305902b3b1cd8a8d55c6bd84bf53c09ea9290d25",
+        "identityNameSha256": "2f2217435e60a82bbf456752a40544cdc560fdf124563feb218bb8a77c6b4ec0",
+        "observedDate": "2026-11-25",
+        "retrieval": "html_observed",
+        "identityNameMatch": false,
+        "signal": "no_format_evidence",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [],
+        "primaryElectronicTerms": [],
+        "pageSha256": "c6b06a2d2040d6dc49447fb8b4a8ed80f2afb7fa515d86126705814e9936a1ec",
+        "finalPageSha256": "d5877cb102556ec5a3a1cdd7305902b3b1cd8a8d55c6bd84bf53c09ea9290d25",
+        "imageHintSha256": [],
+        "analyzerVersion": 2,
+        "structuredProgrammeEvidence": false,
+        "declaredStreamLinked": false,
+        "streamSha256": "1fd1278b4e3b5b760b2afa150d0059c6f3256a2d8f707505f0be8fc0767e0f2c"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -2533,6 +2687,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "1fd1278b4e3b5b760b2afa150d0059c6f3256a2d8f707505f0be8fc0767e0f2c",
         "observedDate": "2026-11-25",
@@ -2596,6 +2751,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -2640,6 +2796,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "ed2a3274edc9092547074120bac8f194320d86bfaa21989d4dd89c5cde525d1c",
         "observedDate": "2026-11-25",
@@ -2706,6 +2863,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -2763,6 +2921,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "cf9456eb48746077c2743b972d475238f611c9da63a84c430c49892e8ed9f3d8",
         "observedDate": "2026-11-25",
@@ -2833,6 +2992,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "49ad66de7ab731d5dfd7d4a726e439856c73f3f336de0397fff71bbdf37f11ff",
         "observedDate": "2026-11-25",
@@ -2901,6 +3061,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -2956,6 +3117,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -3005,6 +3167,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -3041,6 +3204,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -3081,6 +3245,7 @@
         "lastVerdict": "blocked_unsafe"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -3136,6 +3301,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -3193,6 +3359,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "dd30406461d941b61cc5c3c9e0cdba561a7062b93da113034e70735e044481e4",
         "observedDate": "2026-11-25",
@@ -3255,6 +3422,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -3293,6 +3461,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -3329,6 +3498,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -3365,6 +3535,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -3411,7 +3582,21 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
-      "continuityEvidence": null,
+      "hlsEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "efd4f4b76d9b1b919f4de6a1c32726c57a58dd4f4cc9b5536f0ce5230b64e94a",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4000,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "aac_adts",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "unsafe_or_unsupported_source",
         "sourceSha256": null,
@@ -3466,6 +3651,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -3523,7 +3709,21 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
-      "continuityEvidence": null,
+      "hlsEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "600f26605e986226e5d5cddc48f3d2e4ac950ad2ba5bf70a13b26a80af00924c",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4000,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "same_reported_host",
         "sourceSha256": "4a4822c6da73dbdfdc04efa0bd2eedc830f8c0a4e970251a4fb92db1dd6c7c6f",
@@ -3578,6 +3778,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -3635,7 +3836,21 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
-      "continuityEvidence": null,
+      "hlsEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "ee105dc19818e10b108cf9eb99ce662922d5dba7b074ef7aa8f392669dea95b0",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4000,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "same_reported_host",
         "sourceSha256": "116ff17b28ad62c75b97abadc9df450c8fe4bbf1281319d273beaf95a6cee3e1",
@@ -3682,6 +3897,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -3718,6 +3934,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -3762,7 +3979,21 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
-      "continuityEvidence": null,
+      "hlsEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "a0d2546df73ea61f9f61152087c9a4c5d027a6bf2f74480e1082b0d280e1b18a",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4021,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "aac_adts",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "same_reported_host",
         "sourceSha256": "f7dbb5e1ae510b6f8b883ce6c8bd06ce29ddd1f06b2abdd5e6ae1d3aa45ce605",
@@ -3811,6 +4042,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -3855,7 +4087,21 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
-      "continuityEvidence": null,
+      "hlsEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "3443345152a9d708d5a506c600c8cdee46d235fd1623008431eb37cc985a7b82",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4000,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "same_reported_host",
         "sourceSha256": "baf489cefa1913e4eb536fbcc2ccfd8dd02c25970d9cd62e769954eabc1f04a8",
@@ -3912,7 +4158,21 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
-      "continuityEvidence": null,
+      "hlsEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "13f0ecbcfc717ae92707e6769f74c7128294e81ff2254c0e85a8c496c657c32c",
+        "observedDate": "2026-11-25",
+        "verdict": "continuous_icy_frame_indication",
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4001,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "aac_adts",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "missing_source",
         "sourceSha256": null,
@@ -3961,6 +4221,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -4005,6 +4266,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -4054,6 +4316,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -4090,6 +4353,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -4126,6 +4390,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -4160,6 +4425,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -4206,6 +4472,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "query_source_review",
@@ -4255,6 +4522,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -4297,6 +4565,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -4354,6 +4623,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -4411,6 +4681,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -4468,6 +4739,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "query_source_review",
@@ -4525,6 +4797,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -4582,6 +4855,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -4639,6 +4913,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -4695,6 +4970,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -4744,6 +5020,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -4786,6 +5063,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -4833,6 +5111,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -4871,6 +5150,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -4915,6 +5195,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -4973,6 +5254,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -5029,6 +5311,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -5086,6 +5369,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -5143,6 +5427,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -5192,6 +5477,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -5228,6 +5514,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -5270,6 +5557,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -5319,6 +5607,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -5365,6 +5654,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -5412,6 +5702,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -5474,6 +5765,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -5545,6 +5837,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -5602,6 +5895,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -5673,6 +5967,7 @@
         "lastVerdict": "needs_review"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -5722,6 +6017,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -5758,6 +6054,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -5794,6 +6091,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -5830,6 +6128,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -5874,6 +6173,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -5923,6 +6223,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -5959,6 +6260,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -5995,6 +6297,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -6031,6 +6334,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -6060,7 +6364,29 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "indiexfm.com",
+        "homepageSha256": "b69cc21ed68fc3a032b1de2304be0628ee44b70c252308bc7b72e9a311f75a1b",
+        "identityNameSha256": "874273d62743b1f7deb602fde1206d088f6b6960f6b690c7b73e993600083b9f",
+        "observedDate": "2026-11-25",
+        "retrieval": "html_observed",
+        "identityNameMatch": true,
+        "signal": "identity_and_target_indication",
+        "primaryTargetTerms": [
+          "punk"
+        ],
+        "visibleTargetTerms": [
+          "punk"
+        ],
+        "primaryElectronicTerms": [],
+        "pageSha256": "e0ea791ca7cdefcd5e406868908788b835dee49b103d9f25949ac13b9c8ba46d",
+        "finalPageSha256": "b69cc21ed68fc3a032b1de2304be0628ee44b70c252308bc7b72e9a311f75a1b",
+        "imageHintSha256": [],
+        "analyzerVersion": 2,
+        "structuredProgrammeEvidence": false,
+        "declaredStreamLinked": false,
+        "streamSha256": "08e4121484e003dfa9074299b382beb68ab8cfb7021aec650ae9eafa5c2fcafe"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -6071,6 +6397,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "query_source_review",
@@ -6118,6 +6445,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -6164,6 +6492,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -6222,6 +6551,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -6272,6 +6602,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -6351,6 +6682,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -6408,6 +6740,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -6465,6 +6798,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -6514,6 +6848,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -6558,6 +6893,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "unsafe_or_unsupported_source",
@@ -6615,6 +6951,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -6664,6 +7001,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -6708,6 +7046,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -6763,6 +7102,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -6820,6 +7160,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -6869,6 +7210,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -6905,6 +7247,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -6941,6 +7284,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -6977,6 +7321,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -7013,6 +7358,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -7049,6 +7395,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -7095,6 +7442,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -7152,6 +7500,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -7209,6 +7558,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -7264,6 +7614,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -7317,6 +7668,7 @@
         "lastVerdict": "needs_review"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -7366,6 +7718,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -7408,6 +7761,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -7450,7 +7804,25 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "heavy.radio",
+        "homepageSha256": "06a7153938cda20ab7bacdcaf9259d08eafec63db199c9f312981b53b7b97c39",
+        "identityNameSha256": "c10f17d8b8380436cd9e60704b5e5405358204b983e39387efb3aa2bc156a160",
+        "observedDate": "2026-11-25",
+        "retrieval": "failed_review",
+        "identityNameMatch": null,
+        "signal": null,
+        "primaryTargetTerms": null,
+        "visibleTargetTerms": null,
+        "primaryElectronicTerms": null,
+        "pageSha256": null,
+        "finalPageSha256": null,
+        "imageHintSha256": null,
+        "analyzerVersion": 2,
+        "structuredProgrammeEvidence": null,
+        "declaredStreamLinked": null,
+        "streamSha256": "f4f1a56e9b309dbba9ca8daabe7f6892f1a524193733940ed9c3dbce3af19e1a"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -7465,6 +7837,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -7512,6 +7885,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -7548,6 +7922,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -7594,6 +7969,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -7644,6 +8020,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -7712,6 +8089,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -7761,6 +8139,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -7795,6 +8174,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -7833,6 +8213,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -7869,6 +8250,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -7905,6 +8287,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -7941,6 +8324,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -7977,6 +8361,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -8011,6 +8396,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -8049,6 +8435,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -8093,6 +8480,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -8150,6 +8538,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -8207,6 +8596,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "unsafe_or_unsupported_source",
@@ -8256,6 +8646,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -8292,6 +8683,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -8328,6 +8720,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -8362,6 +8755,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -8430,6 +8824,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "query_source_review",
@@ -8504,6 +8899,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -8551,6 +8947,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -8587,6 +8984,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -8623,6 +9021,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -8663,6 +9062,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -8710,6 +9110,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -8752,6 +9153,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -8802,6 +9204,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -8838,6 +9241,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -8872,6 +9276,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -8910,6 +9315,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -8954,6 +9360,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "unsafe_or_unsupported_source",
@@ -9027,6 +9434,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "query_source_review",
@@ -9077,6 +9485,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -9117,6 +9526,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -9174,6 +9584,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -9223,6 +9634,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -9265,6 +9677,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "homepage_unconfirmed",
@@ -9314,6 +9727,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -9350,6 +9764,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -9379,7 +9794,25 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "hitsmusicradiorock.com",
+        "homepageSha256": "b5ec574e533145ebf37e6f33f113d9fdbf2ffa877708d8260f6fb144954ad38a",
+        "identityNameSha256": "d6ce2ff95cc437098ea3bf8a9912512063088571b1391b2c964b56a130edccd1",
+        "observedDate": "2026-11-25",
+        "retrieval": "failed_review",
+        "identityNameMatch": null,
+        "signal": null,
+        "primaryTargetTerms": null,
+        "visibleTargetTerms": null,
+        "primaryElectronicTerms": null,
+        "pageSha256": null,
+        "finalPageSha256": null,
+        "imageHintSha256": null,
+        "analyzerVersion": 2,
+        "structuredProgrammeEvidence": null,
+        "declaredStreamLinked": null,
+        "streamSha256": "b97b706ff8bb39419c7a726e4e3752d0877348106f3a35d5170cd5ce4f6d669d"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -9390,6 +9823,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -9437,6 +9871,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -9483,6 +9918,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -9532,6 +9968,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -9563,7 +10000,41 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "kracradio.com",
+        "homepageSha256": "b607e5fbdb5dd7a5f6e6202000c87acddd47523e45d3b22a8a23b0467b8719fd",
+        "identityNameSha256": "f4436d4f453800824f97ada2dbe3c2954f0e1f445a3f76e47f78cf9ccca43554",
+        "observedDate": "2026-11-25",
+        "retrieval": "html_observed",
+        "identityNameMatch": false,
+        "signal": "unbound_target_indication",
+        "primaryTargetTerms": [
+          "death metal",
+          "metal",
+          "metalcore"
+        ],
+        "visibleTargetTerms": [
+          "death metal",
+          "heavy metal",
+          "metal",
+          "metalcore",
+          "punk",
+          "thrash"
+        ],
+        "primaryElectronicTerms": [],
+        "pageSha256": "b3ef111fbf1dd8e97f54f670d011217a83763ebc6463ebe84bb26944c804d0f4",
+        "finalPageSha256": "b607e5fbdb5dd7a5f6e6202000c87acddd47523e45d3b22a8a23b0467b8719fd",
+        "imageHintSha256": [
+          "56c852148bd953360fbfce1b6cd2ff66a175145027bcdcc32a6c35530fabe931",
+          "64981c80f1bb0d049a7b339c5333a68bd5b7e2704506f4f4f7ba305ba0d4c08c",
+          "82ee32e68a2d43533fc5ea14b582ffb2803daf3395be87e8094dbfb44a54afaa",
+          "e338ee75161967dfd822604df4626511c6d42663546d42d2eec437a15a286e7f"
+        ],
+        "analyzerVersion": 2,
+        "structuredProgrammeEvidence": false,
+        "declaredStreamLinked": false,
+        "streamSha256": "a5cfdd1839cf48dcb14fd73b07d2bfa218002b210771bf470101b12538201dd0"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -9576,6 +10047,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -9633,6 +10105,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -9690,6 +10163,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -9739,6 +10213,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -9779,6 +10254,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -9836,6 +10312,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -9893,6 +10370,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -9942,6 +10420,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -9984,6 +10463,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -10033,6 +10513,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -10071,6 +10552,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -10107,6 +10589,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -10147,6 +10630,18 @@
         "lastVerdict": "playlist_pending"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": {
+        "streamSha256": "ac5e132f18b64939b98ba589e2879817d636b09970400aa35b0dd01538f04016",
+        "observedDate": "2026-11-25",
+        "verdict": "advancing_hls_manifest_only",
+        "firstLastSequence": 54283,
+        "secondLastSequence": 54285,
+        "targetDuration": 7,
+        "segmentSampleBytes": 4096,
+        "frameCodec": null,
+        "firstManifestSha256": "8bd3762e64ecedb34ee51c278810d0ac1e93ba06a4d526fcb0efd8bcf3bb8bbf",
+        "secondManifestSha256": "cebc4f7a0472aace5fb954f61c48a29748336d2607f83ce84e3d9bf3b4a562d3"
+      },
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -10200,6 +10695,18 @@
         "lastVerdict": "playlist_pending"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": {
+        "streamSha256": "3f86508357456841a1d6c279e22b25814645649f6b65f238d4a1bdda0befde8b",
+        "observedDate": "2026-11-25",
+        "verdict": "advancing_hls_audio_frame_indication",
+        "firstLastSequence": 179849543,
+        "secondLastSequence": 179849544,
+        "targetDuration": 10,
+        "segmentSampleBytes": 4096,
+        "frameCodec": "aac_adts",
+        "firstManifestSha256": "41ffce2f0636e432ced04e620aa8949b2ba877074edcf0a713a0c91901f886a5",
+        "secondManifestSha256": "0614d489cdc4e3bb8eec5d1acb3d41403cc9f3b707486efaa8a0259a00b2b97b"
+      },
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -10257,6 +10764,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -10306,6 +10814,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -10350,6 +10859,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -10407,6 +10917,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -10456,6 +10967,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -10498,6 +11010,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -10547,6 +11060,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -10593,6 +11107,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -10643,6 +11158,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -10685,6 +11201,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -10734,6 +11251,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -10774,6 +11292,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -10829,6 +11348,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -10878,6 +11398,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -10920,6 +11441,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -10969,6 +11491,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -11005,6 +11528,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -11049,6 +11573,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -11099,6 +11624,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -11143,6 +11669,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -11185,7 +11712,25 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "kalaver.in",
+        "homepageSha256": "5c1ab6dfbb6db0ab437da44123a443d1cf18f747f45da1d3051374ba48c4aeae",
+        "identityNameSha256": "f5640ae27c856d70ff674a6ed80b4479acd6a15c135deb433511bdf08f683a13",
+        "observedDate": "2026-11-25",
+        "retrieval": "html_observed",
+        "identityNameMatch": false,
+        "signal": "no_format_evidence",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [],
+        "primaryElectronicTerms": [],
+        "pageSha256": "a8fdec5581373f02c9fdea38e835ae2352b29008578d6e013b669c109c692975",
+        "finalPageSha256": "5c1ab6dfbb6db0ab437da44123a443d1cf18f747f45da1d3051374ba48c4aeae",
+        "imageHintSha256": [],
+        "analyzerVersion": 2,
+        "structuredProgrammeEvidence": false,
+        "declaredStreamLinked": false,
+        "streamSha256": "d7c204720669b4d845a2d9184f010776e2d60d305c433bbc84f856be85bbf9c7"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11198,6 +11743,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -11270,6 +11816,7 @@
         "lastVerdict": "needs_review"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -11327,6 +11874,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -11382,6 +11930,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -11439,6 +11988,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -11494,6 +12044,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -11552,6 +12103,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -11601,6 +12153,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -11641,6 +12194,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -11698,6 +12252,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -11755,6 +12310,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "homepage_unconfirmed",
@@ -11812,6 +12368,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -11869,6 +12426,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -11926,6 +12484,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -11983,6 +12542,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -12036,6 +12596,7 @@
         "lastVerdict": "audio_mime_only"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -12093,6 +12654,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -12176,6 +12738,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -12233,6 +12796,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -12290,6 +12854,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -12371,6 +12936,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "same_reported_host",
@@ -12428,6 +12994,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -12483,6 +13050,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -12540,6 +13108,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -12598,6 +13167,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -12655,6 +13225,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -12704,6 +13275,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -12750,6 +13322,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "unsafe_or_unsupported_source",
@@ -12797,6 +13370,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -12843,6 +13417,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -12900,6 +13475,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -12955,6 +13531,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -13004,6 +13581,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -13044,6 +13622,7 @@
         "lastVerdict": "needs_review"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "missing_source",
@@ -13093,6 +13672,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -13135,6 +13715,7 @@
         "lastVerdict": "audio_sample_ok"
       },
       "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
@@ -13184,6 +13765,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -13220,6 +13802,7 @@
       "duplicateRisk": false,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,
@@ -13254,6 +13837,7 @@
       "duplicateRisk": true,
       "streamEvidence": null,
       "streamEvidenceMatchesCurrentSource": false,
+      "hlsEvidence": null,
       "continuityEvidence": null,
       "logoEvidence": null,
       "logoIdentityVerified": false,

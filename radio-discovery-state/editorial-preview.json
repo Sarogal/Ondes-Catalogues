@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "editoriallyApprovedCount": 0,
   "attemptedPageCount": 8,
-  "htmlObservedCount": 11,
-  "identityTargetCount": 2,
+  "htmlObservedCount": 17,
+  "identityTargetCount": 3,
   "structuredProgrammeCount": 0,
   "declaredStreamLinkedCount": 1,
   "records": [
@@ -69,6 +69,32 @@
       ]
     },
     {
+      "stationuuid": "158a3876-cbad-406c-b69e-edac38ae71d6",
+      "homepageSha256": "e710abf9a398e11b794ebc9c46a69b987162fa3e6b87d89e947517fd3afe9822",
+      "identityNameSha256": "e4ccbfe5916b6afa35a4cfe52f307a8c02cb396fbb7e24c50738d49d54aa0da9",
+      "reportedHost": "knonnow.org",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "a6ca0ecea5a93b5af1c7810c9768a173e36814192b234e449f4719dcdb535c27",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": false,
+      "signal": "no_format_evidence",
+      "structuredProgrammeEvidence": false,
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [],
+      "primaryElectronicTerms": [],
+      "pageSha256": "23e77bbf23ccbc1ad57b2be987243eb52ba2a8e77a5fb4c792c50e70d6f17da3",
+      "finalPageSha256": "e710abf9a398e11b794ebc9c46a69b987162fa3e6b87d89e947517fd3afe9822",
+      "imageHintSha256": [
+        "c76cce2d1fee784a440fb4aeabdffe3ca73592c068c07cfd16f53719fba79b6a",
+        "d342db3977fef8f51252b45af6974e9469bd4fb146eeb667a08d7bce3a641d27"
+      ]
+    },
+    {
       "stationuuid": "1628187c-e965-4593-8f36-719c3dd9ad9b",
       "homepageSha256": "f27356f39627fa24851e77fcfcf7d697d0a08eaa3b73e35d15db301ead086ada",
       "identityNameSha256": "e915ed55946fd4ce4395f1fcbbda8b65b407f4dea0f9f32a81824ef2e773ee53",
@@ -80,6 +106,50 @@
       "streamSha256": "82f293eacbefd38fedcc6ecf22cf301aa75392588e9f4bd1a537039c2c40a128",
       "editorialApproved": false,
       "publicationAllowed": false
+    },
+    {
+      "stationuuid": "165c260d-de4a-4728-a1dc-2ae56cad10ec",
+      "homepageSha256": "06a7153938cda20ab7bacdcaf9259d08eafec63db199c9f312981b53b7b97c39",
+      "identityNameSha256": "9f9f23e0904870df1e7c23baab4ee6d57aa4b46b69efeb820d22c84ed9fa7eed",
+      "reportedHost": "heavy.radio",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "failed_review",
+      "analyzerVersion": 2,
+      "streamSha256": "f0511ad93702fc6c07690cc286b7c7f37bb83504237315021030be72353c859b",
+      "editorialApproved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "16b32eac-febf-49ee-85e4-06b559c78b96",
+      "homepageSha256": "04e235db0c0765da98321bf56928018b0c4291f85a909068c7cbec119a877fd0",
+      "identityNameSha256": "f2aaf365ecb4abff16b597dbef2e3358c116665e25bf71fbf83592cabfe47496",
+      "reportedHost": "insanerealmradio.com",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "b9d32e7acc7bb239fc082edfee61e5b16891f38e7fdde0ca02f32aaba62af468",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": true,
+      "signal": "unbound_target_indication",
+      "structuredProgrammeEvidence": false,
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [
+        "metal",
+        "progressive metal",
+        "symphonic metal"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "2dbcbb114c7acb778e19f0ccd7e9072fadc23454b1f93252a278f2ec227ffb34",
+      "finalPageSha256": "04e235db0c0765da98321bf56928018b0c4291f85a909068c7cbec119a877fd0",
+      "imageHintSha256": [
+        "90fa2498954eb058193558dcbf6d2f554c7c80bb4dbe1eb47f52041c3d668606",
+        "c06f5f72009f2e708ee0b9285163f7a7d1b9dd67c1b35690d8f5dbaf37c68e51",
+        "c7ba3781a66f33ee78e8799e4c8d66d133837ed675958bb4ad8239335f9c76bd"
+      ]
     },
     {
       "stationuuid": "1f951feb-544e-447b-8143-8b9656a46cf2",
@@ -136,6 +206,29 @@
       ]
     },
     {
+      "stationuuid": "2f76081c-dbf0-4b40-bb30-63987abe744e",
+      "homepageSha256": "d5877cb102556ec5a3a1cdd7305902b3b1cd8a8d55c6bd84bf53c09ea9290d25",
+      "identityNameSha256": "2f2217435e60a82bbf456752a40544cdc560fdf124563feb218bb8a77c6b4ec0",
+      "reportedHost": "highfidream.com",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "1fd1278b4e3b5b760b2afa150d0059c6f3256a2d8f707505f0be8fc0767e0f2c",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": false,
+      "signal": "no_format_evidence",
+      "structuredProgrammeEvidence": false,
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [],
+      "primaryElectronicTerms": [],
+      "pageSha256": "c6b06a2d2040d6dc49447fb8b4a8ed80f2afb7fa515d86126705814e9936a1ec",
+      "finalPageSha256": "d5877cb102556ec5a3a1cdd7305902b3b1cd8a8d55c6bd84bf53c09ea9290d25",
+      "imageHintSha256": []
+    },
+    {
       "stationuuid": "652a2fa1-d3fe-4724-a3eb-3d6b7fb1e687",
       "homepageSha256": "def0f3aa138343c4e0ed59453f66de576c2d9fdbd9e063e88dc64ee9cbab441a",
       "identityNameSha256": "eb1594ae7780087d034af677c620102e00896d468128187284e98f9b1912a1f2",
@@ -173,6 +266,33 @@
       "streamSha256": "edab9d4fbf267697368affc41288833ee4d1547f2c65f8156c4ca71ae3252ec0",
       "editorialApproved": false,
       "publicationAllowed": false
+    },
+    {
+      "stationuuid": "753d2e38-194f-4fb0-9918-4263c6119188",
+      "homepageSha256": "b69cc21ed68fc3a032b1de2304be0628ee44b70c252308bc7b72e9a311f75a1b",
+      "identityNameSha256": "874273d62743b1f7deb602fde1206d088f6b6960f6b690c7b73e993600083b9f",
+      "reportedHost": "indiexfm.com",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "08e4121484e003dfa9074299b382beb68ab8cfb7021aec650ae9eafa5c2fcafe",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": true,
+      "signal": "identity_and_target_indication",
+      "structuredProgrammeEvidence": false,
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [
+        "punk"
+      ],
+      "visibleTargetTerms": [
+        "punk"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "e0ea791ca7cdefcd5e406868908788b835dee49b103d9f25949ac13b9c8ba46d",
+      "finalPageSha256": "b69cc21ed68fc3a032b1de2304be0628ee44b70c252308bc7b72e9a311f75a1b",
+      "imageHintSha256": []
     },
     {
       "stationuuid": "7912f9a4-750e-4575-8718-37a2a2edfb16",
@@ -213,6 +333,19 @@
         "79a5dd1fd84d06b31551312f78dee9332714596787dddb41d54a860c92074743",
         "d81569c799a6102a7321e7c7fdbed16996b3aacdb164741ed308d1c791094526"
       ]
+    },
+    {
+      "stationuuid": "8decb3ad-234d-4535-b66e-c40f0cc2179b",
+      "homepageSha256": "06a7153938cda20ab7bacdcaf9259d08eafec63db199c9f312981b53b7b97c39",
+      "identityNameSha256": "c10f17d8b8380436cd9e60704b5e5405358204b983e39387efb3aa2bc156a160",
+      "reportedHost": "heavy.radio",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "failed_review",
+      "analyzerVersion": 2,
+      "streamSha256": "f4f1a56e9b309dbba9ca8daabe7f6892f1a524193733940ed9c3dbce3af19e1a",
+      "editorialApproved": false,
+      "publicationAllowed": false
     },
     {
       "stationuuid": "955166e9-1bd6-4cd2-841f-fb7eeb09e1dc",
@@ -308,6 +441,81 @@
       "streamSha256": "e7ce64edc0c9b343c33b302ab134c8126d7880518bb442353a9608452476fa7d",
       "editorialApproved": false,
       "publicationAllowed": false
+    },
+    {
+      "stationuuid": "ad0f6199-f729-4fb1-b19c-e2c6fd545ff9",
+      "homepageSha256": "b5ec574e533145ebf37e6f33f113d9fdbf2ffa877708d8260f6fb144954ad38a",
+      "identityNameSha256": "d6ce2ff95cc437098ea3bf8a9912512063088571b1391b2c964b56a130edccd1",
+      "reportedHost": "hitsmusicradiorock.com",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "failed_review",
+      "analyzerVersion": 2,
+      "streamSha256": "b97b706ff8bb39419c7a726e4e3752d0877348106f3a35d5170cd5ce4f6d669d",
+      "editorialApproved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "b3d7cfa7-8860-4bac-9626-e4eeafece502",
+      "homepageSha256": "b607e5fbdb5dd7a5f6e6202000c87acddd47523e45d3b22a8a23b0467b8719fd",
+      "identityNameSha256": "f4436d4f453800824f97ada2dbe3c2954f0e1f445a3f76e47f78cf9ccca43554",
+      "reportedHost": "kracradio.com",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "a5cfdd1839cf48dcb14fd73b07d2bfa218002b210771bf470101b12538201dd0",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": false,
+      "signal": "unbound_target_indication",
+      "structuredProgrammeEvidence": false,
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [
+        "death metal",
+        "metal",
+        "metalcore"
+      ],
+      "visibleTargetTerms": [
+        "death metal",
+        "heavy metal",
+        "metal",
+        "metalcore",
+        "punk",
+        "thrash"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "b3ef111fbf1dd8e97f54f670d011217a83763ebc6463ebe84bb26944c804d0f4",
+      "finalPageSha256": "b607e5fbdb5dd7a5f6e6202000c87acddd47523e45d3b22a8a23b0467b8719fd",
+      "imageHintSha256": [
+        "56c852148bd953360fbfce1b6cd2ff66a175145027bcdcc32a6c35530fabe931",
+        "64981c80f1bb0d049a7b339c5333a68bd5b7e2704506f4f4f7ba305ba0d4c08c",
+        "82ee32e68a2d43533fc5ea14b582ffb2803daf3395be87e8094dbfb44a54afaa",
+        "e338ee75161967dfd822604df4626511c6d42663546d42d2eec437a15a286e7f"
+      ]
+    },
+    {
+      "stationuuid": "d469d86b-e0a7-45ac-aa94-6be76329ab82",
+      "homepageSha256": "5c1ab6dfbb6db0ab437da44123a443d1cf18f747f45da1d3051374ba48c4aeae",
+      "identityNameSha256": "f5640ae27c856d70ff674a6ed80b4479acd6a15c135deb433511bdf08f683a13",
+      "reportedHost": "kalaver.in",
+      "observedDate": "2026-11-25",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 2,
+      "streamSha256": "d7c204720669b4d845a2d9184f010776e2d60d305c433bbc84f856be85bbf9c7",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": false,
+      "signal": "no_format_evidence",
+      "structuredProgrammeEvidence": false,
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [],
+      "primaryElectronicTerms": [],
+      "pageSha256": "a8fdec5581373f02c9fdea38e835ae2352b29008578d6e013b669c109c692975",
+      "finalPageSha256": "5c1ab6dfbb6db0ab437da44123a443d1cf18f747f45da1d3051374ba48c4aeae",
+      "imageHintSha256": []
     },
     {
       "stationuuid": "d50796ae-a0e4-493f-b276-6b0a15b0c6dc",
