@@ -20,6 +20,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_stream_recheck_ledger.py"
       - "radio-catalog-lab/tools/radio_daily_logo_preview.py"
       - "radio-catalog-lab/tools/test_radio_daily_logo_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_qualification_dossiers.py"
+      - "radio-catalog-lab/tools/test_radio_daily_qualification_dossiers.py"
       - ".github/workflows/radio-catalog-daily-discovery.yml"
   workflow_dispatch:
     inputs:
@@ -92,6 +94,9 @@ jobs:
             cp "$state/genre-hints.json" "$previous/candidates.json"
             if [[ -f "$state/logo-preview.json" ]]; then
               cp "$state/logo-preview.json" "$previous/logo-preview.json"
+            fi
+            if [[ -f "$state/qualification-dossiers.json" ]]; then
+              cp "$state/qualification-dossiers.json" "$previous/qualification-dossiers.json"
             fi
             if [[ -f "$state/stream-evidence.json" ]]; then
               cp "$state/stream-evidence.json" "$previous/stream-evidence.json"
@@ -216,6 +221,23 @@ jobs:
             --reconciliation "$root/reconciliation-v8.json" \
             --stream "$root/stream-evidence.json" \
             --output "$root/logo-preview.json" --limit 8 --allow-network "${previous[@]}"
+      - name: Join qualification evidence by UUID (no admission)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        env:
+          BASELINE_SHA256: f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/qualification-dossiers.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/qualification-dossiers.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_qualification_dossiers.py \
+            --discovery "$root/candidates.json" --reconciliation "$root/reconciliation-v8.json" \
+            --ledger "$root/ledger.json" --stream "$root/stream-evidence.json" \
+            --logo "$root/logo-preview.json" --output "$root/qualification-dossiers.json" \
+            --baseline-sha256 "$BASELINE_SHA256" "${previous[@]}"
       - name: Prepare safe durable genre hints
         shell: bash
         run: |
@@ -267,9 +289,9 @@ jobs:
           src = Path(os.environ["RUNNER_TEMP"]) / "go-radio-state-input"
           dst = Path("radio-discovery-state")
           dst.mkdir(exist_ok=True)
-          for name in ("ledger.json", "genre-hints.json", "stream-evidence.json", "logo-preview.json"):
+          for name in ("ledger.json", "genre-hints.json", "stream-evidence.json", "logo-preview.json", "qualification-dossiers.json"):
               path = src / name
-              if name in ("stream-evidence.json", "logo-preview.json") and not path.exists():
+              if name in ("stream-evidence.json", "logo-preview.json", "qualification-dossiers.json") and not path.exists():
                   continue
               assert path.stat().st_size <= 12 * 1024 * 1024
               data = json.loads(path.read_text())
@@ -283,6 +305,9 @@ jobs:
               if name == "logo-preview.json":
                   assert data.get("approvedLogoCount") == 0
                   assert all(r.get("logoApproved") is False and r.get("publicationAllowed") is False for r in data["records"])
+              if name == "qualification-dossiers.json":
+                  assert data.get("approvedCount") == 0
+                  assert all(r.get("approved") is False and r.get("publicationAllowed") is False for r in data["records"])
               (dst / name).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
           PY
           git config user.name "github-actions[bot]"
