@@ -46,6 +46,7 @@ MAX_AGENDA_ROTATION_SECONDS = 600
 AGENDA_SELECTOR_SCHEMA = "ptitesondes.private_national_agenda_rotation.v1"
 MAX_CONTROL_BYTES = 4096
 GEOGRAPHY_SCHEMA = "ptitesondes.private_geographic_index_rotation.v1"
+GEOGRAPHY_STATUS_SCHEMA = "ptitesondes.private_geographic_query_status.v1"
 # Geographic queries are discovery seeds, never agenda/venue allowlists.
 # All unfiltered index lanes remain independent and continue to run.
 # Start with the three regions with no published outings on 25 Nov 2026.
@@ -120,6 +121,16 @@ def geographic_index_sample(index_dir, reports_dir, day, batch_id, key, reader):
                 or not 0 <= state["next_term"] < len(GEOGRAPHIC_TERMS)):
             raise ValueError("invalid_geographic_index_rotation")
         position = state["next_term"]
+    status_dir = private_subdir(index_dir / "geographic-status")
+    # Existing deployments may have advanced without leaving any per-term
+    # evidence. Replay the first missing coverage sample once, then resume
+    # the saved ordinary rotation. This does not add an extra network budget.
+    resume_position = position
+    recovery_sample = position >= GEOGRAPHIC_QUERIES_PER_RUN and any(
+        not (status_dir / f"term-{i:02d}.json").exists()
+        for i in range(GEOGRAPHIC_QUERIES_PER_RUN))
+    if recovery_sample:
+        position = 0
     known = set()
     for existing, _ in available_index_reports(reports_dir):
         try:
@@ -134,15 +145,36 @@ def geographic_index_sample(index_dir, reports_dir, day, batch_id, key, reader):
             continue
     groups = []
     completed = failed = identities = 0
+    outcomes = []
     for offset in range(GEOGRAPHIC_QUERIES_PER_RUN):
-        term = GEOGRAPHIC_TERMS[(position + offset) % len(GEOGRAPHIC_TERMS)]
+        term_index = (position + offset) % len(GEOGRAPHIC_TERMS)
+        term = GEOGRAPHIC_TERMS[term_index]
+        outcome = {"schema": GEOGRAPHY_STATUS_SCHEMA, "term": term,
+                   "day": day.isoformat(), "batch_id": batch_id,
+                   "status": "failed", "reason_code": None,
+                   "identities_seen": 0, "held_identity_rows": 0,
+                   "new_agendas": 0}
+        outcomes.append((term_index, outcome))
         try:
             data = reader(key, size=PAGE_SIZE, search=term)
             rows, _ = _validated_page(data, PAGE_SIZE, None)
-        except (OSError, ValueError, TypeError, KeyError, TimeoutError):
+        except (OSError, ValueError, TypeError, KeyError, TimeoutError) as exc:
             failed += 1
+            # Never persist arbitrary exceptions, request URLs or credentials.
+            safe_codes = {
+                "oa_index_unavailable", "oa_index_size_invalid",
+                "oa_index_invalid_json", "invalid_oa_index_page",
+                "invalid_oa_index_rows", "invalid_oa_index_cursor",
+                "invalid_oa_index_identity", "invalid_oa_index_item",
+                "unexpected_oa_index_endpoint", "invalid_oa_index_request",
+            }
+            outcome["reason_code"] = (str(exc) if isinstance(exc, ValueError)
+                and str(exc) in safe_codes else type(exc).__name__)
             continue
         completed += 1
+        outcome["status"] = "completed"
+        outcome["identities_seen"] = len(rows)
+        outcome["held_identity_rows"] = data.get("held_identity_rows", 0)
         group = []
         groups.append(group)
         for row in rows:
@@ -157,6 +189,7 @@ def geographic_index_sample(index_dir, reports_dir, day, batch_id, key, reader):
                 "owner_verified": False, "organiser_verified": False,
                 "rights_reviewed": False, "publisher_enabled": False,
             })
+        outcome["new_agendas"] = len(group)
     candidates = [group[offset] for offset in range(PAGE_SIZE)
                   for group in groups if offset < len(group)]
     report_path = None
@@ -178,12 +211,18 @@ def geographic_index_sample(index_dir, reports_dir, day, batch_id, key, reader):
                 "publisher_connected": False, "publication_ready": False,
                 "public_writes": 0,
             })
+    # Persist evidence even for empty or failed queries. Each term occupies
+    # one bounded private file; no ever-growing diagnostic history.
+    for term_index, outcome in outcomes:
+        _write_atomic_private(status_dir / f"term-{term_index:02d}.json",
+            (json.dumps(outcome, ensure_ascii=False, sort_keys=True) + "\n").encode())
     # Keep geographic failure isolated from national census progress.
     # A failed term is retried on the next complete geographic rotation;
     # successful first-page samples never become permanent exclusions.
     _write_atomic_private(path, (json.dumps({
         "schema": GEOGRAPHY_SCHEMA,
-        "next_term": (position + GEOGRAPHIC_QUERIES_PER_RUN) % len(GEOGRAPHIC_TERMS),
+        "next_term": (resume_position if recovery_sample else
+                      (position + GEOGRAPHIC_QUERIES_PER_RUN) % len(GEOGRAPHIC_TERMS)),
     }, sort_keys=True) + "\n").encode())
     return report_path, completed, failed, len(candidates)
 
