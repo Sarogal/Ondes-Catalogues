@@ -961,6 +961,37 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
         self.assertEqual(len(seen_oa), 50)
         self.assertEqual(len(seen_other), 148)
 
+    def test_expanded_budget_retains_all_three_research_lanes(self):
+        queue = []
+        for group, count in (("oa", 20), ("tagged", 24), ("unknown", 60)):
+            for index in range(count):
+                candidate = {"candidateId": f"{group}-{index:03d}",
+                             "source": "agenda_officiel_structuré"}
+                if group == "oa":
+                    candidate.update(source="agenda_officiel_openagenda",
+                                     openAgendaUid=111,
+                                     openAgendaEventUid=index + 1)
+                elif group == "tagged":
+                    candidate["reviewBucket"] = "genre_tag_review"
+                queue.append((f"https://official.example/{group}/{index}/",
+                              "2027-05-01", fixture.VENUE_ID, candidate))
+        before = {"schema": publisher.SCHEMA, "approvals": []}
+        seen = set()
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose", side_effect=ValueError("held")):
+            for offset in range(3):
+                for slot in (0, 1, 2):
+                    result, report = pipeline.build(
+                        {}, BASE, before, TODAY + dt.timedelta(days=offset), slot=slot)
+                    self.assertEqual(result["approvals"], [])
+                    self.assertEqual(report["reviewBudget"], 16)
+                    self.assertEqual(report["examined"], 16)
+                    self.assertEqual(report["openAgendaExamined"], 3)
+                    self.assertEqual(report["officialGenreTaggedExamined"], 4)
+                    self.assertGreaterEqual(report["reviewElapsedSeconds"], 0)
+                    seen.update(row["candidateId"] for row in report["candidateChecks"])
+        self.assertEqual(len(seen), len(queue))
+
     def test_only_openagenda_or_only_venue_uses_entire_budget(self):
         before = {"schema": publisher.SCHEMA, "approvals": []}
         for kind in ("agenda_officiel_openagenda",
