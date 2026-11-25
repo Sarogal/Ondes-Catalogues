@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-25T13:16:18+01:00",
+  "updated_at": "2026-11-25T14:17:08+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -19063,6 +19063,26 @@
       "geo_precision": "venue",
       "lat": 50.773013,
       "lng": 3.048191
+    },
+    {
+      "id": "openagenda-89382271-2026-12-09",
+      "title": "Ciné-concert L’Horloge Magique",
+      "category": "concert",
+      "category_label": "Concert",
+      "date_start": "2026-12-09",
+      "date_end": "2026-12-09",
+      "time": "16:30",
+      "city": "Nantes",
+      "department": "Loire-Atlantique",
+      "region": "Pays de la Loire",
+      "venue": "Le Lieu Unique Nantes",
+      "source_url": "https://openagenda.com/vie-associative-nantes-ville-et-metropole/events/89382271_cine-concert-lhorloge-magique",
+      "source_label": "Vie associative Nantes ville et métropole — Licence Ouverte 2.0 — données mises à jour le 16/11/2026",
+      "verified_at": "2026-11-25",
+      "geo_verified_at": "2026-11-25",
+      "geo_precision": "venue",
+      "lat": 47.215266,
+      "lng": -1.545666
     }
   ]
 }
