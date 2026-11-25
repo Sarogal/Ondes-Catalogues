@@ -485,7 +485,7 @@ jobs:
           UTC_HOUR="$(date -u +%H)"
           SCAN_SLOT=$((10#$UTC_HOUR / 8))
           # Candidate site links are untrusted hints, NEVER authority grants.
-          # DNS-pinned HTTPS + robots + no redirect, three hosts per cycle.
+          # DNS-pinned HTTPS + robots + no redirect, five hosts per cycle.
           # This quarantined archive feeds tomorrow's open-world frontier.
           if ! python public/automation/concerts/open_world_site_research.py \
               --catalogue public/docs/grossesondes/concerts.json \
@@ -493,7 +493,7 @@ jobs:
               --frontier confidential/automation/concerts/intake/open-world-frontier.json \
               --musicbrainz confidential/automation/concerts/intake/musicbrainz-research.json \
               --day "$(TZ=Europe/Paris date +%F)" \
-              --scan-slot "$SCAN_SLOT" --max-sites 3 --max-details 3 \
+              --scan-slot "$SCAN_SLOT" --max-sites 5 --max-details 3 \
               --output "$RUNNER_TEMP/concerts-open-world/candidates.json" \
               > "$RUNNER_TEMP/concerts-private-logs/open-world-site-research.log" 2>&1; then
             echo "::warning::Recherche ouverte indisponible ; aucune source ni concert n'est approuvé."
