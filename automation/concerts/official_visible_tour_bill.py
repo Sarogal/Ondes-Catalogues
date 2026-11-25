@@ -87,8 +87,9 @@ def verified_tour(html, title, room, city, day):
     if not dates or {d for _, _, d in dates} != {day}:
         return None
     # Venue and city must be on the very same full-date announcement.
-    if not any(visible._contains(t, room) and visible._contains(t, city)
-               for _, t, _ in dates):
+    room_key = re.sub(r"^(?:le|la|les|l|the)\s+", "", words(room))
+    if not room_key or not any(visible._contains(t, room_key) and visible._contains(t, city)
+                               for _, t, _ in dates):
         return None
     first_date = dates[0][0]
     genres = list(dict.fromkeys(g for tag, t in section[:min(first_date, 16)]
