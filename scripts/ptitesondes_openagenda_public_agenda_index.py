@@ -44,12 +44,14 @@ def _validated_page(payload, size, old_cursor):
     if not isinstance(payload, dict):
         raise ValueError("invalid_oa_index_page")
     rows = payload.get("agendas")
-    if not isinstance(rows, list) or len(rows) > size:
+    held = payload.get("held_identity_rows", 0)
+    if (not isinstance(rows, list) or type(held) is not int
+            or not 0 <= held <= size or len(rows) + held > size):
         raise ValueError("invalid_oa_index_rows")
     after = payload.get("after")
     if after is not None and (not valid_cursor(after)
                               or after == old_cursor
-                              or not rows):
+                              or not (rows or held)):
         raise ValueError("invalid_oa_index_cursor")
     clean = []
     known = set()
@@ -66,6 +68,39 @@ def _validated_page(payload, size, old_cursor):
         known.add(uid)
         clean.append({"uid": uid, "slug": slug, "title": name})
     return clean, after
+
+
+def _partition_live_index_page(payload, size, old_cursor):
+    """Quarantine malformed individual identities, not the whole API page.
+
+    The raw envelope and pagination cursor remain strict. Only complete,
+    independently readable UID/slug/title identities become research leads.
+    Invalid rows are counted, never repaired or approved, and remain eligible
+    on the next census pass. Duplicate valid UIDs remain a pagination error.
+    """
+    if not isinstance(payload, dict):
+        raise ValueError("invalid_oa_index_page")
+    rows = payload.get("agendas")
+    if not isinstance(rows, list) or len(rows) > size:
+        raise ValueError("invalid_oa_index_rows")
+    after = payload.get("after")
+    if after is not None and (not valid_cursor(after)
+                              or after == old_cursor or not rows):
+        raise ValueError("invalid_oa_index_cursor")
+    clean, seen = [], set()
+    held = 0
+    for row in rows:
+        try:
+            records, _ = _validated_page({"agendas": [row]}, 1, None)
+        except ValueError:
+            held += 1
+            continue
+        record = records[0]
+        if record["uid"] in seen:
+            raise ValueError("invalid_oa_index_identity")
+        seen.add(record["uid"])
+        clean.append(record)
+    return {"agendas": clean, "after": after, "held_identity_rows": held}
 
 
 def read_index_page(public_read_key, after=None, *,
@@ -118,8 +153,7 @@ def read_index_page(public_read_key, after=None, *,
     # reused in either exhaustive index lane.
     if search is not None and isinstance(payload, dict):
         payload = dict(payload, after=None)
-    rows, cursor = _validated_page(payload, size, after)
-    return {"agendas": rows, "after": cursor}
+    return _partition_live_index_page(payload, size, after)
 
 
 def scan_index_pages(configured, *, start_cursor=None, pages=MAX_PAGES,
@@ -155,6 +189,7 @@ def scan_index_pages(configured, *, start_cursor=None, pages=MAX_PAGES,
         payload = reader(public_read_key, current, **kwargs)
         rows, after = _validated_page(payload, PAGE_SIZE, current)
         counts["pages_read"] += 1
+        counts["held_identity_rows"] += payload.get("held_identity_rows", 0)
         for record in rows:
             uid = record["uid"]
             if uid in visited:
