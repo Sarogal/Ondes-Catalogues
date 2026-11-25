@@ -28,6 +28,7 @@ from future_city_preflight import (
     undated_future_year,
 )
 from official_admin_communes import verified_commune
+from grossesondes_admin_marker import historical_proof
 
 PROOF_MODE = "current-edition-commune-two-day.v1"
 MAX_BYTES = 200_000
@@ -181,7 +182,7 @@ def apply_independently_verified_city(target, published, review, today,
         enriched.update({
             "city": national["city"],
             "lat": national["lat"], "lon": national["lon"],
-            "geoCity": national["city"], "geoPrecision": "commune",
+            "geoCity": national.get("geoCity", national["city"]), "geoPrecision": "commune",
             "geoInsee": national["codeInsee"],
             "geoSource": national["geoSource"], "showOnMap": True,
             "geoVerification": {
@@ -190,6 +191,7 @@ def apply_independently_verified_city(target, published, review, today,
                 "verifiedAt": today,
                 "officialSite": old["officialSite"],
                 "markerMeaning": "centre_indicatif_de_commune",
+                **historical_proof(national),
             },
         })
         if any(enriched.get(k) != new.get(k) for k in
