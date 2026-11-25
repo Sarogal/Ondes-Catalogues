@@ -986,12 +986,14 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         all_sites = signed_rotation(
             published, DAY, limit=official_update_scan_limit("push"), tick=0)
         self.assertEqual(len(all_sites), 47)
-        # Normal Paris half-day slots remain complementary and exhaustive.
+        # Normal Paris half-day slots remain exhaustive; only the unused tail
+        # slot wraps to the beginning.
         morning = signed_rotation(published, DAY, limit=24, tick=0)
         evening = signed_rotation(published, DAY, limit=24, tick=1)
         self.assertEqual(len(morning), 24)
-        self.assertEqual(len(evening), 23)
-        self.assertFalse(set(x[0] for x in morning) & set(x[0] for x in evening))
+        self.assertEqual(len(evening), 24)
+        self.assertEqual(len({x[0] for x in evening}), 24)
+        self.assertEqual(len(set(x[0] for x in morning) & set(x[0] for x in evening)), 1)
         self.assertEqual(set(x[0] for x in all_sites),
                          {x[0] for x in morning + evening})
 
@@ -1030,9 +1032,31 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         signed = doc(*rows)
         seen = [url for tick in range(3)
                 for url, _ in signed_rotation(signed, DAY, limit=24, tick=tick)]
-        self.assertEqual(len(seen), 53)
+        self.assertEqual(len(seen), 72)
         self.assertEqual(len(set(seen)), 53)
-        self.assertLessEqual(len(signed_rotation(signed, DAY, limit=24, tick=0)), 24)
+        for tick in range(3):
+            batch = [u for u, _ in signed_rotation(signed, DAY, limit=24, tick=tick)]
+            self.assertEqual(len(batch), 24)
+            self.assertEqual(len(set(batch)), 24)
+
+    def test_ordinary_tail_uses_budget_without_starvation(self):
+        for count in (1, 23, 24, 25, 47, 48, 49, 53, 72, 73, 121):
+            with self.subTest(count=count):
+                rows = [festival(f"festival-{i:03d}",
+                                 f"https://ordinary-{i:03d}.example.fr/")
+                        for i in range(count)]
+                published = doc(*rows)
+                slots = (count + 23) // 24
+                # Any consecutive complete rotation covers all signed
+                # sources even when it starts at the final partial slice.
+                seen = set()
+                for tick in range(slots - 1, 2 * slots - 1):
+                    batch = [url for url, _ in signed_rotation(
+                        published, DAY, limit=24, tick=tick)]
+                    self.assertEqual(len(batch), min(count, 24))
+                    self.assertEqual(len(set(batch)), len(batch))
+                    seen.update(batch)
+                self.assertEqual(seen, {r["officialSite"] for r in rows})
 
     def test_fresh_official_dates_clean_only_stale_historical_notes(self):
         from grossesondes_existing_official_updates import clean_obsolete_date_notes
