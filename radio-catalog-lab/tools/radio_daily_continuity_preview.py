@@ -83,20 +83,20 @@ def read_icy_titles(response, interval, deadline, clock):
             size = exact(1)[0] * 16
             if not size:
                 continue
-            raw = exact(size).rstrip(b"\\0")
+            raw = exact(size).rstrip(b"\0")
             # The server may use UTF-8 or legacy Latin-1.
             try:
                 text = raw.decode("utf-8")
             except UnicodeDecodeError:
                 text = raw.decode("latin-1")
-            m = re.search(r"(?:^|;)\\s*StreamTitle='(.*?)';", text, re.S|re.I)
+            m = re.search(r"(?:^|;)\s*StreamTitle='(.*?)';", text, re.S|re.I)
             if not m:
                 continue
             value = m.group(1).strip()
             # Artist/title syntax is a hint, not a verified artist identity.
             if not 0 < len(value) <= 240 or any(ord(c)<32 for c in value):
                 continue
-            if re.search(r"https?://|www\\.|@|[?=&]", value, re.I):
+            if re.search(r"https?://|www\.|@|[?=&]", value, re.I):
                 continue
             if value.count(" - ") != 1:
                 continue
