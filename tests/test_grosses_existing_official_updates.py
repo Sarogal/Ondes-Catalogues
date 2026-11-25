@@ -289,6 +289,63 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertTrue(_verified_official_update_delta(row, updated))
         self.assertEqual(report["accepted"], [row["slug"]])
 
+    def test_seasonal_ticket_cards_preserve_price_tiers_and_status(self):
+        from grossesondes_existing_official_updates import (
+            seasonal_ticket_card_offers, seasonal_ticket_summary,
+        )
+        site = "https://festival-exemple.fr/"
+        row = festival("festival-foudre-libre-2027", site,
+                       dates=("2027-08-19", "2027-08-21"))
+        row.update(name="Festival Foudre Libre 2027", department="39")
+        html = (
+            '<html><head><title>Festival Foudre Libre</title>'
+            '<meta property="og:description" content="Été 2027 · '
+            '19, 20 et 21 août à Légna (39)"></head><body><main>'
+            '<section><p>19, 20 &amp; 21 AOÛT 2027<br/>Légna (39) · Jura</p></section>'
+            '<section><p>Billetterie · Été 2027</p><h2>Choisis ton pass.</h2><ul>'
+            '<li><img alt="Pass 3 jours Tarif réduit : 89 €."><p>Festival</p>'
+            '<h3>Tarif réduit</h3><p>Disponibilité : Épuisé</p></li>'
+            '<li><img alt="Pass 3 jours Plein tarif : 115 €."><p>Festival</p>'
+            '<h3>Pass 3 jours · Plein tarif</h3><p>Disponibilité : Disponible</p></li>'
+            '<li><img alt="Pass 3 jours Soutien : 130 €."><p>Festival</p>'
+            '<h3>Tarif soutien</h3><p>Disponibilité : Disponible</p></li>'
+            '<li><p>Camping</p><h3>Aire de bivouac</h3><p>Gratuit</p></li>'
+            '</ul></section><section><p>Billetterie · Hiver 2027</p><ul>'
+            '<li><img alt="Pass 1 jour Hiver : 35 €"><p>Festival</p>'
+            '<h3>Hiver</h3><p>Disponibilité : Disponible</p></li>'
+            '</ul></section></main></body></html>')
+        offers = seasonal_ticket_card_offers(html, row, DAY)
+        self.assertEqual(len(offers), 3)
+        self.assertEqual(offers[(3, "tarif reduit")], ("Tarif réduit", "89 €", "épuisé"))
+        self.assertEqual(offers[(3, "plein tarif")], ("Plein tarif", "115 €", "disponible"))
+        summary = seasonal_ticket_summary(offers)
+        self.assertIn("130 € (disponible)", summary)
+        self.assertIn("89 € (épuisé)", summary)
+        self.assertNotIn("35 €", summary)
+        for bad in (
+            html.replace("Disponibilité : Épuisé", "Disponibilité : Actualisation…"),
+            html.replace('alt="Pass 3 jours Tarif réduit', 'hidden alt="Pass 3 jours Tarif réduit'),
+            html.replace("Pass 3 jours Soutien", "Pass 3 jours Autre formule"),
+            html.replace("Billetterie · Été 2027", "Billetterie · Été 2026"),
+            html.replace("21 AOÛT 2027", "22 AOÛT 2027"),
+            html.replace("115 €.", "115 €.").replace(
+                "Disponibilité : Disponible</p></li><li><img alt=\"Pass 3 jours Soutien",
+                "Disponibilité : Épuisé</p><p>Disponibilité : Disponible</p></li><li><img alt=\"Pass 3 jours Soutien"),
+        ):
+            self.assertEqual(seasonal_ticket_card_offers(bad, row, DAY), {})
+        self.assertIsNone(seasonal_ticket_summary({
+            (3, "tarif reduit"): ("Tarif réduit", "89 €", "épuisé")}))
+        original = doc(row)
+        out, report = apply_independently_verified_updates(
+            original, original, DAY,
+            fetch=lambda _: (_ for _ in ()).throw(OSError("HTTP 403")),
+            browser_fetch=lambda _: html, commune_resolver=lambda *_: None,
+            limit=1, tick=0)
+        updated = out["festivals"][0]
+        self.assertEqual(updated["price"], summary)
+        self.assertTrue(_verified_official_update_delta(row, updated))
+        self.assertEqual(report["accepted"], [row["slug"]])
+
     def test_linked_official_news_can_recover_when_both_raw_requests_fail(self):
         signed = doc(festival("mozhell-open-air", MOZHELL))
         browser_calls = []

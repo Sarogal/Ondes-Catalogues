@@ -605,6 +605,155 @@ def season_scoped_first_names(doc, html, row, today):
     return names
 
 
+
+class _SeasonTicketCards(VisibleText):
+    """Read visible first-party image alt and status within one section/list item."""
+    def __init__(self):
+        super().__init__()
+        self.sections = []
+        self.active = []
+        self.cards = []
+        self.labels = []
+
+    def handle_starttag(self, tag, attrs):
+        super().handle_starttag(tag, attrs)
+        tags = [t for t, _ in self.stack]
+        if (self.hidden() or "main" not in tags
+                or any(t in tags for t in ("nav", "header", "footer", "aside"))):
+            return
+        if tag == "section":
+            section = {"labels": [], "cards": []}
+            self.sections.append(section)
+            self.active.append((len(self.stack), section))
+        if not self.active:
+            return
+        section = self.active[-1][1]
+        if tag == "p" and not self.cards:
+            self.labels.append((len(self.stack), section, []))
+        if tag == "li":
+            self.cards.append((len(self.stack), section, [], []))
+        if tag == "img" and self.cards and self.cards[-1][1] is section:
+            attributes = dict(attrs)
+            if ("hidden" in attributes or attributes.get("aria-hidden") == "true"
+                    or re.search(r"display\s*:\s*none|visibility\s*:\s*hidden",
+                                 attributes.get("style") or "", re.I)):
+                return
+            alt = attributes.get("alt")
+            # Unlike OCR, this is a literal organizer-authored accessible label.
+            if isinstance(alt, str) and 0 < len(alt) <= 180:
+                self.cards[-1][3].append(alt)
+
+    def handle_data(self, data):
+        if (not self.hidden() and
+                not any(t in ("nav", "header", "footer", "aside") for t, _ in self.stack)):
+            if self.cards:
+                self.cards[-1][2].append(data)
+            if self.labels:
+                self.labels[-1][2].append(data)
+
+    def handle_endtag(self, tag):
+        super().handle_endtag(tag)
+        depth = len(self.stack)
+        while self.labels and self.labels[-1][0] > depth:
+            _, section, values = self.labels.pop()
+            section["labels"].append(fold(" ".join(values)))
+        while self.cards and self.cards[-1][0] > depth:
+            _, section, values, alts = self.cards.pop()
+            section["cards"].append((" ".join(values), alts))
+        while self.active and self.active[-1][0] > depth:
+            self.active.pop()
+
+
+def seasonal_ticket_card_offers(html, row, today):
+    """All explicitly priced and status-labelled tiers of the signed season.
+
+    Unknown status, incomplete price cards and inconsistent duplicate tiers
+    defer the entire section. Never pair a price from another list item with
+    a status, infer a duration from a festival's dates or advertise a sold
+    out tier as available. Only exact signed first-party editions qualify.
+    """
+    if not exact_edition_city(html, row):
+        return {}
+    try:
+        start = date.fromisoformat(row["startDate"])
+        if start < date.fromisoformat(today):
+            return {}
+        title = _EditionTitle()
+        title.feed(html)
+        title.close()
+        seasons = set(re.findall(
+            rf"\b(ete|hiver|printemps|automne)\s+{start.year}\b",
+            fold(" ".join(title.parts))))
+        description = current_edition_description(html, row)
+        if description:
+            seasons.add(description["season"])
+        if len(seasons) != 1:
+            return {}
+        label = next(iter(seasons)) + " " + str(start.year)
+        parser = _SeasonTicketCards()
+        parser.feed(html)
+        parser.close()
+    except (KeyError, TypeError, ValueError, UnicodeError):
+        return {}
+    offers = {}
+    for section in parser.sections:
+        labels = set(section["labels"])
+        if not labels.intersection({"billetterie " + label, "les pass " + label,
+                                    "tarifs " + label}):
+            continue
+        season_labels = {m.group() for text in labels for m in re.finditer(
+            r"\b(?:ete|hiver|printemps|automne)\s+20[2-4]\d\b", text)}
+        if season_labels != {label}:
+            continue
+        local = {}
+        for raw, alts in section["cards"]:
+            candidates = [re.fullmatch(
+                r"Pass\s+([1-7])\s+jours?\s+([^:;€]{1,65}?)\s*:\s*"
+                r"(\d{2,4}(?:[,.]\d{2})?)\s*€\.?", alt.strip(), re.I)
+                for alt in alts]
+            matched = [m for m in candidates if m]
+            if not matched:
+                # A paid festival card without a priced accessible label is
+                # incomplete. A separate free camping card is not a price tier.
+                if re.search(r"\bfestival\b", fold(raw)):
+                    return {}
+                continue
+            if len(matched) != 1:
+                return {}
+            m = matched[0]
+            duration, tier, price = int(m[1]), m[2].strip(), m[3].replace(".", ",")
+            visible = fold(raw)
+            if (not re.search(r"\b" + re.escape(fold(tier)) + r"\b", visible)
+                    or re.search(r"\b(?:disponibilite actualisation|bientot disponible)\b", visible)):
+                return {}
+            statuses = set(re.findall(
+                r"\bdisponibilite\s+(disponible|epuise|complet|sold out)\b", visible))
+            statuses = {"disponible" if value == "disponible" else "épuisé"
+                        for value in statuses}
+            if len(statuses) != 1:
+                return {}
+            offer_key = (duration, fold(tier))
+            value = (tier, price + " €", next(iter(statuses)))
+            if offer_key in local and local[offer_key] != value:
+                return {}
+            local[offer_key] = value
+        for k, v in local.items():
+            if k in offers and offers[k] != v:
+                return {}
+            offers[k] = v
+    return offers
+
+
+def seasonal_ticket_summary(offers):
+    if not offers or not any(v[2] == "disponible" for v in offers.values()):
+        return None
+    summary = " ; ".join(
+        f"Pass {days} jour{'s' if days > 1 else ''} — {tier} : {price} ({status})"
+        for (days, _), (tier, price, status) in sorted(offers.items()))
+    summary += " — billetterie officielle ouverte"
+    return summary if len(summary) <= 350 else None
+
+
 def advertised_passes(blocks):
     found = {}
     # Explicit, visible ticket-card offers take precedence over generic
@@ -1065,6 +1214,22 @@ def apply_independently_verified_updates(
                 if seasonal_names:
                     claims.extend(seasonal_names)
                     sources.append(url)
+            # Separate complete, explicitly labelled price tiers from the
+            # legacy one-price-per-duration parser. Do not reconcile conflicting
+            # page snapshots or replace an unrelated existing price summary.
+            seasonal_offers, seasonal_sources = {}, []
+            seasonal_conflict = False
+            for url, html in html_pages:
+                offers = seasonal_ticket_card_offers(html, old, today)
+                if not offers:
+                    continue
+                if any(k in seasonal_offers and seasonal_offers[k] != v
+                       for k, v in offers.items()):
+                    seasonal_conflict = True
+                seasonal_offers.update(offers)
+                seasonal_sources.append(url)
+            tier_summary = (seasonal_ticket_summary(seasonal_offers)
+                            if not seasonal_conflict else None)
             current_lineup = old.get("lineup")
             current_lineup = current_lineup if isinstance(current_lineup, list) else []
             cleaned_lineup = verified_artist_alias_cleanup(current_lineup, claims)
@@ -1102,6 +1267,11 @@ def apply_independently_verified_updates(
                         old_price != summary):
                     new["price"] = summary
                     fields.append("price")
+            if (tier_summary is not None and old.get("price") is None
+                    and not prices):
+                new["price"] = tier_summary
+                fields.append("price")
+                sources.extend(seasonal_sources)
             # The signed current-edition title may explicitly name the town.
             # Publisher re-fetches the site itself, then independently resolves
             # that exact commune through the fixed government geocoding API.
