@@ -48,6 +48,47 @@ def archive_entry(**overrides):
 
 
 class VisibleHTMLTests(unittest.TestCase):
+    def test_explicit_off_festival_calendar_cannot_create_an_edition(self):
+        from datetime import date
+        from grossesondes_archived_html_intake import official_date
+        from grossesondes_official_html_edition import festival_visible_content
+        name = "Festival des Brumes"
+        day = date(2027, 2, 4)
+        annual = (
+            "<section><h2>Programmation à l’année</h2>"
+            "<p>Notre organisateur propose aussi des concerts à l'année.</p>"
+            "<a href='/events/etiquette/hors-festival/'>Tous les concerts</a>"
+            "<article><h3>Tournée Foudre Vive</h3>"
+            "<p>Le 4 février 2027</p></article></section>"
+        )
+        home = "<main><h1>Festival des Brumes</h1>" + annual + "</main>"
+        self.assertFalse(visible_official_edition(home, name + " 2027", day, day))
+        self.assertIsNone(official_date(home, {"name": name}, 2027))
+        remaining, outside = festival_visible_content(home)
+        self.assertNotIn("4 fevrier 2027", remaining)
+        self.assertTrue(any("4 fevrier 2027" in part for part in outside))
+        # Explicitly marked outside-festival cards must not suppress a real
+        # one-day edition or create a conflicting second festival date.
+        true_day = date(2027, 10, 28)
+        real = ("<section><h2>Festival des Brumes 2027</h2>"
+                "<p>Le 28 octobre 2027</p></section>")
+        mixed = home.replace("</main>", real + "</main>")
+        self.assertTrue(visible_official_edition(
+            mixed, name + " 2027", true_day, true_day))
+        self.assertEqual(official_date(mixed, {"name": name}, 2027),
+                         (true_day, true_day))
+        explicit = home.replace("Programmation à l’année", "Hors festival")
+        self.assertIsNone(official_date(explicit, {"name": name}, 2027))
+        # A hidden link or an ordinary yearly programme is NOT sufficient
+        # to erase genuine announced dates or contradicting evidence.
+        for unproven in (
+            home.replace("hors-festival", "festival"),
+            home.replace("<a href=", "<a hidden href="),
+            home.replace("Programmation à l’année", "Programmation"),
+        ):
+            self.assertIn("4 fevrier 2027",
+                          festival_visible_content(unproven)[0])
+
     def test_french_range_and_multiple_days(self):
         for dates in ("12-13 août 2027", "12 et 13 août 2027",
                       "du 12 au 13 août 2027", "12, 13 août 2027",
