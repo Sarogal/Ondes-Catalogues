@@ -43,7 +43,8 @@ class StatusApiTests(unittest.TestCase):
         self.assertFalse(same_mount("http://example.org/metal", "https://example.org/metal"))
         self.assertFalse(same_mount("https://example.org/metal", "https://example.org/metal2"))
         self.assertFalse(same_mount("https://example.org/metal", "https://example.org:8080/metal"))
-        self.assertTrue(same_mount("https://example.org/metal?x=1", "https://example.org/metal"))
+        self.assertFalse(same_mount("https://example.org/metal?x=1", "https://example.org/metal"))
+        self.assertFalse(same_mount("https://example.org/", "https://example.org/"))
 
 
 if __name__ == "__main__":
