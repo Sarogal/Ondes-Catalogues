@@ -112,7 +112,71 @@ def _qualifies_row(row, today):
     }
 
 
-def find_research(catalogue, today, concert_catalogue=None):
+def correction_research(corrections, today):
+    """Reviewed retractions nominate a tour without reviving its festival row."""
+    if not isinstance(corrections, list) or len(corrections) > MAX_ROWS:
+        raise ValueError("Invalid festival corrections")
+    selected = {}
+    for correction in corrections:
+        if (not isinstance(correction, dict) or correction.get("schema") != 1
+                or correction.get("action") != "retract_false_edition_only"
+                or correction.get("retainHistoricalFestival") is not True
+                or correction.get("continueEditionWatch") is not True):
+            continue
+        previous = correction.get("previousRow")
+        lead = correction.get("concertLead")
+        if not isinstance(previous, dict) or not isinstance(lead, dict):
+            continue
+        if lead.get("publicationAuthorized") is not False:
+            continue
+        site = _public_https_home(previous.get("officialSite"))
+        day = _one_day_future(previous, today)
+        slug = previous.get("slug")
+        if (site is None or day is None or day.isoformat() != lead.get("date")
+                or not isinstance(slug, str) or len(slug) > 130
+                or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", slug)):
+            continue
+        if not all(isinstance(lead.get(k), str) and 2 <= len(lead[k]) <= 200
+                   for k in ("title", "venue", "city", "department", "officialUrl")):
+            continue
+        if not re.fullmatch(r"[0-9]{2,3}|2A|2B", lead["department"]):
+            continue
+        lineup = lead.get("artists")
+        if _named_lineup({"lineup": lineup}) is None:
+            continue
+        # Same-origin detail is a research hint, never permission to fetch.
+        try:
+            url = urlsplit(lead["officialUrl"])
+            if (url.scheme != "https" or url.netloc != urlsplit(site).netloc
+                    or url.path in ("", "/") or url.query or url.fragment
+                    or lead["officialUrl"] not in correction.get("evidence", [])):
+                continue
+        except (ValueError, TypeError):
+            continue
+        stable = sha256(json.dumps({
+            "slug": slug, "date": day.isoformat(), "site": site,
+            "city": triage.words(lead["city"]),
+        }, sort_keys=True).encode("utf-8")).hexdigest()[:24]
+        candidate = triage.triage({
+            "candidateId": "concert-from-festival-" + stable,
+            "source": SOURCE, "sourceUrl": lead["officialUrl"], "sourcePage": site,
+            "date": day.isoformat(), "name": lead["title"],
+            "leadArtist": lineup[0], "venue": lead["venue"],
+            "city": lead["city"], "department": lead["department"],
+            "venueCatalogueId": None, "artistNamesFromFestivalOnly": list(lineup),
+            "festivalReferenceSlug": slug, "classification": [],
+            "genreToConfirm": True, "officialDetailFound": False,
+            "publishedFestivalTourFlag": True, "requiresArtistAndVenueReproof": True,
+            "festivalCatalogueHintsOnly": True,
+            "publicationAllowed": False, "reviewRequired": True,
+        })
+        if candidate["reviewBucket"] != "tour_source_research":
+            raise ValueError("Retraction research cannot enter publisher source")
+        selected[candidate["candidateId"]] = candidate
+    return list(selected.values())
+
+
+def find_research(catalogue, today, concert_catalogue=None, corrections=None):
     if (not isinstance(catalogue, dict) or catalogue.get("schema") != 1
             or not isinstance(catalogue.get("festivals"), list)
             or len(catalogue["festivals"]) > MAX_ROWS
@@ -173,6 +237,10 @@ def find_research(catalogue, today, concert_catalogue=None):
             selected.append(classified)
     # A saturated old catalogue must be triaged, not silently truncate
     # a series of genuine touring stops and masquerade as a complete pass.
+    by_id = {row["candidateId"]: row for row in selected}
+    for row in correction_research(corrections if corrections is not None else [], today):
+        by_id.setdefault(row["candidateId"], row)
+    selected = list(by_id.values())
     if len(selected) > MAX_CANDIDATES:
         raise ValueError("Too many published festival-tour nominations")
     selected.sort(key=lambda row: (row["date"], row["candidateId"]))
@@ -191,7 +259,13 @@ def main():
     ap.add_argument("--output", required=True, type=Path)
     args = ap.parse_args()
     data = json.loads(args.festivals.read_text(encoding="utf-8"))
-    report = find_research(data, datetime.now(ZoneInfo("Europe/Paris")).date())
+    correction_dir = args.festivals.parent / "festival-corrections"
+    paths = sorted(correction_dir.glob("*.json"))
+    if len(paths) > MAX_ROWS:
+        raise ValueError("Too many reviewed correction files")
+    corrections = [json.loads(p.read_text(encoding="utf-8")) for p in paths]
+    report = find_research(data, datetime.now(ZoneInfo("Europe/Paris")).date(),
+                           corrections=corrections)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(
         report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
