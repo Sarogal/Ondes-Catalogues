@@ -28,6 +28,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_continuity_preview.py"
       - "radio-catalog-lab/tools/radio_daily_hls_preview.py"
       - "radio-catalog-lab/tools/test_radio_daily_hls_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_decision_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_decision_preview.py"
       - ".github/workflows/radio-catalog-daily-discovery.yml"
   workflow_dispatch:
     inputs:
@@ -294,6 +296,17 @@ jobs:
             --ledger "$root/ledger.json" --stream "$root/stream-evidence.json" \
             --logo "$root/logo-preview.json" --editorial "$root/editorial-preview.json" --continuity "$root/continuity-preview.json" --hls "$root/hls-preview.json" --output "$root/qualification-dossiers.json" \
             --baseline-sha256 "$BASELINE_SHA256" "${previous[@]}"
+      - name: Evaluate decision policy (staging review only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        env:
+          BASELINE_SHA256: f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          python radio-catalog-lab/tools/radio_daily_decision_preview.py \
+            --discovery "$root/candidates.json" --dossiers "$root/qualification-dossiers.json" \
+            --baseline-sha256 "$BASELINE_SHA256" --output "$root/decision-preview.json"
       - name: Prepare safe durable genre hints
         shell: bash
         run: |
@@ -345,9 +358,9 @@ jobs:
           src = Path(os.environ["RUNNER_TEMP"]) / "go-radio-state-input"
           dst = Path("radio-discovery-state")
           dst.mkdir(exist_ok=True)
-          for name in ("ledger.json", "genre-hints.json", "stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json"):
+          for name in ("ledger.json", "genre-hints.json", "stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json", "decision-preview.json"):
               path = src / name
-              if name in ("stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json") and not path.exists():
+              if name in ("stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json", "decision-preview.json") and not path.exists():
                   continue
               assert path.stat().st_size <= 12 * 1024 * 1024
               data = json.loads(path.read_text())
@@ -361,6 +374,9 @@ jobs:
               if name == "logo-preview.json":
                   assert data.get("approvedLogoCount") == 0
                   assert all(r.get("logoApproved") is False and r.get("publicationAllowed") is False for r in data["records"])
+              if name == "decision-preview.json":
+                  assert data.get("approvedCount") == 0
+                  assert all(r.get("approved") is False and r.get("publicationAllowed") is False for r in data["records"])
               if name == "hls-preview.json":
                   assert data.get("technicallyQualifiedCount") == 0
                   assert all(r.get("technicalQualified") is False and r.get("publicationAllowed") is False for r in data["records"])

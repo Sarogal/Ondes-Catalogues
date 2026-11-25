@@ -200,11 +200,11 @@ def build_dossiers(discovery, reconciliation, ledger, stream, logo, baseline_sha
                 "lastVerdict")} if a else None,
             "streamEvidenceMatchesCurrentSource": matching_audio,
             "hlsEvidence": {k: hs.get(k) for k in (
-                "streamSha256", "observedDate", "verdict", "firstLastSequence",
+                "streamSha256", "observedDate", "verdict", "positiveObservationDates", "firstLastSequence",
                 "secondLastSequence", "targetDuration", "segmentSampleBytes",
                 "frameCodec", "firstManifestSha256", "secondManifestSha256")} if hs else None,
             "continuityEvidence": {k: c.get(k) for k in (
-                "streamSha256", "observedDate", "verdict", "windowCount", "sampleBytes",
+                "streamSha256", "observedDate", "verdict", "positiveObservationDates", "windowCount", "sampleBytes",
                 "elapsedMs", "coherentWindowCount", "distinctWindowCount", "frameCodec",
                 "finiteResponse", "icyHeaderPresent", "earlyEnd")} if c else None,
             "logoEvidence": {k: l.get(k) for k in (

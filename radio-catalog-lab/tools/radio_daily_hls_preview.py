@@ -21,6 +21,7 @@ from urllib.parse import urljoin, urlunsplit
 from radio_daily_qualification_dossiers import index, safe_digest
 from radio_stream_technical_probe import validate_endpoint, public_resolved_ips, REDIRECT_CODES, frame_chain
 from radio_stream_recheck_ledger import parse_day, SHA256_RE
+from radio_daily_continuity_preview import positive_dates
 
 MAX_MANIFEST = 65536
 MAX_SEGMENT = 4096
@@ -261,12 +262,15 @@ def collect(discovery,reconciliation,audio,*,previous=None,limit=0,probe=observe
             e=probe(url)
         except (OSError,ValueError,http.client.HTTPException,UnicodeError):
             e={"verdict":"manifest_or_connection_review"}
-        return uid,{"stationuuid":uid,"streamSha256":digest,"observedDate":day,
+        dates=positive_dates(old.get(uid),day,digest,e.get("verdict"),"advancing_hls_audio_frame_indication")
+        return uid,{"stationuuid":uid,"streamSha256":digest,"observedDate":day,"positiveObservationDates":dates,
                     "observedInScan":True,"technicalQualified":False,"publicationAllowed":False,**e}
     with ThreadPoolExecutor(max_workers=2) as pool:
         for uid,row in pool.map(check,selected):
             result[uid]=row
     rows=[result[k] for k in sorted(result)]
+    for row in rows:
+        row["positiveObservationDates"]=positive_dates(row,day,row["streamSha256"],None,"advancing_hls_audio_frame_indication")
     return {"schemaVersion":1,"scanDate":day,"publicationAllowed":False,"technicallyQualifiedCount":0,
             "attemptedCount":len(selected),
             "advancingManifestCount":sum(x["verdict"] in ("advancing_hls_audio_frame_indication","advancing_hls_manifest_only") for x in rows),

@@ -135,6 +135,23 @@ def observe_url(raw_url, *, clock=time.monotonic, sleep=time.sleep):
     raise ValueError("redirect budget")
 
 
+def positive_dates(prior, day, digest, verdict, positive_verdict):
+    """Retain positive dates only for the exact fingerprint, capped at 30."""
+    days = []
+    if prior and prior.get("streamSha256") == digest:
+        days = prior.get("positiveObservationDates", [])
+        if not isinstance(days, list) or len(days)>30:
+            raise ValueError("invalid positive history")
+        days = [parse_day(x) for x in days]
+        if days != sorted(set(days)) or any(x>day for x in days):
+            raise ValueError("invalid positive dates")
+        if prior.get("verdict") == positive_verdict:
+            days = sorted(set(days + [parse_day(prior["observedDate"])]))
+    if verdict == positive_verdict:
+        days = sorted(set(days + [day]))
+    return days[-30:]
+
+
 def collect(discovery, reconciliation, audio, editorial, *, previous=None, limit=0, observe=observe_url):
     day = parse_day(discovery.get("scanDate"))
     if not 0 <= limit <= MAX_STATIONS:
@@ -198,13 +215,17 @@ def collect(discovery, reconciliation, audio, editorial, *, previous=None, limit
             evidence = observe(url)
         except (OSError, ValueError, http.client.HTTPException, ssl.SSLError):
             evidence = {"verdict": "connection_or_protocol_review", "windowCount": 0}
+        dates = positive_dates(old.get(uid), day, digest, evidence.get("verdict"), "continuous_icy_frame_indication")
         return uid, {"stationuuid": uid, "streamSha256": digest, "observedDate": day,
+                     "positiveObservationDates": dates,
                      "observedInScan": True, "technicalQualified": False,
                      "publicationAllowed": False, **evidence}
     with ThreadPoolExecutor(max_workers=2) as pool:
         for uid, result in pool.map(check, selected):
             retained[uid] = result
     records = [retained[k] for k in sorted(retained)]
+    for row in records:
+        row["positiveObservationDates"] = positive_dates(row, day, row["streamSha256"], None, "continuous_icy_frame_indication")
     return {"schemaVersion": 1, "scanDate": day, "publicationAllowed": False,
             "technicallyQualifiedCount": 0, "attemptedCount": len(selected),
             "continuousIcyCount": sum(x["verdict"] == "continuous_icy_frame_indication" for x in records),
