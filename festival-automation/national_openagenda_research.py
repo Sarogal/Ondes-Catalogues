@@ -22,7 +22,7 @@ from regional_festival_discovery import APPROVED
 from source_qualification import normalized
 
 SCHEMA = "grossesondes.national-openagenda-research-private.v1"
-RESEARCH_RULESET = "event-title-and-published-edition-dedup.v4"
+RESEARCH_RULESET = "event-title-and-published-edition-dedup.v5"
 STATE_KEY = "national_openagenda_research_private"
 SOURCE = "https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/evenements-publics-openagenda/records"
 HOST = "public.opendatasoft.com"
@@ -211,6 +211,23 @@ def _safe_city_hint(value):
         return None
     return value
 
+def _valid_calendar_hint(hint, year, today):
+    """Provider dates are scheduling hints only, never edition proof."""
+    if not isinstance(hint, dict) or set(hint) != {
+            "start_date", "end_date", "verified"} or hint["verified"] is not False:
+        return False
+    try:
+        first = date.fromisoformat(hint["start_date"])
+        last = date.fromisoformat(hint["end_date"])
+        now = date.fromisoformat(today)
+    except (ValueError, TypeError):
+        return False
+    return (first.isoformat() == hint["start_date"]
+            and last.isoformat() == hint["end_date"]
+            and first.year == year and last >= now
+            and 0 <= (last - first).days <= 366)
+
+
 def candidate(row, today):
     """Untrusted metadata can become only an unverified discovery lead."""
     if not isinstance(row, dict) or len(row) > 80:
@@ -261,6 +278,11 @@ def candidate(row, today):
         "id": "oa-" + digest, "name_hint": title,
         "edition_year_hint": year, "region_hint": region,
         "city_hint_review_only": _safe_city_hint(row.get("location_city")),
+        # lastdate_begin is the last advertised session's starting day,
+        # not an independently established festival closing date.
+        "calendar_hint_review_only": (
+            {"start_date": first.isoformat(), "end_date": last.isoformat(),
+             "verified": False} if (last - first).days <= 366 else None),
         "year_source_review_only": ("TITLE" if years
                                     else "UNVERIFIED_PROVIDER_START_DATE"),
         "source_url": url, "observed_at": today,
@@ -305,6 +327,9 @@ def validated_leads(state, today):
                 or type(row.get("edition_year_hint")) is not int):
             continue
         title, year = row["name_hint"], row["edition_year_hint"]
+        hint = row.get("calendar_hint_review_only")
+        if hint is not None and not _valid_calendar_hint(hint, year, today):
+            continue
         years = {int(x) for x in YEAR.findall(normalized(title))}
         source_kind = row.get("year_source_review_only")
         if not ((years == {year} and source_kind == "TITLE")
