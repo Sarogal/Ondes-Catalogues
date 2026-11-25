@@ -893,4 +893,52 @@ void main() {
   });
 
 
+
+  test('memo reuses verified disk envelope but rejects tampered bytes', () async {
+    final dir = await Directory.systemTemp.createTemp('go-catalog-memo-');
+    try {
+      final store = CentralCatalogDiskStore(dir,
+        verificationMemo: CentralCatalogVerificationMemo());
+      final snapshot = await validatePayload(jsonBytes(catalog([station(1)])));
+      await store.persist(snapshot);
+      final first = await store.loadLatest(verifier);
+      final second = await store.loadLatest(verifier);
+      expect(first, isNotNull);
+      expect(identical(first, second), isTrue);
+      final diskFile = (await dir.list().toList()).whereType<File>().single;
+      final original = await diskFile.readAsString();
+      final envelope = jsonDecode(original) as Map<String, dynamic>;
+      final changed = jsonBytes(catalog([station(2)]));
+      envelope['catalog_base64'] = base64.encode(changed);
+      await diskFile.writeAsString(jsonEncode(envelope), flush: true);
+      expect(await store.loadLatest(verifier), isNull);
+      await diskFile.writeAsString(original, flush: true);
+      expect(await store.loadLatest(verifier), isNotNull);
+      final untrusted = CentralCatalogVerifier(trustedKeys: {});
+      expect(await store.loadLatest(untrusted), isNull);
+    } finally {
+      await dir.delete(recursive: true);
+    }
+  });
+
+  test('memo keeps the signed history scan and sees newly persisted releases', () async {
+    final dir = await Directory.systemTemp.createTemp('go-catalog-memo-next-');
+    try {
+      final store = CentralCatalogDiskStore(dir,
+        verificationMemo: CentralCatalogVerificationMemo());
+      final first = await validatePayload(jsonBytes(catalog([station(1)])));
+      await store.persist(first);
+      expect((await store.loadLatest(verifier))!.pointer.sequence, 1);
+      final second = await validatePayload(
+        jsonBytes(catalog([station(1), station(2)], sequence: 2)),
+        sequence: 2, previous: first);
+      await store.persist(second);
+      final history = await store.loadVerifiedHistory(verifier);
+      expect(history.map((s) => s.pointer.sequence), [2, 1]);
+      expect(history.first.stations, hasLength(2));
+    } finally {
+      await dir.delete(recursive: true);
+    }
+  });
+
 }
