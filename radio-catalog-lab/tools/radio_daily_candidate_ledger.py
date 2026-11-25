@@ -15,6 +15,18 @@ from pathlib import Path
 
 MAX_ROWS = 15000
 MAX_DAYS = 14
+EDITORIAL_SIGNALS = frozenset({
+    "target_genre_indication", "ambiguous_genre_review",
+    "mixed_genre_review", "electronic_context_review", "not_assessed",
+})
+
+
+def _signal(value: object) -> str:
+    if value is None:
+        return "not_assessed"
+    if not isinstance(value, str) or value not in EDITORIAL_SIGNALS:
+        raise ValueError("Unknown editorial signal")
+    return value
 
 
 def _uuid(value: object) -> str:
@@ -73,6 +85,7 @@ def update_ledger(scan: dict, previous: dict | None = None) -> dict:
                 "name": str(item.get("name", ""))[:240],
                 "lastStatus": str(item.get("lastStatus", ""))[:60],
                 "duplicateRisk": bool(item.get("duplicateRisk", False)),
+                "editorialSignal": _signal(item.get("editorialSignal")),
             }
 
     observed_ids: set[str] = set()
@@ -97,6 +110,7 @@ def update_ledger(scan: dict, previous: dict | None = None) -> dict:
                 "seenDays": 1, "name": str(row.get("name", ""))[:240],
                 "lastStatus": status,
                 "duplicateRisk": bool(row.get("duplicateIdentityRisk", False)),
+                "editorialSignal": _signal(row.get("editorialSignal")),
             }
             fresh += 1
         else:
@@ -107,6 +121,7 @@ def update_ledger(scan: dict, previous: dict | None = None) -> dict:
             old["lastStatus"] = status
             old["name"] = str(row.get("name", ""))[:240]
             old["duplicateRisk"] = bool(row.get("duplicateIdentityRisk", False))
+            old["editorialSignal"] = _signal(row.get("editorialSignal"))
             reobserved += 1
     if len(prior) > MAX_ROWS:
         raise ValueError("Candidate ledger capacity exceeded; require maintenance")
