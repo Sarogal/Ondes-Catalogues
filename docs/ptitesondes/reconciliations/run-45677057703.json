@@ -1,0 +1,391 @@
+{
+  "schema": "ptitesondes.official_reconciliation.v1",
+  "checked_on": "2026-11-25",
+  "slot": 2,
+  "source_series_checked": 30,
+  "total_source_series": 104,
+  "before_count": 968,
+  "after_count": 1021,
+  "source_summary": {
+    "official_new_session_admitted": 2,
+    "official_new_session_held": 2,
+    "official_unavailable": 1,
+    "official_unchanged": 27
+  },
+  "catalogue_before_sha256": "530686c2f0f80a60ad9bd1c96146d996d11717d71b200d2b9cbaef42bf53dc0a",
+  "catalogue_after_sha256": "a543216b9afe438e913abd099f4d303d4ee525d15edf64a33b3affbdcc8ae782",
+  "operations": [
+    {
+      "id": "openagenda-23913876-2026-11-26",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "84476647c7227a9273ff788879f66faf07c162a614b3a6f45827a2133e118278"
+    },
+    {
+      "id": "openagenda-23913876-2026-11-27",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "d6e32108334401fee8e14e02d1100508308949ed6d62ee18f4b685550f65227a"
+    },
+    {
+      "id": "openagenda-23913876-2026-11-28",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "136fdfe8b2ab3630fd3e908c600c476520e4766d498102a70149a7f71014ed92"
+    },
+    {
+      "id": "openagenda-23913876-2026-11-29",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "66b1fc69d2f7fc8b104866f073c38a8391ec90355ff856f017dc342957699174"
+    },
+    {
+      "id": "openagenda-23913876-2026-11-30",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "d1c8aee2e52ccc025ddf180e8e8126b0c243c57b0f0743e5689b755ee4761519"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-01",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "405f6fce64ae75cd8449c5b958cad150a315508617b1aeeaa81a12e0260ce896"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-02",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "5ffdb71218dfa0eab66f9b75a20868223794dfdc83bd3ebcf0d9b90e1bf8b08d"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-03",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "85087fe1265cdc4c054cab80601e33278b69a6547ea814ca2b1daa21f71cff68"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-04",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "44ab7069715aea9af8417e45d973af94db05edb1c776ef3af8b237080a146ba7"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-05",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "3380af38b770e1ec735ba4850af21859473288cdb5419f273b248af21a0b059e"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-06",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "7db1dfc4928220c411cb1b51ee957111ffbf36797b525c70c1a57a186eb8b3ed"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-07",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "4d2d3e06c139daa922bc71672386bb382a02c8dcdd8a5545019c3ab92d82e374"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-08",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "5c42427175cdb988a5c5cf4b01cdcf060b85880a95e62eb740b3cc11df166260"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-09",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "8d96ef8792bca65ed4205b88d1f923daafe30bad669cd662a53a9124fd7c7624"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-10",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "81c92464647bd7a96fa11731a91db32cf5633e06dbb6760486ccef1584b8e31a"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-11",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "efea7dc889289a8fb4887011ceb049410d275d9999602b664f3866c78a3964fe"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-12",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "e262a5fc5748c5b17574ae6dc2a5cc7f4b4f9288bb1ca478047dd4e6c17ddc3b"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-13",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "3ecdd9998e592d039e0e0c323d11a90f4efc5d58cc9d2bb88abba37306276669"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-14",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "0c5e788f10b9556c56bf38e7952d31c9fc94075fc10fa8922271fc22f815e538"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-15",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "f648a75f443a878c992086cec6d6e5e28a011dfc83fd3e32a36c0a21353bffd2"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-16",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "f647645df2064466985bb5557d902413246566e350f570d81630d498c993e454"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-17",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "b5576d1908e33037983d49668e3d6205e3b338845fa273be6f4360f3581400dd"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-18",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "a869f5cd9102aee75e2839ce66bd8d8419669aab81e2ebc69e76ecccff6cc721"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-19",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "012ed5bba055952367dde54cc2b10f5693bff1be4d7a9ae23a1e8b8596b3d391"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-20",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "646406bbf3fde0cec042ea99154256508e6aaaa05e97d436d53c262475162483"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-21",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "775132a888d738d9b461d61f7b6f59fb781a9ef56a4692e8bd4bcb5ce950e144"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-22",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "332ef23aafb878cfd0f13e68bcb2efcd54e7740165befa55d4ececd6a4283653"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-23",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "5e12366e23ca8d7dd3ec129baeec2976a9080f071f9e0df701dd9738a6256c0f"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-24",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "ce324d3c7f3fadce20f1ce3f074b0fc515e5b062ce187c343d6934aa59c25226"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-25",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "2c2753b63acaacdb3df15c354e431b943e2e13a9cf9000539941aa2e916f2c0f"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-26",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "aaf0a225ff312bfc0c8f263bbdec74f1b834a240b5931c071565e2ce0088fbee"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-27",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "3d0faf197f4c59bf0991bc0b8832b272770a4c7a7ce434573a09bf37d4d013ac"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-28",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "a9bec73acf36fa1dee2dabbf27be75c6eadc11704f017e388804c4bc9d80f4ff"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-29",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "028bbb7107cd6dc96824b8d17df5c66304ad964458a228d78a783a197a4db5cc"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-30",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "8421d21d8a37c335fae820c409761505f67d23e9dd940355239c20ca818c2deb"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-31",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "ba61b57155dd158bce88fd8fb50e0c4c039c68f93674a7ba25d7488013fdcd50"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-01",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "46ac6dae69bc6375caf3ff78960c2aa079e918d6dd107dc835ec6285b204c84b"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-02",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "4fd97c412dd10b1d2c4b4e68c58086515f07ec612c9c2a5eaf47711a16a18a35"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-03",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "18d5ada446b921b23deb713e52095a48b78e8fa04a0e4dc2ff7ac1ada8de5c85"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-04",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "f17425030a57999eff3597d2ee118c367a4af390391b31d345e68d775212b2b7"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-05",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "f49db4dc4e748d4688060613451d441e91ed881ca327cf9b1b64395d46d4bb19"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-06",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "7d2bf629b32b23ce20512054a0d7b0b3062a5f501c2b35ae694dc18b094d24f1"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-07",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "ff5cae58acb90ccc1605e73464d1121403e31df5aa45066ea9561e9029b606b1"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-08",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "5c630fb9df10712be8be8d9fe808fdc8b1be6823bdc013074943f465f5c4f2cc"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-09",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "4e849224d91616f56b411350d1e35946e3cc8f547eb4106fed9d88042a467c75"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-10",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "03f56aafacab93cb75ef819d3a28ae142da159c377591c7bf702c91d60a76762"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-11",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "85754b9171ce3fb0aa170ea476cd86f3cae499694321651cc2d38a4d3a2be33d"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-12",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "94aa4546bd06b858dbf12bed3103cccc75c828f528e32a0534707a2c75eae33a"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-13",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "03578015ea3f81a883e7fde8bea2dd70fee52f9a352cf0b538998cd4f8755ef4"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-14",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "011e7ebac61ad72bb146e9af5059861a5b2b7f399912dbfa4a99ad11ca851dfb"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-15",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "004181ed9fa4a166ff3b3269a1811de6aceba8f046a74ff525f1b1b4a5144c19"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-16",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+      "new_event_sha256": "7663f07c8f97b937fb578d58f912d11537f47269b29e6fbc629a69d077e5ae40"
+    },
+    {
+      "id": "openagenda-58690425-2027-05-23",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/les-concerts-classiques/events/58690425_panique-au-zoo",
+      "new_event_sha256": "bad4ee78dc290fe5485be51594abcbd0008b4d9eb6df74dd144da6fce692d898"
+    }
+  ],
+  "unrelated_public_records_preserved": true
+}
