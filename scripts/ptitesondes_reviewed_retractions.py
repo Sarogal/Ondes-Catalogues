@@ -20,12 +20,14 @@ SCHEMA = "ptitesondes.reviewed_retractions.v1"
 REASONS = frozenset(("school_support_primary",
                      "non_performance_gathering_primary",
                      "evergreen_commercial_studio_availability",
-                     "adult_audience_official", "market_gathering_primary"))
+                     "adult_audience_official", "market_gathering_primary",
+                     "mixed_umbrella_programme_primary"))
 EVENT_ID = re.compile(r"openagenda-[1-9][0-9]{0,11}-20[0-9]{2}-[0-9]{2}-[0-9]{2}\Z")
 TITLE_CLUES = {
     # For the adult-audience reason the exact source-reviewed record,
     # official municipal evidence URL and concert category are checked below.
     "adult_audience_official": re.compile(r"\S"),
+    "mixed_umbrella_programme_primary": re.compile(r"^Les Journées polyglottes$", re.I),
     "market_gathering_primary": re.compile(
         r"^\s*march[ée]\s+de\s+(?:no[ëe]l|saint[- ]nicolas)\b", re.I),
     "school_support_primary": re.compile(
@@ -116,6 +118,15 @@ def reviewed_retraction(document, manifest):
                    and urlsplit(row["evidence_url"]).path.startswith(
                        "/que-faire-a-nantes/agenda/" + eid.split("-")[1] + "_"),
                    "invalid_official_adult_audience_evidence")
+        if row["reason_code"] == "mixed_umbrella_programme_primary":
+            reject(manifest["reviewed_on"] == "2026-11-25"
+                   and expected.get("category") == "concert"
+                   and expected.get("time") == "10:00"
+                   and urlsplit(row["evidence_url"]).hostname == "metropole.nantes.fr"
+                   and urlsplit(row["evidence_url"]).path.startswith(
+                       "/que-faire-a-nantes/agenda/" + eid.split("-")[1] + "_")
+                   and urlsplit(expected["source_url"]).path.split("/")[-1].startswith(eid.split("-")[1] + "_"),
+                   "invalid_official_mixed_programme_evidence")
         targets[eid] = row
     original = {e["id"]: e for e in events}
     present = [eid for eid in targets if eid in original]
