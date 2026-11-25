@@ -5,7 +5,8 @@
   "approvedLogoCount": 0,
   "candidateCount": 158,
   "attemptedSourceCount": 8,
-  "decodedCandidateCount": 12,
+  "decodedCandidateCount": 18,
+  "retainedEvidenceCount": 0,
   "records": [
     {
       "stationuuid": "01707580-90b4-47cd-9a46-2954e457ea8f",
@@ -14,7 +15,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "017f1b35-7330-4ccc-a8eb-0544a7a9b611",
@@ -23,7 +25,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "0231aca1-4e0c-41e4-9b17-74538f1d3c25",
@@ -32,16 +35,24 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "035ed365-f6dc-46a2-901d-7ac97880e875",
       "sourceClass": "same_reported_host",
       "sourceSha256": "0a6e72dcaad1c4f37ef7172fa08b617ad6a215d62479ff9dbc5c91143e3099c7",
       "audioEvidenceRank": 1,
-      "retrieval": "not_attempted",
+      "retrieval": "decoded_unapproved",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true,
+      "imageSha256": "5f379ef0f6ca655d7dfc48409afba3cf7e626b4c67dfca1c564a2390ff604019",
+      "mime": "image/png",
+      "width": 512,
+      "height": 512,
+      "byteLength": 69531,
+      "observedDate": "2026-11-25"
     },
     {
       "stationuuid": "05412426-3d22-4e8e-bee0-92b71dac20ff",
@@ -50,7 +61,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "0abce032-b825-46fb-96a4-016d75420ade",
@@ -59,7 +71,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "0bc40b21-cd89-4dcb-ad47-18528395168a",
@@ -68,7 +81,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "0ccdab5a-e2d4-46c1-988e-00bb53378b33",
@@ -77,7 +91,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "0cd363a2-d26f-4957-bc69-9b1f85b5f173",
@@ -86,7 +101,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "10d01aca-f5de-4591-b4e0-441ce8e1ddfe",
@@ -95,7 +111,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "11d1fe19-b237-4bfc-95fb-fd9757f40916",
@@ -104,7 +121,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "11ebd6e7-4b9f-4c93-afcd-bca082bb82a6",
@@ -113,7 +131,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "125f0f3a-4833-4e2d-856a-106fba6cd6cd",
@@ -122,7 +141,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "143ff518-5d57-4bf0-9859-e82af365a771",
@@ -131,7 +151,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "14516140-aa4b-4462-997e-bb6a36ae7780",
@@ -140,7 +161,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "14bd61af-81e2-44ea-b1cc-8d8a940e0386",
@@ -149,16 +171,24 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "158a3876-cbad-406c-b69e-edac38ae71d6",
       "sourceClass": "same_reported_host",
       "sourceSha256": "93b9bdc5ae8590c7a39fcdf826823cf2462b4007ff2829890cc91a8f83744236",
       "audioEvidenceRank": 1,
-      "retrieval": "not_attempted",
+      "retrieval": "decoded_unapproved",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true,
+      "imageSha256": "5ef8498f188aa6295a72159b58e35db7f938648d3d2dbde5b082f95d5b75d0ff",
+      "mime": "image/jpeg",
+      "width": 127,
+      "height": 100,
+      "byteLength": 4701,
+      "observedDate": "2026-11-25"
     },
     {
       "stationuuid": "16166094-b6d7-4382-bcb4-8a61f63a8427",
@@ -167,7 +197,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "1628187c-e965-4593-8f36-719c3dd9ad9b",
@@ -176,7 +207,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "165c260d-de4a-4728-a1dc-2ae56cad10ec",
@@ -186,6 +218,7 @@
       "retrieval": "failed_review",
       "logoApproved": false,
       "publicationAllowed": false,
+      "observedInScan": true,
       "observedDate": "2026-11-25"
     },
     {
@@ -195,7 +228,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "1914384c-d876-46c7-a6cf-a4ec4853bb2f",
@@ -204,7 +238,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "193ce893-b2f4-11e8-afe1-52543be04c81",
@@ -213,7 +248,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "1c6dcd6f-88c6-4fd4-8191-078435168e85",
@@ -222,7 +258,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "1e27d1d8-7720-46b7-ab9e-f456a432420a",
@@ -231,7 +268,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "1f951feb-544e-447b-8143-8b9656a46cf2",
@@ -240,7 +278,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "1fa4d92d-9d07-42bb-b121-e82fd7092800",
@@ -249,7 +288,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "221e04bb-6d8a-4e13-a9b6-621561fc07f8",
@@ -258,7 +298,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "24145371-b9df-485d-ac2d-3515899a5e3e",
@@ -267,7 +308,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "25d7b677-a866-4b32-aabc-20fa43e2d479",
@@ -276,7 +318,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "25de583d-8165-4a5f-8ba5-39861a77f943",
@@ -285,7 +328,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "2d8f653c-0709-42b0-bc76-71434a8d31b7",
@@ -294,7 +338,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "2f76081c-dbf0-4b40-bb30-63987abe744e",
@@ -303,7 +348,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "32955656-5a38-40c0-ab1f-e059496bfda6",
@@ -312,7 +358,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "32bac5f0-58bc-445a-8e54-8ce9ba7f48df",
@@ -321,7 +368,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "3446b04f-839f-4367-b119-b85842787b97",
@@ -331,6 +379,7 @@
       "retrieval": "failed_review",
       "logoApproved": false,
       "publicationAllowed": false,
+      "observedInScan": true,
       "observedDate": "2026-11-25"
     },
     {
@@ -340,7 +389,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "351d5685-f5e6-47f4-9cbb-9e82b3930621",
@@ -349,7 +399,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "36d2f90a-baf1-4abb-bf7b-55536d606f93",
@@ -358,7 +409,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "3a1ecb1c-36a5-4f01-97ca-7103c9b721ce",
@@ -367,7 +419,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "3a363c7c-0b66-4d78-9972-e62ab56ee61c",
@@ -376,7 +429,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "3a40f5fc-8ba3-4177-a145-b1f90dfb06d5",
@@ -386,6 +440,7 @@
       "retrieval": "failed_review",
       "logoApproved": false,
       "publicationAllowed": false,
+      "observedInScan": true,
       "observedDate": "2026-11-25"
     },
     {
@@ -395,7 +450,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "3e3087e8-1da2-11ea-a955-52543be04c81",
@@ -404,7 +460,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "3e416d41-3433-4f74-bb32-c224bda34016",
@@ -414,6 +471,7 @@
       "retrieval": "decoded_unapproved",
       "logoApproved": false,
       "publicationAllowed": false,
+      "observedInScan": true,
       "imageSha256": "5af59cb5f9d3f91f33598b4ca37207ac560b954d4de6f1e7053257a7a439c95c",
       "mime": "image/jpeg",
       "width": 1920,
@@ -428,7 +486,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "418b964f-a3df-4b72-a2ff-173ec7e1c1ff",
@@ -438,6 +497,7 @@
       "retrieval": "decoded_unapproved",
       "logoApproved": false,
       "publicationAllowed": false,
+      "observedInScan": true,
       "imageSha256": "e75627066cdcf94e3f57a9e32a64762215ef3298e0c234d4d7a12e710dd9987a",
       "mime": "image/png",
       "width": 253,
@@ -453,6 +513,7 @@
       "retrieval": "decoded_unapproved",
       "logoApproved": false,
       "publicationAllowed": false,
+      "observedInScan": true,
       "imageSha256": "d447b900f9c280d4d5ad7e2295fae09b7a196a7a6b026ae9262054e80e2d33a9",
       "mime": "image/png",
       "width": 512,
@@ -468,6 +529,7 @@
       "retrieval": "decoded_unapproved",
       "logoApproved": false,
       "publicationAllowed": false,
+      "observedInScan": true,
       "imageSha256": "fe90cdc3206c6606592d67e90492077e259d18b97e5e666fa3d196eafd0461ac",
       "mime": "image/png",
       "width": 180,
@@ -482,7 +544,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "45c0d067-75b7-4714-a5dd-aeae2e4e9023",
@@ -491,7 +554,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "4a4f979d-b3e6-48c8-9957-cd3a263023c3",
@@ -500,7 +564,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "4dc166c7-acde-405e-b134-eba17c514215",
@@ -509,7 +574,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "4e3c3bc3-7d48-4a20-84cc-509d3e2cea14",
@@ -518,7 +584,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "4f30ac19-4a41-40cb-8999-2ca19b34711e",
@@ -528,6 +595,7 @@
       "retrieval": "decoded_unapproved",
       "logoApproved": false,
       "publicationAllowed": false,
+      "observedInScan": true,
       "imageSha256": "a2a35c377b2339cad9d6d020129149359768221ee994a397e8f2343f228a3619",
       "mime": "image/png",
       "width": 738,
@@ -542,7 +610,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "517b189e-46eb-4156-bf93-905f7934c838",
@@ -551,7 +620,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "53cf8dd0-be8f-4186-96d2-767e751459a4",
@@ -560,7 +630,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "53f8aadb-cb61-4132-9240-dac5b76e0095",
@@ -569,7 +640,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "542c83b8-7465-46e9-a083-c2cc417d315d",
@@ -578,7 +650,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "54645bcf-0356-4680-bbae-457a9906dcbe",
@@ -587,7 +660,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "575c08a2-4325-4173-8373-b922c7438436",
@@ -596,7 +670,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "59a3411a-e5bc-4ff9-9341-bb949f09a230",
@@ -605,7 +680,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "5c885f44-2c9e-4485-a8bb-b858f06eaff6",
@@ -614,7 +690,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "5c8f8628-58bd-433b-b3a2-9bdd63e64cef",
@@ -623,7 +700,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "5e9f7c0a-a1ef-4739-b115-dad73cfbf404",
@@ -633,6 +711,7 @@
       "retrieval": "failed_review",
       "logoApproved": false,
       "publicationAllowed": false,
+      "observedInScan": true,
       "observedDate": "2026-11-25"
     },
     {
@@ -642,7 +721,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "62ef2552-35e9-433a-b747-efdae52bfe4f",
@@ -651,7 +731,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "652a2fa1-d3fe-4724-a3eb-3d6b7fb1e687",
@@ -660,7 +741,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "679e5c4f-740d-4c92-9d22-0d7948c5910d",
@@ -669,7 +751,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "6928b97f-56f2-459e-b7e8-d76997fd9802",
@@ -678,7 +761,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "69bc015f-acfd-4175-af3b-bbc131c5bee1",
@@ -687,7 +771,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "6fc8bce6-0ab9-4d0a-a703-992634eddf61",
@@ -696,7 +781,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "753d2e38-194f-4fb0-9918-4263c6119188",
@@ -705,7 +791,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "76200b90-939a-46ad-9b37-069f32ba4366",
@@ -714,7 +801,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "77337406-99c4-11e9-a605-52543be04c81",
@@ -723,7 +811,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "7912f9a4-750e-4575-8718-37a2a2edfb16",
@@ -733,6 +822,7 @@
       "retrieval": "decoded_unapproved",
       "logoApproved": false,
       "publicationAllowed": false,
+      "observedInScan": true,
       "imageSha256": "1881b98991cb112196534008396e8b7b940679d31547bb78595c463d4955d38a",
       "mime": "image/png",
       "width": 512,
@@ -747,7 +837,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "7a2996c6-adf0-4f1d-8eb9-225bc90e7a34",
@@ -757,6 +848,7 @@
       "retrieval": "decoded_unapproved",
       "logoApproved": false,
       "publicationAllowed": false,
+      "observedInScan": true,
       "imageSha256": "17347777462aed01562ffde021843b3152e2489edd0a70c054b3c3dd8d452eb6",
       "mime": "image/png",
       "width": 512,
@@ -771,7 +863,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "7c97b62b-88b5-4c75-a265-f225b531ad00",
@@ -780,7 +873,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "7e8fd698-c935-4b56-8808-d4aafcef38eb",
@@ -790,6 +884,7 @@
       "retrieval": "decoded_unapproved",
       "logoApproved": false,
       "publicationAllowed": false,
+      "observedInScan": true,
       "imageSha256": "d437f752b595889ed2a25d43719310b6092ff6a5e9327152c2922c58e57b034a",
       "mime": "image/png",
       "width": 180,
@@ -804,7 +899,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "80747ce9-cb13-44f5-9691-b68d03cdd05e",
@@ -814,6 +910,7 @@
       "retrieval": "decoded_unapproved",
       "logoApproved": false,
       "publicationAllowed": false,
+      "observedInScan": true,
       "imageSha256": "ed6f1f43fd64113722ba39c1e235f4e9640902626b4a9c68fb8fd6d16a39e728",
       "mime": "image/png",
       "width": 600,
@@ -828,7 +925,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "89345b47-66c4-45c2-a1d5-b411080d2327",
@@ -837,7 +935,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "8b2a827f-963b-4b07-80d6-5051e9e09411",
@@ -846,7 +945,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "8bfd74c2-c254-4e9b-ba58-94248ddd767e",
@@ -855,7 +955,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "8c150c94-fe1d-4be8-93cf-fd585a300541",
@@ -864,7 +965,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "8d86b9d5-0afc-4063-8b90-e0351d5aa464",
@@ -873,7 +975,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "8decb3ad-234d-4535-b66e-c40f0cc2179b",
@@ -883,6 +986,7 @@
       "retrieval": "failed_review",
       "logoApproved": false,
       "publicationAllowed": false,
+      "observedInScan": true,
       "observedDate": "2026-11-25"
     },
     {
@@ -892,7 +996,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "955166e9-1bd6-4cd2-841f-fb7eeb09e1dc",
@@ -901,7 +1006,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "9628a108-0601-11e8-ae97-52543be04c81",
@@ -910,7 +1016,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "962caa2a-0601-11e8-ae97-52543be04c81",
@@ -920,6 +1027,7 @@
       "retrieval": "decoded_unapproved",
       "logoApproved": false,
       "publicationAllowed": false,
+      "observedInScan": true,
       "imageSha256": "9a59af97a58f4df8e322f1e005627d315597d4cc54898420a06d3b9ffb93e30f",
       "mime": "image/png",
       "width": 180,
@@ -934,7 +1042,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "981237b0-253c-4be9-81ce-6fcb86006733",
@@ -943,7 +1052,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "98e39928-1801-414c-b6e7-dd7b58614dd6",
@@ -952,7 +1062,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "9b198e36-57eb-4107-8412-97221333f531",
@@ -961,7 +1072,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "9c634ba6-a5f2-47e5-858b-d4deff8071b8",
@@ -970,7 +1082,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "a2d00de3-cd16-46c8-ac30-9e79e294cf47",
@@ -979,7 +1092,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "a3f97919-2519-4e58-b0b4-386d1402e367",
@@ -988,7 +1102,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "a6464432-710b-4f8a-948e-b9c1278dff77",
@@ -997,7 +1112,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "a6a99730-3118-49ab-ad52-f15d596ef359",
@@ -1007,6 +1123,7 @@
       "retrieval": "decoded_unapproved",
       "logoApproved": false,
       "publicationAllowed": false,
+      "observedInScan": true,
       "imageSha256": "7b5ce255c47df9714b52d6e64193a176b4e5c88527d9a35865eb64a418f26fe4",
       "mime": "image/png",
       "width": 224,
@@ -1021,7 +1138,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "ad0f6199-f729-4fb1-b19c-e2c6fd545ff9",
@@ -1030,7 +1148,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "aeb82637-ba20-4cee-9072-50cab4f9e723",
@@ -1040,6 +1159,7 @@
       "retrieval": "decoded_unapproved",
       "logoApproved": false,
       "publicationAllowed": false,
+      "observedInScan": true,
       "imageSha256": "b7d2c496e928b766df393a20590b167d3c41166d638a69a3a0e6ec13f09cbe42",
       "mime": "image/png",
       "width": 1251,
@@ -1054,7 +1174,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "b3fc8944-1a27-46ec-a446-ca960d88a13a",
@@ -1063,7 +1184,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "b4d40bd6-311f-42cf-b8db-595e4b64053f",
@@ -1072,7 +1194,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "b6b231d4-bd2f-4127-995f-670ce4b3178a",
@@ -1081,7 +1204,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "b980ea76-8772-43af-8e4a-06eb2e8dfd75",
@@ -1090,7 +1214,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "bb38c058-7757-48e7-a73e-ccdc4fad7d2e",
@@ -1099,7 +1224,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "bd0dc889-b736-4b75-a35b-70a606482a47",
@@ -1108,7 +1234,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "c123bef5-256a-427f-a942-570ae9836f68",
@@ -1117,7 +1244,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "c16ffe2f-a305-4f11-9d85-0aa615b9ed04",
@@ -1126,16 +1254,24 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "c22f97d4-26b6-46ac-a415-54b1bdd85f0d",
       "sourceClass": "same_reported_host",
       "sourceSha256": "7a2358d63daf2f15d75bc1d2549d66a1f57a0ab1a2e178c81af97f7aab30e4b4",
       "audioEvidenceRank": 2,
-      "retrieval": "not_attempted",
+      "retrieval": "decoded_unapproved",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true,
+      "imageSha256": "77b4b7014ba3a92783f5705f933e5b0325124a23416b5f2ebd36bda426ee98da",
+      "mime": "image/png",
+      "width": 800,
+      "height": 800,
+      "byteLength": 71430,
+      "observedDate": "2026-11-25"
     },
     {
       "stationuuid": "c62a1cf3-dd53-4f8d-ab12-3567faa4f59f",
@@ -1144,16 +1280,19 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "c79485f1-013e-46ec-a2ef-8eb3cef2d6dd",
       "sourceClass": "same_reported_host",
       "sourceSha256": "2f3d88c2740802d584d40a06d3b53fd0b82b3c323cdab2da1374f37c77f0b1ae",
       "audioEvidenceRank": 2,
-      "retrieval": "not_attempted",
+      "retrieval": "failed_review",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true,
+      "observedDate": "2026-11-25"
     },
     {
       "stationuuid": "c9e17187-7b9f-48af-8454-0cf8462302c7",
@@ -1162,7 +1301,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "cbb233ad-fad1-46e1-b89b-9389f457f204",
@@ -1171,7 +1311,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "cea9bece-6c51-47a0-bcf9-02b1377824b2",
@@ -1180,7 +1321,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "cf7a3162-64a7-461c-a7c4-10660bc41e82",
@@ -1189,7 +1331,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "d0d9c01c-5e0d-11ea-be63-52543be04c81",
@@ -1198,7 +1341,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "d0fb00ac-db4b-467e-8ed5-b023c24cf213",
@@ -1207,7 +1351,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "d2a83065-4b07-4c1c-bc0c-75f7c29cfbe1",
@@ -1216,7 +1361,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "d342e328-81bb-4026-9822-cd6c02313be0",
@@ -1225,7 +1371,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "d469d86b-e0a7-45ac-aa94-6be76329ab82",
@@ -1234,7 +1381,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "d50796ae-a0e4-493f-b276-6b0a15b0c6dc",
@@ -1243,7 +1391,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "d5c6fb79-1344-43bc-a995-6524620c61ba",
@@ -1252,7 +1401,8 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "d7ae2091-ed4a-4e61-aa56-4a1feb1a2a3d",
@@ -1261,7 +1411,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "d7be93d3-067b-4056-8759-fdefc607cc17",
@@ -1270,25 +1421,34 @@
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "da1715de-c1b0-4dd5-a469-c944c30bc2c7",
       "sourceClass": "same_reported_host",
       "sourceSha256": "18d3a5692f75aa16c2b18ac0382c602eb91e2f8405687cebdf3c4ab597f3f82d",
-      "audioEvidenceRank": 0,
+      "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "da7d7480-3616-4ba6-bf43-e086deb71d1a",
       "sourceClass": "same_reported_host",
       "sourceSha256": "cd91074810807e067d925a830a079f032f3e90b6ed38e6b578405c0c54a8fce4",
-      "audioEvidenceRank": 0,
-      "retrieval": "not_attempted",
+      "audioEvidenceRank": 2,
+      "retrieval": "decoded_unapproved",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true,
+      "imageSha256": "c9a45398dea302fe66f0279f986f08c46647665ba282415df58374ac5ef876c3",
+      "mime": "image/png",
+      "width": 1920,
+      "height": 1439,
+      "byteLength": 771487,
+      "observedDate": "2026-11-25"
     },
     {
       "stationuuid": "dccda812-d94d-4619-89d5-81ec9f5d75d0",
@@ -1297,61 +1457,74 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "dd246659-bf2c-4e32-ae37-ba8c04a70597",
       "sourceClass": "missing_source",
       "sourceSha256": null,
-      "audioEvidenceRank": 0,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "dd5dae31-c4ca-41c5-b943-8d8e7cb8c0e4",
       "sourceClass": "homepage_unconfirmed",
       "sourceSha256": null,
-      "audioEvidenceRank": 0,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "dfd8fd13-bc8c-4f89-96c3-2c13a1e72b6e",
       "sourceClass": "missing_source",
       "sourceSha256": null,
-      "audioEvidenceRank": 0,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "e0069278-117c-4437-9c41-1ec614b702ca",
       "sourceClass": "same_reported_host",
       "sourceSha256": "96de2de1e3a61975ed917ed0ac6b8356f94bac26406917f785611590b04c49a9",
-      "audioEvidenceRank": 0,
-      "retrieval": "not_attempted",
+      "audioEvidenceRank": 2,
+      "retrieval": "decoded_unapproved",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true,
+      "imageSha256": "8b226b48a28dbb05963c7d311f2074ae39e0519e93e3474a7c54e76916806cca",
+      "mime": "image/png",
+      "width": 180,
+      "height": 180,
+      "byteLength": 32277,
+      "observedDate": "2026-11-25"
     },
     {
       "stationuuid": "e22310aa-c0a7-49eb-abe8-4c125ac9c4ce",
       "sourceClass": "external_image_host_review",
       "sourceSha256": null,
-      "audioEvidenceRank": 0,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "e29cbf8b-6727-487b-bb1a-33b0b99f5482",
       "sourceClass": "missing_source",
       "sourceSha256": null,
-      "audioEvidenceRank": 0,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "e45779db-541b-49af-a4d6-7ac84200a3f2",
@@ -1360,97 +1533,115 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "e48ec5f2-18eb-4b49-8b9c-e2533c390ae3",
       "sourceClass": "missing_source",
       "sourceSha256": null,
-      "audioEvidenceRank": 0,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "e4fc3a81-354d-420c-b204-affc7e307891",
       "sourceClass": "missing_source",
       "sourceSha256": null,
-      "audioEvidenceRank": 0,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "e77ab056-eda4-4438-8e0f-6e8522e75343",
       "sourceClass": "same_reported_host",
       "sourceSha256": "cc948dcfb2a44107d078672a2841e81eb5c461c9ce29ef9b16cc79ab9bf7b37f",
-      "audioEvidenceRank": 0,
-      "retrieval": "not_attempted",
+      "audioEvidenceRank": 2,
+      "retrieval": "failed_review",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true,
+      "observedDate": "2026-11-25"
     },
     {
       "stationuuid": "e98a9578-6006-4611-af89-f80d1bf13817",
       "sourceClass": "missing_source",
       "sourceSha256": null,
-      "audioEvidenceRank": 0,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "ea272dde-9da1-4f42-aca7-981d91254af7",
       "sourceClass": "same_reported_host",
       "sourceSha256": "5bdb112e590f20ce20dde2bea2cd9eefa8c9d3cdb605e0d95bb287a2f938a697",
-      "audioEvidenceRank": 0,
-      "retrieval": "not_attempted",
+      "audioEvidenceRank": 2,
+      "retrieval": "decoded_unapproved",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true,
+      "imageSha256": "e11bee0559718a880cec127046b016c4bdb35fa4fe3dde3edc141762c1a125e7",
+      "mime": "image/png",
+      "width": 192,
+      "height": 192,
+      "byteLength": 48003,
+      "observedDate": "2026-11-25"
     },
     {
       "stationuuid": "eb3041cd-69bc-41bd-b1e0-daf2a88fe190",
       "sourceClass": "missing_source",
       "sourceSha256": null,
-      "audioEvidenceRank": 0,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "eb9eca16-7202-42d1-9b16-65e7f2ba9713",
       "sourceClass": "external_image_host_review",
       "sourceSha256": null,
-      "audioEvidenceRank": 0,
+      "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "ebdaeaf7-bbcf-4136-bb44-0c644d0c7d69",
       "sourceClass": "missing_source",
       "sourceSha256": null,
-      "audioEvidenceRank": 0,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "ec5f9687-4dc2-4358-ad16-bed7a17cc0a0",
       "sourceClass": "external_image_host_review",
       "sourceSha256": null,
-      "audioEvidenceRank": 0,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "ed02a49b-11e2-4de3-b279-279529290257",
       "sourceClass": "external_image_host_review",
       "sourceSha256": null,
-      "audioEvidenceRank": 0,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "f210dca4-1171-43cb-b12f-1a40fcfbbc81",
@@ -1459,7 +1650,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "f27af422-8ec6-48eb-aa62-f73a1d629eb3",
@@ -1468,7 +1660,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "f2d38d55-01ef-4d78-9686-61f54d48ee03",
@@ -1477,7 +1670,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "f4df535d-d65b-46ad-8498-df5b56a011c7",
@@ -1486,7 +1680,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "f8b1341f-2c88-4c86-bcb5-a820fa890221",
@@ -1495,7 +1690,8 @@
       "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "f95f4310-ff8c-4106-9b8e-18f05e594f1f",
@@ -1504,7 +1700,8 @@
       "audioEvidenceRank": 1,
       "retrieval": "not_attempted",
       "logoApproved": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "observedInScan": true
     }
   ]
 }
