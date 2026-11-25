@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-25T14:17:59+01:00",
+  "updated_at": "2026-11-25T14:22:46+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -19003,6 +19003,26 @@
       "geo_precision": "venue",
       "lat": 47.215266,
       "lng": -1.545666
+    },
+    {
+      "id": "openagenda-10172477-2026-12-19",
+      "title": "Concert :Duo Awele - Musique Africaine",
+      "category": "concert",
+      "category_label": "Concert",
+      "date_start": "2026-12-19",
+      "date_end": "2026-12-19",
+      "time": "16:30",
+      "city": "Bordeaux",
+      "department": "Gironde",
+      "region": "Nouvelle-Aquitaine",
+      "venue": "Bibliothèque Pierre Veilletet",
+      "source_url": "https://openagenda.com/bordeaux-bibliotheques/events/10172477_concert-duo-awele-musique-africaine",
+      "source_label": "Bibliothèques de Bordeaux — Licence Ouverte 2.0 — données mises à jour le 06/11/2026",
+      "verified_at": "2026-11-25",
+      "geo_verified_at": "2026-11-25",
+      "geo_precision": "venue",
+      "lat": 44.857443,
+      "lng": -0.623403
     }
   ]
 }
