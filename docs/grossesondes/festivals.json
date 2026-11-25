@@ -6122,7 +6122,7 @@
     {
       "officialSite": "https://www.festibarockin.fr/",
       "notes": "Lien vers le site du festival retrouvé dans un annuaire public puis dates et genre revérifiés directement sur le site officiel. Lieu exact, artistes et coordonnées à confirmer.",
-      "price": null,
+      "price": "Préventes annoncées à partir du 12/12/2026 — Pass 1 jour : pas de prévente, après prévente 15 € ; Pass 2 jours : prévente 18 €, après prévente 25 € ; Moins de 12 ans accompagnés : gratuit",
       "startDate": "2027-06-25",
       "lon": null,
       "bands": 0,
@@ -6139,9 +6139,12 @@
       "name": "Festibarock'in 2027",
       "dateRangeIsContinuous": false,
       "showOnMap": false,
-      "lastVerified": "2026-11-22",
+      "lastVerified": "2026-11-25",
       "slug": "festibarock-in-2027",
-      "lat": null
+      "lat": null,
+      "auditSources": [
+        "https://www.festibarockin.fr/festibarockin-billetterie/"
+      ]
     },
     {
       "officialSite": "https://xtremefest.fr/",
