@@ -50,6 +50,29 @@ class HistoricalCommuneTests(unittest.TestCase):
         self.assertIsNone(historical_parent("Village Ancien", "39",
                                            fixture(first).rstrip(), DAY))
 
+    def test_valid_empty_origin_and_destination_do_not_poison_other_names(self):
+        creation = ["20", "2011-03-31"] + [""] * 6 + [
+            "COM", "97601", "1", "ACOUA", "Acoua", "Acoua"]
+        suppression = ["30", "2007-02-23", "COM", "97123", "0",
+                       "SAINT BARTHELEMY", "Saint-Barthélemy",
+                       "Saint-Barthélemy"] + [""] * 6
+        merger = row("32", "2017-01-01", OLD, PARENT)
+        self.assertEqual(historical_parent("Village Ancien", "39",
+                         fixture(creation, suppression, merger), DAY),
+                         ("39161", "Commune Nouvelle", "39162"))
+        self.assertIsNone(historical_parent("Saint-Barthélemy", None,
+                                           fixture(suppression), DAY))
+        # A suppressed terminal identity cannot survive as a parent.
+        end = ["30", "2020-01-01", "COM", "39162", "0",
+               "COMMUNE NOUVELLE", "Commune Nouvelle",
+               "Commune Nouvelle"] + [""] * 6
+        self.assertIsNone(historical_parent("Village Ancien", "39",
+                                           fixture(merger, end), DAY))
+        broken = list(creation)
+        broken[0] = "32"
+        self.assertIsNone(historical_parent("Village Ancien", "39",
+                                           fixture(merger, broken), DAY))
+
     def test_future_movements_are_not_used(self):
         data = fixture(row("32", "2027-01-01", OLD, PARENT))
         self.assertIsNone(historical_parent("Village Ancien", "39", data, DAY))
