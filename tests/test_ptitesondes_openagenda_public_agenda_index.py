@@ -100,6 +100,19 @@ class NationalOpenAgendaIndexTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "invalid_oa_index_request"):
             read_index_page(KEY, sort="createdAt.desc", opener=fetch)
 
+    def test_geographic_search_is_pinned_and_never_reuses_relevance_cursor(self):
+        urls = []
+        def fetch(request, timeout):
+            urls.append(request.full_url)
+            return Response(request, page([123], after=[0.43, 123]))
+        result = read_index_page(KEY, search="Île-de-France", opener=fetch)
+        self.assertEqual([x["uid"] for x in result["agendas"]], [123])
+        self.assertIsNone(result["after"])
+        self.assertIn("search=%C3%8Ele-de-France", urls[0])
+        self.assertNotIn("official=", urls[0])
+        with self.assertRaisesRegex(ValueError, "invalid_oa_index_request"):
+            read_index_page(KEY, [1, 123], search="Mayotte", opener=fetch)
+
     def test_recent_index_scan_preserves_unfiltered_source_fairness(self):
         def fresh(key, cursor, *, size, sort):
             self.assertEqual(sort, "recentlyAddedEvents.desc")
