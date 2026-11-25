@@ -11,6 +11,12 @@ from functools import lru_cache
 import io
 import re
 import ssl
+from pathlib import Path
+import sys
+
+SCRIPTS = str(Path(__file__).resolve().parents[1] / "scripts")
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
 
 from dns_pinned_https import DNSPinnedHTTPSConnection
 from grossesondes_official_html_edition import fold
