@@ -32,7 +32,9 @@ def origin(url):
 
 def same_mount(a, b):
     try:
-        return origin(a) == origin(b) and urlsplit(a).path == urlsplit(b).path
+        left, right = urlsplit(a), urlsplit(b)
+        return (origin(a) == origin(b) and left.path not in ("", "/")
+                and left.path == right.path and left.query == right.query)
     except (ValueError, TypeError):
         return False
 
