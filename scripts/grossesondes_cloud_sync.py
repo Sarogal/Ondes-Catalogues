@@ -246,7 +246,8 @@ def _certified_new_commune_delta(old, new, *, allow_direct=False):
                 and norm(old["city"]) != norm(new["city"]))
             or not isinstance(new.get("geoSource"), str)
             or not new["geoSource"].startswith(
-                "https://geo.api.gouv.fr/communes?")
+                ("https://geo.api.gouv.fr/communes?",
+                "https://geo.api.gouv.fr/communes_associees_deleguees?"))
             or not isinstance(new.get("geoInsee"), str)
             or re.fullmatch(r"[0-9AB]{5}", new["geoInsee"]) is None):
         return False
