@@ -89,6 +89,23 @@ class StructuredEditionValidationTests(unittest.TestCase):
         self.assertNotIn("originSlug", result)
         self.assertEqual(parent, PARENT)
 
+    def test_structured_metadata_cannot_revive_an_explicit_off_festival_date(self):
+        proposed = copied(startDate="2027-08-12", endDate="2027-08-12")
+        data = html(event(endDate="2027-08-12"))
+        annual = ("<h1>Winter Rising Fest</h1>"
+                  "<section><h2>Hors festival</h2>"
+                  "<p>Concert en tournée le 12 août 2027</p></section>")
+        self.assertIsNone(validate_structured_edition(
+            proposed, PARENT, data + annual, TODAY))
+        genuine = ("<section><h2>Winter Rising Fest 2027</h2>"
+                   "<p>Le 12 août 2027</p></section>")
+        self.assertIsNotNone(validate_structured_edition(
+            proposed, PARENT, data + annual + genuine, TODAY))
+        # A generic annual agenda is not itself negative evidence.
+        self.assertIsNotNone(validate_structured_edition(
+            proposed, PARENT, data + annual.replace("Hors festival",
+                                                    "Agenda"), TODAY))
+
     def test_fail_closed_for_injected_identity_status_and_coords(self):
         for item in (
             copied(showOnMap=True), copied(lat=47.1),

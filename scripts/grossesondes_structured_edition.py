@@ -8,7 +8,9 @@ bands, price or sessions. The JSON-LD must specify the precise year AND dates.
 from datetime import date
 import re
 
-from grossesondes_official_html_edition import visible_official_edition
+from grossesondes_official_html_edition import (
+    visible_official_edition, festival_visible_content, explicit_ranges,
+)
 
 from grossesondes_structured_roster import (
     JsonLD, walk, iso_day, edition_name, ALLOWED_EVENT_TYPES,
@@ -161,6 +163,19 @@ def validate_structured_edition(proposal, parent, html, today, proof_mode=PROOF_
             and proposal["notes"] == PRIVATE_NOTES
             and proposal["verificationStatus"] == PRIVATE_STATUS
             and proposal["sourceConfidence"] == PRIVATE_CONFIDENCE):
+        return None
+    # Structured markup must not resurrect an explicitly separate concert
+    # when that exact interval is visible only in off-festival programming.
+    # Real same-day festival editions remain possible if independently
+    # identified in the remaining visible festival context.
+    try:
+        _, outside = festival_visible_content(html)
+    except (TypeError, ValueError, UnicodeError):
+        return None
+    if (any((first, last) == (start, end)
+            for section in outside
+            for _, _, first, last in explicit_ranges(section, year))
+            and not visible_official_edition(html, title, start, end)):
         return None
     if proof_mode == HTML_PROOF_MODE:
         if (not visible_official_edition(html, title, start, end)
