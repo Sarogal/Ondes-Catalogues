@@ -89,6 +89,42 @@ class VisibleHTMLTests(unittest.TestCase):
             self.assertIn("4 fevrier 2027",
                           festival_visible_content(unproven)[0])
 
+    def test_annual_programme_cms_heading_scope_requires_explicit_contrast(self):
+        from datetime import date
+        from grossesondes_archived_html_intake import official_date
+        from grossesondes_official_html_edition import festival_visible_content
+        name = "Festival des Brumes"
+        day = date(2027, 2, 4)
+        real_day = date(2027, 10, 28)
+        home = (
+            "<main><div><h1>Festival des Brumes</h1></div>"
+            "<div><h2>Programmation à l'année</h2></div>"
+            "<div><p>Notre association, ce n’est pas uniquement le festival "
+            "des Brumes, c’est aussi une programmation à l’année.</p></div>"
+            "<div><h4>Shred Tour</h4><p>Le 4 février 2027 "
+            "to 4 février 2027</p></div>"
+            "<div><h1>Artistes</h1><p>Les archives</p></div></main>"
+        )
+        self.assertFalse(visible_official_edition(home, name + " 2027", day, day))
+        self.assertIsNone(official_date(home, {"name": name}, 2027))
+        remaining, outside = festival_visible_content(home)
+        self.assertNotIn("4 fevrier 2027", remaining)
+        self.assertIn("artistes", remaining)
+        self.assertTrue(any("4 fevrier 2027" in text for text in outside))
+        mixed = home.replace("<h1>Artistes</h1>",
+                             "<h1>Festival des Brumes 2027</h1>"
+                             "<p>Le 28 octobre 2027</p>")
+        self.assertTrue(visible_official_edition(
+            mixed, name + " 2027", real_day, real_day))
+        self.assertEqual(official_date(mixed, {"name": name}, 2027),
+                         (real_day, real_day))
+        for unproven in (
+            home.replace("ce n’est pas uniquement", "nous organisons"),
+            home.replace("c’est aussi une programmation à l’année", "en été"),
+            home.replace("<h1>Artistes</h1>", "<h4>Artistes</h4>"),
+        ):
+            self.assertIn("4 fevrier 2027", festival_visible_content(unproven)[0])
+
     def test_french_range_and_multiple_days(self):
         for dates in ("12-13 août 2027", "12 et 13 août 2027",
                       "du 12 au 13 août 2027", "12, 13 août 2027",
