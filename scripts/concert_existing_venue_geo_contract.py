@@ -108,12 +108,23 @@ def prepare(catalogue, approvals, today, *, verify_one=None, defer_unavailable=F
     A pending correction is re-fetched, not trusted from the signed proposal.
     """
     rows = approvals.get(KEY, [])
-    require(isinstance(rows, list) and len(rows) <= len(catalogue["venues"]),
-            "invalid correction ledger")
-    ids = [r.get("venueId") if isinstance(r, dict) else None for r in rows]
-    require(all(isinstance(i, str) for i in ids) and len(set(ids)) == len(ids),
-            "duplicate or malformed correction venue ID")
-    plans = {row["venueId"]: plan(row, catalogue, today) for row in rows}
+    require(isinstance(rows, list), "invalid correction ledger")
+    latest = {}
+    plans = {}
+    for row in rows:
+        candidate = plan(row, catalogue, today)
+        vid = row["venueId"]
+        prior = plans.get(vid)
+        if prior is not None:
+            # A renewal is an append-only re-attestation of exactly the same
+            # geographic state, not a new permission to move an existing pin.
+            require(candidate["checked"] > prior["checked"]
+                    and candidate["original"] == prior["original"]
+                    and candidate["target"] == prior["target"],
+                    "duplicate, non-monotonic or geographically different renewal")
+        plans[vid] = candidate
+        latest[vid] = row
+    rows = list(latest.values())
     verify_one = evidence.verify if verify_one is None else verify_one
     pending = [row for row in rows if not plans[row["venueId"]]["already"]]
     # Expired anchors do not consume network budget; structural corruption

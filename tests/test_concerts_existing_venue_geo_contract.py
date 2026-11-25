@@ -146,3 +146,33 @@ class GenericVenueGeoContractTests(unittest.TestCase):
         bad["originalVenue"]["name"] = "Wrong"
         with self.assertRaises(ValueError):
             contract.prepare(original, {contract.KEY: [bad]}, TODAY, defer_unavailable=True)
+
+
+    def test_expired_attestation_can_be_renewed_with_new_anchor(self):
+        original, proof, old = fixture()
+        day = TODAY + dt.timedelta(days=8)
+        newer = dict(original["events"][0], id="next-event", date="2027-03-01",
+                     officialUrl="https://unknown-room.fr/events/next")
+        original["events"].append(newer)
+        fresh = dict(proof, eventId=newer["id"], eventDate=newer["date"],
+                     officialUrl=newer["officialUrl"])
+        renewed = contract.signed_proposal(fresh, day)
+        ledger = {contract.KEY: [old, renewed]}
+        with mock.patch.object(evidence, "verify", return_value=fresh) as verify:
+            normalized, plans = contract.prepare(original, ledger, day)
+            verify.assert_called_once_with(newer, original["venues"][0])
+        self.assertEqual(contract.apply(normalized, plans), 1)
+        with mock.patch.object(evidence, "verify", side_effect=AssertionError("network")):
+            restored, plans = contract.prepare(normalized, ledger, dt.date(2027, 6, 1))
+            self.assertEqual(contract.apply(restored, plans), 0)
+            self.assertEqual(restored, normalized)
+
+    def test_renewal_cannot_change_geography_or_review_order(self):
+        original, proof, old = fixture()
+        day = TODAY + dt.timedelta(days=8)
+        renewed = contract.signed_proposal(proof, day)
+        for bad in (dict(renewed, reviewedAt=old["reviewedAt"]),
+                    dict(renewed, venuePatch=dict(renewed["venuePatch"], latitude=49.0))):
+            with self.assertRaisesRegex(ValueError, "renewal"):
+                contract.prepare(original, {contract.KEY: [old, bad]}, day,
+                                 verify_one=lambda *args: self.fail("must not fetch"))

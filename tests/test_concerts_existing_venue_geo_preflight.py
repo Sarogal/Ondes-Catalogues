@@ -1,4 +1,5 @@
 import copy
+import datetime as dt
 import unittest
 
 from automation.concerts import existing_venue_geo_preflight as preflight
@@ -76,3 +77,38 @@ class ExistingVenueGeoPreflightTests(unittest.TestCase):
                                          publisher=lambda *args: self.fail("must not call"))
         self.assertEqual(proposed, ledger)
         self.assertEqual(out["examined"], 0)
+
+
+    def test_renewal_exact_delta_removes_only_one_deferred_correction(self):
+        data, ledger, report, old = inputs()
+        day = TODAY + dt.timedelta(days=8)
+        ledger[contract.KEY] = [old]
+        report["asOf"] = day.isoformat()
+        def replay(reference, current, signed, today):
+            result = copy.deepcopy(current)
+            result["events"].append({"id": "other-pending"})
+            counts = {"correctedVenues": 0, "newEvents": 1, "held": [],
+                      "deferredGeoCorrections": 1}
+            if len(signed[contract.KEY]) == 2:
+                result["venues"][0].update(signed[contract.KEY][-1]["venuePatch"])
+                counts["correctedVenues"] += 1
+                del counts["deferredGeoCorrections"]
+            return result, counts
+        proposed, out = preflight.select(ledger, report, data, data, day,
+                                         publisher=replay)
+        self.assertTrue(out["validatedByPublisher"])
+        self.assertTrue(out["renewal"])
+        self.assertEqual(proposed[contract.KEY][0], old)
+        self.assertEqual(proposed[contract.KEY][1]["reviewedAt"], day.isoformat())
+        self.assertEqual(len(ledger[contract.KEY]), 1)
+
+    def test_changed_target_renewal_remains_unapproved(self):
+        data, ledger, report, old = inputs()
+        day = TODAY + dt.timedelta(days=8)
+        ledger[contract.KEY] = [old]
+        report["asOf"] = day.isoformat()
+        report["proposals"][0]["venuePatch"]["latitude"] = 49.0
+        proposed, out = preflight.select(ledger, report, data, data, day,
+                                         publisher=lambda *args: self.fail("must not call"))
+        self.assertEqual(proposed, ledger)
+        self.assertFalse(out["validatedByPublisher"])
