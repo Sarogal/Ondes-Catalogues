@@ -11,7 +11,7 @@
   "creditGenreEvidenceCount": 0,
   "collaborationGenreEvidenceCount": 0,
   "collaborationMembersResearchedCount": 0,
-  "heldByArtistService": false,
+  "heldByArtistService": true,
   "serviceFailure": null,
   "entries": {
     "60fa0906a838dbe0f417c1ec79d7d34c267f7aa3cc270fb1b7be3842ea07f7df": {

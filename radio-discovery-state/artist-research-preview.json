@@ -4,11 +4,43 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 73,
-  "attemptedCount": 8,
-  "serviceFailure": null,
-  "retryAfterKey": null,
+  "dueNameCount": 65,
+  "attemptedCount": 3,
+  "serviceFailure": "http_503",
+  "retryAfterKey": "76% uncertain",
   "entries": {
+    "2000 fm": {
+      "status": "not_found",
+      "artistName": "2000 FM",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "3 doors down": {
+      "status": "name_hypothesis",
+      "mbid": "2386cd66-e923-4e8e-bf14-2eebe2e9b973",
+      "genres": [
+        "acoustic rock",
+        "alternative metal",
+        "alternative rock",
+        "grunge",
+        "hard rock",
+        "pop rock",
+        "post-grunge",
+        "rock",
+        "southern rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/2386cd66-e923-4e8e-bf14-2eebe2e9b973",
+      "artistName": "3 Doors Down",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "38 special": {
       "status": "ambiguous_or_incomplete",
       "artistName": "38 Special",
