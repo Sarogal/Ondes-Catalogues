@@ -2488,11 +2488,6 @@
       "aliases": []
     },
     {
-      "id": "deefait-release-party",
-      "name": "DÉÉFAIT Release Party",
-      "aliases": []
-    },
-    {
       "id": "the-locos-ex-ska-p-en-concert",
       "name": "THE LOCOS (ex Ska-P) en concert",
       "aliases": []
@@ -15969,11 +15964,10 @@
     },
     {
       "id": "go-c-20261204-montreuil-the-tubs-uk",
-      "title": "THE TUBS (UK) + GUESTS",
+      "title": "THE TUBS (UK)",
       "date": "2026-12-04",
       "artistIds": [
-        "the-tubs-uk",
-        "guests"
+        "the-tubs-uk"
       ],
       "venueId": "go-site-a4221278b655cca782f2",
       "genres": [
@@ -15994,35 +15988,10 @@
         {
           "date": "2026-11-26",
           "change": "Ajout après revue des preuves officielles"
-        }
-      ]
-    },
-    {
-      "id": "go-c-20261205-paris-chaabi-live-paradise",
-      "title": "CHAÂBI LIVE PARADISE",
-      "date": "2026-12-05",
-      "artistIds": [
-        "chaabi-live-paradise"
-      ],
-      "venueId": "go-site-f5054d76985c4c3a9c6e",
-      "genres": [
-        "punk"
-      ],
-      "status": "confirmed",
-      "officialUrl": "https://openagenda.com/shotgun/events/chaabi-live-paradise",
-      "sourceType": "organisateur",
-      "time": null,
-      "timeMeaning": "non confirmé",
-      "organizer": "Punk Paradise",
-      "ticketUrl": null,
-      "lastVerified": "2026-11-26",
-      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
-      "sourceLabel": "Programmation officielle (salle / organisateur)",
-      "locationPrecision": "Position connue du catalogue, précision à confirmer",
-      "history": [
+        },
         {
           "date": "2026-11-26",
-          "change": "Ajout après revue des preuves officielles"
+          "change": "Identité artistique rectifiée après nouvelle vérification de la fiche officielle"
         }
       ]
     },
@@ -16155,5 +16124,15 @@
     "venueCoordinates": "Position indicative par commune lorsque la géolocalisation précise de la salle n’est pas vérifiée.",
     "selection": "Concerts et dates annoncées, sans revendication d’exhaustivité.",
     "ticketmaster": "Découverte uniquement par API officielle avec clé sécurisée; aucun événement Ticketmaster importé sans accès API et droit confirmé. Ne pas exposer de clé dans ce catalogue."
-  }
+  },
+  "editorialExclusions": [
+    {
+      "eventId": "go-c-20261205-paris-chaabi-live-paradise",
+      "date": "2026-11-26",
+      "reason": "venue-name-genre-contamination"
+    }
+  ],
+  "retiredArtistIds": [
+    "deefait-release-party"
+  ]
 }
