@@ -4,8 +4,9 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 28,
-  "distinctArtistHints": 35,
+  "stationsWithArtistHints": 30,
+  "distinctArtistHints": 39,
+  "stationsWithHistoryHints": 0,
   "stationsWithAlternativeHints": 0,
   "records": [
     {
@@ -49,7 +50,7 @@
       "publicationAllowed": false,
       "verdict": "metadata_no_parseable_title",
       "observations": [],
-      "alternativeVersion": 2,
+      "alternativeVersion": 3,
       "alternativeAttempted": true
     },
     {
@@ -165,6 +166,42 @@
       "observations": [],
       "alternativeVersion": 2,
       "alternativeAttempted": true
+    },
+    {
+      "stationuuid": "14516140-aa4b-4462-997e-bb6a36ae7780",
+      "streamSha256": "5917f32faa0f7c2288fd7e5395b80a1fd9869d0290918aa1805d43b28e59cc15",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "BrainDead",
+          "titleSha256": "ef34da880c73046092f9e05e7ac128e4fd3e280bfc8657fd1b857b1497c0d175"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "14bd61af-81e2-44ea-b1cc-8d8a940e0386",
+      "streamSha256": "646318f179d2c53f05c08d49ec787afa60b732f3aa19788db744da2e5917a041",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "The Misfits",
+          "titleSha256": "a65dd475d7bf6164ca2c012af022d98b3101060fdbb3de4fae3f9fbed5543787"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "25de583d-8165-4a5f-8ba5-39861a77f943",
@@ -361,17 +398,19 @@
     {
       "stationuuid": "4488dc76-a690-4e51-a46c-3600be8195c4",
       "streamSha256": "13f0ecbcfc717ae92707e6769f74c7128294e81ff2254c0e85a8c496c657c32c",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
       "verdict": "metadata_no_parseable_title",
-      "observations": []
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "45c0d067-75b7-4714-a5dd-aeae2e4e9023",
       "streamSha256": "c56a472d7125556b5e0011d993ff1c175f8598c3ae486b64028c87e77771f070",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -381,13 +420,20 @@
           "date": "2026-11-25",
           "artistHint": "AxiomMaxiom",
           "titleSha256": "1bf3d1424f2f3ff403e3b61aba7c5676758e42762c17d8f146295b7c5a39e78c"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "Kornkob95",
+          "titleSha256": "572b3801d6999b3c8aa48f0950a120e27cf4419dd9395aac28ba066da64a38d8"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "4a4f979d-b3e6-48c8-9957-cd3a263023c3",
       "streamSha256": "c23922f43cbedb9e0b05f782bcaf5062c34cf2886d35b772b53731ba5c6d3a4d",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -397,8 +443,15 @@
           "date": "2026-11-25",
           "artistHint": "Never Obey Again",
           "titleSha256": "5d24315c73deb80d7b6d6660b97b6ac7ac35c45a915a757d467a5f3d8382a2b6"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "ICED EARTH",
+          "titleSha256": "0544a724fd7c22abaa4206abb153150171bd270dde72b422c3a196ddeda8f70a"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "4e3c3bc3-7d48-4a20-84cc-509d3e2cea14",

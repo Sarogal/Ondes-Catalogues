@@ -3,8 +3,8 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 35,
-  "dueNameCount": 19,
+  "observedNameCount": 39,
+  "dueNameCount": 17,
   "attemptedCount": 6,
   "serviceFailure": null,
   "retryAfterKey": null,
@@ -58,6 +58,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "braindead": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "BrainDead",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "dead end tragedy": {
       "status": "not_found",
       "artistName": "Dead End Tragedy",
@@ -84,9 +93,27 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "gojira": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Gojira",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "howard jones": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Howard Jones",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "iced earth": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "ICED EARTH",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
@@ -134,9 +161,27 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "kornkob95": {
+      "status": "not_found",
+      "artistName": "Kornkob95",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "krasnaja plesen'": {
       "status": "not_found",
       "artistName": "Krasnaja Plesen'",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "la pulqueria": {
+      "status": "not_found",
+      "artistName": "La Pulqueria",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
@@ -236,6 +281,15 @@
     "rage": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Rage",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "shadow la sombra": {
+      "status": "not_found",
+      "artistName": "Shadow La Sombra",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
