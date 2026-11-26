@@ -1053,6 +1053,30 @@ jobs:
             echo "::warning::Observation géographique indisponible ; collecte poursuivie."
           fi
 
+      - name: Prévalider les exclusions éditoriales génériques en privé
+        if: steps.access.outputs.ready == 'true' && steps.publisher_preflight.outputs.outcome == 'passed'
+        shell: bash
+        env:
+          GROSSES_ONDES_CONCERTS_AUTOREVIEW: ${{ vars.GROSSES_ONDES_CONCERTS_AUTOREVIEW }}
+        run: |
+          set -euo pipefail
+          REPORT=confidential/automation/concerts/intake/editorial-correction-preflight.json
+          rm -f "$REPORT"
+          UTC_HOUR=$(date -u +%H)
+          SCAN_SLOT=$((10#$UTC_HOUR / 8))
+          OPTIONS=()
+          if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
+            OPTIONS+=(--apply)
+          fi
+          if ! timeout 150s python public/automation/concerts/editorial_correction_preflight.py \
+              --before confidential/automation/concerts/approved.json \
+              --reference public/docs/grossesondes/concerts-reference.json \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --report "$REPORT" --slot "$SCAN_SLOT" "${OPTIONS[@]}" \
+              > "$RUNNER_TEMP/concerts-private-logs/editorial-correction-preflight.log" 2>&1; then
+            echo "::warning::Prévalidation éditoriale indisponible ; collecte poursuivie."
+          fi
+
       - name: Conserver les rapports sensibles uniquement dans le dépôt privé
         if: steps.access.outputs.ready == 'true'
         shell: bash
@@ -1209,6 +1233,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/published-lineup-audit.json ]; then
             git add --sparse -- automation/concerts/intake/published-lineup-audit.json
+          fi
+          if [ -f automation/concerts/intake/editorial-correction-preflight.json ]; then
+            git add --sparse -- automation/concerts/intake/editorial-correction-preflight.json
           fi
           if [ -f automation/concerts/intake/existing-venue-geo-preflight.json ]; then
             git add --sparse -- automation/concerts/intake/existing-venue-geo-preflight.json
