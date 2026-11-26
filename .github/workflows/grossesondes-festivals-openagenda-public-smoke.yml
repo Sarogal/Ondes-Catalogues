@@ -76,6 +76,7 @@ jobs:
               review = research_brand_domain(lead, title, lead['edition_year_hint'], today)
               assert review['publication_authorized'] is False
               print('Brand domain:', title, review['status'],
-                    'official dates:', review['dates_review_only'])
+                    'official dates:', review['dates_review_only'],
+                    'diagnostics:', review.get('diagnostics', {}))
           print('Brand-domain eligible:', len(leads), 'checked:', min(4, len(leads)))
           PY
