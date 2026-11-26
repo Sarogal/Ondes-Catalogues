@@ -7,6 +7,8 @@ from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 from merge_policy import merge,ORIGIN
 from private_intake import latest
+from ptitesondes_historical_gps_cloud import LEDGER_PATH, prepare_cloud_repairs
+from ptitesondes_historical_gps_ledger import reconcile
 from ptitesondes_open_world_patch_bridge import (
     merge_verified_open_world, PUBLIC_REHEARSAL_REASONS,
 )
@@ -71,6 +73,8 @@ def public_summary(report):
         f"- Catalogue avant : {report['initial']}\n"
         f"- Catalogue simulé : {report['final']}\n"
         f"- Nouvelles fiches conformes : {report['ajoutes']}\n"
+        f"- Corrections GPS historiques vérifiées : {report.get('correction', 0)}\n"
+        f"- Recherche GPS différée : {report.get('gps_research_deferred', False)}\n"
         f"- Propositions différées : {len(report['attente'])}\n"
         +extra
         +"- Le déploiement est décidé séparément par le workflow.\n"
@@ -89,12 +93,14 @@ def main():
     if len(data)>9_000_000:raise ValueError("Production trop volumineuse")
     reference=json.loads(data.decode("utf-8-sig"))
     current=json.loads(CATALOGUE.read_text(encoding="utf-8"))
+    ledger=json.loads(LEDGER_PATH.read_text(encoding="utf-8"))
+    effective_reference=reconcile(reference,current,ledger)
     patch,path=latest(secret,today)
     if "open_world_research" in patch:
         # A private research dossier never grants verification. The bridge
         # re-reads OpenAgenda, DILA, municipal events and independent GPS.
         candidate,report,bridge=merge_verified_open_world(
-            reference,current,patch,today,
+            effective_reference,current,patch,today,
             os.getenv("OPENAGENDA_READ_KEY",""),
             as_of_utc=as_of_utc)
         report["open_world_counts"]={
@@ -106,10 +112,25 @@ def main():
             "reason_counts":redacted_blocker_counts(
                 bridge.get("held_reason_counts", {}))}
     else:
-        candidate,report=merge(reference,current,patch,today)
+        candidate,report=merge(effective_reference,current,patch,today)
+    # A fresh historical correction is separate from private patch updates.
+    # Failure of optional geographic research must not lose valid additions.
+    try:
+        corrected,new_ledger,count=prepare_cloud_repairs(
+            reference,candidate,ledger,today,secret)
+    except (OSError, ValueError, TypeError, KeyError, TimeoutError, RecursionError, OverflowError):
+        corrected,new_ledger,count=candidate,ledger,0
+        report["gps_research_deferred"]=True
+    else:
+        report["gps_research_deferred"]=False
+    report["correction"]=count
+    if count:
+        candidate=corrected
+        candidate["updated_at"]=as_of_utc.astimezone(ZoneInfo("Europe/Paris")).isoformat(timespec="seconds")
+        LEDGER_PATH.write_text(json.dumps(new_ledger,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     report["patch"]=path
     REPORT.write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
-    changed=bool(report["ajoutes"])
+    changed=bool(report["ajoutes"] or report["correction"])
     if changed:
         CATALOGUE.write_text(json.dumps(candidate,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     output=os.getenv("GITHUB_OUTPUT")
@@ -122,14 +143,13 @@ def main():
     # summary cannot be read by external monitoring. The helper exposes
     # only fixed, preapproved reason codes and counts, never a private
     # event ID, organizer name, URL, title or venue.
-    if "open_world_counts" in report:
-        print(public_summary(report).rstrip())
+    print(public_summary(report).rstrip())
     # Ne jamais exposer les IDs et motifs privés dans les journaux publics.
     summary_path=os.getenv("GITHUB_STEP_SUMMARY")
     if summary_path:
         with open(summary_path,"a",encoding="utf-8") as summary:
             summary.write(public_summary(report))
-    print("Aucune suppression ni correction automatique.")
+    print("Aucune suppression; corrections GPS historiques vérifiées :", report["correction"])
 
 if __name__=="__main__":
     main()
