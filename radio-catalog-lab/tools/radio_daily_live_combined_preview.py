@@ -3,10 +3,12 @@
 No operation is admitted solely on a digest report. No signed pointer, key,
 candidate bytes or raw network evidence is persisted by this module.
 """
-from radio_daily_baseline_verify import verify_baseline
-from radio_daily_combined_release_validation import compose, validate_combined
+from radio_daily_baseline_verify import verify_baseline, strict_json
+from radio_daily_combined_release_validation import compose, validate_combined, publish_combined
 from radio_daily_lab_signing import EphemeralLabSigner
 from radio_daily_v9_generator import digest
+from radio_daily_publication_simulator import MemoryStore, verify_visible
+from radio_daily_live_inherited_artwork import recover_inherited, ArtworkUnavailable
 
 # Prefer recovery/repair of existing radios to additions or destructive merges.
 ORDER = ("repair", "status", "logo", "admission", "merge")
@@ -17,7 +19,7 @@ def inventory(operations):
 
 
 def combine_and_rehearse(pointer, raw, *, anchor, day, operations):
-    verify_baseline(pointer, raw, **anchor)
+    old = verify_baseline(pointer, raw, **anchor)
     if set(operations) - set(ORDER):
         raise ValueError("unknown live combined operation")
     selected = {}
@@ -73,4 +75,31 @@ def combine_and_rehearse(pointer, raw, *, anchor, day, operations):
         return report
     report.update(outcome="experimental_signature_verified", signed=True,
                   experimentalSignatureVerified=True, experimentalKeyId=signer.key_id)
+    try:
+        inherited = recover_inherited(old, strict_json(body))
+    except ArtworkUnavailable:
+        report["outcome"] = "inherited_artwork_held"
+        return report
+    store = MemoryStore(lab_pointer, raw, legacy_logos=inherited)
+    args = dict(expected_sha=anchor["expected_sha"],
+                expected_sequence=anchor["expected_sequence"],
+                expected_candidate_sha=sha, day=day,
+                operations=selected, objects=objects)
+    try:
+        result = publish_combined(store, signer, lab_pointer, raw, body, **args)
+        if not result["changed"] or result["sequence"] != anchor["expected_sequence"]+1:
+            raise ValueError("unexpected simulated publication")
+        if store.current() != signed:
+            raise ValueError("simulated pointer differs from verified signature")
+        verify_visible(store, store.current(), sha=sha,
+                       sequence=result["sequence"], signer=signer)
+        retry = publish_combined(store, signer, lab_pointer, raw, body, **args)
+        if not retry.get("resumed") or store.current() != signed:
+            raise ValueError("simulated retry not idempotent")
+    except (ValueError, KeyError):
+        report["outcome"] = "experimental_publication_held"
+        return report
+    report.update(outcome="experimental_publication_verified", simulatedPublication=True,
+                  visibleSequence=result["sequence"], retryVerified=True,
+                  verifiedInheritedArtworkCount=len(inherited))
     return report

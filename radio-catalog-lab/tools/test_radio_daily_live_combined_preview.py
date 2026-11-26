@@ -29,7 +29,9 @@ class LiveCombinedPreviewTests(unittest.TestCase):
         self.assertEqual(set(result["selectedOperations"]), {"logo", "status"})
         self.assertTrue(result["experimentalSignatureVerified"])
         self.assertFalse(result["publicationAllowed"])
-        self.assertFalse(result["simulatedPublication"])
+        self.assertTrue(result["simulatedPublication"])
+        self.assertTrue(result["retryVerified"])
+        self.assertEqual(result["visibleSequence"], 9)
         self.assertNotEqual(result["experimentalKeyId"], f.anchor["key_id"])
 
     @patch("radio_daily_live_combined_preview.EphemeralLabSigner")
@@ -65,3 +67,16 @@ class LiveCombinedPreviewTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             verify_baseline(pointer, f.raw, **f.anchor)
         verify_baseline(pointer, f.raw, **dict(f.anchor, public_key=signer.public_key, key_id=signer.key_id))
+
+    @patch("radio_daily_live_combined_preview.recover_inherited", side_effect=__import__("radio_daily_live_inherited_artwork").ArtworkUnavailable("held"))
+    def test_missing_inherited_artwork_blocks_publication_not_signature(self, recover):
+        result = self.run_preview(self.f.operations)
+        self.assertTrue(result["experimentalSignatureVerified"])
+        self.assertFalse(result["simulatedPublication"])
+        self.assertEqual(result["outcome"], "inherited_artwork_held")
+
+    @patch("radio_daily_live_combined_preview.publish_combined", side_effect=ValueError("collision"))
+    def test_atomic_publication_failure_is_held(self, publish):
+        result = self.run_preview(self.f.operations)
+        self.assertFalse(result["simulatedPublication"])
+        self.assertEqual(result["outcome"], "experimental_publication_held")
