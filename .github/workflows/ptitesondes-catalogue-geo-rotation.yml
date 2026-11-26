@@ -13,6 +13,8 @@ on:
     paths:
       - '.github/workflows/ptitesondes-catalogue-geo-rotation.yml'
       - 'scripts/ptitesondes_acceslibre_geo_hints.py'
+      - 'scripts/ptitesondes_catalogue_geo_proof_batch.py'
+      - 'scripts/ptitesondes_catalogue_geo_rotation.py'
   schedule:
     - cron: '42 01 * * *'
     - cron: '42 05 * * *'
@@ -86,6 +88,20 @@ jobs:
               for k in ("group_count", "examined", "never_examined", "venue_points_found", "accelerated_hints"):
                   assert type(r[k]) is int and r[k] >= 0
                   f.write(f"- {k}: {r[k]}\n")
+              providers = ("dila", "administrative", "official_html", "ban", "osm_nearby", "osm_named")
+              totals = r.get("provider_diagnostics", {})
+              assert isinstance(totals, dict)
+              for provider in providers:
+                  row = totals.get(provider)
+                  if row is None:
+                      continue
+                  assert isinstance(row, dict)
+                  calls, errors = row.get("calls"), row.get("errors")
+                  assert type(calls) is int and type(errors) is int
+                  assert 0 <= errors <= calls <= 100 * r["examined"]
+                  line = f"- {provider}: calls={calls}, errors={errors}"
+                  f.write(line + "\n")
+                  print(line)
           PY
           git diff --exit-code -- docs/ptitesondes/sorties.json
       - name: Persist only the private rotation checkpoint
