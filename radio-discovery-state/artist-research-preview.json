@@ -7,7 +7,7 @@
   "dueNameCount": 31,
   "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "bad buka",
+  "retryAfterKey": "brigadnyj podrjad",
   "entries": {
     "2000 fm": {
       "status": "not_found",
