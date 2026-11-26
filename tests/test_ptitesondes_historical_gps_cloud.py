@@ -60,3 +60,30 @@ class GPSCloudTests(unittest.TestCase):
             read_private_json(name, "test", reader=Mock(side_effect=[meta,bad]))
         with self.assertRaisesRegex(ValueError, "unknown"):
             read_private_json("../secret", "test", reader=Mock())
+
+
+    def test_diagnostics_distinguish_missing_checkpoint_and_failed_fresh_proof(self):
+        doc, state, proof = fixture()
+        diagnostics = {}
+        prepare_cloud_repairs(doc, doc, empty_ledger(), DAY, "test",
+            reader=lambda *_: None, diagnostics=diagnostics)
+        self.assertEqual(diagnostics, {"checkpoint_missing": 1})
+        diagnostics = {}
+        prepare_cloud_repairs(doc, doc, empty_ledger(), DAY, "test",
+            reader=lambda name, _: state if name == "catalogue-geo-rotation.json" else None,
+            researcher_factory=lambda _: lambda *_: None, diagnostics=diagnostics)
+        self.assertEqual(diagnostics["candidate_groups"], 1)
+        self.assertEqual(diagnostics["fresh_proof_missing_or_changed"], 1)
+        self.assertEqual(diagnostics["source_reads"], 0)
+
+    def test_summary_never_prints_unknown_gps_diagnostic(self):
+        from run_cloud_sync import public_summary
+        summary = public_summary(dict(initial=1, final=1, ajoutes=0, attente=[],
+            gps_research_counts={"candidate_groups": 1,
+                                 "event_identity_unconfirmed": 1,
+                                 "https://private.example/venue": 99,
+                                 "source_reads": "private text"}))
+        self.assertIn("GPS candidate_groups : 1", summary)
+        self.assertIn("GPS event_identity_unconfirmed : 1", summary)
+        self.assertNotIn("private.example", summary)
+        self.assertNotIn("private text", summary)
