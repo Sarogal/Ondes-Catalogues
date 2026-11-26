@@ -137,6 +137,39 @@ class OpenAgendaDescriptionGenreTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "genre evidence missing"):
                     check(official_record(description=fragment + "<p>Soirée jazz.</p>"))
 
+
+    def test_non_nominative_support_never_becomes_an_artist(self):
+        for label in ("GUESTS", "Special Guest", "TBA",
+                      "Première partie à confirmer", "Invité surprise",
+                      "Spezialgast", "Invitados"):
+            with self.subTest(label=label):
+                raw = official_record(description="Concert post punk.",
+                    keywords={"fr": ["post punk"]},
+                    title={"fr": "Example Band + " + label})
+                names, genres = check(raw)
+                self.assertEqual(names, ["Example Band"])
+                self.assertEqual(genres, ["post punk"])
+
+    def test_named_performers_and_order_preserved(self):
+        names = oa._bill({"@type": "MusicEvent",
+            "name": "Example Band + GUESTS + Guest House + Other Band",
+            "performer": [{"@type": "MusicGroup", "name": "Example Band"},
+                          {"@type": "MusicGroup", "name": "GUESTS"},
+                          {"@type": "MusicGroup", "name": "Guest House"}]})
+        self.assertEqual(names, ["Example Band", "Guest House", "Other Band"])
+
+    def test_placeholder_only_and_contradictory_named_bill_rejected(self):
+        for title, performers in (
+            ("GUESTS + TBA", []),
+            ("GUESTS", []),
+            ("Example Band + GUESTS",
+             [{"@type": "MusicGroup", "name": "Different Band"}]),
+        ):
+            with self.subTest(title=title):
+                with self.assertRaises(ValueError):
+                    oa._bill({"@type": "MusicEvent", "name": title,
+                              "performer": performers})
+
     def test_keyword_genre_still_takes_precedence_over_description(self):
         _, genres = check(official_record(
             description="<p>Simple rencontre publique.</p>",
