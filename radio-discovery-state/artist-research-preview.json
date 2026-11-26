@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 124,
   "dueNameCount": 50,
-  "attemptedCount": 1,
+  "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "heaven shall burn",
+  "retryAfterKey": "inminente",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -333,6 +333,25 @@
     "howard jones": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Howard Jones",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "iced earth": {
+      "status": "name_hypothesis",
+      "mbid": "8a0e10a9-80c7-40e0-bf5b-89f1d57f9537",
+      "genres": [
+        "heavy metal",
+        "metal",
+        "power metal",
+        "thrash metal",
+        "us power metal"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/8a0e10a9-80c7-40e0-bf5b-89f1d57f9537",
+      "artistName": "ICED EARTH",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,

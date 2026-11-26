@@ -9,7 +9,7 @@
   "stationsWithSourceConflicts": 1,
   "stationsWithReportedHistory": 0,
   "stationsWithMultipleObservationDays": 19,
-  "stationsWithGenreHints": 29,
+  "stationsWithGenreHints": 30,
   "verifiedArtistCount": 0,
   "records": [
     {
@@ -1705,16 +1705,16 @@
       "distinctHistoricalArtistTitleHints": 0,
       "stalePairCount": 0,
       "artistHintCounts": {
-        "target_hint": 0,
+        "target_hint": 1,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 2
+        "unclassified_hint": 1
       },
       "artistTitleHintCounts": {
-        "target_hint": 0,
+        "target_hint": 1,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 2
+        "unclassified_hint": 1
       },
       "collaborationMemberHintCounts": {
         "target_hint": 0,
@@ -1723,8 +1723,7 @@
         "unclassified_hint": 0
       },
       "sourceHintCounts": {
-        "musicbrainz_only": 1,
-        "no_usable_source": 1
+        "musicbrainz_only": 2
       },
       "verifiedArtistCount": 0,
       "approved": false,
