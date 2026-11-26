@@ -2,7 +2,7 @@
 import unittest
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
-from national_cultural_venue_discovery import cultural_detail, registry_path, PAGE_SIZE
+from national_cultural_venue_discovery import cultural_detail, registry_path, sites_from_rows, PAGE_SIZE
 
 DAY = "2026-11-26"
 TITLE = "Festival des Rives 2027"
@@ -55,6 +55,31 @@ class CulturalVenueDiscoveryTests(unittest.TestCase):
         pages = dict(PAGES, **{DETAIL: HTML.replace(TICKET, TICKET + "-autre")})
         self.assertEqual(cultural_detail(LEAD, TITLE, 2027, DAY, fetch=pages.__getitem__,
                                         registry_fetch=registry)["proofs"], [])
+
+    def test_registry_preserves_venue_subpage_and_ignores_social_profiles(self):
+        venue = "https://culture-exemple.fr/salles/salle-des-rives/"
+        root = "https://culture-exemple.fr/"
+        detail = root + "agenda/festival-des-rives/"
+        row = dict(ROW, site_internet_et_autres_liens=[
+            venue, "https://twitter.com/salle", "https://www.youtube.com/@salle",
+            "https://www.linkedin.com/company/salle",
+            root + "salles/%2e%2e/autre", root + "salles/?id=untrusted"])
+        self.assertEqual(sites_from_rows([row], "Exemple", "Île-de-France"), [venue])
+        pages = {venue: '<h1>Salle des Rives</h1><a href="' + detail +
+                 '">Festival des Rives 2027</a>',
+                 root: '<h1>Culture</h1>', detail: HTML}
+        calls = []
+        def read(url):
+            calls.append(url)
+            return pages[url]
+        report = cultural_detail(LEAD, TITLE, 2027, DAY, fetch=read,
+            registry_fetch=lambda *args: {"meta": {"page": 1,
+                "page_size": PAGE_SIZE, "total": 1}, "data": [row]})
+        self.assertEqual(report["status"], "OFFICIAL_DETAIL_PROOF_REVIEW_ONLY")
+        self.assertEqual(report["proofs"][0]["official_detail_url"], detail)
+        self.assertEqual(calls[0], venue)
+        self.assertTrue(all(u.startswith(root) for u in calls))
+        self.assertLessEqual(len(calls), 4)
 
     def test_publisher_reconstructs_fallback_from_fresh_public_record(self):
         from national_professional_publisher_provenance import prove
