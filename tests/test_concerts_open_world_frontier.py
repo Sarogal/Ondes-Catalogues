@@ -74,7 +74,8 @@ class OpenWorldFrontierTests(unittest.TestCase):
                          "Unknown Venue", "Lyon", dept="69",
                          officialArtistNames=names),
         })
-        result = frontier.build(public(), private, TODAY)
+        # Isolate the 65 new relations from the default historical fixture.
+        result = frontier.build(public(events=[]), private, TODAY)
         self.assertEqual(result["counts"]["unlistedArtists"], 65)
         self.assertEqual(result["counts"]["artistVenueDateRelations"], 65)
         self.assertTrue(set(names) <= {a["name"] for a in result["artistResearch"]})
