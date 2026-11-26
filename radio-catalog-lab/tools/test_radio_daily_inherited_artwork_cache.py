@@ -79,3 +79,58 @@ class InheritedCacheTests(unittest.TestCase):
         (self.previous/filename(self.logo)).symlink_to(source)
         with self.assertRaises(ValueError):
             cached(self.logo,[self.previous])
+
+    def first_party_fixture(self):
+        self.logo["url"]="https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/feature/test/artwork/"+filename(self.logo)
+        self.pointer,self.raw,self.anchor=sign(self.doc)
+        local=self.root/"local"
+        local.mkdir()
+        return local
+
+    def test_verified_first_party_import_without_network(self):
+        local=self.first_party_fixture()
+        (local/filename(self.logo)).write_bytes(DATA)
+        fetch=Mock()
+        report=populate(self.pointer,self.raw,anchor=self.anchor,day=DAY,
+            previous=self.previous,output=self.root/"out",fetch=fetch,
+            limit=0,local_sources=[local])
+        self.assertEqual(report["localImportedCount"],1)
+        self.assertEqual(report["localImportedBytes"],len(DATA))
+        self.assertEqual(report["networkRecoveredCount"],0)
+        self.assertEqual(report["remainingCount"],0)
+        self.assertEqual((self.root/"out"/filename(self.logo)).read_bytes(),DATA)
+        fetch.assert_not_called()
+
+    def test_corrupt_local_source_is_not_imported(self):
+        local=self.first_party_fixture()
+        (local/filename(self.logo)).write_bytes(OLD)
+        fetch=Mock()
+        report=populate(self.pointer,self.raw,anchor=self.anchor,day=DAY,
+            previous=self.previous,output=self.root/"out",fetch=fetch,
+            limit=0,local_sources=[local])
+        self.assertEqual(report["localImportedCount"],0)
+        self.assertEqual(report["localRejectedCount"],1)
+        self.assertEqual(report["remainingCount"],1)
+        fetch.assert_not_called()
+
+    def test_external_image_not_sourced_from_unrelated_checkout(self):
+        local=self.root/"local"
+        local.mkdir()
+        (local/filename(self.logo)).write_bytes(DATA)
+        report=populate(self.pointer,self.raw,anchor=self.anchor,day=DAY,
+            previous=self.previous,output=self.root/"out",fetch=Mock(),
+            limit=0,local_sources=[local])
+        self.assertEqual(report["localImportedCount"],0)
+        self.assertEqual(report["remainingCount"],1)
+
+    def test_local_import_not_repeated_if_cache_contains_image(self):
+        local=self.first_party_fixture()
+        (local/filename(self.logo)).write_bytes(DATA)
+        (self.previous/filename(self.logo)).write_bytes(DATA)
+        fetch=Mock()
+        report=populate(self.pointer,self.raw,anchor=self.anchor,day=DAY,
+            previous=self.previous,output=self.root/"out",fetch=fetch,
+            limit=0,local_sources=[local])
+        self.assertEqual(report["cachedCount"],1)
+        self.assertEqual(report["localImportedCount"],0)
+        fetch.assert_not_called()

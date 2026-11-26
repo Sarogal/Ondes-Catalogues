@@ -649,6 +649,34 @@ jobs:
             --repair-report "$root/repair-plan-preview.json" --status-report "$root/status-transition-preview.json" \
             --logo-maintenance "$root/logo-maintenance-preview.json" --missing-logo "$root/missing-logo-preview.json" \
             --allow-repair-material-network --allow-logo-material-network --output-dir "$root/v9-preview"
+      - name: Read existing TEST v8 artwork objects (read-only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        uses: actions/checkout@v4
+        with:
+          ref: feature/go-radio-test-v2-isolated-20261123
+          path: go-artwork-v8
+          persist-credentials: false
+          sparse-checkout: |
+            grossesondes/radio-test-v2/artwork/sha256
+      - name: Read existing v6 staging artwork objects (read-only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        uses: actions/checkout@v4
+        with:
+          ref: feature/go-radio-v6-dedupe-logo-audit-20261123
+          path: go-artwork-v6
+          persist-credentials: false
+          sparse-checkout: |
+            grossesondes/radio-test-v2/artwork/staging-unpublished
+      - name: Read existing v7 staging artwork objects (read-only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        uses: actions/checkout@v4
+        with:
+          ref: feature/go-radio-v7-13-dedupe-20261123
+          path: go-artwork-v7
+          persist-credentials: false
+          sparse-checkout: |
+            grossesondes/radio-test-v2/artwork/staging-lautfm-v7
+            grossesondes/radio-test-v2/artwork/staging-exclusive-v7
       - name: Stage bounded verified inherited artwork cache (no catalogue writes)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
         shell: bash
@@ -661,6 +689,10 @@ jobs:
             --baseline-sha256 "$BASELINE_SHA256" --baseline-sequence "$BASELINE_SEQUENCE" \
             --day "$(date -u +%F)" \
             --previous go-radio-state-checkout/radio-discovery-state/artwork-cache/sha256 \
+            --local-source go-artwork-v8/grossesondes/radio-test-v2/artwork/sha256 \
+            --local-source go-artwork-v6/grossesondes/radio-test-v2/artwork/staging-unpublished \
+            --local-source go-artwork-v7/grossesondes/radio-test-v2/artwork/staging-lautfm-v7 \
+            --local-source go-artwork-v7/grossesondes/radio-test-v2/artwork/staging-exclusive-v7 \
             --output "$root/inherited-artwork-cache" --report "$root/inherited-artwork-cache.json"
           cp "$RUNNER_TEMP/go-radio-selected-baseline.json" "$root/inherited-artwork-baseline.json"
       - name: Recompute strict release previews with live evidence (artifact only)
@@ -862,7 +894,12 @@ jobs:
                       allowed[logo["sha256"]+"."+ext[logo["mime_type"]]] = logo
               incoming = src / "inherited-artwork-cache"
               files = list(incoming.iterdir()) if incoming.is_dir() else []
-              assert len(files) == report["recoveredCount"] <= 12
+              local_count = report.get("localImportedCount",0)
+              network_count = report.get("networkRecoveredCount",report["recoveredCount"])
+              assert type(local_count) is int and 0 <= local_count <= 100
+              assert type(network_count) is int and 0 <= network_count <= 12
+              assert len(files) == report["recoveredCount"] == local_count+network_count <= 112
+              assert sum(item.stat().st_size for item in files) <= 48*1024*1024
               cache = dst / "artwork-cache" / "sha256"
               cache.mkdir(parents=True, exist_ok=True)
               assert not cache.is_symlink() and not cache.parent.is_symlink()
