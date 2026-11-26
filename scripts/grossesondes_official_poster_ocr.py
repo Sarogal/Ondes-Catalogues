@@ -453,3 +453,58 @@ def poster_review_claims(row, reading):
         if claims:
             out["claims"][key] = claims
     return out
+
+
+def structured_poster_candidates(row, reading):
+    """Typed, explicitly labelled evidence for a later independent recheck.
+
+    This is still review-only. Never infer sale status, overwrite an existing
+    price, or promote a known-name hint from an unlabelled logo.
+    """
+    from grossesondes_official_html_edition import fold
+    out = {"review_only": True, "publication_authorized": False,
+           "artists": [], "passes": {}}
+    proof = poster_review_claims(row, reading)
+    if proof["status"] != "edition_matches_review_only":
+        return out
+    lines = poster_word_lines(reading["words"])
+    if lines is None:
+        return out
+    duration = (date.fromisoformat(row["endDate"]) -
+                date.fromisoformat(row["startDate"])).days + 1
+    artist_lists, offers, conflicts = [], {}, set()
+    for line in lines:
+        if not all(w["confidence"] >= 95 for w in line):
+            continue
+        raw = " ".join(w["text"] for w in line).strip()
+        roster = re.fullmatch(r"(?:artistes?|groupes?|line[\s-]?up)\s*:\s*(.+)", raw, re.I)
+        if roster:
+            # Only explicitly delimited names; no split on 'and' or '&'.
+            names = [n.strip() for n in re.split(r"\s*(?:,|;|•)\s*", roster.group(1))]
+            if (1 <= len(names) <= 60 and all(
+                    2 <= len(n) <= 90 and re.search(r"[A-Za-zÀ-ÿ]", n)
+                    and not re.search(r"[\r\n<>@/\\:!?]", n)
+                    and not re.search(r"\b(?:sponsors?|partenaires?|billetterie|"
+                                      r"tickets?|festival|programmation|tarifs?|"
+                                      r"pass|concerts?|et autres|and more)\b", fold(n))
+                    for n in names)
+                    and len({fold(n) for n in names}) == len(names)):
+                artist_lists.append(names)
+        offer = re.fullmatch(
+            r"pass\s+([1-7])\s*(?:j|jours?|days?)\s*:\s*"
+            r"([1-9]\d{0,2}(?:[,.]\d{2})?)\s*(?:€|euros?|eur)",
+            raw, re.I)
+        if offer:
+            days, amount = int(offer.group(1)), offer.group(2).replace(".", ",")
+            if days <= duration:
+                if days in offers and offers[days] != amount:
+                    conflicts.add(days)
+                offers[days] = amount
+    # Never merge contradictory explicitly labelled rosters into a new list.
+    if artist_lists and all(
+            {fold(n) for n in names} == {fold(n) for n in artist_lists[0]}
+            for names in artist_lists):
+        out["artists"] = artist_lists[0]
+    out["passes"] = {str(days): amount for days, amount in sorted(offers.items())
+                     if days not in conflicts}
+    return out
