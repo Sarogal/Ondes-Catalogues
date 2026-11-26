@@ -46,6 +46,22 @@ class OfficialDetailResearchTests(unittest.TestCase):
             result, _ = self.run_pages(dict(PAGES, **{DETAIL: html}))
             self.assertEqual(result["proofs"], [])
 
+    def test_explicit_cold_and_dark_wave_scope_not_electronic_hardcore(self):
+        for genre in ("coldwave", "cold wave", "darkwave", "dark wave", "post-punk"):
+            with self.subTest(genre=genre):
+                result, _ = self.run_pages(dict(PAGES, **{DETAIL:
+                    HTML.replace("metal et punk", genre)}))
+                self.assertEqual(result["status"], "OFFICIAL_DETAIL_PROOF_REVIEW_ONLY")
+                self.assertFalse(result["publication_authorized"])
+        for genre in ("hardcore techno", "hardstyle et frenchcore", "house"):
+            result, _ = self.run_pages(dict(PAGES, **{DETAIL:
+                HTML.replace("metal et punk", genre)}))
+            self.assertEqual(result["proofs"], [])
+        # A hidden wave keyword is not genre evidence.
+        result, _ = self.run_pages(dict(PAGES, **{DETAIL:
+            HTML.replace("metal et punk", "techno <span hidden>darkwave</span>")}))
+        self.assertEqual(result["proofs"], [])
+
     def test_conflicting_details_do_not_qualify(self):
         other = ROOT + "festival-des-rives-bis/"
         pages = dict(PAGES)
