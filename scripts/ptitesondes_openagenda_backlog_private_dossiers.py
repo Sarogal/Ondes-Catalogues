@@ -524,6 +524,7 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
     review_order = (persistent_backlog_batch(ordered_active, today, refusal_memory, clues)
                     if refusal_memory is not None else
                     deadline_aware_backlog_batch(ordered_active, today, batch_index))
+    reconsider_examined = 0
     visited = attempts = holds = 0
     proposals = []
     cache = {}
@@ -541,6 +542,7 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
             mark_attempt(refusal_memory, attempt_key(identity, clues[identity]))
             if identity_key(identity) in refusal_memory["reconsider"]:
                 refusal_memory["reconsider"].remove(identity_key(identity))
+                reconsider_examined += 1
         try:
             if slug not in cache:
                 cache[slug] = agenda_reader(slug, key)
@@ -597,6 +599,8 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
         "editorial_queue_live_reads": queue_reads,
         "editorial_cached_backlog_deferred": deferred_clues,
         "editorial_new_live_refusals": new_refusals,
+        "editorial_reconsider_examined": reconsider_examined,
+        "editorial_reconsider_remaining": len(refusal_memory.get("reconsider", [])) if refusal_memory is not None else 0,
         "held_for_publisher_or_network": holds, "public_writes": 0,
         **network,
     }
