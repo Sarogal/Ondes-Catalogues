@@ -22,9 +22,9 @@ from radio_catalog_logo_pilot_probe import fetch_strict_https,decode_image,MAX_L
 from radio_daily_qualification_dossiers import MAX_BYTES
 from radio_stream_recheck_ledger import parse_day,SHA256_RE
 
-MAX_STATIONS=4
+MAX_STATIONS=8
 MAX_IMAGES=2
-ANALYZER_VERSION=2
+ANALYZER_VERSION=3
 MAX_ALTERNATIVES=2
 LOGO_KINDS={"typed_station_logo","named_player_html_logo"}
 KINDS=LOGO_KINDS|{"typed_station_image","named_page_og_image"}
@@ -145,8 +145,17 @@ def discover_page(station, fetch_page):
     home=homepage_url(station.get("homepage"))
     if not home:
         raise ValueError("no homepage")
-    final,body=fetch_page(home)
-    found=bound_page(station,home,final,body)
+    try:
+        final,body=fetch_page(home)
+        found=bound_page(station,home,final,body)
+    except (OSError,ValueError,http.client.HTTPException,TypeError,AttributeError):
+        # An obsolete deep link does not imply a dead broadcaster. The
+        # origin root is derived from the declared site, not a search result.
+        root=urljoin(home,"/")
+        if page_key(root)==page_key(home):
+            raise
+        final,body=fetch_page(root)
+        found=bound_page(station,root,final,body)
     if found:
         return final,body,found
     p=ArtworkPage()
@@ -157,7 +166,7 @@ def discover_page(station, fetch_page):
         try:
             url=urljoin(final,href)
             if (len(name)>=5 and name_key(label)==name and homepage_url(url)==url
-                    and related_host(url,home) and page_key(url)!=page_key(final)):
+                    and related_host(url,home) and page_key(url) not in {page_key(final),page_key(home)}):
                 links.add(url)
         except (ValueError,TypeError):
             continue
@@ -231,7 +240,8 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch_page=fetch_html,
             old[sid]=row
     def order(sid):
         previous=old.get(sid,{})
-        return (previous.get("observedDate") or "",eligible[sid]["status"]["state"]!="active",sid)
+        return (previous.get("observedDate") or "",previous.get("analyzerVersion",1),
+                eligible[sid]["status"]["state"]!="active",sid)
     queue=sorted((sid for sid in eligible if not old.get(sid,{}).get("observedDate")
                   or (old[sid].get("reviewStatus") in {"page_held","no_bound_image","ambiguous_images","image_held"}
                       and old[sid].get("analyzerVersion",1)<ANALYZER_VERSION)

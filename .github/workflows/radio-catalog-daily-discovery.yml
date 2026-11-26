@@ -634,7 +634,7 @@ jobs:
           fi
           python radio-catalog-lab/tools/radio_daily_missing_logo.py \
             --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" --baseline-sha256 "$BASELINE_SHA256" --output "$root/missing-logo-preview.json" \
-            --limit 4 --allow-network "${previous[@]}"
+            --limit 8 --allow-network "${previous[@]}"
       - name: Generate single unsigned catalogue candidate (artifact only)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
         shell: bash

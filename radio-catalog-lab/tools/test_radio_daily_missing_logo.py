@@ -150,6 +150,51 @@ class MissingLogoTests(unittest.TestCase):
         player=('<audio src="'+station["streams"][0]["url"]+'"></audio>').encode()
         self.assertEqual(candidates(station,child,typed()+player),{URL:"typed_station_logo"})
 
+    def test_dead_station_path_recovers_from_official_root(self):
+        station,body=self.html_logo()
+        root="https://radio.example.org/"
+        child="https://radio.example.org/station/iron"
+        calls=[]
+        def fetch(u):
+            calls.append(u)
+            if u==PAGE:
+                raise ValueError("old page unavailable")
+            if u==root:
+                return u,b'<a href="/station/iron">Iron Radio</a>'
+            self.assertEqual(u,child)
+            return u,body
+        final,_,found=discover_page(station,fetch)
+        self.assertEqual(calls,[PAGE,root,child])
+        self.assertEqual(final,child)
+        self.assertEqual(found,{"https://radio.example.org/logo.png":"named_player_html_logo"})
+
+    def test_root_fallback_cannot_accept_unbound_network_logo(self):
+        station,_=self.html_logo()
+        def fetch(u):
+            if u==PAGE:
+                raise OSError("old page unavailable")
+            return u,typed()
+        self.assertEqual(discover_page(station,fetch)[2],{})
+
+    def test_already_root_failure_does_not_retry(self):
+        station,_=self.html_logo()
+        station["homepage"]="https://radio.example.org/"
+        calls=[]
+        def fetch(u):
+            calls.append(u)
+            raise OSError("offline")
+        with self.assertRaises(OSError):
+            discover_page(station,fetch)
+        self.assertEqual(calls,[station["homepage"]])
+
+    def test_expanded_station_budget_is_bounded(self):
+        raw,sha=setup()
+        report=build(raw,DAY,expected=sha,limit=8,fetch_page=lambda u:(PAGE,typed()),
+                     fetch_image=lambda u,h:(DATA,"image/png"),decode=lambda b:("image/png",128,128))
+        self.assertEqual(report["attemptedStationCount"],1)
+        with self.assertRaises(ValueError):
+            build(raw,DAY,expected=sha,limit=9)
+
     def test_external_link_not_followed(self):
         station,_=self.html_logo()
         root=b'<a href="https://other.example.org/station/iron">Iron Radio</a>'
