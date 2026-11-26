@@ -218,6 +218,7 @@ jobs:
           set -euo pipefail
           if ! python public/automation/concerts/discover.py \
              --output "$RUNNER_TEMP/concerts-discovery" \
+             --detail-history confidential/automation/concerts/intake/generic-detail-history.json \
              > "$RUNNER_TEMP/concerts-private-logs/discovery.log" 2>&1; then
             echo "::error::La collecte Concerts a échoué ; les sorties restent confidentielles"
             exit 1
@@ -1262,6 +1263,9 @@ jobs:
           export GIT_CONFIG_KEY_0='http.https://github.com/.extraheader'
           export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $HEADER"
           git add --sparse -- automation/concerts/intake/registry.json automation/concerts/intake/official-review.json automation/concerts/intake/approval-preflight.json automation/concerts/intake/published-watch.json
+          if [ -f automation/concerts/intake/generic-detail-history.json ]; then
+            git add --sparse -- automation/concerts/intake/generic-detail-history.json
+          fi
           if [ -f automation/concerts/intake/open-world-frontier.json ]; then
             git add --sparse -- automation/concerts/intake/open-world-frontier.json
           fi
