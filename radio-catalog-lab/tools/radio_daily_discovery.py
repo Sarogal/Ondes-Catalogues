@@ -362,6 +362,10 @@ def resolve_api_mirrors() -> list[str]:
     return sorted(found)
 
 
+class DiscoveryQueryUnavailable(RuntimeError):
+    """All configured mirrors failed for one bounded query page."""
+
+
 def fetch_page(hosts: list[str], field: str, term: str,
                offset: int, limit: int) -> list[dict]:
     if field not in {"tag", "name"} or not term or not hosts:
@@ -393,7 +397,7 @@ def fetch_page(hosts: list[str], field: str, term: str,
             return decoded
         except (OSError, ValueError, RuntimeError, urllib.error.HTTPError) as error:
             last_error = error
-    raise RuntimeError(f"Radio Browser query failed: {field}={term}; {last_error}")
+    raise DiscoveryQueryUnavailable(f"Radio Browser query failed: {field}={term}; {last_error}")
 
 
 def page_offsets(day: dt.date, page_size: int, max_pages: int) -> list[int]:
@@ -418,15 +422,25 @@ def discover(*, fetch, tags: list[str], names: list[str],
     offsets = page_offsets(day, page_size, max_pages)
     observed: dict[str, dict] = {}
     scan_log = []
-    # Missing results are never a deletion signal; a failed query fails
-    # the whole report rather than publishing an apparent empty catalog.
+    # Only a positively retrieved page supplies evidence. A failed page
+    # is not an empty response: retain successful pages and mark the gap.
+    # An entirely unavailable source still fails closed.
+    successful_pages = 0
+    failed_queries = 0
     for field, term in queries:
         seen_pages = 0
+        failed_offset = None
         for offset in offsets:
-            records = fetch(field, term, offset, page_size)
+            try:
+                records = fetch(field, term, offset, page_size)
+            except DiscoveryQueryUnavailable:
+                failed_offset = offset
+                failed_queries += 1
+                break
             if not isinstance(records, list):
                 raise ValueError("Bad discovery page")
             seen_pages += 1
+            successful_pages += 1
             for raw in records:
                 row = candidate(raw, known_ids)
                 if row is None:
@@ -442,7 +456,13 @@ def discover(*, fetch, tags: list[str], names: list[str],
                 break
             if sleep_seconds:
                 time.sleep(sleep_seconds)
-        scan_log.append({"field": field, "term": term, "pagesRead": seen_pages})
+        entry = {"field": field, "term": term, "pagesRead": seen_pages,
+                 "status": "complete" if failed_offset is None else "unavailable"}
+        if failed_offset is not None:
+            entry["failedOffset"] = failed_offset
+        scan_log.append(entry)
+    if successful_pages == 0:
+        raise DiscoveryQueryUnavailable("Radio Browser unavailable for all discovery pages")
     rows = sorted(observed.values(), key=lambda row: row["stationuuid"])
     annotate_duplicate_risks(rows)
     new = [r for r in rows if r["status"] != "already_known"]
@@ -456,6 +476,9 @@ def discover(*, fetch, tags: list[str], names: list[str],
         "knownUuidInputCount": len(known_ids),
         "observedUniqueUuidCount": len(rows),
         "unrecognizedCandidateCount": len(new),
+        "scanComplete": failed_queries == 0,
+        "successfulPageCount": successful_pages,
+        "failedQueryCount": failed_queries,
         "queries": scan_log,
         "candidates": new,
     }
@@ -499,7 +522,8 @@ def main(argv: list[str] | None = None) -> int:
     target.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"DISCOVERY_PREVIEW_ONLY date={day} unique={report['observedUniqueUuidCount']} "
           f"unrecognized={report['unrecognizedCandidateCount']} "
-          f"published=false queries={len(report['queries'])}")
+          f"published=false queries={len(report['queries'])} "
+          f"scan_complete={report['scanComplete']} failed_queries={report['failedQueryCount']}")
     return 0
 
 

@@ -9,6 +9,7 @@ from radio_daily_discovery import (
     candidate, discover, genre_evidence, is_public_stream, known_uuids,
     normalize, page_offsets, fetch_page, plan_daily_queries,
     previous_genre_hints, suggest_related_tags, DEFAULT_TAGS, DEFAULT_NAMES,
+    DiscoveryQueryUnavailable,
 )
 
 ID_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
@@ -171,6 +172,51 @@ class DailyDiscoveryTests(unittest.TestCase):
             discover(fetch=broken, tags=["metal"], names=[],
                      day=self.day, page_size=100, max_pages=2,
                      known_ids=set())
+
+    def test_partial_mirror_failure_keeps_successful_queries(self):
+        def fetch(field, term, offset, limit):
+            if term == "nu metal":
+                raise DiscoveryQueryUnavailable("HTTP 502")
+            return [station(ID_A if term == "metal" else ID_B,
+                            name=term+" Radio")]
+        report = discover(fetch=fetch, tags=["metal", "nu metal", "punk"],
+                          names=[], day=self.day, page_size=2, max_pages=1,
+                          known_ids=set())
+        self.assertFalse(report["scanComplete"])
+        self.assertEqual(report["failedQueryCount"], 1)
+        self.assertEqual(report["successfulPageCount"], 2)
+        self.assertEqual(report["queries"][1],
+                         dict(field="tag", term="nu metal", pagesRead=0,
+                              status="unavailable", failedOffset=0))
+        self.assertEqual({r["stationuuid"] for r in report["candidates"]}, {ID_A, ID_B})
+        self.assertFalse(report["publicationAllowed"])
+        self.assertEqual(report["qualifiedStreamCount"], 0)
+
+    def test_failed_deeper_page_preserves_observed_candidates(self):
+        def fetch(field, term, offset, limit):
+            if offset:
+                raise DiscoveryQueryUnavailable("timeout")
+            return [station(ID_A, name="Metal A"), station(ID_B, name="Metal B")]
+        report = discover(fetch=fetch, tags=["metal"], names=[],
+                          day=self.day, page_size=2, max_pages=2, known_ids=set())
+        self.assertFalse(report["scanComplete"])
+        self.assertEqual(report["queries"][0]["pagesRead"], 1)
+        self.assertEqual(report["queries"][0]["failedOffset"],
+                         page_offsets(self.day, 2, 2)[1])
+        self.assertEqual(report["unrecognizedCandidateCount"], 2)
+
+    def test_all_mirrors_unavailable_still_fails_closed(self):
+        def fetch(*args):
+            raise DiscoveryQueryUnavailable("HTTP 502")
+        with self.assertRaisesRegex(DiscoveryQueryUnavailable, "all discovery pages"):
+            discover(fetch=fetch, tags=["metal", "punk"], names=[],
+                     day=self.day, page_size=2, max_pages=1, known_ids=set())
+
+    def test_complete_scan_distinguished_from_partial(self):
+        report, _ = self.scan({})
+        self.assertTrue(report["scanComplete"])
+        self.assertEqual(report["failedQueryCount"], 0)
+        self.assertEqual(report["successfulPageCount"], 1)
 
     def test_known_uuid_baseline_is_dynamic_and_validated(self):
         with tempfile.TemporaryDirectory() as td:
