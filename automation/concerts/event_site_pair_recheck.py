@@ -177,6 +177,16 @@ def _read_osm_node(node_url, expected, fetch):
 
 
 def _visible_artist_genres_from_this_event(html, title):
+    """Complete an empty structured roster from the same official event."""
+    import official_html_evidence as visible
+
+    legacy = _strong_artist_genres_from_this_event(html, title)
+    if legacy is not None:
+        return legacy
+    return visible.inline_artist_credits(html, title)
+
+
+def _strong_artist_genres_from_this_event(html, title):
     """Read genre-labelled artists from one first-party event body, NEVER a bio.
 
     Only completes a structured Event whose own date, title and location are
