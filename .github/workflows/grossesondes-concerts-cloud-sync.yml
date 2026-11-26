@@ -9,6 +9,10 @@ on:
         options: [preview, publish]
         default: preview
         required: true
+      retry_after_race:
+        description: Reprise bornée interne après concurrence Git
+        type: boolean
+        default: false
   # Synchronisation après validation Tours (PR publique #119, privée #193).
   # Les cinq affiches du Bateau Ivre disposent de preuves nominatives signées.
   # Cette annotation déclenche le workflow existant sans modifier sa sécurité.
@@ -83,6 +87,7 @@ jobs:
     timeout-minutes: 18
     outputs:
       deploy: ${{ steps.decision.outputs.deploy }}
+      retry_race: ${{ steps.commit_catalogue.outputs.retry_race }}
     steps:
       # The common publication lock may have queued this run behind a newer
       # catalogue. Read the current trusted main only after acquiring it.
@@ -178,6 +183,7 @@ jobs:
           fi
 
       - name: Conserver le nouveau JSON approuvé dans Git
+        id: commit_catalogue
         if: ${{ steps.sync.outputs.changed == 'true' && steps.decision.outputs.deploy == 'true' }}
         env:
           CHECKED_BASE: ${{ steps.checked_base.outputs.sha }}
@@ -209,6 +215,7 @@ jobs:
               tests/test_concerts_cloud_sync.py \
               docs/grossesondes/concerts.json \
               docs/grossesondes/concerts-reference.json; then
+              echo "retry_race=true" >> "$GITHUB_OUTPUT"
               echo "::error::Le catalogue ou ses garde-fous ont changé : relancer la revue sur main"
               exit 1
             fi
@@ -221,6 +228,7 @@ jobs:
               sleep "$attempt"
             fi
           done
+          echo "retry_race=true" >> "$GITHUB_OUTPUT"
           echo "::error::Publication non confirmée après cinq tentatives ; prochaine exécution requise"
           exit 1
 
@@ -235,6 +243,30 @@ jobs:
           # attempt so deploy-pages never encounters ambiguous github-pages.
           name: github-pages-${{ github.run_attempt }}
           path: docs/
+
+  # A new dispatch reads trusted main and reruns every test and proof. Never
+  # reuse the failed candidate or recursively dispatch a second retry.
+  retry-fresh:
+    needs: prepare
+    if: >-
+      always() && needs.prepare.result == 'failure' &&
+      needs.prepare.outputs.retry_race == 'true' &&
+      github.repository == 'Sarogal/Ondes-Catalogues' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name != 'workflow_dispatch' ||
+      (inputs.mode == 'publish' && !inputs.retry_after_race))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions:
+      actions: write
+    steps:
+      - name: Demander une seule nouvelle validation sur main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run grossesondes-concerts-cloud-sync.yml \
+            --repo Sarogal/Ondes-Catalogues --ref main \
+            -f mode=publish -f retry_after_race=true
 
   deploy:
     needs: prepare
