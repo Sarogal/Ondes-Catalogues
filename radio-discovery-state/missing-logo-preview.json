@@ -302,7 +302,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 4,
+      "analyzerVersion": 6,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000202",
@@ -317,7 +317,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 4,
+      "analyzerVersion": 6,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000216",
@@ -332,7 +332,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 4,
+      "analyzerVersion": 6,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000241",
@@ -347,7 +347,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 4,
+      "analyzerVersion": 6,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000248",
@@ -362,7 +362,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 4,
+      "analyzerVersion": 6,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000259",
@@ -377,7 +377,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 4,
+      "analyzerVersion": 6,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000268",
@@ -392,7 +392,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 4,
+      "analyzerVersion": 6,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000275",
@@ -407,7 +407,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 4,
+      "analyzerVersion": 6,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000280",

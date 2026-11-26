@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 124,
   "dueNameCount": 32,
-  "attemptedCount": 1,
+  "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "aerosmith",
+  "retryAfterKey": "athena",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -80,6 +80,15 @@
     "aisyk": {
       "status": "not_found",
       "artistName": "Aisyk",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "ali x, ximena & pvlomo": {
+      "status": "not_found",
+      "artistName": "Ali X, Ximena & PVLOMO",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,
