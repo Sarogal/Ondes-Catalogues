@@ -323,7 +323,9 @@ class UnlistedExistingVenueTests(unittest.TestCase):
                      name="Distinct recommended event", startDate="2027-04-06")
         def body(nodes, address):
             return ("<html><main><header><h1>" + node["name"] + "</h1></header>"
-                    "<p>5 mars 2027</p>" + graph_page(nodes)
+                    "<p>5 mars 2027</p><script type='application/ld+json'>"
+                    + json.dumps({"@context": "https://schema.org", "@graph": nodes})
+                    + "</script>"
                     + "<p><strong>Informations sur les événements :</strong><br/>"
                     + venue["name"] + "<br/>Centre culturel<br/>" + address
                     + "<br/><strong>Informations billetterie et tarif</strong></p>"
