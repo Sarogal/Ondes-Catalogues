@@ -376,7 +376,9 @@ def _visible_artist_sections(html, title):
         return []
     section = []
     for kind, text in parsed.blocks[headings[0][0] + 1:]:
-        if normal(text) in visible.END_SECTION:
+        if normal(text) in visible.END_SECTION or normal(text) in {
+                "vous devriez aimer", "nous vous recommandons egalement",
+                "we also recommend"}:
             break
         section.append((kind, text))
     return section
@@ -420,34 +422,166 @@ def _visible_artist_description(html, title, name):
     return _visible_artist_labels(_visible_artist_sections(html, title), name)
 
 
-def visible_named_bill(html, title):
-    """Recover an absent bill only from its exact H1 AND individual headings.
+def _prose_artist_credit(prefix):
+    """Recognize a bounded musical credit immediately before an exact name.
 
-    Each title artist must have exactly one matching heading, in bill order.
-    One relevant named artist suffices; no genre is assigned to other acts.
+    A role-only credit proves a roster entry, not its genre. Genre claims
+    require a literal style in a possessive credit or named musical role.
+    No general event labels, comparisons, influence or other acts' genres.
+    """
+    from automation.concerts import artist_official_bio as biographies
+
+    relevant = {normal(g): g.title() for g in
+                (*triage.POSITIVE_GENRES, *biographies.BIO_GENRES)
+                if normal(g) not in {"hardcore", "rock"}}
+    neutral = {"rock", "rock alternatif", "alternative rock", "pop", "jazz",
+               "electro", "electronique", "techno", "folk", "chanson",
+               "hip hop", "rap", "indie pop", "synth pop", "darkwave"}
+    role = (r"(?:groupe|trio|duo|quatuor|collectif|artiste|musicien|"
+            r"musicienne|chanteur|chanteuse|band|singer)")
+    modifiers = {"feministe", "anarchiste", "melodique", "atmospherique",
+                 "progressif", "progressive", "experimental", "experimentale",
+                 "brut", "brute", "energetique", "tres", "riot", "grrrl",
+                 "grrrls", "grunge", "melodic", "raw", "feminist",
+                 "anarchist", "alternatif", "alternative"}
+
+    def styles(value, *, qualified=False):
+        result = []
+        for part in re.split(r" (?:et|and) ", value):
+            if part in relevant:
+                result.append(relevant[part])
+                continue
+            if part in neutral:
+                continue
+            label = next((g for g in sorted(relevant, key=lambda x: (-len(x), x))
+                          if part.startswith(g + " ")
+                          and set(part[len(g) + 1:].split()) <= modifiers), None)
+            if not qualified or label is None:
+                return None
+            result.append(relevant[label])
+        return list(dict.fromkeys(result))
+
+    prefix = prefix.strip()
+    # Read the closest valid grammatical credit, not an earlier artist's
+    # description. Articles may also occur in the introductory prose.
+    for article in reversed(list(re.finditer(
+            r"\b(?:le|la|les|un|une|du|des|the|a|an) ", prefix))):
+        body = prefix[article.end():]
+        if re.fullmatch(role, body):
+            return []
+        song = re.fullmatch(r"(?:chansons|songs)(?: [a-z]+){0,6} (?:de|by)", body)
+        if song:
+            return []
+        group = re.fullmatch(role + r" (?:de|du|d|of) (.+)", body)
+        if group:
+            style = re.sub(r" (?:originaire de|from) [a-z0-9]+(?: [a-z0-9]+){0,5}$",
+                           "", group[1])
+            labels = styles(style, qualified=True)
+            if labels is not None:
+                return labels
+        possessive = re.fullmatch(r"(.+) (?:de|du|d|by)", body)
+        if possessive:
+            labels = styles(possessive[1], qualified=True)
+            if labels is not None and labels:
+                return labels
+    return None
+
+
+def _visible_prose_bill(section, names):
+    """Recover a title roster from one independently named musical paragraph."""
+    keys = [normal(n) for n in names]
+    matches = {}
+    for kind, paragraph in section:
+        if kind != "p" or len(paragraph) > 1000:
+            continue
+        text = normal(paragraph)
+        # This is an announced lineup, not an arbitrary biography or prose
+        # mentioning artists. The caller has already checked source, date,
+        # exact event heading and venue independently.
+        if (not re.match(r"^(?:au programme\b|on the bill\b|line up\b|"
+                         r"(?:un|une|le|la) (?:concert|soiree|session)\b"
+                         r".{0,120}\bavec\b|(?:a|the) (?:concert|show)\b"
+                         r".{0,120}\b(?:with|featuring)\b)", text)
+                or triage.NONCONCERT.search(text)
+                or re.search(r"\b(?:rencontre|discussion|interview|projection)\b", text)):
+            continue
+        # Reject comparisons, tribute/support descriptions and negation rather
+        # than treating proximity to a musical keyword as positive evidence.
+        if re.search(r"\b(?:not|no|never|pas|sans|ne|ni|tribute|hommage|"
+                     r"influence|influences|influenced|inspire|inspires|inspiree|"
+                     r"inspires|reprise|cover|support|annule|annulee|reporte|"
+                     r"reportee|cancelled|postponed)\b", text):
+            continue
+        people = []
+        position = 0
+        for name, key in zip(names, keys):
+            occurrences = list(re.finditer(
+                r"(?<!\w)" + re.escape(key) + r"(?!\w)", text))
+            if len(occurrences) != 1 or occurrences[0].start() < position:
+                break
+            occurrence = occurrences[0]
+            labels = _prose_artist_credit(text[position:occurrence.start()])
+            if labels is None:
+                break
+            person = {"@type": "MusicGroup", "name": name}
+            if labels:
+                person["genre"] = labels
+            people.append(person)
+            position = occurrence.end()
+        if len(people) == len(names) and any(p.get("genre") for p in people):
+            # Some sites duplicate their description in the event markup.
+            # Identical visible paragraphs are one witness; distinct competing
+            # descriptions are not a reason to choose one arbitrarily.
+            matches[text] = people
+    return next(iter(matches.values())) if len(matches) == 1 else None
+
+
+def _recover_visible_bill(section, names):
+    guest = names.pop() if names and bridge.is_unnamed_performer(names[-1]) else None
+    keys = [normal(s) for s in names]
+    if (not names or not all(2 <= len(s) <= 120 for s in names) or not all(keys)
+            or len(set(keys)) != len(keys)
+            or any(bridge.is_unnamed_performer(n) for n in names)):
+        return None
+    matched = [normal(t) for k, t in section
+               if k in ("h2", "h3", "h4") and normal(t) in keys]
+    if matched == keys:
+        people = []
+        for name in names:
+            labels = _visible_artist_labels(section, name)
+            person = {"@type": "MusicGroup", "name": name}
+            if labels:
+                person["genre"] = labels
+            people.append(person)
+    elif not matched:
+        people = _visible_prose_bill(section, names)
+    else:
+        return None  # Partial/contradictory artist headings stay held.
+    if not people or not any(p.get("genre") for p in people):
+        return None
+    if guest:
+        people.append({"@type": "MusicGroup", "name": guest})
+    return people if bridge.official_named_bill(people) else None
+
+
+def visible_named_bill(html, title):
+    """Recover an absent bill from its exact H1 and individual credits.
+
+    Every title artist must be independently named in order, either by
+    exact headings or by one explicit musical roster paragraph. A trailing
+    unnamed guest is never published as an artist. No event genre inheritance.
+    A slash may also be part of an artist name; never split it without
+    corroboration of each individual credit and reject competing readings.
     """
     if not isinstance(title, str):
         return None
-    names = [s.strip() for s in re.split(r"\s+\+\s+", title)]
-    keys = [normal(s) for s in names]
-    if (not all(2 <= len(s) <= 120 for s in names) or not all(keys)
-            or len(set(keys)) != len(keys)):
-        return None
     section = _visible_artist_sections(html, title)
-    matched = [normal(t) for k, t in section
-               if k in ("h2", "h3", "h4") and normal(t) in keys]
-    if matched != keys:
-        return None
-    people = []
-    for name in names:
-        labels = _visible_artist_labels(section, name)
-        person = {"@type": "MusicGroup", "name": name}
-        if labels:
-            person["genre"] = labels
-        people.append(person)
-    if not any(p.get("genre") for p in people):
-        return None
-    return people if bridge.official_named_bill(people) else None
+    legacy = [s.strip() for s in re.split(r"\s+\+\s+", title)]
+    slash = [s.strip() for s in re.split(r"\s+(?:\+|/)\s+", title)]
+    readings = [legacy] if slash == legacy else [legacy, slash]
+    recovered = [_recover_visible_bill(section, list(names)) for names in readings]
+    valid = [people for people in recovered if people is not None]
+    return valid[0] if len(valid) == 1 else None
 
 
 def event_genres(raw, official_url, *, fetch=None, cache=None, html=None):
