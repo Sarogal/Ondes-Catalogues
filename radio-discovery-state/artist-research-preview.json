@@ -3,11 +3,11 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 102,
-  "dueNameCount": 72,
-  "attemptedCount": 2,
-  "serviceFailure": "timeout",
-  "retryAfterKey": "latter day exploits",
+  "observedNameCount": 107,
+  "dueNameCount": 76,
+  "attemptedCount": 5,
+  "serviceFailure": "http_503",
+  "retryAfterKey": "megadeth",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -238,6 +238,80 @@
       "artistName": "Lars Frederiksen And The Bastards",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "led zeppelin": {
+      "status": "name_hypothesis",
+      "mbid": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+      "genres": [
+        "arena rock",
+        "blues",
+        "blues rock",
+        "classic rock",
+        "folk rock",
+        "hard rock",
+        "heavy metal",
+        "pop",
+        "progressive rock",
+        "rock",
+        "rock and roll"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/678d88b2-87b0-403b-b63d-5da7465aecc3",
+      "artistName": "Led Zeppelin",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "lionheart": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Lionheart",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "local natives": {
+      "status": "name_hypothesis",
+      "mbid": "1bbf31dc-dbc0-4a7a-bf3f-48bc665878e1",
+      "genres": [
+        "folk",
+        "freak folk",
+        "indie folk",
+        "indie pop",
+        "indie rock",
+        "pop rock",
+        "rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/1bbf31dc-dbc0-4a7a-bf3f-48bc665878e1",
+      "artistName": "Local Natives",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "maluma": {
+      "status": "name_hypothesis",
+      "mbid": "e8979f75-9110-4df8-ac70-898898d080d1",
+      "genres": [
+        "latin",
+        "latin pop",
+        "pop rock",
+        "reggaeton",
+        "trap latino"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/e8979f75-9110-4df8-ac70-898898d080d1",
+      "artistName": "Maluma",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },
