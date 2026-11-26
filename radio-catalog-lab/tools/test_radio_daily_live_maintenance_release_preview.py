@@ -77,3 +77,49 @@ class LiveMaintenanceReleaseTests(unittest.TestCase):
     @patch("radio_daily_live_evidence.probe_url", return_value={"streamSha256": "expected", "verdict": "playlist_pending"})
     def test_manifest_without_audio_is_not_positive(self, probe, hls):
         self.assertFalse(positive(LiveEvidence(), "https://radio.example.org/live", "expected"))
+
+    @patch("radio_daily_live_evidence.PinnedHttpTransport.request")
+    def test_one_unavailable_station_does_not_block_other(self, request):
+        import json
+        f = status_fixture.IndependentStatusGateTests()
+        f.fixture(count=2, approved=False)
+        request.side_effect = [SimpleNamespace(status=503), SimpleNamespace(status=410)]
+        operations = {}
+        result = preview_status(f.pointer, f.raw, anchor=f.anchor, day=DAY,
+            operations=operations, **f.evidence)
+        self.assertEqual(result["selectedCount"], 1)
+        self.assertEqual(len(result["deferred"]), 1)
+        new = json.loads(operations["status"]["candidate"])
+        self.assertEqual(sum(s["status"]["state"]=="quarantined" for s in new["stations"]), 1)
+        self.assertEqual(request.call_count, 2)
+
+    def test_status_fresh_check_repeated_at_signer(self):
+        from radio_daily_status_release_validation import validate_status_release
+        f = self.status()
+        selected = [f.evidence["status"]["proposals"][0]["goStationId"]]
+        with self.assertRaisesRegex(ValueError, "fresh denied"):
+            validate_status_release(f.pointer, f.raw, f.candidate, anchor=f.anchor, day=DAY,
+                selected=selected, fresh_check=lambda p: self.fail_fresh(), **f.evidence)
+
+    def fail_fresh(self):
+        raise ValueError("fresh denied")
+
+    def test_merge_fresh_check_repeated_at_signer(self):
+        from radio_daily_merge_release_validation import validate_merge_release
+        from radio_daily_baseline_verify import strict_json
+        f = merge_fixture.IndependentMergeGateTests()
+        f.fixture(approved=False)
+        old = strict_json(f.raw)
+        new = strict_json(f.candidate)
+        selected = [s["go_station_id"] for s in old["stations"] if s not in new["stations"]]
+        with self.assertRaisesRegex(ValueError, "fresh denied"):
+            validate_merge_release(f.pointer, f.raw, f.candidate, anchor=f.anchor, day=DAY,
+                selected=selected, fresh_check=lambda p:self.fail_fresh(), **f.evidence)
+
+    def test_merge_subset_unknown_refused(self):
+        from radio_daily_merge_release_validation import validate_merge_release
+        f = merge_fixture.IndependentMergeGateTests()
+        f.fixture(approved=False)
+        with self.assertRaisesRegex(ValueError,"invalid selected"):
+            validate_merge_release(f.pointer, f.raw, f.candidate, anchor=f.anchor, day=DAY,
+                selected=["unknown"], **f.evidence)

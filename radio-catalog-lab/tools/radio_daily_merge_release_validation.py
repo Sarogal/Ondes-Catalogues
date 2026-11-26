@@ -9,13 +9,14 @@ from radio_daily_baseline_verify import strict_json
 from radio_daily_lab_signing import validate_candidate
 from radio_daily_maintenance_preview import build as maintenance_build
 from radio_daily_repair_plan import plan as repair_plan
-from radio_daily_merge_plan import plan as merge_plan
+from radio_daily_merge_plan import plan as merge_plan, MAX_MERGES
+from radio_daily_proposal_subset import select_proposals
 from radio_daily_publication_simulator import publish
 from radio_daily_v9_generator import digest, encode
 
 
 def expected_merge_release(prior_body, *, expected_sha, expected_sequence, day,
-                           maintenance, repair, confirmation):
+                           maintenance, repair, confirmation, selected=None, fresh_check=None):
     sha = expected_sha
     if digest(prior_body) != sha:
         raise ValueError("merge baseline mismatch")
@@ -29,6 +30,8 @@ def expected_merge_release(prior_body, *, expected_sha, expected_sequence, day,
     proposals, _ = merge_plan(old, checked, day, {p["goStationId"] for p in repairs["proposals"]})
     if not proposals:
         raise ValueError("no qualified duplicate merge")
+    if selected is not None:
+        proposals = select_proposals(proposals, "sourceGoStationId", selected, MAX_MERGES)
     rows = {r["go_station_id"]: r for r in old["stations"]}
     expected = copy.deepcopy(old)
     removed = set()
@@ -41,6 +44,8 @@ def expected_merge_release(prior_body, *, expected_sha, expected_sequence, day,
             raise ValueError("duplicate identity mismatch")
         if not {u["uuid"] for u in source["radio_browser_uuids"]} <= set(source["legacy_aliases"]):
             raise ValueError("historical UUID missing")
+        if fresh_check is not None:
+            fresh_check(p)
         removed.add(sid)
         expected["tombstones"].append(dict(go_station_id=sid,
             legacy_aliases=copy.deepcopy(source["legacy_aliases"]),
@@ -53,8 +58,12 @@ def expected_merge_release(prior_body, *, expected_sha, expected_sequence, day,
 
 
 def validate_merge_release(prior_pointer, prior_body, candidate, *, anchor, day,
-                           maintenance, repair, confirmation):
+                           maintenance, repair, confirmation, selected=None, fresh_check=None):
     evidence = dict(maintenance=maintenance, repair=repair, confirmation=confirmation)
+    if selected is not None:
+        evidence["selected"] = selected
+    if fresh_check is not None:
+        evidence["fresh_check"] = fresh_check
     validate_candidate(prior_pointer, prior_body, candidate,
         expected_candidate_sha=digest(candidate), day=day, merge_evidence=evidence, **anchor)
     return digest(candidate)

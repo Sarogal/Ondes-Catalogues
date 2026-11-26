@@ -7,13 +7,14 @@ import copy
 from radio_daily_baseline_verify import strict_json
 from radio_daily_lab_signing import validate_candidate
 from radio_daily_repair_plan import plan
-from radio_daily_status_preview import build as status_build, MAX_CHECKS
+from radio_daily_status_preview import build as status_build, MAX_CHECKS, MAX_PROPOSALS
+from radio_daily_proposal_subset import select_proposals
 from radio_daily_publication_simulator import publish
 from radio_daily_v9_generator import digest, encode
 
 
 def expected_status_release(prior_body, *, expected_sha, expected_sequence, day,
-                            maintenance, repair, confirmation, status):
+                            maintenance, repair, confirmation, status, selected=None, fresh_check=None):
     sha = expected_sha
     if digest(prior_body) != sha:
         raise ValueError("status baseline mismatch")
@@ -31,7 +32,10 @@ def expected_status_release(prior_body, *, expected_sha, expected_sequence, day,
     repair_ids = {p["goStationId"] for p in repairs["proposals"]}
     redirect_ids = {t.get("redirect_to") for t in expected["tombstones"]}
     changed = 0
-    for proposal in checked["proposals"]:
+    proposals = checked["proposals"]
+    if selected is not None:
+        proposals = select_proposals(proposals, "goStationId", selected, MAX_PROPOSALS)
+    for proposal in proposals:
         sid = proposal["goStationId"]
         row = rows[sid]
         if (row["status"].get("reason_code") == "synthetic_diagnostic_not_for_playback"
@@ -40,6 +44,8 @@ def expected_status_release(prior_body, *, expected_sha, expected_sequence, day,
             continue
         if digest(encode(row)) != proposal["stationSha256"] or row["status"]["state"] != proposal["from"]:
             raise ValueError("status station identity mismatch")
+        if fresh_check is not None:
+            fresh_check(proposal)
         row["status"].update(state=proposal["to"],
             reason_code="experimental_recovery_review" if proposal["to"] == "active"
                         else "experimental_unavailability_review",
@@ -53,9 +59,13 @@ def expected_status_release(prior_body, *, expected_sha, expected_sequence, day,
 
 
 def validate_status_release(prior_pointer, prior_body, candidate, *, anchor, day,
-                            maintenance, repair, confirmation, status):
+                            maintenance, repair, confirmation, status, selected=None, fresh_check=None):
     evidence = dict(maintenance=maintenance, repair=repair,
                     confirmation=confirmation, status=status)
+    if selected is not None:
+        evidence["selected"] = selected
+    if fresh_check is not None:
+        evidence["fresh_check"] = fresh_check
     validate_candidate(prior_pointer, prior_body, candidate,
         expected_candidate_sha=digest(candidate), day=day, status_evidence=evidence, **anchor)
     return digest(candidate)

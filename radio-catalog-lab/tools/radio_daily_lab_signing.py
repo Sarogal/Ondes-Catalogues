@@ -68,7 +68,7 @@ def validate_candidate(prior_pointer, prior_body, candidate, *, expected_sha,
         reference["generated_at"] = old["generated_at"]
     if status_evidence is not None:
         from radio_daily_status_release_validation import expected_status_release
-        if not isinstance(status_evidence, dict) or set(status_evidence) != {
+        if not isinstance(status_evidence, dict) or set(status_evidence)-{"selected", "fresh_check"} != {
                 "maintenance", "repair", "confirmation", "status"}:
             raise ValueError("invalid status evidence contract")
         rebuilt = expected_status_release(prior_body, expected_sha=expected_sha,
@@ -78,7 +78,7 @@ def validate_candidate(prior_pointer, prior_body, candidate, *, expected_sha,
         reference = strict_json(rebuilt)
     if merge_evidence is not None:
         from radio_daily_merge_release_validation import expected_merge_release
-        if not isinstance(merge_evidence, dict) or set(merge_evidence) != {
+        if not isinstance(merge_evidence, dict) or set(merge_evidence)-{"selected", "fresh_check"} != {
                 "maintenance", "repair", "confirmation"}:
             raise ValueError("invalid merge evidence contract")
         rebuilt = expected_merge_release(prior_body, expected_sha=expected_sha,
