@@ -2488,11 +2488,6 @@
       "aliases": []
     },
     {
-      "id": "the-locos-ex-ska-p-en-concert",
-      "name": "THE LOCOS (ex Ska-P) en concert",
-      "aliases": []
-    },
-    {
       "id": "martin-dupont",
       "name": "Martin Dupont",
       "aliases": []
@@ -2570,6 +2565,11 @@
     {
       "id": "hlls",
       "name": "HØLLS",
+      "aliases": []
+    },
+    {
+      "id": "nexion",
+      "name": "NEXION",
       "aliases": []
     }
   ],
@@ -15997,11 +15997,11 @@
     },
     {
       "id": "go-c-20261213-montreuil-panzerfaust",
-      "title": "PANZERFAUST + guests : NEXION",
+      "title": "PANZERFAUST + NEXION",
       "date": "2026-12-13",
       "artistIds": [
         "panzerfaust",
-        "guests-nexion"
+        "nexion"
       ],
       "venueId": "go-site-a4221278b655cca782f2",
       "genres": [
@@ -16023,6 +16023,10 @@
         {
           "date": "2026-11-26",
           "change": "Ajout après revue des preuves officielles"
+        },
+        {
+          "date": "2026-11-26",
+          "change": "Identité artistique rectifiée après nouvelle vérification de la fiche officielle"
         }
       ]
     },
@@ -16133,6 +16137,7 @@
     }
   ],
   "retiredArtistIds": [
-    "deefait-release-party"
+    "deefait-release-party",
+    "the-locos-ex-ska-p-en-concert"
   ]
 }
