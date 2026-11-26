@@ -3,7 +3,7 @@
 
 The report is a diagnostic, NEVER an approval. It must be written only into
 GrossesOndes (private); do not print private candidate records or source URLs.
-Counts are not an instruction to bypass distinct-day stability or proof checks.
+Counts reflect discovery and pre-network scheduling, never approval or proof.
 """
 from __future__ import annotations
 
@@ -126,6 +126,27 @@ def build(registry, approvals, catalogue, as_of, artist_preflight=None):
     bucket_counts = Counter()
     status_counts = Counter()
     date_counts = Counter()
+    # Reuse the actual network-free dynamic admission selectors, not a second
+    # list of supported venue names. Their rows are references to the original
+    # candidate dictionaries; object identities are transient, never serialized.
+    dynamic_candidates = set()
+    dynamic_queue_counts = Counter()
+    dynamic_available = all(isinstance(catalogue.get(k), list)
+                            for k in ("venues", "artists"))
+    if dynamic_available:
+        import dynamic_osm_official_proposals as existing
+        import openagenda_new_site_proposals as new_site
+        for label, rows, position in (
+            ("existingOfficialSite", existing.eligible(registry, catalogue, as_of), 3),
+            ("openAgendaNewSite", new_site.eligible(registry, catalogue, as_of), 2),
+        ):
+            for row in rows:
+                candidate = row[position]
+                if _pair(candidate.get("sourceUrl"), candidate.get("date")) in approved_pairs:
+                    continue
+                dynamic_candidates.add(id(candidate))
+                dynamic_queue_counts[label] += 1
+    dynamic_genre_unknown = 0
     dispositions = Counter()
     source_counts = defaultdict(Counter)
     source_dispositions = defaultdict(Counter)
@@ -180,9 +201,12 @@ def build(registry, approvals, catalogue, as_of, artist_preflight=None):
             effective_states["privately_decided_not_exactly_matched"] += 1
         else:
             effective_states["pending_not_exactly_matched"] += 1
-        stable = isinstance(record.get("stableObservations"), int) and (
-            record["stableObservations"] >= 2
-        )
+        observations = record.get("stableObservations")
+        observed = type(observations) is int and observations >= 1
+        stable = observed and observations >= 2
+        dynamic_ready = id(item) in dynamic_candidates
+        if dynamic_ready and bucket == "genre_unknown":
+            dynamic_genre_unknown += 1
         # A concert does not have to be in a previously known venue.
         # These source-claimed location markers are PRIVATE prioritization
         # only: a real show, source identity and coordinates still need
@@ -241,12 +265,18 @@ def build(registry, approvals, catalogue, as_of, artist_preflight=None):
             disposition = "missing_first_party_detail_evidence"
         elif not first_party:
             disposition = "first_party_status_not_established"
+        elif dynamic_ready:
+            disposition = "ready_for_dynamic_independent_recheck"
+        elif not observed:
+            disposition = "observation_identity_missing"
+        elif source_compatible:
+            # official_recheck.process allows the first identity-stable
+            # observation. The actual verifier still freshly proves the event.
+            disposition = "ready_for_independent_recheck"
         elif not stable:
             disposition = "awaiting_distinct_day_stability"
-        elif not source_compatible:
-            disposition = "verified_adapter_not_available"
         else:
-            disposition = "ready_for_independent_recheck"
+            disposition = "verified_adapter_not_available"
         dispositions[disposition] += 1
         source_dispositions[source][disposition] += 1
 
@@ -359,6 +389,14 @@ def build(registry, approvals, catalogue, as_of, artist_preflight=None):
         "documentedOfficialGenreLeadsPendingFreshVerification": evidence_leads,
         "stableCandidatesInSupportedSourceQueue": eligible_stable,
         "readyForIndependentRecheck": recheck_ready,
+        "dynamicIndependentRecheck": {
+            "evaluated": dynamic_available,
+            "eligibleDistinctCandidateRows": len(dynamic_candidates),
+            "genreUnknownEligibleRows": dynamic_genre_unknown,
+            "eligibleByRoute": dict(sorted(dynamic_queue_counts.items())),
+            "publicationAllowed": False,
+            "note": "Actual offline producer selection, not verified evidence or approval",
+        },
         "possibleYieldBySource": dict(sorted(sources_with_new_potential.items())),
         "sourceDiagnostics": {
             name: dict(sorted(counts.items()))
@@ -380,7 +418,9 @@ def build(registry, approvals, catalogue, as_of, artist_preflight=None):
             "Official detail flags and genre tags are discovery claims, not independent proof.",
             "The discovery detail flag is required only by verifiers that enforce it.",
             "Per-source blocking counts are diagnostics, never automatic approvals.",
-            "Two distinct-day identity-stable observations remain mandatory.",
+            "The reviewed official rechecker accepts one stable observation; dynamic routes apply their actual source-specific eligibility checks.",
+            "The remaining distinct-day category is a diagnostic for rows without a recognized dynamic or reviewed route, not a universal wait requirement.",
+            "Unknown musical genre remains a discovery classification; dynamic rechecks can still establish it.",
             "Only independently rechecked events pass preflight and public cloud sync.",
         ],
     }
