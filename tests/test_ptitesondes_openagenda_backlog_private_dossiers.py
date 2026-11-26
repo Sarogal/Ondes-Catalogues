@@ -687,3 +687,33 @@ class BacklogFirstPartyTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CycleReadCacheTests(unittest.TestCase):
+    def test_exact_arguments_and_mutation_isolation(self):
+        from ptitesondes_openagenda_backlog_private_dossiers import cycle_cached_reader
+        from unittest.mock import Mock
+        source = Mock(side_effect=lambda *a: {"uid": a[1], "timings": [{"begin": "original"}]})
+        counters = {"event_requests": 0, "event_reused": 0}
+        read = cycle_cached_reader(source, counters, "event")
+        first = read(1, 2, "key")
+        first["timings"][0]["begin"] = "modified"
+        self.assertEqual(read(1, 2, "key")["timings"][0]["begin"], "original")
+        read(3, 2, "key")
+        read(1, 4, "key")
+        self.assertEqual(source.call_count, 3)
+        self.assertEqual(counters, {"event_requests": 3, "event_reused": 1})
+
+    def test_transient_errors_not_cached_and_new_cycle_rechecks(self):
+        from ptitesondes_openagenda_backlog_private_dossiers import cycle_cached_reader
+        from unittest.mock import Mock
+        source = Mock(side_effect=[TimeoutError(), {"uid": 2}, {"uid": 2, "changed": True}])
+        counters = {"event_requests": 0, "event_reused": 0}
+        read = cycle_cached_reader(source, counters, "event")
+        with self.assertRaises(TimeoutError):
+            read(1, 2, "key")
+        self.assertEqual(read(1, 2, "key"), {"uid": 2})
+        self.assertEqual(read(1, 2, "key"), {"uid": 2})
+        next_cycle = cycle_cached_reader(source, counters, "event")
+        self.assertTrue(next_cycle(1, 2, "key")["changed"])
+        self.assertEqual(counters, {"event_requests": 3, "event_reused": 1})
