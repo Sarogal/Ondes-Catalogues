@@ -270,7 +270,36 @@ def stable_private_proposals(state, queue, catalogue, report, today):
     if not isinstance(records, dict):
         raise ValueError("Invalid observation registry")
     accepted, slugs = [], set()
+    current_hints = {lead["source_url"]: lead.get("professional_source_hints_review_only")
+                     for lead in validated_openagenda_leads(state, today)}
     for row in report["rows"]:
+        if (isinstance(row, dict)
+                and row.get("status") == "OPENAGENDA_OFFICIAL_LINK_UNPROVEN"
+                and row.get("publication_authorized") is False):
+            key = row.get("dossier_id"), row.get("event_ref_review_only")
+            source = source_map.get(key)
+            detail = row.get("professional_official_detail_review_only")
+            if (source is not None and source["url"] in current_hints
+                    and isinstance(detail, dict)
+                    and detail.get("status") == "OFFICIAL_DETAIL_PROOF_REVIEW_ONLY"
+                    and detail.get("publication_authorized") is False
+                    and isinstance(detail.get("proofs"), list)
+                    and 0 < len(detail["proofs"]) <= 4):
+                for proof in detail["proofs"]:
+                    if (not isinstance(proof, dict)
+                            or proof.get("publication_authorized") is not False):
+                        continue
+                    proposal = private_proposal(
+                        source["title"], proof.get("official_detail_url"),
+                        (proof.get("start_date"), proof.get("end_date")), today,
+                        event_ref=source["url"], professional_ticket=proof.get("ticket_url"))
+                    if (proposal is not None and proposal["slug"] not in slugs
+                            and len(proposal["evidence"]) == 4
+                            and validate_private_proposal(proposal, today) is not None):
+                        accepted.append(proposal)
+                        slugs.add(proposal["slug"])
+                        break
+                continue
         if (not isinstance(row, dict)
                 or row.get("status") not in (
                     "FIRST_DAY_OPENAGENDA_FIRST_PARTY_PRIVATE",
