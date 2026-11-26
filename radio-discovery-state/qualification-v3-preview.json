@@ -12,9 +12,9 @@
   "counts": {
     "advanced_candidate": 1,
     "already_known": 82,
-    "editorial_review": 124,
+    "editorial_review": 123,
     "identity_review": 29,
-    "observed_music_candidate": 26,
+    "observed_music_candidate": 27,
     "programme_conflict_review": 1,
     "programme_context_review": 7,
     "source_recheck": 3,
@@ -26,8 +26,8 @@
     "no_observed_music": 32,
     "other_genre_observed_hints": 7,
     "source_conflict": 1,
-    "target_observed_hints": 22,
-    "unclassified_observations": 73
+    "target_observed_hints": 23,
+    "unclassified_observations": 72
   },
   "records": [
     {
@@ -5630,29 +5630,29 @@
       "stationuuid": "89345b47-66c4-45c2-a1d5-b411080d2327",
       "streamSha256": "165a13a1226ccdef638523312bc3d52272885bc6b9d989ccd71e7406b5a8c28e",
       "v2Decision": "editorial_review",
-      "shadowDecision": "editorial_review",
+      "shadowDecision": "observed_music_candidate",
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope"
       ],
       "nextActions": [
-        "collect_more_programme_observations"
+        "resolve_remaining_station_and_technical_gates"
       ],
-      "programmeEvidenceStatus": "unclassified_observations",
+      "programmeEvidenceStatus": "target_observed_hints",
       "programmeBound": true,
       "programmeEvidence": {
         "artistHints": {
-          "target_hint": 0,
+          "target_hint": 1,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 0
         },
         "pairHints": {
-          "target_hint": 0,
+          "target_hint": 1,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 0
         },
         "collaborationMemberHints": {
           "target_hint": 0,
@@ -5661,7 +5661,7 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "no_usable_source": 1
+          "musicbrainz_only": 1
         },
         "independentObservationDays": [
           "2026-11-26"

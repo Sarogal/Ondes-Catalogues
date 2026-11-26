@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 40,
-  "attemptedCount": 2,
-  "serviceFailure": "timeout",
-  "retryAfterKey": "tears for fears",
+  "dueNameCount": 39,
+  "attemptedCount": 3,
+  "serviceFailure": "http_503",
+  "retryAfterKey": "the blamed",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -977,6 +977,31 @@
       "genreSource": "musicbrainz-community",
       "sourceUrl": "https://musicbrainz.org/artist/4e622511-68d1-4544-ab6b-ffdd843f1c2b",
       "artistName": "T3nors",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "television": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Television",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "the ataris": {
+      "status": "name_hypothesis",
+      "mbid": "57805d77-f947-4851-b7fb-78baad154451",
+      "genres": [
+        "pop punk",
+        "punk"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/57805d77-f947-4851-b7fb-78baad154451",
+      "artistName": "The Ataris",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,
