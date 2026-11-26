@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 63,
+  "dueNameCount": 62,
   "attemptedCount": 2,
-  "serviceFailure": "http_503",
-  "retryAfterKey": "aerosmith",
+  "serviceFailure": "timeout",
+  "retryAfterKey": "ali x, ximena & pvlomo",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -70,6 +70,15 @@
     "acdc": {
       "status": "not_found",
       "artistName": "ACDC",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "aisyk": {
+      "status": "not_found",
+      "artistName": "Aisyk",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,
