@@ -4,7 +4,7 @@ import unittest
 from test_ptitesondes_open_world_permanent_place_evidence import (
     CITY, VENUE, URL, HTML, OSM,
 )
-from ptitesondes_open_world_permanent_place_research import named_query, research
+from ptitesondes_open_world_permanent_place_research import named_query, research, cycle
 
 DAY = date(2026, 11, 26)
 
@@ -61,6 +61,20 @@ class OpenWorldPermanentPlaceResearchTests(unittest.TestCase):
         _, _, summary = research(report(r), None, DAY, osm_fetch=lambda *_: OSM,
                                   page_read=lambda _: self.fail("unexpected read"))
         self.assertEqual(summary["counts"], {"postal_evidence_conflict": 1})
+
+    def test_private_cycle_retains_other_candidates_and_rejects_forged_approval(self):
+        candidates = report(row(), row("Autre lieu"))
+        state, first = cycle(candidates, None, DAY, limit=1,
+                            osm_fetch=lambda *_: OSM, page_read=lambda _: HTML)
+        state, second = cycle(candidates, state, DAY, limit=1,
+                             osm_fetch=lambda *_: OSM, page_read=lambda _: HTML)
+        self.assertEqual(first["stored_private_results"], 1)
+        self.assertEqual(second["stored_private_results"], 2)
+        self.assertEqual(second["unattempted"], 0)
+        self.assertTrue(all(r["public_eligible"] is False for r in state["records"]))
+        state["records"][0]["public_eligible"] = True
+        with self.assertRaises(ValueError):
+            cycle(candidates, state, DAY)
 
     def test_input_injection_and_permission_flags(self):
         query = named_query('Ville";out;', 'Lieu "test"')

@@ -153,3 +153,58 @@ def research(report, previous, today, *, limit=MAX_BATCH,
                "counts": dict(Counter(r["status"] for r in results)),
                "publication_ready": False, "public_writes": 0}
     return results, state, summary
+
+
+STATE_SCHEMA = "ptitesondes.private_open_world_place_research_state.v1"
+
+
+def cycle(report, previous, today, **kwargs):
+    """Keep the latest private result for every still-known identity."""
+    if previous is None:
+        previous = {"schema": STATE_SCHEMA, "cursor": None, "records": []}
+    if (not isinstance(previous, dict) or previous.get("schema") != STATE_SCHEMA
+            or set(previous) != {"schema", "cursor", "records"}
+            or not isinstance(previous["records"], list)
+            or len(previous["records"]) > MAX_RECORDS):
+        raise ValueError("invalid_place_research_state")
+    saved = {}
+    for row in previous["records"]:
+        if (not isinstance(row, dict) or row.get("public_eligible") is not False
+                or (row.get("evidence") is not None and
+                    (not isinstance(row["evidence"], dict)
+                     or row["evidence"].get("public_eligible") is not False))):
+            raise ValueError("invalid_saved_place_research")
+        key = _identity(row)
+        if key in saved:
+            raise ValueError("duplicate_saved_place_research")
+        saved[key] = row
+    results, cursor, summary = research(report, previous["cursor"], today, **kwargs)
+    active = {_identity(row) for row in report["records"] if row.get("status") not in SKIP}
+    saved = {k: v for k, v in saved.items() if k in active}
+    for row in results:
+        saved[_identity(row)] = row
+    summary["stored_private_results"] = len(saved)
+    return {"schema": STATE_SCHEMA, "cursor": cursor,
+            "records": [saved[k] for k in sorted(saved)]}, summary
+
+
+def main():
+    import argparse
+    from pathlib import Path
+    from ptitesondes_national_backlog_bridge import _atomic_json, _read
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--qualification", type=Path, required=True)
+    p.add_argument("--previous", type=Path, required=True)
+    p.add_argument("--output", type=Path, required=True)
+    p.add_argument("--date", type=date.fromisoformat, required=True)
+    args = p.parse_args()
+    report = _read(args.qualification, 4_000_000)
+    previous = (_read(args.previous, 6_000_000)
+                if args.previous.exists() or args.previous.is_symlink() else None)
+    state, summary = cycle(report, previous, args.date)
+    _atomic_json(args.output, state)
+    print(json.dumps(summary, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()
