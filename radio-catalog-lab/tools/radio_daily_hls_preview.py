@@ -22,6 +22,7 @@ from radio_daily_qualification_dossiers import index, safe_digest
 from radio_stream_technical_probe import validate_endpoint, public_resolved_ips, REDIRECT_CODES, frame_chain
 from radio_stream_recheck_ledger import parse_day, SHA256_RE
 from radio_daily_continuity_preview import positive_dates
+from radio_daily_alternative_metadata import hint
 
 MAX_MANIFEST = 65536
 MAX_SEGMENT = 4096
@@ -166,7 +167,62 @@ class BoundedFetch:
         raise ValueError("redirect budget")
 
 
-def observe(url, *, fetch=None, sleep=time.sleep):
+
+def syncsafe(raw):
+    if len(raw) != 4 or any(b & 128 for b in raw):
+        raise ValueError("invalid syncsafe size")
+    return (raw[0] << 21) | (raw[1] << 14) | (raw[2] << 7) | raw[3]
+
+
+def packed_id3(segment, source):
+    """Bounded ID3v2.3/2.4 at the start of packed audio, never scan arbitrary bytes.
+
+    A timestamp-only HLS PRIV tag is not a musical observation. Unsupported
+    tag/frame flags, incomplete frames and conflicting fields fail closed.
+    Return audio offset separately so the existing codec check can run.
+    """
+    if not segment.startswith(b"ID3"):
+        return 0, []
+    try:
+        if len(segment) < 10 or segment[3] not in (3, 4) or segment[4] != 0 or segment[5] != 0:
+            return 0, []
+        version = segment[3]
+        end = 10 + syncsafe(segment[6:10])
+        if end > len(segment):
+            return 0, []
+        pos, fields = 10, {}
+        while pos < end:
+            if not any(segment[pos:end]):
+                break
+            if end-pos < 10:
+                return 0, []
+            name = segment[pos:pos+4]
+            if not re.fullmatch(rb"[A-Z0-9]{4}", name):
+                return 0, []
+            size = syncsafe(segment[pos+4:pos+8]) if version == 4 else int.from_bytes(segment[pos+4:pos+8], "big")
+            flags = segment[pos+8:pos+10]
+            pos += 10
+            if size <= 0 or pos+size > end:
+                return 0, []
+            if name in (b"TPE1", b"TIT2"):
+                if flags != b"\0\0":
+                    return 0, []
+                raw = segment[pos:pos+size]
+                enc = {0:"latin-1",1:"utf-16",2:"utf-16-be",3:"utf-8"}.get(raw[0])
+                if enc is None or (version == 3 and raw[0] > 1):
+                    return 0, []
+                value = raw[1:].decode(enc).rstrip("\0").strip()
+                if "\0" in value or name in fields:
+                    return 0, []
+                fields[name] = value
+            pos += size
+        h = hint(fields.get(b"TPE1"), fields.get(b"TIT2"), "hls_packed_id3", source)
+        return end, [h] if h else []
+    except (ValueError, UnicodeError):
+        return 0, []
+
+
+def observe(url, *, fetch=None, sleep=time.sleep, metadata=False):
     if fetch is None:
         fetch = BoundedFetch()
     final, first_bytes = fetch(url, MAX_MANIFEST)
@@ -199,12 +255,17 @@ def observe(url, *, fetch=None, sleep=time.sleep):
     target = second["segments"][-1]
     segment_url, segment = fetch(target,MAX_SEGMENT)
     safe_target(target,segment_url)
-    codec = frame_chain(segment)
-    return {"verdict":"advancing_hls_audio_frame_indication" if codec else "advancing_hls_manifest_only",
+    offset, hints = packed_id3(segment, segment_url)
+    codec = frame_chain(segment[offset:])
+    result = {"verdict":"advancing_hls_audio_frame_indication" if codec else "advancing_hls_manifest_only",
             "firstLastSequence":first_last,"secondLastSequence":second_last,
             "targetDuration":second["targetDuration"],"segmentSampleBytes":len(segment),
             "frameCodec":codec or None,"firstManifestSha256":hashlib.sha256(first_bytes).hexdigest(),
             "secondManifestSha256":hashlib.sha256(second_bytes).hexdigest()}
+    if metadata:
+        return {"verdict":"hls_id3_artist_title_hint" if codec and hints else "hls_no_parseable_id3",
+                "titleHints": hints if codec else []}
+    return result
 
 
 def collect(discovery,reconciliation,audio,*,previous=None,limit=0,probe=observe):
