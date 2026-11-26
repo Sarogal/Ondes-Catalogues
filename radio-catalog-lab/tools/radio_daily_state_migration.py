@@ -8,7 +8,7 @@ import copy
 from radio_daily_baseline_verify import verify_baseline
 from radio_daily_v9_generator import digest,check_catalog
 from radio_daily_maintenance_preview import build as maintenance_build, catalogue_rows
-from radio_daily_logo_maintenance import build as logo_build
+from radio_daily_logo_maintenance import build as logo_build, official_source
 from radio_daily_missing_logo import build as missing_build
 from radio_daily_status_preview import build as status_build
 from radio_daily_repair_preview import build as repair_build, validate_hint
@@ -71,8 +71,9 @@ def migrate(old_pointer,old_raw,new_pointer,new_raw,*,old_anchor,new_anchor,day,
     def sources(stations):
         result={}
         for sid,s in stations.items():
-            if s["logo"]:
-                result.setdefault(digest(s["logo"]["url"].encode()),{})[sid]=s["logo"]
+            source=official_source(s)
+            if source:
+                result.setdefault(digest(source.encode()),{})[sid]=s["logo"]
         return result
     old_sources,new_sources=sources(a),sources(b)
     stable_sources={k for k in old_sources.keys()&new_sources.keys()
