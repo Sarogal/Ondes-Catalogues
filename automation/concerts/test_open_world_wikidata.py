@@ -1,5 +1,6 @@
 """No-network independent directory and generic discovery integration."""
 import unittest
+from unittest import mock
 from urllib.error import HTTPError
 
 import open_world_wikidata as wd
@@ -179,7 +180,32 @@ class WikidataResearchTests(unittest.TestCase):
         self.assertEqual(second["namesChecked"], 0)
         self.assertEqual(second["entries"], first["entries"])
         with self.assertRaises(ValueError):
-            wd.build(registry(), DAY, limit=13)
+            wd.build(registry(), DAY, limit=wd.MAX_NAMES + 1)
+
+
+    def test_bounded_expansion_and_deferred_names_remain_due(self):
+        reg = registry()
+        reg["items"]["lead"]["candidate"]["officialArtistNames"] = [
+            f"Act {i:02d}" for i in range(40)]
+        def empty(params):
+            return {"search": []}
+        full = wd.build(reg, DAY, request=empty)
+        self.assertEqual(full["namesChecked"], 24)
+        self.assertEqual(full["reviewDeferredByTimeBudget"], 0)
+        with mock.patch.object(wd.time, "monotonic", side_effect=[0, 0, 1, 2, 3, 3]):
+            partial = wd.build(reg, DAY, request=empty, max_seconds=3)
+        self.assertEqual(partial["namesChecked"], 3)
+        self.assertEqual(partial["reviewDeferredByTimeBudget"], 21)
+        self.assertEqual(len(partial["entries"]), 3)
+        resumed = wd.build(reg, DAY, prior=partial, request=empty)
+        self.assertEqual(resumed["dueNames"], 37)
+        self.assertEqual(resumed["namesChecked"], 24)
+        self.assertEqual(len(resumed["entries"]), 27)
+        self.assertFalse(resumed["publicationAllowed"])
+        self.assertEqual(resumed["approvalsProposed"], 0)
+        for bad in (0, True, 121):
+            with self.assertRaises(ValueError):
+                wd.build(reg, DAY, request=empty, max_seconds=bad)
 
 
 if __name__ == "__main__":
