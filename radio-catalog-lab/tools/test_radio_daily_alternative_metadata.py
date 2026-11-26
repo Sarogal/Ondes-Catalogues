@@ -1,6 +1,6 @@
 import unittest
 from radio_daily_alternative_metadata import (
-    advertised_endpoints, json_hints, observe_alternative, page_hints, Page, embedded_hints,
+    advertised_endpoints, json_hints, observe_alternative, page_hints, Page, embedded_hints, history_hints,
 )
 from radio_daily_qualification_dossiers import safe_digest
 
@@ -132,6 +132,39 @@ class AlternativeMetadataTests(unittest.TestCase):
     def test_conflicting_embedded_observations_are_ambiguous(self):
         html = f'<div data-stream-url="{STREAM}" data-now-playing-artist="Band" data-now-playing-title="Song"></div>'
         self.assertEqual(embedded_hints((html + html.replace("Song", "Different")).encode(), STREAM, HOME), [])
+
+
+    def test_dated_history_rejects_future_stale_undated_and_other_station(self):
+        import datetime as dt
+        now = dt.datetime(2026,11,26,12,tzinfo=dt.timezone.utc)
+        def event(stamp, artist):
+            return {"played_at": stamp, "song": {"artist": artist, "title": "Song"}}
+        data = [{"station": {"listen_url": OTHER}, "song_history": [event("2026-11-26T10:00:00Z","Wrong Band")]},
+                {"station": {"listen_url": STREAM}, "song_history": [
+                    event("2026-11-25T23:00:00Z","AC/DC"),
+                    event("2026-11-26T13:00:00Z","Future Band"),
+                    event("2026-10-01T10:00:00Z","Old Band"),
+                    event("2026-11-26T10:00:00","No Zone"),
+                    event(None,"Undated Band"),
+                    event(int(dt.datetime(2026,11,26,10,tzinfo=dt.timezone.utc).timestamp()),"A & B")]}]
+        hints = history_hints(data, STREAM, API, now=now)
+        self.assertEqual([(h["artistHint"],h["broadcastDate"]) for h in hints],
+                         [("A & B","2026-11-26"),("AC/DC","2026-11-25")])
+        self.assertEqual(history_hints(data+[data[1]],STREAM,API,now=now),[])
+
+    def test_history_never_treats_playlist_as_played(self):
+        row={"streamUrl":STREAM,"playlist":[{"artist":"Band","title":"Song","playedAt":"2026-11-25T10:00:00Z"}]}
+        self.assertEqual(history_hints(row,STREAM,API),[])
+        self.assertEqual(history_hints({"stations":[{"streamUrl":STREAM},{"song_history":row["playlist"]}]},STREAM,API),[])
+
+    def test_history_budget_and_dedup(self):
+        import datetime as dt
+        now=dt.datetime(2026,11,26,12,tzinfo=dt.timezone.utc)
+        events=[{"playedAt":"2026-11-26T10:00:00Z","artist":"Band "+str(i),"title":"Song"} for i in range(5)]
+        row={"streamUrl":STREAM,"playedTracks":events+events}
+        hints=history_hints(row,STREAM,API,now=now)
+        self.assertEqual(len(hints),3)
+        self.assertEqual(len({h["artistHint"] for h in hints}),3)
 
 if __name__ == "__main__":
     unittest.main()
