@@ -49,6 +49,25 @@ class CrossSourceTests(unittest.TestCase):
         next(iter(cr["entries"].values()))["artistMbids"]=[UID]
         row=build(m,music(m),decisions(m),wikidata=w,recordings=cr)["records"][0]
         self.assertEqual(row["sourceHintCounts"],{"identity_conflict":1})
+    def test_credit_genres_without_name_lookup_and_conflicts(self):
+        m,r,t=fixture()
+        def artist(mid, params):
+            return {"id":mid,"name":"Iron Band","genres":[{"name":"heavy metal","count":1}]}
+        cr=recording(m,r,t,limit=1,request=recording_request,artist_request=artist)
+        row=build(m,music(m),decisions(m),recordings=cr)["records"][0]
+        self.assertEqual(row["sourceHintCounts"],{"recording_genre_hint":1})
+        self.assertEqual(row["artistHintCounts"]["target_hint"],1)
+        self.assertEqual(row["verifiedArtistCount"],0)
+        w=wiki(m,limit=1,request=request)
+        row=build(m,music(m),decisions(m),wikidata=w,recordings=cr)["records"][0]
+        self.assertEqual(row["sourceHintCounts"],{"recording_wikidata":1})
+        w["entries"]["iron band"]["genresById"]={"Q1":"pop"}
+        row=build(m,music(m),decisions(m),wikidata=w,recordings=cr)["records"][0]
+        self.assertEqual(row["sourceHintCounts"],{"genre_conflict":1})
+        next(iter(cr["entries"].values()))["creditGenreEvidence"]["mbid"]=UID
+        with self.assertRaises(ValueError):
+            build(m,music(m),decisions(m),recordings=cr)
+
     def test_stale_wikidata_and_bad_provenance(self):
         m=report()
         w=wiki(m,limit=1,request=request)

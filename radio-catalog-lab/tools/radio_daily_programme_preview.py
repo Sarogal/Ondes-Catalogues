@@ -7,7 +7,7 @@ from collections import Counter
 from pathlib import Path
 
 from radio_daily_artist_research import key, safe_name, valid_id, MAX_SEARCH_PAGES
-from radio_daily_recording_preview import SEARCH_LIMIT as RECORDING_SEARCH_LIMIT
+from radio_daily_recording_preview import SEARCH_LIMIT as RECORDING_SEARCH_LIMIT, valid_credit_genres
 from radio_daily_wikidata_preview import validate_entry as validate_wikidata
 from radio_daily_qualification_dossiers import safe_digest
 from radio_daily_metadata_preview import valid_hint
@@ -76,7 +76,8 @@ def build(metadata, research, decisions, *, wikidata=None, recordings=None):
                     or not SHA256_RE.fullmatch(e.get("titleSha256") or "")
                     or k != safe_digest(e["artistHint"]+"\n"+e["titleSha256"])
                     or e.get("identityVerified") is not False or e.get("publicationAllowed") is not False
-                    or parse_day(e["checkedAt"]) > day or e.get("source") != "musicbrainz-recording-search"):
+                    or parse_day(e["checkedAt"]) > day or e.get("source") != "musicbrainz-recording-search"
+                    or not valid_credit_genres(e)):
                 raise ValueError("untrusted recording entry")
             if e.get("status") == "recording_credit_hypothesis":
                 for field, maximum in (("artistMbids",20),("recordingMbids",RECORDING_SEARCH_LIMIT * MAX_SEARCH_PAGES)):
@@ -142,8 +143,14 @@ def build(metadata, research, decisions, *, wikidata=None, recordings=None):
                 return "unclassified_hint","cross_source_identity_unlinked"
             if rid and wd and links!={rid} and not mb:
                 return "unclassified_hint","cross_source_identity_unlinked"
+            cg=r.get("creditGenreEvidence",{}).get("genres",[]) if rc else []
             mg=m["genres"] if mb else []
             wg=list(w["genresById"].values()) if wd else []
+            if cg:
+                c_bucket=label_bucket(cg)
+                if any({c_bucket,label_bucket(g)}=={"target_hint","other_hint"} for g in (mg,wg)):
+                    return "unclassified_hint","genre_conflict"
+                mg=mg+cg
             m_bucket,w_bucket=label_bucket(mg),label_bucket(wg)
             if mb and wd:
                 if {m_bucket,w_bucket}=={"target_hint","other_hint"}:
@@ -153,7 +160,9 @@ def build(metadata, research, decisions, *, wikidata=None, recordings=None):
             if mb:
                 return m_bucket,"recording_musicbrainz" if rc else "musicbrainz_only"
             if wd:
-                return w_bucket,"recording_wikidata" if rc else "wikidata_only"
+                return label_bucket(wg+cg),"recording_wikidata" if rc else "wikidata_only"
+            if cg:
+                return label_bucket(cg),"recording_genre_hint"
             return "unclassified_hint","recording_only" if rc else "no_usable_source"
         by_artist={}
         for artist,title_hash in sorted(seen):

@@ -55,6 +55,32 @@ class RecordingTests(unittest.TestCase):
         self.assertEqual(result["artistMbids"], [MBID])
         self.assertEqual(len(result["recordingMbids"]), 51)
 
+    def test_direct_credit_genres_and_exact_id(self):
+        m,r,t=fixture()
+        def artist(mid, params):
+            self.assertEqual(mid, MBID)
+            self.assertEqual(params, {"inc":"genres"})
+            return {"id":mid,"name":"Canonical Artist","genres":[{"name":"hard rock","count":3}]}
+        out=build(m,r,t,limit=1,request=request,artist_request=artist)
+        e=next(iter(out["entries"].values()))
+        self.assertEqual(e["creditGenreEvidence"]["genres"],["hard rock"])
+        self.assertEqual(e["creditGenreEvidence"]["mbid"],MBID)
+        self.assertEqual(out["genreLookupAttemptedCount"],1)
+        self.assertFalse(e["identityVerified"])
+        bad=build(m,r,t,limit=1,request=request,artist_request=lambda *a:{"id":UID,"name":"Other"})
+        self.assertEqual(next(iter(bad["entries"].values()))["status"],"recording_credit_hypothesis")
+        self.assertEqual(bad["creditGenreEvidenceCount"],0)
+        self.assertIsNotNone(bad["serviceFailure"])
+
+    def test_genre_failure_keeps_recording_credit(self):
+        m,r,t=fixture()
+        def fail(*a):
+            raise OSError("network")
+        out=build(m,r,t,limit=1,request=request,artist_request=fail)
+        self.assertEqual(out["creditGenreEvidenceCount"],0)
+        self.assertEqual(next(iter(out["entries"].values()))["artistMbids"],[MBID])
+        self.assertIsNotNone(out["serviceFailure"])
+
     def test_no_title_persisted(self):
         m,r,t=fixture()
         out=build(m,r,t,limit=1,request=request)

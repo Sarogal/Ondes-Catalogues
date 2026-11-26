@@ -62,7 +62,36 @@ def resolve(artist,title,request):
     return {"status":"recording_credit_hypothesis","artistMbids":list(ids),
             "recordingMbids":sorted(recordings)}
 
-def build(metadata,research,titles,*,prior=None,limit=0,request=None):
+def lookup_credit_genres(mbid, request):
+    """Fetch community genres for the exact recording credit, never a name guess."""
+    if not valid_id(mbid):
+        raise ValueError("invalid credit id")
+    detail = request(mbid, {"inc": "genres"})
+    if detail.get("id") != mbid or not safe_name(detail.get("name")):
+        raise ValueError("credit detail identity mismatch")
+    genres = detail.get("genres", [])
+    if not isinstance(genres, list) or len(genres) > 200:
+        raise ValueError("invalid credit genres")
+    labels = sorted({g["name"].strip() for g in genres
+                     if isinstance(g, dict) and safe_name(g.get("name"))
+                     and type(g.get("count")) is int and g["count"] > 0})
+    return {"mbid": mbid, "genres": labels, "source": "musicbrainz-community",
+            "sourceUrl": "https://musicbrainz.org/artist/" + mbid}
+
+def valid_credit_genres(entry):
+    evidence = entry.get("creditGenreEvidence")
+    if evidence is None:
+        return True
+    ids = entry.get("artistMbids")
+    return (entry.get("status") == "recording_credit_hypothesis"
+            and isinstance(ids, list) and len(ids) == 1 and valid_id(ids[0])
+            and isinstance(evidence, dict) and evidence.get("mbid") == ids[0]
+            and evidence.get("source") == "musicbrainz-community"
+            and evidence.get("sourceUrl") == "https://musicbrainz.org/artist/" + ids[0]
+            and isinstance(evidence.get("genres"), list) and len(evidence["genres"]) <= 200
+            and all(safe_name(g) for g in evidence["genres"]))
+
+def build(metadata,research,titles,*,prior=None,limit=0,request=None,artist_request=None):
     day=parse_day(metadata["scanDate"])
     for r in (metadata,research):
         if r.get("schemaVersion")!=1 or r.get("scanDate")!=day or r.get("publicationAllowed") is not False or r.get("approvedCount")!=0:
@@ -80,7 +109,8 @@ def build(metadata,research,titles,*,prior=None,limit=0,request=None):
                     or not SHA256_RE.fullmatch(e.get("titleSha256") or "")
                     or k!=safe_digest(e["artistHint"]+"\n"+e["titleSha256"])
                     or e.get("identityVerified") is not False or e.get("publicationAllowed") is not False
-                    or parse_day(e["checkedAt"])>day or e.get("source")!="musicbrainz-recording-search"):
+                    or parse_day(e["checkedAt"])>day or e.get("source")!="musicbrainz-recording-search"
+                    or not valid_credit_genres(e)):
                 raise ValueError("invalid recording cache entry")
             entries[k]=e
     tasks={}
@@ -107,7 +137,10 @@ def build(metadata,research,titles,*,prior=None,limit=0,request=None):
     held=bool(research.get("serviceFailure"))
     if limit and tasks and not held and request is None:
         time.sleep(1.2)
-        request=Client().recordings
+        client=Client()
+        request=client.recordings
+        artist_request=client
+    genre_attempts=0
     for k,t in sorted(tasks.items())[:0 if held else limit]:
         attempted+=1
         try:
@@ -115,10 +148,28 @@ def build(metadata,research,titles,*,prior=None,limit=0,request=None):
         except (ValueError,OSError,TypeError,KeyError) as exc:
             failure="http_"+str(exc.code) if isinstance(exc,HTTPError) else "service_or_response_held"
             break
+        if (artist_request is not None and result.get("status")=="recording_credit_hypothesis"
+                and len(result["artistMbids"])==1):
+            genre_attempts+=1
+            try:
+                result["creditGenreEvidence"]=lookup_credit_genres(result["artistMbids"][0],artist_request)
+            except (ValueError,OSError,TypeError,KeyError,AttributeError) as exc:
+                failure="http_"+str(exc.code) if isinstance(exc,HTTPError) else "service_or_response_held"
+                # A failed genre refresh must not erase the exact credit or a
+                # previously corroborated genre list for that same credit.
+                old=entries.get(k,{})
+                if (old.get("artistMbids")==result["artistMbids"]
+                        and old.get("creditGenreEvidence") is not None):
+                    # Retain the original checkedAt; do not re-date stale evidence.
+                    break
         entries[k]=dict(result,artistHint=t["artistHint"],titleSha256=t["titleSha256"],
                         source="musicbrainz-recording-search",checkedAt=day,identityVerified=False,publicationAllowed=False)
+        if failure:
+            break
     return {"schemaVersion":1,"scanDate":day,"publicationAllowed":False,"approvedCount":0,
-            "duePairCount":len(tasks),"attemptedCount":attempted,"heldByArtistService":held,
+            "duePairCount":len(tasks),"attemptedCount":attempted,"genreLookupAttemptedCount":genre_attempts,
+            "creditGenreEvidenceCount":sum(e.get("creditGenreEvidence") is not None for e in entries.values()),
+            "heldByArtistService":held,
             "serviceFailure":failure,"entries":dict(sorted(entries.items()))}
 
 def main():
