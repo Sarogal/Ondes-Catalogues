@@ -71,6 +71,26 @@ MOTO_ARTICLE = (
 
 
 class ExistingOfficialFestivalTests(unittest.TestCase):
+    def test_current_official_poster_discovery_is_review_only(self):
+        from grossesondes_existing_official_updates import current_official_poster_candidates
+        site = "https://festival-exemple.fr/"
+        row = festival("festival-123", site)
+        row["name"] = "Festival 123 2027"
+        html = ('<main><img src="/images/123-2027.jpg">'
+                '<img src="/images/123-2026.jpg">'
+                '<img src="/images/123-2026-2027.jpg">'
+                '<img src="https://external.example/123-2027.jpg">'
+                '<img hidden src="/images/affiche-2027.png">'
+                '<div hidden><img src="/images/poster-2027.jpg"></div>'
+                '<img src="/images/other-2027.png">'
+                '<img src="/images/123-2027.svg">'
+                '<img src="/images/123-2027.jpg?x=1">'
+                '<footer><img src="/images/123-2027-footer.jpg"></footer></main>')
+        self.assertEqual(current_official_poster_candidates(html, site, row),
+                         [site + "images/123-2027.jpg"])
+        self.assertEqual(row["lineup"], [])
+        self.assertIsNone(row["lat"])
+
     def test_multivenue_homonym_uses_only_current_named_venue_address(self):
         from grossesondes_openagenda_linked_edition import PROFESSIONAL_PUBLIC_CONFIDENCE
         from grossesondes_existing_official_updates import multivenue_department_from_access

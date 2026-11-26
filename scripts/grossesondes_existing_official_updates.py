@@ -695,6 +695,59 @@ def page(html):
     return out
 
 
+def current_official_poster_candidates(html, site, row):
+    """Discover visible same-host edition images, not evidence or publication.
+    
+    Never download image bytes or infer any field from the filename. The
+    caller independently verifies the page belongs to the signed edition.
+    """
+    if (not isinstance(html, str) or not 0 < len(html) <= 650_000
+            or safe_public_url(site) != site):
+        return []
+    try:
+        year = date.fromisoformat(row["startDate"]).year
+        brand = re.sub(r"\b20[2-4]\d\b", "", fold(row["name"]))
+        tokens = [t for t in brand.split() if t not in ("festival", "fest")]
+        if not tokens or len("".join(tokens)) < 3:
+            return []
+        host = urlsplit(site).hostname
+        class Images(VisibleText):
+            def __init__(self):
+                super().__init__()
+                self.urls = set()
+            def handle_starttag(self, tag, attrs):
+                attr = dict(attrs)
+                if tag in ("nav", "footer", "aside", "header"):
+                    attrs = list(attrs) + [("hidden", None)]
+                if (tag == "img" and not self.hidden()
+                        and "hidden" not in attr and attr.get("aria-hidden") != "true"
+                        and not re.search(r"display\s*:\s*none|visibility\s*:\s*hidden",
+                                          attr.get("style") or "", re.I)
+                        and len(self.urls) < 20):
+                    raw = attr.get("src")
+                    if (isinstance(raw, str) and 0 < len(raw) <= 500
+                            and not any(c in raw for c in ("%", "\\", "#", "?"))
+                            and ".." not in urlsplit(raw).path.split("/")):
+                        url = urljoin(site, raw)
+                        parts = urlsplit(url)
+                        words = fold(parts.path.rsplit("/", 1)[-1])
+                        years = set(re.findall(r"\b20[2-4]\d\b", words))
+                        if (parts.hostname == host and safe_public_url(url) == url
+                                and not parts.query and not parts.fragment
+                                and re.search(r"\.(?:jpe?g|png|webp)$", parts.path, re.I)
+                                and years == {str(year)}
+                                and (all(t in words.split() for t in tokens)
+                                     or re.search(r"\b(?:affiche|poster|lineup)\b", words))):
+                            self.urls.add(url)
+                super().handle_starttag(tag, attrs)
+        parser = Images()
+        parser.feed(html)
+        parser.close()
+        return sorted(parser.urls)[:3]
+    except (ValueError, TypeError, KeyError, UnicodeError):
+        return []
+
+
 def linked_pages(site, parsed):
     if safe_public_url(site) != site:
         return []
@@ -2158,6 +2211,9 @@ def apply_independently_verified_updates(
                     "slug": slug, "official_site": site,
                     "homepage_matches_signed_edition": root_ok,
                     "linked_pages_fetched": len(html_pages) - 1,
+                    "official_poster_candidates_review_only": (
+                        current_official_poster_candidates(root_html, site, old)
+                        if root_ok else []),
                     "artist_names_claimed": len(claims),
                     "artist_names_new": len(new_names),
                     "open_pass_categories_found": sorted(prices),
