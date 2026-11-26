@@ -91,5 +91,22 @@ class MetadataTests(unittest.TestCase):
                        alternative=lambda u,s:self.fail("ICY already works"))
         self.assertEqual(result["records"][0]["verdict"],"icy_artist_title_hint")
 
+
+    def test_upgrade_retries_unresolved_once_and_records_new_method(self):
+        empty=lambda u:{"verdict":"metadata_no_parseable_title","titleHints":[]}
+        first=collect(*reports(),limit=1,observe=empty)
+        failed=collect(*reports(),previous=first,limit=1,observe=empty,alternative=lambda u,s:[])
+        self.assertEqual(failed["attemptedCount"],1)
+        self.assertTrue(failed["records"][0]["alternativeAttempted"])
+        same=collect(*reports(),previous=failed,limit=1,observe=empty,
+                     alternative=lambda u,s:self.fail("repeated same-day retry"))
+        self.assertEqual(same["attemptedCount"],0)
+        recovered=collect(*reports(),previous=first,limit=1,observe=empty,
+            alternative=lambda u,s:[{"artistHint":"Band","titleHint":"Song","titleSha256":safe_digest("Song"),
+                "method":"station_now_playing_json","sourceSha256":safe_digest("https://radio.example.org/api/nowplaying")}])
+        self.assertEqual(recovered["stationsWithAlternativeHints"],1)
+        self.assertEqual(recovered["records"][0]["observations"][0]["method"],"station_now_playing_json")
+        self.assertEqual(recovered["approvedCount"],0)
+
 if __name__=="__main__":
     unittest.main()
