@@ -40,6 +40,39 @@ def source_policy(url):
     except (ValueError,TypeError):
         return "unsafe_or_unsupported_source_held"
 
+SOURCE_PREFIX="go-logo-source-v1:"
+MANAGED_PREVIEW_HOST="radio-preview.example.org"
+
+def managed_url(url):
+    p=urlsplit(url)
+    return p.hostname==MANAGED_PREVIEW_HOST or "/objects/sha256/" in p.path
+
+def source_reference(logo, url):
+    ref=SOURCE_PREFIX+logo["sha256"]+":"+url
+    if len(ref)>500 or source_policy(url)!="eligible" or managed_url(url):
+        raise ValueError("invalid official artwork source")
+    return ref
+
+def official_source(station):
+    """Signed editorial reference bound to exact logo digest, or legacy URL."""
+    logo=station["logo"]
+    refs=[r for r in station["editorial"]["evidence_refs"] if r.startswith(SOURCE_PREFIX)]
+    if not logo:
+        if refs:
+            raise ValueError("artwork source without logo")
+        return None
+    if refs:
+        if len(refs)!=1:
+            raise ValueError("ambiguous official artwork source")
+        prefix=SOURCE_PREFIX+logo["sha256"]+":"
+        if not refs[0].startswith(prefix):
+            raise ValueError("artwork provenance digest mismatch")
+        url=refs[0][len(prefix):]
+        if source_reference(logo,url)!=refs[0]:
+            raise ValueError("invalid artwork provenance")
+        return url
+    return None if managed_url(logo["url"]) else logo["url"]
+
 def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch=fetch_strict_https,decode=decode_image):
     day=parse_day(day)
     if type(limit) is not int or not 0<=limit<=MAX_SOURCES:
@@ -51,7 +84,9 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch=fetch_strict_http
     for station in doc["stations"]:
         logo=station["logo"]
         if logo:
-            url=logo["url"]
+            url=official_source(station)
+            if url is None:
+                continue
             key=digest(url)
             group=groups.setdefault(key,{"url":url,"expected":{}})
             if group["url"]!=url:
@@ -120,12 +155,15 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch=fetch_strict_http
     records=[]
     for s in sorted(doc["stations"],key=lambda x:x["go_station_id"]):
         logo=s["logo"]
-        key=digest(logo["url"]) if logo else None
+        source=official_source(s)
+        key=digest(source) if source else None
         state="missing_logo"
         last=None
         changed_days=[]
-        if logo:
-            state=source_policy(logo["url"])
+        if logo and source is None:
+            state="official_source_missing_review"
+        elif logo:
+            state=source_policy(source)
             h=histories[key]
             if state=="eligible":
                 state="awaiting_check"
