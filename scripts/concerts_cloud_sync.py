@@ -8046,6 +8046,14 @@ def merge(reference, current, approvals, today):
     published_origin_venues = {v["id"]: v for v in current["venues"]}
     published_origin_artists = {a["id"]: a for a in current["artists"]}
     published_event_by_id = {e["id"]: e for e in current["events"]}
+    # The exact signed lineup was already checked above. Historical new-site
+    # binding must use its ORIGINAL bill, not the subsequently corrected one.
+    for eid in lineup_by_id:
+        if eid in published_event_by_id:
+            e = published_event_by_id[eid]
+            original = approved_ids[eid]["event"]
+            published_event_by_id[eid] = dict(e, title=original["title"],
+                                                 artistIds=original["artistIds"])
     venue_approvals = approvals.get("venueApprovals", [])
     require(isinstance(venue_approvals, list),
             "Liste d'approbations de salles inattendue")
