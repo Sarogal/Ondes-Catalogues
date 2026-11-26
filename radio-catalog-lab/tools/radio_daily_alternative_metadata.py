@@ -23,7 +23,7 @@ MAX_DOCUMENTS = 12
 MAX_NODES = 256
 ALTERNATIVE_METHODS = frozenset({"icecast_json", "shoutcast_json", "station_jsonld",
                                 "station_now_playing_json", "station_embedded_json", "station_html",
-                                "station_history_json"})
+                                "station_history_json", "hls_packed_id3"})
 
 
 def origin(url):
