@@ -117,6 +117,24 @@ class EphemeralLabSigner:
         self.public_key = base64.b64encode(raw).decode("ascii")
         self.key_id = "radio-lab-" + digest(raw)[:24]
 
+    def reanchor_verified_baseline(self, pointer, body, *, anchor):
+        """Re-sign only exact authenticated predecessor bytes for an isolated rehearsal.
+
+        The original pointer remains untouched. The result uses this process's
+        ephemeral key, which cannot authenticate the real TEST environment.
+        """
+        verify_baseline(pointer, body, **anchor)
+        p = strict_json(pointer)
+        message = ("GO-RADIO-CATALOG-POINTER-V1\\n" +
+                   "".join(str(p[k])+"\\n" for k in FIELDS)+self.key_id+"\\n").encode()
+        p["signature"] = dict(algorithm="Ed25519", key_id=self.key_id,
+                              signature_base64=base64.b64encode(self._key.sign(message)).decode("ascii"))
+        result = encode(p)
+        verify_baseline(result, body, expected_sha=anchor["expected_sha"],
+                        expected_sequence=anchor["expected_sequence"],
+                        public_key=self.public_key, key_id=self.key_id)
+        return result
+
     def sign_candidate(self, prior_pointer, prior_body, candidate, *, expected_sha,
                        expected_sequence, expected_candidate_sha, day, logo_evidence=None, repair_evidence=None, status_evidence=None, merge_evidence=None, combined_evidence=None):
         new = validate_candidate(prior_pointer, prior_body, candidate,

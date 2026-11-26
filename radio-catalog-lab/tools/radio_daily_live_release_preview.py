@@ -13,6 +13,7 @@ from radio_daily_repair_release_validation import qualify_repair, validate_repai
 from radio_daily_live_evidence import LiveEvidence, EvidenceDeferred
 from radio_daily_live_logo_preview import preview_logo
 from radio_daily_live_maintenance_release_preview import preview_status, preview_merge
+from radio_daily_live_combined_preview import combine_and_rehearse
 
 
 def run(pointer, raw, *, anchor, day, discovery, dossiers, maintenance, repair, confirmation, logo_maintenance, missing_logo, status):
@@ -24,6 +25,7 @@ def run(pointer, raw, *, anchor, day, discovery, dossiers, maintenance, repair, 
              if r["decision"] == "ready_for_staging_review"]
     repairs = plan(raw, maintenance, repair, confirmation, expected=sha)["proposals"]
     results = {}
+    operations = {}
     for kind, proposed, qualify, validate, evidence in (
         ("admission", ready, qualify_admission, validate_admission_release,
          dict(discovery=discovery, dossiers=dossiers)),
@@ -41,23 +43,28 @@ def run(pointer, raw, *, anchor, day, discovery, dossiers, maintenance, repair, 
                 if verified != digest(candidate):
                     raise ValueError("strict live candidate digest mismatch")
                 result.update(outcome="strict_gate_validated", candidateSha256=verified)
+                operations[kind] = dict(candidate=candidate, evidence=dict(evidence, **live.services()))
             except EvidenceDeferred:
                 result["outcome"] = "live_evidence_deferred"
             except ValueError:
                 result["outcome"] = "strict_gate_held"
             result["networkCalls"] = live.calls
         results[kind] = result
-    results["logo"] = preview_logo(pointer, raw, anchor=anchor, day=day,
-        logo_maintenance=logo_maintenance, missing_logo=missing_logo)
+    try:
+        results["logo"] = preview_logo(pointer, raw, anchor=anchor, day=day,
+            logo_maintenance=logo_maintenance, missing_logo=missing_logo, operations=operations)
+    except ValueError:
+        results["logo"] = dict(outcome="strict_gate_held", candidateSha256=None)
     for kind, operation, extra in (("status", preview_status, dict(status=status)),
                                   ("merge", preview_merge, {})):
         try:
             results[kind] = operation(pointer, raw, anchor=anchor, day=day,
-                maintenance=maintenance, repair=repair, confirmation=confirmation, **extra)
+                maintenance=maintenance, repair=repair, confirmation=confirmation, operations=operations, **extra)
         except ValueError:
             results[kind] = dict(outcome="strict_gate_held", candidateSha256=None)
     return dict(schemaVersion=1, scanDate=day, catalogBaselineSha256=sha,
-                publicationAllowed=False, signed=False, operations=results)
+                publicationAllowed=False, signed=False, operations=results,
+                combined=combine_and_rehearse(pointer, raw, anchor=anchor, day=day, operations=operations))
 
 
 def main():

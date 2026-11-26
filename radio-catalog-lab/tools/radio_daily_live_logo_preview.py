@@ -11,7 +11,7 @@ from radio_daily_logo_release_validation import expected_logo_release, validate_
 from radio_daily_live_evidence import LiveEvidence
 
 
-def preview_logo(pointer, raw, *, anchor, day, logo_maintenance, missing_logo):
+def preview_logo(pointer, raw, *, anchor, day, logo_maintenance, missing_logo, operations=None):
     old = verify_baseline(pointer, raw, **anchor)
     sha = anchor["expected_sha"]
     proposals, _ = plan(raw, day, logo_maintenance, missing_logo, expected=sha)
@@ -46,4 +46,6 @@ def preview_logo(pointer, raw, *, anchor, day, logo_maintenance, missing_logo):
         raise ValueError("strict live logo digest mismatch")
     result.update(outcome="strict_gate_validated", candidateSha256=verified,
                   objectCount=len(objects))
+    if operations is not None:
+        operations["logo"] = dict(candidate=candidate, evidence=evidence)
     return result

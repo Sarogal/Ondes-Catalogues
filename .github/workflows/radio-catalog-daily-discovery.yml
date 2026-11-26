@@ -67,6 +67,8 @@ on:
       - "radio-catalog-lab/tools/radio_daily_live_evidence.py"
       - "radio-catalog-lab/tools/test_radio_daily_live_evidence.py"
       - "radio-catalog-lab/tools/radio_daily_live_release_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_live_combined_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_live_combined_preview.py"
       - "radio-catalog-lab/tools/radio_daily_live_logo_preview.py"
       - "radio-catalog-lab/tools/radio_daily_live_maintenance_release_preview.py"
       - "radio-catalog-lab/tools/test_radio_daily_live_maintenance_release_preview.py"

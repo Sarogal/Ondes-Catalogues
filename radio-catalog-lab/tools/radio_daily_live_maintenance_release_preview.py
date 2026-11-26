@@ -36,7 +36,7 @@ def report_for(proposals):
                 candidateSha256=None, outcome="no_proposal")
 
 
-def preview_status(pointer, raw, *, anchor, day, maintenance, repair, confirmation, status):
+def preview_status(pointer, raw, *, anchor, day, maintenance, repair, confirmation, status, operations=None):
     old = verify_baseline(pointer, raw, **anchor)
     sha = anchor["expected_sha"]
     repairs = repair_plan(raw, maintenance, repair, confirmation, expected=sha)
@@ -82,13 +82,15 @@ def preview_status(pointer, raw, *, anchor, day, maintenance, repair, confirmati
         if verified != digest(candidate):
             raise ValueError("status digest mismatch")
         result.update(outcome="strict_gate_validated", candidateSha256=verified)
+        if operations is not None:
+            operations["status"] = dict(candidate=candidate, evidence=args)
     except EvidenceDeferred:
         result["outcome"] = "live_evidence_deferred"
     result["networkCalls"] = live.calls
     return result
 
 
-def preview_merge(pointer, raw, *, anchor, day, maintenance, repair, confirmation):
+def preview_merge(pointer, raw, *, anchor, day, maintenance, repair, confirmation, operations=None):
     old = verify_baseline(pointer, raw, **anchor)
     sha = anchor["expected_sha"]
     repairs = repair_plan(raw, maintenance, repair, confirmation, expected=sha)
@@ -123,6 +125,8 @@ def preview_merge(pointer, raw, *, anchor, day, maintenance, repair, confirmatio
         if verified != digest(candidate):
             raise ValueError("merge digest mismatch")
         result.update(outcome="strict_gate_validated", candidateSha256=verified)
+        if operations is not None:
+            operations["merge"] = dict(candidate=candidate, evidence=args)
     except EvidenceDeferred:
         result["outcome"] = "live_evidence_deferred"
     result["networkCalls"] = live.calls
