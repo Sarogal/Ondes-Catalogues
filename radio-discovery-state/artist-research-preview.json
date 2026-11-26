@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 36,
-  "attemptedCount": 2,
+  "dueNameCount": 35,
+  "attemptedCount": 4,
   "serviceFailure": "http_503",
-  "retryAfterKey": "тима гранж (томск)",
+  "retryAfterKey": "wdk",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -45,7 +45,8 @@
       "status": "ambiguous_or_incomplete",
       "artistName": "38 Special",
       "source": "musicbrainz",
-      "checkedAt": "2026-11-25",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },
@@ -441,6 +442,7 @@
       "artistName": "Klaxons",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },
@@ -825,6 +827,7 @@
       "artistName": "Rage",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },
