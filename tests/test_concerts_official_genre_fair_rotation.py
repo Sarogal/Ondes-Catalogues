@@ -180,6 +180,88 @@ class FairGenreReviewSlots(unittest.TestCase):
                 self.assertEqual(report["examined"], 16)
                 self.assertEqual(report["firstReviewInMemory"], 16)
 
+    def test_extractor_revision_retries_are_bounded_and_keep_other_lanes(self):
+        queue = ([row("oa", i) for i in range(24)] +
+                 [row("tag", i, "genre_tag_review") for i in range(24)] +
+                 [row("unknown", i) for i in range(72)])
+        old, new = "a" * 64, "b" * 64
+        reason = next(iter(pipeline._EXTRACTION_REASONS))
+        def fail(row, *args, **kwargs):
+            raise ValueError(reason if row[3]["source"] != "agenda_officiel_openagenda"
+                             else "Other source failure")
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose", side_effect=fail), \
+             mock.patch.object(pipeline, "_extractor_revision", return_value=old):
+            _, first = pipeline.build({}, CATALOGUE, BEFORE, TODAY, slot=0, limit=32)
+            _, same = pipeline.build({}, CATALOGUE, BEFORE, TODAY, slot=0,
+                                     limit=32, prior=first)
+        self.assertEqual(len(first["extractionRetryMemory"]), 26)
+        self.assertEqual(same["changedExtractorPriorityChecks"], 0)
+        self.assertEqual(same["changedExtractorRetryPendingBefore"], 0)
+        self.assertEqual(same["firstReviewInMemory"], 32)
+        old_ids = {c["candidateId"] for c in first["candidateChecks"]}
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose", side_effect=fail), \
+             mock.patch.object(pipeline, "_extractor_revision", return_value=new):
+            out, retry = pipeline.build({}, CATALOGUE, BEFORE, TODAY, slot=0,
+                                        limit=32, prior=first)
+            self.assertEqual(out, BEFORE)
+            self.assertEqual(retry["examined"], 32)
+            self.assertEqual(retry["changedExtractorRetryPendingBefore"], 26)
+            self.assertEqual(retry["changedExtractorPriorityChecks"], 8)
+            self.assertEqual(retry["changedExtractorRetryPendingAfter"], 18)
+            self.assertEqual(retry["openAgendaExamined"], 6)
+            self.assertEqual(retry["officialGenreTaggedExamined"], 8)
+            self.assertEqual(len(old_ids & {c["candidateId"]
+                                           for c in retry["candidateChecks"]}), 8)
+            self.assertEqual(retry["firstReviewInMemory"], 24)
+            # A second cycle on the same revision consumes remaining stale
+            # rows, but never gives the newly failed rows priority again.
+            _, next_report = pipeline.build({}, CATALOGUE, BEFORE, TODAY,
+                                            slot=0, limit=32, prior=retry)
+            self.assertEqual(next_report["changedExtractorRetryPendingBefore"], 18)
+            self.assertLess(next_report["changedExtractorRetryPendingAfter"], 18)
+            self.assertLessEqual(next_report["changedExtractorPriorityChecks"], 8)
+            self.assertFalse(next_report["publicationAllowed"])
+
+    def test_legacy_extraction_retry_migration_and_untrusted_state(self):
+        queue = [row("unknown", i) for i in range(60)]
+        reason = next(iter(pipeline._EXTRACTION_REASONS))
+        def fail(row, *args, **kwargs):
+            raise ValueError(reason)
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose", side_effect=fail), \
+             mock.patch.object(pipeline, "_extractor_revision", return_value="c" * 64):
+            _, first = pipeline.build({}, CATALOGUE, BEFORE, TODAY, slot=0)
+            legacy = {k: v for k, v in first.items()
+                      if k not in ("extractionRetryMemory", "extractorRevision")}
+            _, result = pipeline.build({}, CATALOGUE, BEFORE, TODAY, slot=0, prior=legacy)
+            self.assertEqual(result["changedExtractorRetryPendingBefore"], 16)
+            self.assertEqual(result["changedExtractorPriorityChecks"], 4)
+            self.assertEqual(result["firstReviewInMemory"], 12)
+            for invalid in (
+                    {**legacy, "publicationAllowed": True},
+                    {**first, "extractionRetryMemory": {"unknown": "a" * 64}},
+                    {**first, "extractionRetryMemory": {k: [] for k in first["recentReviewKeys"]}},
+                    {**first, "extractionRetryMemory": []}):
+                _, report = pipeline.build({}, CATALOGUE, BEFORE, TODAY, slot=0, prior=invalid)
+                self.assertEqual(report["changedExtractorPriorityChecks"], 0)
+                self.assertEqual(report["examined"], 16)
+
+    def test_extraction_revision_ignores_unrelated_failure_reasons(self):
+        queue = [row("unknown", i) for i in range(40)]
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose", side_effect=ValueError("date conflict")), \
+             mock.patch.object(pipeline, "_extractor_revision", return_value="d" * 64):
+            _, report = pipeline.build({}, CATALOGUE, BEFORE, TODAY)
+            self.assertEqual(report["extractionRetryMemory"], {})
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose", side_effect=ValueError("date conflict")), \
+             mock.patch.object(pipeline, "_extractor_revision", return_value="e" * 64):
+            _, next_report = pipeline.build({}, CATALOGUE, BEFORE, TODAY, prior=report)
+            self.assertEqual(next_report["changedExtractorPriorityChecks"], 0)
+            self.assertEqual(next_report["firstReviewInMemory"], 16)
+
     def test_double_budget_reuses_unused_lanes(self):
         queue = [row("unknown", i) for i in range(40)]
         with mock.patch.object(pipeline, "eligible", return_value=queue), \
