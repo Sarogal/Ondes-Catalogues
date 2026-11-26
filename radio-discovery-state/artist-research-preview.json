@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 124,
   "dueNameCount": 30,
-  "attemptedCount": 1,
+  "attemptedCount": 4,
   "serviceFailure": "http_503",
-  "retryAfterKey": "heaven shall burn",
+  "retryAfterKey": "kornkob95",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -377,6 +377,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "inminente": {
+      "status": "not_found",
+      "artistName": "Inminente",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "jason derulo; nicki minaj; ty dolla $ign": {
       "status": "not_found",
       "artistName": "Jason Derulo; Nicki Minaj; Ty Dolla $ign",
@@ -449,6 +458,49 @@
       "genreSource": "musicbrainz-community",
       "sourceUrl": "https://musicbrainz.org/artist/9a58fda3-f4ed-4080-a3a5-f457aac9fcdd",
       "artistName": "Joy Division",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "judas priest": {
+      "status": "name_hypothesis",
+      "mbid": "6b335658-22c8-485d-93de-0bc29a1d0349",
+      "genres": [
+        "classic rock",
+        "hard rock",
+        "heavy metal",
+        "metal",
+        "nwobhm",
+        "speed metal"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/6b335658-22c8-485d-93de-0bc29a1d0349",
+      "artistName": "Judas Priest",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "kayo dot": {
+      "status": "name_hypothesis",
+      "mbid": "3979eee5-c72a-4b0a-9191-a0243881250a",
+      "genres": [
+        "art rock",
+        "avant-garde",
+        "avant-garde metal",
+        "avant-prog",
+        "drone",
+        "experimental rock",
+        "post-metal",
+        "post-rock",
+        "progressive metal"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/3979eee5-c72a-4b0a-9191-a0243881250a",
+      "artistName": "Kayo Dot",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,
