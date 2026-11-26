@@ -1,14 +1,47 @@
 {
   "schemaVersion": 1,
-  "scanDate": "2026-11-25",
+  "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
   "freshnessDays": 30,
-  "stationCount": 30,
-  "stationsWithMultipleObservationDays": 0,
-  "stationsWithGenreHints": 1,
+  "stationCount": 32,
+  "stationsWithWikidataHints": 2,
+  "stationsWithSourceConflicts": 0,
+  "stationsWithMultipleObservationDays": 2,
+  "stationsWithGenreHints": 2,
   "verifiedArtistCount": 0,
   "records": [
+    {
+      "stationuuid": "0231aca1-4e0c-41e4-9b17-74538f1d3c25",
+      "streamSha256": "dd296e44bf28597be6fe06a86d97aa060e9cf544930d6db081702fc22d14bdf9",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 1,
+      "distinctArtistTitleHints": 1,
+      "distinctTitleHashes": 1,
+      "observationDates": [
+        "2026-11-26"
+      ],
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
     {
       "stationuuid": "035ed365-f6dc-46a2-901d-7ac97880e875",
       "streamSha256": "7f39876a8b876844369bcce72b212767153cba84bb9cf531267897d7573862c8",
@@ -31,20 +64,21 @@
         "mixed_hint": 0,
         "unclassified_hint": 0
       },
+      "sourceHintCounts": {},
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
     },
     {
-      "stationuuid": "25de583d-8165-4a5f-8ba5-39861a77f943",
-      "streamSha256": "fcab32b81f3023cc0712a2ea56a31ca7f8c19afe57d5435849e35e665dd04f19",
+      "stationuuid": "05412426-3d22-4e8e-bee0-92b71dac20ff",
+      "streamSha256": "bf1810018392cb47db73befc7e7017085f55a36af5b1605d6407cce9112ec745",
       "matchesDecisionStream": true,
       "observedInScan": true,
       "distinctArtistHints": 1,
       "distinctArtistTitleHints": 1,
       "distinctTitleHashes": 1,
       "observationDates": [
-        "2026-11-25"
+        "2026-11-26"
       ],
       "stalePairCount": 0,
       "artistHintCounts": {
@@ -58,6 +92,41 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 1
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "25de583d-8165-4a5f-8ba5-39861a77f943",
+      "streamSha256": "fcab32b81f3023cc0712a2ea56a31ca7f8c19afe57d5435849e35e665dd04f19",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 2,
+      "distinctArtistTitleHints": 2,
+      "distinctTitleHashes": 2,
+      "observationDates": [
+        "2026-11-25",
+        "2026-11-26"
+      ],
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 2
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 2
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 2
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -68,24 +137,29 @@
       "streamSha256": "1fd1278b4e3b5b760b2afa150d0059c6f3256a2d8f707505f0be8fc0767e0f2c",
       "matchesDecisionStream": true,
       "observedInScan": true,
-      "distinctArtistHints": 1,
-      "distinctArtistTitleHints": 1,
-      "distinctTitleHashes": 1,
+      "distinctArtistHints": 2,
+      "distinctArtistTitleHints": 2,
+      "distinctTitleHashes": 2,
       "observationDates": [
-        "2026-11-25"
+        "2026-11-25",
+        "2026-11-26"
       ],
       "stalePairCount": 0,
       "artistHintCounts": {
         "target_hint": 0,
         "other_hint": 1,
         "mixed_hint": 0,
-        "unclassified_hint": 0
+        "unclassified_hint": 1
       },
       "artistTitleHintCounts": {
         "target_hint": 0,
         "other_hint": 1,
         "mixed_hint": 0,
-        "unclassified_hint": 0
+        "unclassified_hint": 1
+      },
+      "sourceHintCounts": {
+        "linked_sources": 1,
+        "no_usable_source": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -96,22 +170,27 @@
       "streamSha256": "ed2a3274edc9092547074120bac8f194320d86bfaa21989d4dd89c5cde525d1c",
       "matchesDecisionStream": true,
       "observedInScan": true,
-      "distinctArtistHints": 0,
-      "distinctArtistTitleHints": 0,
-      "distinctTitleHashes": 0,
-      "observationDates": [],
+      "distinctArtistHints": 1,
+      "distinctArtistTitleHints": 1,
+      "distinctTitleHashes": 1,
+      "observationDates": [
+        "2026-11-26"
+      ],
       "stalePairCount": 0,
       "artistHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 0
+        "unclassified_hint": 1
       },
       "artistTitleHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 0
+        "unclassified_hint": 1
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -139,6 +218,7 @@
         "mixed_hint": 0,
         "unclassified_hint": 0
       },
+      "sourceHintCounts": {},
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -165,6 +245,7 @@
         "mixed_hint": 0,
         "unclassified_hint": 0
       },
+      "sourceHintCounts": {},
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -192,6 +273,9 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 1
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -221,6 +305,9 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -247,6 +334,7 @@
         "mixed_hint": 0,
         "unclassified_hint": 0
       },
+      "sourceHintCounts": {},
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -274,6 +362,9 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 1
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -303,6 +394,9 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -329,6 +423,7 @@
         "mixed_hint": 0,
         "unclassified_hint": 0
       },
+      "sourceHintCounts": {},
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -355,6 +450,7 @@
         "mixed_hint": 0,
         "unclassified_hint": 0
       },
+      "sourceHintCounts": {},
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -382,6 +478,9 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 1
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -411,6 +510,9 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -437,6 +539,7 @@
         "mixed_hint": 0,
         "unclassified_hint": 0
       },
+      "sourceHintCounts": {},
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -463,6 +566,7 @@
         "mixed_hint": 0,
         "unclassified_hint": 0
       },
+      "sourceHintCounts": {},
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -491,6 +595,9 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -508,16 +615,19 @@
       ],
       "stalePairCount": 0,
       "artistHintCounts": {
-        "target_hint": 0,
+        "target_hint": 1,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 1
+        "unclassified_hint": 0
       },
       "artistTitleHintCounts": {
-        "target_hint": 0,
+        "target_hint": 1,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 1
+        "unclassified_hint": 0
+      },
+      "sourceHintCounts": {
+        "wikidata_only": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -547,6 +657,9 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -575,6 +688,9 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -583,7 +699,7 @@
       "stationuuid": "575c08a2-4325-4173-8373-b922c7438436",
       "streamSha256": "da95f8dfefcfb2cba1e77a27368b78c9ccc1b20a6055a347dcd23644e3ebadb9",
       "matchesDecisionStream": true,
-      "observedInScan": true,
+      "observedInScan": false,
       "distinctArtistHints": 0,
       "distinctArtistTitleHints": 0,
       "distinctTitleHashes": 0,
@@ -601,6 +717,7 @@
         "mixed_hint": 0,
         "unclassified_hint": 0
       },
+      "sourceHintCounts": {},
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -628,6 +745,9 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 1
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -657,6 +777,9 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -684,6 +807,9 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 1
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -713,6 +839,9 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -739,6 +868,7 @@
         "mixed_hint": 0,
         "unclassified_hint": 0
       },
+      "sourceHintCounts": {},
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -766,6 +896,9 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 1
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -795,6 +928,9 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -822,6 +958,9 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 1
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,

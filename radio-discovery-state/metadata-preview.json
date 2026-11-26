@@ -1,16 +1,32 @@
 {
   "schemaVersion": 1,
-  "scanDate": "2026-11-25",
+  "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 19,
-  "distinctArtistHints": 19,
+  "stationsWithArtistHints": 22,
+  "distinctArtistHints": 24,
   "records": [
+    {
+      "stationuuid": "0231aca1-4e0c-41e4-9b17-74538f1d3c25",
+      "streamSha256": "dd296e44bf28597be6fe06a86d97aa060e9cf544930d6db081702fc22d14bdf9",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Shadow La Sombra",
+          "titleSha256": "861356ed28d1b72b6411f81f00f83defe6126c724ca1a4670de9f6df98ac430c"
+        }
+      ]
+    },
     {
       "stationuuid": "035ed365-f6dc-46a2-901d-7ac97880e875",
       "streamSha256": "7f39876a8b876844369bcce72b212767153cba84bb9cf531267897d7573862c8",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -18,9 +34,25 @@
       "observations": []
     },
     {
+      "stationuuid": "05412426-3d22-4e8e-bee0-92b71dac20ff",
+      "streamSha256": "bf1810018392cb47db73befc7e7017085f55a36af5b1605d6407cce9112ec745",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Fuzz Kill Radio",
+          "titleSha256": "1a43d1c435f5cd81dbdad3d43676f740d4ae8dc197445a8d275e7bef07017f49"
+        }
+      ]
+    },
+    {
       "stationuuid": "25de583d-8165-4a5f-8ba5-39861a77f943",
       "streamSha256": "fcab32b81f3023cc0712a2ea56a31ca7f8c19afe57d5435849e35e665dd04f19",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -30,13 +62,18 @@
           "date": "2026-11-25",
           "artistHint": "Marc Freak",
           "titleSha256": "b6e7c265ed25993d99220938092ba7671fddcd2fc3ca5fc247213df041d3a2cc"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "The Futureheads",
+          "titleSha256": "974e2a9256ad1a1256cd6777e16b4bcfc24a4501030d9b4fb39456f0ae5668be"
         }
       ]
     },
     {
       "stationuuid": "2f76081c-dbf0-4b40-bb30-63987abe744e",
       "streamSha256": "1fd1278b4e3b5b760b2afa150d0059c6f3256a2d8f707505f0be8fc0767e0f2c",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -46,18 +83,29 @@
           "date": "2026-11-25",
           "artistHint": "Johnny Hates Jazz",
           "titleSha256": "0230ccbe64be6046e1a58f74be4f122d9b4f1a9f84caac6e6c1525ff0b5dfbe8"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "Nine Inch Nails",
+          "titleSha256": "f4df7cd390ce3cf82fe9f634e72652568e721ab2c885dc8da8fbf342a7c4a432"
         }
       ]
     },
     {
       "stationuuid": "32955656-5a38-40c0-ab1f-e059496bfda6",
       "streamSha256": "ed2a3274edc9092547074120bac8f194320d86bfaa21989d4dd89c5cde525d1c",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
-      "verdict": "metadata_no_parseable_title",
-      "observations": []
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Krasnaja Plesen'",
+          "titleSha256": "6a8c539e454f50d67f5decc8903051003a44a5da71a199ac08ddb23308ba6238"
+        }
+      ]
     },
     {
       "stationuuid": "3446b04f-839f-4367-b119-b85842787b97",
@@ -293,7 +341,7 @@
       "stationuuid": "575c08a2-4325-4173-8373-b922c7438436",
       "streamSha256": "da95f8dfefcfb2cba1e77a27368b78c9ccc1b20a6055a347dcd23644e3ebadb9",
       "observedDate": "2026-11-25",
-      "observedInScan": true,
+      "observedInScan": false,
       "approved": false,
       "publicationAllowed": false,
       "verdict": "metadata_no_parseable_title",

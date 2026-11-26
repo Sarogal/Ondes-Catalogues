@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "scanDate": "2026-11-25",
+  "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedLogoCount": 0,
-  "candidateCount": 161,
-  "attemptedSourceCount": 0,
+  "candidateCount": 160,
+  "attemptedSourceCount": 7,
   "decodedCandidateCount": 26,
   "retainedEvidenceCount": 0,
   "records": [
@@ -32,7 +32,7 @@
       "stationuuid": "0231aca1-4e0c-41e4-9b17-74538f1d3c25",
       "sourceClass": "missing_source",
       "sourceSha256": null,
-      "audioEvidenceRank": 1,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
       "publicationAllowed": false,
@@ -42,7 +42,7 @@
       "stationuuid": "035ed365-f6dc-46a2-901d-7ac97880e875",
       "sourceClass": "same_reported_host",
       "sourceSha256": "0a6e72dcaad1c4f37ef7172fa08b617ad6a215d62479ff9dbc5c91143e3099c7",
-      "audioEvidenceRank": 1,
+      "audioEvidenceRank": 2,
       "retrieval": "decoded_unapproved",
       "logoApproved": false,
       "publicationAllowed": false,
@@ -68,7 +68,7 @@
       "stationuuid": "05412426-3d22-4e8e-bee0-92b71dac20ff",
       "sourceClass": "external_image_host_review",
       "sourceSha256": null,
-      "audioEvidenceRank": 1,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
       "publicationAllowed": false,
@@ -78,7 +78,7 @@
       "stationuuid": "0abce032-b825-46fb-96a4-016d75420ade",
       "sourceClass": "external_image_host_review",
       "sourceSha256": null,
-      "audioEvidenceRank": 1,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
       "publicationAllowed": false,
@@ -118,7 +118,7 @@
       "stationuuid": "10d01aca-f5de-4591-b4e0-441ce8e1ddfe",
       "sourceClass": "same_reported_host",
       "sourceSha256": "2329b687a7b7a5595fc1e1805d450754ec9521ca569632ae51c1a055c7f41672",
-      "audioEvidenceRank": 1,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
       "publicationAllowed": false,
@@ -128,7 +128,7 @@
       "stationuuid": "11d1fe19-b237-4bfc-95fb-fd9757f40916",
       "sourceClass": "missing_source",
       "sourceSha256": null,
-      "audioEvidenceRank": 1,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
       "publicationAllowed": false,
@@ -148,7 +148,7 @@
       "stationuuid": "125f0f3a-4833-4e2d-856a-106fba6cd6cd",
       "sourceClass": "external_image_host_review",
       "sourceSha256": null,
-      "audioEvidenceRank": 1,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
       "publicationAllowed": false,
@@ -158,7 +158,7 @@
       "stationuuid": "143ff518-5d57-4bf0-9859-e82af365a771",
       "sourceClass": "query_source_review",
       "sourceSha256": null,
-      "audioEvidenceRank": 1,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
       "publicationAllowed": false,
@@ -168,7 +168,7 @@
       "stationuuid": "14516140-aa4b-4462-997e-bb6a36ae7780",
       "sourceClass": "query_source_review",
       "sourceSha256": null,
-      "audioEvidenceRank": 1,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
       "publicationAllowed": false,
@@ -188,7 +188,7 @@
       "stationuuid": "158a3876-cbad-406c-b69e-edac38ae71d6",
       "sourceClass": "same_reported_host",
       "sourceSha256": "93b9bdc5ae8590c7a39fcdf826823cf2462b4007ff2829890cc91a8f83744236",
-      "audioEvidenceRank": 1,
+      "audioEvidenceRank": 2,
       "retrieval": "decoded_unapproved",
       "logoApproved": false,
       "publicationAllowed": false,
@@ -224,18 +224,18 @@
       "stationuuid": "165c260d-de4a-4728-a1dc-2ae56cad10ec",
       "sourceClass": "same_reported_host",
       "sourceSha256": "6510210d3cb784ae740cd8f9097f4c3d933b1510da4c4cd40b9a2a001468c7dc",
-      "audioEvidenceRank": 1,
+      "audioEvidenceRank": 2,
       "retrieval": "failed_review",
       "logoApproved": false,
       "publicationAllowed": false,
       "observedInScan": true,
-      "observedDate": "2026-11-25"
+      "observedDate": "2026-11-26"
     },
     {
       "stationuuid": "16b32eac-febf-49ee-85e4-06b559c78b96",
       "sourceClass": "unsafe_or_unsupported_source",
       "sourceSha256": null,
-      "audioEvidenceRank": 1,
+      "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
       "publicationAllowed": false,
@@ -245,7 +245,7 @@
       "stationuuid": "1914384c-d876-46c7-a6cf-a4ec4853bb2f",
       "sourceClass": "missing_source",
       "sourceSha256": null,
-      "audioEvidenceRank": 1,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
       "publicationAllowed": false,
@@ -275,7 +275,7 @@
       "stationuuid": "1e27d1d8-7720-46b7-ab9e-f456a432420a",
       "sourceClass": "external_image_host_review",
       "sourceSha256": null,
-      "audioEvidenceRank": 1,
+      "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
       "logoApproved": false,
       "publicationAllowed": false,
@@ -388,6 +388,16 @@
       "observedInScan": true
     },
     {
+      "stationuuid": "341376c9-ce9e-4377-aaf8-a791d42cf567",
+      "sourceClass": "missing_source",
+      "sourceSha256": null,
+      "audioEvidenceRank": 2,
+      "retrieval": "not_attempted",
+      "logoApproved": false,
+      "publicationAllowed": false,
+      "observedInScan": true
+    },
+    {
       "stationuuid": "3446b04f-839f-4367-b119-b85842787b97",
       "sourceClass": "same_reported_host",
       "sourceSha256": "a0c1a9c45dc2ba51e8c3fb02e0530a71c06a1b3c53abac01bf4bc36547424be5",
@@ -396,7 +406,7 @@
       "logoApproved": false,
       "publicationAllowed": false,
       "observedInScan": true,
-      "observedDate": "2026-11-25"
+      "observedDate": "2026-11-26"
     },
     {
       "stationuuid": "35080d89-d7b9-4e1e-af80-ae4a50420f67",
@@ -417,7 +427,7 @@
       "logoApproved": false,
       "publicationAllowed": false,
       "observedInScan": true,
-      "observedDate": "2026-11-25"
+      "observedDate": "2026-11-26"
     },
     {
       "stationuuid": "36d2f90a-baf1-4abb-bf7b-55536d606f93",
@@ -458,7 +468,7 @@
       "logoApproved": false,
       "publicationAllowed": false,
       "observedInScan": true,
-      "observedDate": "2026-11-25"
+      "observedDate": "2026-11-26"
     },
     {
       "stationuuid": "3cf8f90f-0776-44ef-ac57-1eb446abfbe4",
@@ -693,16 +703,6 @@
       "observedDate": "2026-11-25"
     },
     {
-      "stationuuid": "575c08a2-4325-4173-8373-b922c7438436",
-      "sourceClass": "external_image_host_review",
-      "sourceSha256": null,
-      "audioEvidenceRank": 2,
-      "retrieval": "not_attempted",
-      "logoApproved": false,
-      "publicationAllowed": false,
-      "observedInScan": true
-    },
-    {
       "stationuuid": "59a3411a-e5bc-4ff9-9341-bb949f09a230",
       "sourceClass": "same_reported_host",
       "sourceSha256": "f92b7f8da7f0f08c71d60e9fed934e428d4eae39dd92863e3b024772d19d90ee",
@@ -741,7 +741,7 @@
       "logoApproved": false,
       "publicationAllowed": false,
       "observedInScan": true,
-      "observedDate": "2026-11-25"
+      "observedDate": "2026-11-26"
     },
     {
       "stationuuid": "6014fd73-f56c-43e3-9c7b-43ef280f278f",
@@ -906,16 +906,6 @@
       "observedInScan": true
     },
     {
-      "stationuuid": "7c97b62b-88b5-4c75-a265-f225b531ad00",
-      "sourceClass": "external_image_host_review",
-      "sourceSha256": null,
-      "audioEvidenceRank": 2,
-      "retrieval": "not_attempted",
-      "logoApproved": false,
-      "publicationAllowed": false,
-      "observedInScan": true
-    },
-    {
       "stationuuid": "7e8fd698-c935-4b56-8808-d4aafcef38eb",
       "sourceClass": "same_reported_host",
       "sourceSha256": "b179d9cff64e8bd2334fa5a43851bc301ac4861f9082aefbaf7d5f10c4cd7490",
@@ -1032,7 +1022,7 @@
       "logoApproved": false,
       "publicationAllowed": false,
       "observedInScan": true,
-      "observedDate": "2026-11-25"
+      "observedDate": "2026-11-26"
     },
     {
       "stationuuid": "913fc253-fd99-4f0e-a215-f7751bbed27a",
@@ -1353,7 +1343,7 @@
       "logoApproved": false,
       "publicationAllowed": false,
       "observedInScan": true,
-      "observedDate": "2026-11-25"
+      "observedDate": "2026-11-26"
     },
     {
       "stationuuid": "c9e17187-7b9f-48af-8454-0cf8462302c7",
@@ -1644,7 +1634,7 @@
       "logoApproved": false,
       "publicationAllowed": false,
       "observedInScan": true,
-      "observedDate": "2026-11-25"
+      "observedDate": "2026-11-26"
     },
     {
       "stationuuid": "e98a9578-6006-4611-af89-f80d1bf13817",

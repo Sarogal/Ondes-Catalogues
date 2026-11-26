@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "scanDate": "2026-11-25",
+  "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 19,
-  "dueNameCount": 17,
-  "attemptedCount": 2,
+  "observedNameCount": 24,
+  "dueNameCount": 21,
+  "attemptedCount": 3,
   "serviceFailure": "http_503",
-  "retryAfterKey": "poison",
+  "retryAfterKey": "the futureheads",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -38,6 +38,22 @@
       "artistName": "Panda Bear, Cindy Lee",
       "source": "musicbrainz",
       "checkedAt": "2026-11-25",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "rage": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Rage",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "shadow la sombra": {
+      "status": "not_found",
+      "artistName": "Shadow La Sombra",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
       "identityVerified": false,
       "publicationAllowed": false
     }

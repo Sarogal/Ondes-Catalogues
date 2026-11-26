@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "scanDate": "2026-11-25",
+  "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 19,
-  "dueNameCount": 19,
+  "observedNameCount": 24,
+  "dueNameCount": 20,
   "attemptedCount": 6,
   "serviceFailure": null,
   "retryAfterKey": null,
@@ -54,6 +54,83 @@
       "artistName": "Dead End Tragedy",
       "checkedAt": "2026-11-25",
       "source": "wikidata",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "fuzz kill radio": {
+      "status": "not_found",
+      "artistName": "Fuzz Kill Radio",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "howard jones": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Howard Jones",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "johnny hates jazz": {
+      "status": "name_hypothesis",
+      "qid": "Q1294961",
+      "genresById": {
+        "Q187760": "new wave",
+        "Q484641": "pop rock"
+      },
+      "musicbrainzIds": [
+        "1cf1db8f-06bc-4c02-a608-4fc7980bbfcc"
+      ],
+      "sourceUrl": "https://www.wikidata.org/wiki/Q1294961",
+      "genreSource": "wikidata-P136",
+      "artistName": "Johnny Hates Jazz",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "klaxons": {
+      "status": "name_hypothesis",
+      "qid": "Q840882",
+      "genresById": {
+        "Q1643549": "dance-punk",
+        "Q183504": "indie rock",
+        "Q1899347": "post-punk revival",
+        "Q1995980": "new rave",
+        "Q325504": "electronic rock"
+      },
+      "musicbrainzIds": [
+        "63011a8d-0117-4f7e-9991-1ef1f337ff70"
+      ],
+      "sourceUrl": "https://www.wikidata.org/wiki/Q840882",
+      "genreSource": "wikidata-P136",
+      "artistName": "Klaxons",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "krasnaja plesen'": {
+      "status": "not_found",
+      "artistName": "Krasnaja Plesen'",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "lars frederiksen and the bastards": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Lars Frederiksen And The Bastards",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     }

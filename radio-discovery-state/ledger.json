@@ -1,72 +1,72 @@
 {
   "schemaVersion": 1,
-  "scanDate": "2026-11-25",
+  "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "automaticallyApprovedCount": 0,
-  "newCandidateCount": 0,
-  "reobservedCandidateCount": 271,
-  "notSeenTodayCount": 1,
+  "newCandidateCount": 1,
+  "reobservedCandidateCount": 269,
+  "notSeenTodayCount": 3,
   "records": [
     {
       "stationuuid": "01707580-90b4-47cd-9a46-2954e457ea8f",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Sprawl FM - RAVE | Hardcore, Breakbeat, Jungle, Acid",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "electronic_context_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "017f1b35-7330-4ccc-a8eb-0544a7a9b611",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "MIX Hard Rock (iHeart Radio) - Online - ACIR Online / iHeart Radio - Ciudad de México",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "0231aca1-4e0c-41e4-9b17-74538f1d3c25",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "New Release Underground",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "02950ba8-2fa9-4031-8f4f-d712ce543151",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Thrash Metal (48)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "035ed365-f6dc-46a2-901d-7ac97880e875",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "AIRWAVE",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "03cfdf69-e231-4b0b-ab87-ec091ff91ba8",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Morcote International",
       "lastStatus": "needs_stream_check",
       "duplicateRisk": false,
@@ -76,30 +76,30 @@
     {
       "stationuuid": "05412426-3d22-4e8e-bee0-92b71dac20ff",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Punk Rock Demonstration",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "091790a1-0f81-4cac-abd4-40a1c437cf3d",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Rockaxis Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "097d69bb-4abe-11e8-9b06-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "FluxFM - Hard Rock",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -109,8 +109,8 @@
     {
       "stationuuid": "09a241fa-4abc-11e8-9b06-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "FluxFM - Hard Rock",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -120,52 +120,52 @@
     {
       "stationuuid": "0abce032-b825-46fb-96a4-016d75420ade",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadioU Battery",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "0bc40b21-cd89-4dcb-ad47-18528395168a",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "[GTA IV] Liberty City Hardcore [GTARadio.net]",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "0ccdab5a-e2d4-46c1-988e-00bb53378b33",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Flux Hard Rock FM (320)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "0cd363a2-d26f-4957-bc69-9b1f85b5f173",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Q104.3",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "0de271e3-7a23-4641-9b91-c93dffeede41",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Nu Metal Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -175,85 +175,85 @@
     {
       "stationuuid": "0e27d390-e237-4ff7-b1c9-998853879d89",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Heavy Metal History Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "0f95c125-91d0-4a8d-986e-6ae02d97eacf",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "FIP Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "0f98ed94-dfc5-4f77-85ea-0b0766dca061",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "idobi Howl",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "10d01aca-f5de-4591-b4e0-441ce8e1ddfe",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "WYML 99.9",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "11d1fe19-b237-4bfc-95fb-fd9757f40916",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Bates FM Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "11ebd6e7-4b9f-4c93-afcd-bca082bb82a6",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Church Punks",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "125f0f3a-4833-4e2d-856a-106fba6cd6cd",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "M&N RADYJO",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "130aaa5a-c509-4fb6-81ba-6da569ba8f3f",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Progressive Heavy Metal",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -263,339 +263,350 @@
     {
       "stationuuid": "143ff518-5d57-4bf0-9859-e82af365a771",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Q103.3 KTMQ",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "14516140-aa4b-4462-997e-bb6a36ae7780",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Louder Than War",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "14bd61af-81e2-44ea-b1cc-8d8a940e0386",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Horror Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "158a3876-cbad-406c-b69e-edac38ae71d6",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "KNON Now - Dallas",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "16166094-b6d7-4382-bcb4-8a61f63a8427",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Doom Stew Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "1628187c-e965-4593-8f36-719c3dd9ad9b",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Hard Rock FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "163d3e33-2bbf-497d-b1f5-e2cdb58efc40",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "165c260d-de4a-4728-a1dc-2ae56cad10ec",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "HEAVY.RADIO -- Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "16b32eac-febf-49ee-85e4-06b559c78b96",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Insane Realm Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "18c4a5d4-b2d8-4233-bd84-a2d0369bc515",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Ad Infinitum",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "1914384c-d876-46c7-a6cf-a4ec4853bb2f",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Booty Bay Pirate Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "193ce893-b2f4-11e8-afe1-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - AOR / Melodic Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "1c6dcd6f-88c6-4fd4-8191-078435168e85",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "BBC Radio 6 Music",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "1e27d1d8-7720-46b7-ab9e-f456a432420a",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Metal Hammer",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "1f86fce1-5d79-4c52-b06e-462cabb5da26",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Metal On: Toxic",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "1f951feb-544e-447b-8143-8b9656a46cf2",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "HearMe - Classic Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "1fa4d92d-9d07-42bb-b121-e82fd7092800",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Exclusively ZZ Top",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "211d6377-141d-46f7-8045-73b88d96b10b",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Diabolus",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "21a278fb-dac4-433f-aa80-7b74341fb012",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio BOB - Nu Metal (aac 64)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "21d284f0-00ce-4f38-8afd-854fd0c877e1",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "X Transmission FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "221e04bb-6d8a-4e13-a9b6-621561fc07f8",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Crust Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "24145371-b9df-485d-ac2d-3515899a5e3e",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Iron Voice Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "2425a3f7-0b2a-4b34-99de-14a65df9bd9d",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Gothic Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "25d7b677-a866-4b32-aabc-20fa43e2d479",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Virgin Radio Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "25de583d-8165-4a5f-8ba5-39861a77f943",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Fuzzy Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "2d8f653c-0709-42b0-bc76-71434a8d31b7",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Mutation",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "2eb49b46-e056-4628-80c3-f63f685d22a4",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "The Pit | NTS",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "2f76081c-dbf0-4b40-bb30-63987abe744e",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "High Fi Dream Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "30a09972-730a-42d8-8614-c9148b05992f",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Metal On: The Thrasher",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "32955656-5a38-40c0-ab1f-e059496bfda6",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Russian Punk Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "32bac5f0-58bc-445a-8e54-8ce9ba7f48df",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Ska Punk",
+      "lastStatus": "candidate_requires_qualification",
+      "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
+      "repeatedObservation": true
+    },
+    {
+      "stationuuid": "341376c9-ce9e-4377-aaf8-a791d42cf567",
+      "firstSeen": "2026-11-26",
+      "lastSeen": "2026-11-26",
+      "seenDays": 1,
+      "name": "Lavarox Main",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
@@ -604,63 +615,63 @@
     {
       "stationuuid": "3446b04f-839f-4367-b119-b85842787b97",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "__12PUNKS.FM__ by rautemusik (rm.fm)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "35080d89-d7b9-4e1e-af80-ae4a50420f67",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Virgin Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "351d5685-f5e6-47f4-9cbb-9e82b3930621",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "DankFM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "36d2f90a-baf1-4abb-bf7b-55536d606f93",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "3738fc9e-2c16-11e8-91bf-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Thrashking Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "39e76148-a05a-4ced-852d-2184e0158c67",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RADCAP: ATMOSPHERIC / AMBIENT BLACK METAL",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -670,41 +681,41 @@
     {
       "stationuuid": "3a1ecb1c-36a5-4f01-97ca-7103c9b721ce",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Nocturne Vault Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "3a363c7c-0b66-4d78-9972-e62ab56ee61c",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Rock Antenne Punkrock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "3a40f5fc-8ba3-4177-a145-b1f90dfb06d5",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "KBHQ-LP \"Q-Rock 100.7\" Harrison, Arkansas",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "3a8d4240-6ee9-4b04-aca5-e607feb005bf",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Hard Rock Heaven",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -714,30 +725,30 @@
     {
       "stationuuid": "3a9a9083-7d62-43ac-8ca0-1e74e3ba81b2",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "CRnet Hard Rock (32)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "3ac98fee-f280-4cb4-ad48-749879522383",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Metalcore",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "3bd970e6-6f77-49a3-9546-3aff74fd945b",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Nu Metal (128)",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -747,63 +758,63 @@
     {
       "stationuuid": "3cf8f90f-0776-44ef-ac57-1eb446abfbe4",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Ska Punk / Core / Two Tone",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "3e3087e8-1da2-11ea-a955-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio BOB Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "3e416d41-3433-4f74-bb32-c224bda34016",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Paranoid",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "40386f09-7c9b-470e-b6df-03b4a1f30f70",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "De Tijdloze",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "418b964f-a3df-4b72-a2ff-173ec7e1c1ff",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Kyclops Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "41e4522c-2cbb-4cb6-9976-fe2182d01bad",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Svartkrog Black Metal Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -813,118 +824,118 @@
     {
       "stationuuid": "42b89f69-bff0-48ba-ae66-a554e84414d7",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "SomaFM Metal Detector (32k AAC)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "4340f942-c877-4b60-9d2e-e628db62f761",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Metal Zone Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "437256ca-cd34-41fc-bb5d-2d931b402959",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Thrash Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "44088288-7ad1-44a7-8ec5-d8c210099c12",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "3Chords allez Ist Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "4488dc76-a690-4e51-a46c-3600be8195c4",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Spoon Radio - Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "44cbb6d8-3217-11ea-afca-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Nu Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "45c0d067-75b7-4714-a5dd-aeae2e4e9023",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Nova + KK Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "470db048-0b74-45e8-90af-b9193874bef5",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Pagan Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "47278da2-b2c1-4f1b-90ac-e8ffb4918cfb",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "True Black Metal Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "480bcec1-ac7d-4424-8a0b-2a5fc23643de",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "laut.fm - Endzeit FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "48ef4f66-ffba-4397-b1ba-731572ad37d8",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Sonora Classic Rock (Hard & Metal)",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -934,140 +945,140 @@
     {
       "stationuuid": "4a4f979d-b3e6-48c8-9957-cd3a263023c3",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Metal Radio GR",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "4b473070-a3c2-41bd-8d98-c2db5f5954bc",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Rock Antenne Heavy Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "4dc166c7-acde-405e-b134-eba17c514215",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RADIO BOB Classic Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "4e3c3bc3-7d48-4a20-84cc-509d3e2cea14",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Freies Radio FRATZ - Flensburg",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "4f30ac19-4a41-40cb-8999-2ca19b34711e",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Boomerang",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "4f420bd6-f547-4d84-acb1-0526f5263151",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Metal FM Lebanon",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "517b189e-46eb-4156-bf93-905f7934c838",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Dance Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "53cf8dd0-be8f-4186-96d2-767e751459a4",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Punk4Punks Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "53f8aadb-cb61-4132-9240-dac5b76e0095",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "СИБИРСКАЯ СТАНЦИЯ 2.0",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "542c83b8-7465-46e9-a083-c2cc417d315d",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "KracRadio Post-Punk & Cold Wave",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "5446f9e0-25d9-4be1-824d-72fba2037554",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "REAL PUNK RADIO",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "54645bcf-0356-4680-bbae-457a9906dcbe",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Alt Xmas (Stupid Potato)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "548724bd-78e1-41a9-8b5c-09ecb8a7d79a",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Hotmix Hard Rock",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -1077,13 +1088,13 @@
     {
       "stationuuid": "5676ffa5-d687-4df9-823b-ecd591caa4ee",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Exclusive - Scorpions",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "575c08a2-4325-4173-8373-b922c7438436",
@@ -1099,261 +1110,261 @@
     {
       "stationuuid": "59a3411a-e5bc-4ff9-9341-bb949f09a230",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Dogmazic Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "5c885f44-2c9e-4485-a8bb-b858f06eaff6",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "delta radio HARD ROCK & HEAVY METAL",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "5c8f8628-58bd-433b-b3a2-9bdd63e64cef",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "ROCK 957",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "5e9f7c0a-a1ef-4739-b115-dad73cfbf404",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "We Love the Eighties Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "5fea1af2-8488-4213-a744-11ce452c8e25",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Depressive Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "6010ee2f-c88e-4ee6-a2a1-1c1526cc48ca",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Studio Brussel Zware Gitaren",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "6014fd73-f56c-43e3-9c7b-43ef280f278f",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Rock The World - Punk Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "6175fc5c-9a42-4c33-84b5-0b44d322a5e1",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Progressive Rock and Metal (PRM)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "62ef2552-35e9-433a-b747-efdae52bfe4f",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Weymouth Rocks (Medium Bitrate)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "6424a5b9-1401-415c-a243-6da3fc06dd47",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "SomaFM Metal Detector (64k AAC)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "652a2fa1-d3fe-4724-a3eb-3d6b7fb1e687",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "0R - 80s ROCK || Classic Rock, Hard Rock, Pop Rock, Rock Hits, Guitar, Ballads, Hair Metal, Rock Anthems, Retro, Vintage, Arena Rock, Party Rock, Rock Classics, Melodic Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "679e5c4f-740d-4c92-9d22-0d7948c5910d",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Deecibel Rock Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "6928b97f-56f2-459e-b7e8-d76997fd9802",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Russian Punk rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "69bc015f-acfd-4175-af3b-bbc131c5bee1",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "hard rock FM surabaya",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "6a3184d6-5f22-44c4-956e-715ec8c0ff88",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "DrGnu - Death Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "6bd67acb-e99e-4673-8270-19d55935be2a",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Mosh Head Black Metal ID",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "6c2ec0d6-31af-40f0-ae97-0a0071b3f519",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Pagan Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "6c3a79d6-2315-44c8-81df-f8aa5a7458cd",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "PunkRockRadio.ca",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "6fc8bce6-0ab9-4d0a-a703-992634eddf61",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - BEATDOWN / MOSHCORE / DOWNTEMPO HARDCORE / METALCORE",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "70051d2a-30a3-40b1-8b3a-c2fd74dc8455",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "DrGnu - 20th Century Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "71533d67-4674-4614-b988-eeff27f68ce9",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "666 Forgotten Castle",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "716d0d91-4c12-4bd6-bf7e-e5173ef40d39",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "0nlineradio METAL",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "720feb78-4dec-4c6a-879f-f7cfa7e50c2c",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "rock.irk.ru :: main-mix",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "7264e476-09d5-4dc0-8580-bf8cc2070265",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Beacon NXT",
       "lastStatus": "needs_stream_check",
       "duplicateRisk": false,
@@ -1363,19 +1374,19 @@
     {
       "stationuuid": "753d2e38-194f-4fb0-9918-4263c6119188",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Indie X FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "75561fa6-d7b7-4055-a3d2-77902a776cf3",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "AI Metal Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -1385,90 +1396,90 @@
     {
       "stationuuid": "76200b90-939a-46ad-9b37-069f32ba4366",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RADIOACTIVO 98 1/2: Fuck Everyone Else!",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "77337406-99c4-11e9-a605-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Punk4all",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "77e35147-7bdd-4b4c-a200-3f69d7804208",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Symphonic Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "7912f9a4-750e-4575-8718-37a2a2edfb16",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Hard Rock Hell Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "795e1e3f-8b5a-414a-bb28-a53164c27c71",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Post Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "7a2996c6-adf0-4f1d-8eb9-225bc90e7a34",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Inferno FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "7a7d4983-a650-4653-8b00-e9f705731ae2",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "MaximusRockFM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "7bb4134f-99c9-4b72-ad72-5a03380d1270",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "radiodellaconcia-rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "7c97b62b-88b5-4c75-a265-f225b531ad00",
@@ -1484,57 +1495,57 @@
     {
       "stationuuid": "7d911013-c936-4403-9736-9266303dd100",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "ChroniX AGGRESSION",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "7e8fd698-c935-4b56-8808-d4aafcef38eb",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Hard Rock by Rock FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "7fb7fbd4-c5f7-11e9-8502-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "FLUX FM Hard Rock FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "80747ce9-cb13-44f5-9691-b68d03cdd05e",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RockRadio32",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "814ff1ae-7f10-46d8-8784-d60be8a43365",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "DJ 666 Geordieblackcore",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "81f64f21-cf21-4d4f-83cc-0374a9f6f98e",
@@ -1550,41 +1561,41 @@
     {
       "stationuuid": "85131571-aa06-4e14-82d4-0c34d6fed6bc",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RADIO BOB! 2000er Rock [64 kbit/s AAC]",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "853963f2-ec56-4e9a-a67c-a25682902781",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Avantgarde Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "853ef384-382a-4556-8193-d265b56fe19a",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Viking Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "8677e3a3-291f-4608-9c50-5a9f50e91b0e",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Tangra Mega Rock",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -1594,96 +1605,96 @@
     {
       "stationuuid": "87ef9042-ae9a-4994-8900-026cb0dd6420",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Gold Radio UK/Metal Radio UK",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "89345b47-66c4-45c2-a1d5-b411080d2327",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Smash",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "8b2a827f-963b-4b07-80d6-5051e9e09411",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "The Wolf 104.9 (CFWF)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "8bfd74c2-c254-4e9b-ba58-94248ddd767e",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio SAR - Studencka Agencja Radiowa",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "8c150c94-fe1d-4be8-93cf-fd585a300541",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Rock Connection 77 CLOUD",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "8cd43257-3c70-4e85-92cb-d2728b296814",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "HARD ROCK PALACE",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "8d86b9d5-0afc-4063-8b90-e0351d5aa464",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Space Coast Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "8decb3ad-234d-4535-b66e-c40f0cc2179b",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "HEAVY.RADIO -- Punkrock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "8e176e3e-dc3e-45c6-97bf-82e422af99fe",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Hotmix Hard Rock",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -1693,8 +1704,8 @@
     {
       "stationuuid": "8ee4015a-80e3-42dc-b3da-6a3dce3dd57f",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "AI Metal Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -1704,52 +1715,52 @@
     {
       "stationuuid": "913fc253-fd99-4f0e-a215-f7751bbed27a",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Rockcorner",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "949aec8c-2342-4f02-9312-e3f74cf840f6",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Thrash Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "955166e9-1bd6-4cd2-841f-fb7eeb09e1dc",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Captain Baltimore - Pop, Rock and Alternative",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "960c4c2a-0601-11e8-ae97-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Rock Antenne - Punk Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "960cccb6-0601-11e8-ae97-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "punkrockers-radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -1759,30 +1770,30 @@
     {
       "stationuuid": "960de41d-0601-11e8-ae97-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "SomaFM Metal Detector (128k AAC)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "961185f5-0601-11e8-ae97-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "ChroniX Radio Metalcore",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "9618ac6b-0601-11e8-ae97-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Tangra Mega Rock",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -1792,30 +1803,30 @@
     {
       "stationuuid": "9618c802-0601-11e8-ae97-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RADIO BOB! BOBs Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "961f85c0-0601-11e8-ae97-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio todamax",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "962369ac-2036-4458-abe4-130639cd1c4d",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Sonora Classic Rock (Hard & Metal)",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -1825,52 +1836,52 @@
     {
       "stationuuid": "9626d6b0-0601-11e8-ae97-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "core-mix",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "9628a108-0601-11e8-ae97-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "2000 FM - Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "962caa2a-0601-11e8-ae97-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Christian Hard Rock Dot Net",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "962e7288-0601-11e8-ae97-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "96336b01-0601-11e8-ae97-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Hard Rock Heaven",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -1880,30 +1891,30 @@
     {
       "stationuuid": "96427c67-0601-11e8-ae97-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "96474790-0601-11e8-ae97-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Thrash Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "96ab0427-9398-453d-ac18-a3c5272d5305",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Progressive Heavy Metal",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -1913,74 +1924,74 @@
     {
       "stationuuid": "981237b0-253c-4be9-81ce-6fcb86006733",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "WHYP-LP \"Channel 98.9\" Corry, Pennsylvania",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "98e39928-1801-414c-b6e7-dd7b58614dd6",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "METAL BROTHERS",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "9a5811ad-f4b5-11e8-a471-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "SomaFM Metal Detector (128k MP3)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "9ac79860-890d-4e0a-953e-30698602e294",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Gadingharjo Core",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "9afeaf65-bb57-4d76-892d-c7a39fc6c805",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Hard Rock Radio FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "9b198e36-57eb-4107-8412-97221333f531",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "punk irratia",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "9b9e2a34-e56d-4d57-88b5-3084a5676175",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Josema Metal Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -1990,19 +2001,19 @@
     {
       "stationuuid": "9c634ba6-a5f2-47e5-858b-d4deff8071b8",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Latehome Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "9cfe095b-edea-4d05-945f-1487223a892c",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Atmospheric Ambient Black Metal",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -2012,19 +2023,19 @@
     {
       "stationuuid": "9f402596-35bd-4184-a1de-29b6050cef16",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Folk Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "a1f18162-da2b-419e-9e86-72a81e508a40",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Punkrockers Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -2034,129 +2045,129 @@
     {
       "stationuuid": "a2287e74-7d5d-4279-8acb-1e2c5e09e14f",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Metalourgio Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "a2d00de3-cd16-46c8-ac30-9e79e294cf47",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Melodic Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "a3f97919-2519-4e58-b0b4-386d1402e367",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Exclusively Daft Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "a46b9381-f9d3-434f-be79-ea9a027ca87d",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Australian Digital Radio Network - Punk and Metal Mix (MP3)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "a6464432-710b-4f8a-948e-b9c1278dff77",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Pop Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "a6a99730-3118-49ab-ad52-f15d596ef359",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "MOTORADIO, Low AAC 24 kbps",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "a827152a-7b7a-454d-ae12-5c34a367e353",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "laut.fm - Dark Sound United",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "ab55d4aa-01db-46c6-9934-288828374ea1",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Rock Antenne - Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "abef736c-5c50-4a73-b9fa-2204efde081d",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Nu Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "aca299dd-d28d-43e4-a731-beed1a532fec",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Hotmix meal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "ad0f6199-f729-4fb1-b19c-e2c6fd545ff9",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "HITS MUSIC RADIO ROCK",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "ae42a700-4abb-11e8-9b06-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "FluxFM - Hard Rock",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -2166,129 +2177,129 @@
     {
       "stationuuid": "aeb82637-ba20-4cee-9072-50cab4f9e723",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Hard Rock Heaven",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "b2eb04cc-2788-4e09-81db-9a13d79a6df0",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "ROCK FM METAL",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "b3d7cfa7-8860-4bac-9626-e4eeafece502",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "KracRadio Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "b3fc8944-1a27-46ec-a446-ca960d88a13a",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "zzz-rock-zzz",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "b4d40bd6-311f-42cf-b8db-595e4b64053f",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "NRJ Métal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "b5042009-fd94-4b87-9b6a-0b4779129d4e",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Bob! Nu Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "b6b231d4-bd2f-4127-995f-670ce4b3178a",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Symphonic Gothic Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "b980ea76-8772-43af-8e4a-06eb2e8dfd75",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Rock The Bones Radio - Rock & Metal Chile",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "bb38c058-7757-48e7-a73e-ccdc4fad7d2e",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Rock (NO)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "bc59bb52-9386-4c3d-a2bf-782756bea3fa",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Hotmix Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "bd0dc889-b736-4b75-a35b-70a606482a47",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Music Radio Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "bd8a6b13-7a0e-4a07-b4bb-ed6c18aab910",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Tangra Mega Rock",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -2298,569 +2309,569 @@
     {
       "stationuuid": "bee55fe5-930a-4914-a8c8-573625112522",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Long Tracks Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "c06d26a0-75b3-4a93-a680-e3f3ea3f1f68",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Crossover Thrash Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "c117353b-a26a-47c6-a060-67eb17affc17",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Narcan",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "c123bef5-256a-427f-a942-570ae9836f68",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio La Metro Stereo 88.5 FM Quito / 95.7 FM Guayaquil",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "c16ffe2f-a305-4f11-9d85-0aa615b9ed04",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Q 103.3 - Rockin' the Temecula Valley!",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "c22f97d4-26b6-46ac-a415-54b1bdd85f0d",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "AItocha Rock (AI music)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "c2a05b77-3a27-48cb-9e39-6139c3045fd0",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio BOB - Nu Metal (mp3 192)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "c62a1cf3-dd53-4f8d-ab12-3567faa4f59f",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "The Rock! (Hard Rock)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "c79485f1-013e-46ec-a2ef-8eb3cef2d6dd",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Známka Punku",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "c91b66dd-0797-4662-a5d3-f406ffc32da8",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "BurnFM - musik intensiv!",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "c9e17187-7b9f-48af-8454-0cf8462302c7",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Real Rock Revival",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "ca49faf6-2688-4e8e-9b8e-b39f5d6f792e",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Rádio Metal Heads",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "cbb233ad-fad1-46e1-b89b-9389f457f204",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "La Antiradio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "cdf04cf7-efe0-4242-baa3-c8bb0e78e3ba",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Gothic Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "cea9bece-6c51-47a0-bcf9-02b1377824b2",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "KracRadio Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "cee76738-4ff5-478f-8810-5e0a8edfcbd9",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Depressive Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "cf7a3162-64a7-461c-a7c4-10660bc41e82",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Oi Punk Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "d0d9c01c-5e0d-11ea-be63-52543be04c81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "88.6 Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "d0df2a51-9cd3-4f3e-977d-aab92ddef7a3",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "# 100 GREATEST HEAVY METAL",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "d0fb00ac-db4b-467e-8ed5-b023c24cf213",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "MetalFM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "d27842b3-97d8-4be7-9152-503167301955",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "NRJ LINKIN PARK",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "d28fbc2f-b061-424d-8897-97ecfac7138b",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Maximum - Heavy Monday",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "d2a83065-4b07-4c1c-bc0c-75f7c29cfbe1",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Nevermore Radio - Nevermore Network",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "d2daef0d-83c7-4857-904c-cda1b05fe2e2",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "METALchet",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "d342e328-81bb-4026-9822-cd6c02313be0",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "KZAO \"Z89.3\" Ajo, Arizona",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "d469d86b-e0a7-45ac-aa94-6be76329ab82",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Haze Pub Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "d50796ae-a0e4-493f-b276-6b0a15b0c6dc",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "24-7 Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "d5c6fb79-1344-43bc-a995-6524620c61ba",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Hard Rock Halloween",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "d7ae2091-ed4a-4e61-aa56-4a1feb1a2a3d",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Best of Rock FM - Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "d7be93d3-067b-4056-8759-fdefc607cc17",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Rádio ROCK - Hard Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "da1715de-c1b0-4dd5-a469-c944c30bc2c7",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Flo",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "da7d7480-3616-4ba6-bf43-e086deb71d1a",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Real Rock Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "db4d6757-71c6-40fe-b768-3be8f9c11ba9",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Best Of Rock.FM Metallica (mp3-256)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "dccda812-d94d-4619-89d5-81ec9f5d75d0",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "PUNK FM",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "dd246659-bf2c-4e32-ae37-ba8c04a70597",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Folk Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "dd5dae31-c4ca-41c5-b943-8d8e7cb8c0e4",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Flatlines Radio Punk",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "dfd8fd13-bc8c-4f89-96c3-2c13a1e72b6e",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Rock Radio Metalomanie",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "e0069278-117c-4437-9c41-1ec614b702ca",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "radio.XES – Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "e22310aa-c0a7-49eb-abe8-4c125ac9c4ce",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "The Metallica Report",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "e29cbf8b-6727-487b-bb1a-33b0b99f5482",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Metal Radio UK",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "e45779db-541b-49af-a4d6-7ac84200a3f2",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "SUN Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "e48ec5f2-18eb-4b49-8b9c-e2533c390ae3",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RadCap - Punk 1",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "e4fc3a81-354d-420c-b204-affc7e307891",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Big R Radio - 80s Punk Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "e77ab056-eda4-4438-8e0f-6e8522e75343",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Ze Rock Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "e98a9578-6006-4611-af89-f80d1bf13817",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Rock Connection 77",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "ea272dde-9da1-4f42-aca7-981d91254af7",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "FreaksOnly",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "eb3041cd-69bc-41bd-b1e0-daf2a88fe190",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Laut.FM - Punk and Disorderly The 80s",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "eb9eca16-7202-42d1-9b16-65e7f2ba9713",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "RADIO BOB - Death Metal (aac-64)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "ebdaeaf7-bbcf-4136-bb44-0c644d0c7d69",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": ">> *TOP 100 CHARTS* <<  || Pop, Rock, Dance, House, Techno, Trance, Electro, Hip-Hop, Rap, RnB, Reggaeton, Latin, Jazz, Blues, Soul, Funk, Metal, Punk, Indie, Alternative, Chillout, Lounge, Ambient, Classical, Acoustic, Singer-Songwriter, P",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "ec5f9687-4dc2-4358-ad16-bed7a17cc0a0",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "105.1 rock TAO",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "ed02a49b-11e2-4de3-b279-279529290257",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Montiel Rock",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "ef38194d-10d6-403f-acf7-b5e268037fae",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Nu Metal Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -2870,19 +2881,19 @@
     {
       "stationuuid": "f210dca4-1171-43cb-b12f-1a40fcfbbc81",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Australian Digital Radio Network - Punk (MP3)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "f21e07bd-05fb-4102-b1db-74281596a15d",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Josema Metal Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -2892,41 +2903,41 @@
     {
       "stationuuid": "f27af422-8ec6-48eb-aa62-f73a1d629eb3",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "KCUT 102.9 Moab Rocks Community Radio - Moab, Utah",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "f2d38d55-01ef-4d78-9686-61f54d48ee03",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Heavy Metal Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "f4df535d-d65b-46ad-8498-df5b56a011c7",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "ROCK & METAL",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "f64559c4-faa2-4c17-b042-00ab4a921dfb",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Nu Metal",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
@@ -2936,63 +2947,63 @@
     {
       "stationuuid": "f8b1341f-2c88-4c86-bcb5-a820fa890221",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Midnight Madness Metal eradio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "f957a66c-9ed9-4d96-8878-0f6ca24504ec",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "CRnet Hard Rock (128)",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "f95f4310-ff8c-4106-9b8e-18f05e594f1f",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Vinyl-Valley Rock Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "fda05c36-b849-4eb6-8ddc-763a3c899e47",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Bandung Death Metal Syndicate",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "ff122908-8d92-4af9-81f8-69a8a89951ad",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Radio Caprice - Atmospheric/Ambient Black Metal",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "fffb8081-7382-45aa-b3a0-56e5b85b1b6b",
       "firstSeen": "2026-11-25",
-      "lastSeen": "2026-11-25",
-      "seenDays": 1,
+      "lastSeen": "2026-11-26",
+      "seenDays": 2,
       "name": "Svartkrog Black Metal Radio",
       "lastStatus": "needs_duplicate_review",
       "duplicateRisk": true,
