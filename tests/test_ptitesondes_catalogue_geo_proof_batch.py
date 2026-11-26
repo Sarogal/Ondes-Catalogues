@@ -192,3 +192,21 @@ class CatalogueGeoProofTests(unittest.TestCase):
         self.assertEqual(last["next_offset"], 0)
         self.assertEqual(reader.call_count, 5)
         self.assertEqual(last["public_writes"], 0)
+
+
+    def test_administrative_parent_is_verified_not_inferred(self):
+        from ptitesondes_catalogue_geo_proof_batch import administrative_unit_matches
+        g = {"city": "Paris", "department": "Paris (75)"}
+        row = dict(nom="Paris 20e Arrondissement", code="75120",
+                   codeDepartement="75", codeParent="75056")
+        reader = Mock(return_value=row)
+        self.assertTrue(administrative_unit_matches(g, "75056", "75120", reader))
+        reader.assert_called_once_with("75120")
+        reader.reset_mock()
+        self.assertTrue(administrative_unit_matches(g, "75056", "75056", reader))
+        reader.assert_not_called()
+        for other in ({}, dict(row, codeParent="75055"), dict(row, code="75119"),
+                      dict(row, codeDepartement="77"), dict(row, nom="")):
+            self.assertFalse(administrative_unit_matches(g, "75056", "75120",
+                                                         lambda _: other))
+        self.assertFalse(administrative_unit_matches(g, "75056", "77001", reader))
