@@ -107,3 +107,49 @@ class IndependentAcceslibreHintsTests(unittest.TestCase):
             old = dict(status=status, publication_ready=False)
             self.assertEqual(hinted_researcher({}, base=lambda *_: old, verify=verify)(group, DAY), old)
         verify.assert_not_called()
+
+
+    def test_missing_website_is_discovered_but_still_requires_independent_recheck(self):
+        from unittest.mock import Mock, patch
+        from ptitesondes_acceslibre_geo_hints import independent_hint_location
+        from ptitesondes_catalogue_geo_research import research_queue
+        from ptitesondes_catalogue_geo_rotation import identity
+        group = research_queue(DOC, DAY)["research_groups"][0]
+        report = scan(DOC, DAY, [dict(ROW, site_internet="")])
+        hint = report["hints"][identity(group)]
+        tags = dict(name=group["venue"], website="https://theatre.example/")
+        node = dict(type="node", id=1, lat=47.2, lon=-1.57, tags=tags)
+        osm = Mock(return_value={"elements":[node]})
+        reader = Mock(return_value="<html>venue</html>")
+        commune = lambda _: [dict(nom="Nantes", code="44109", codeDepartement="44")]
+        valid = dict(lat=47.2, lng=-1.57, official=ROW["site_internet"], geo_source="BAN + OSM")
+        with patch("ptitesondes_acceslibre_geo_hints._external_location", return_value=valid) as proof:
+            self.assertIsNotNone(independent_hint_location(group, hint, html_get=reader,
+                osm_get=osm, commune_get=commune))
+            proof.assert_called_once()
+            reader.assert_called_once_with(ROW["site_internet"])
+        with patch("ptitesondes_acceslibre_geo_hints._external_location", return_value=None):
+            self.assertIsNone(independent_hint_location(group, hint, html_get=reader,
+                osm_get=osm, commune_get=commune))
+        for objects in ([node, dict(node, id=2)], [dict(node, tags=dict(tags, website="http://127.0.0.1"))],
+                        [dict(node, tags=dict(tags, name="Another theatre"))]):
+            with patch("ptitesondes_acceslibre_geo_hints._external_location") as proof:
+                self.assertIsNone(independent_hint_location(group, hint, html_get=reader,
+                    osm_get=lambda _: {"elements":objects}, commune_get=commune))
+                proof.assert_not_called()
+
+    def test_same_host_event_page_is_discovery_not_authorization(self):
+        from unittest.mock import Mock, patch
+        from ptitesondes_acceslibre_geo_hints import independent_hint_location
+        from ptitesondes_catalogue_geo_research import research_queue
+        from ptitesondes_catalogue_geo_rotation import identity
+        group = research_queue(DOC, DAY)["research_groups"][0]
+        group["source_urls"] = ["https://other.example/event", "https://theatre.example/event"]
+        hint = scan(DOC, DAY, [ROW])["hints"][identity(group)]
+        reader = Mock(return_value="<html>venue</html>")
+        commune = lambda _: [dict(nom="Nantes", code="44109", codeDepartement="44")]
+        valid = dict(lat=47.2, lng=-1.57, official=group["source_urls"][1], geo_source="BAN + OSM")
+        with patch("ptitesondes_acceslibre_geo_hints._external_location", side_effect=[None, valid]):
+            self.assertIsNotNone(independent_hint_location(group, hint, html_get=reader, commune_get=commune))
+        self.assertEqual([c.args[0] for c in reader.call_args_list],
+                         [ROW["site_internet"], group["source_urls"][1]])
