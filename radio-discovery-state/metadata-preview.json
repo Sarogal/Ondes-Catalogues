@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 50,
-  "distinctArtistHints": 68,
+  "stationsWithArtistHints": 55,
+  "distinctArtistHints": 73,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -1207,6 +1207,108 @@
       ],
       "alternativeVersion": 0,
       "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "7bb4134f-99c9-4b72-ad72-5a03380d1270",
+      "streamSha256": "5cf0d299349864b9cd81061b34baec0700d2857f2b35db479e72788cb7614ef8",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Joy Division",
+          "titleSha256": "e329ff55271cb3a2697bf1dd9b275d2f12ceb877a24c949d0fb7848681ceb5c7"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "7e8fd698-c935-4b56-8808-d4aafcef38eb",
+      "streamSha256": "d7348572336110b900839f8108e8e2d873b3f3a5889a5a99516439ab01237e87",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Led Zeppelin",
+          "titleSha256": "531101b46acc9a6ad3f009af465889a676e3d02aa6e7a31b87b062302078bfd5"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "80747ce9-cb13-44f5-9691-b68d03cdd05e",
+      "streamSha256": "dd0810f5b1b406c43f3b3e40e75b90611b1f7355938e6e842a11d394a40fd65f",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Behemoth",
+          "titleSha256": "4c77e200dcf70dfc0576cfe778a4c13b9ff97b432dcbd2177681901b68f3c38d"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "87ef9042-ae9a-4994-8900-026cb0dd6420",
+      "streamSha256": "3db12730b755989de338f8a94c14d866f2c843226981e74ccf6d9f185038cdb4",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Dominum",
+          "titleSha256": "151680f179e1c68bc499afcf25f0bba2b541a2a00e1e8af376155305c8798556"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "89345b47-66c4-45c2-a1d5-b411080d2327",
+      "streamSha256": "165a13a1226ccdef638523312bc3d52272885bc6b9d989ccd71e7406b5a8c28e",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "The Ataris",
+          "titleSha256": "15ddb7f6dfc4b3bc390daa398b26f3bc4cd5c12008edfe787a95af6b86211200"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "8b2a827f-963b-4b07-80d6-5051e9e09411",
+      "streamSha256": "8eb7a79f93e0d5eb2c95e29081f253ac6777ce7b55c302bc09e180f666733e47",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "c123bef5-256a-427f-a942-570ae9836f68",
