@@ -10,6 +10,7 @@ from radio_daily_v9_generator import digest
 from radio_daily_publication_simulator import MemoryStore, verify_visible
 from radio_daily_live_inherited_artwork import recover_inherited, ArtworkUnavailable
 from radio_daily_live_state_migration import migrate_visible
+from radio_daily_lab_cycle import publish_cycle
 
 # Prefer recovery/repair of existing radios to additions or destructive merges.
 ORDER = ("repair", "status", "logo", "admission", "merge")
@@ -83,21 +84,11 @@ def combine_and_rehearse(pointer, raw, *, anchor, day, operations, state=None):
         report["outcome"] = "inherited_artwork_held"
         return report
     store = MemoryStore(lab_pointer, raw, legacy_logos=inherited)
-    args = dict(expected_sha=anchor["expected_sha"],
-                expected_sequence=anchor["expected_sequence"],
-                expected_candidate_sha=sha, day=day,
-                operations=selected, objects=objects)
     try:
-        result = publish_combined(store, signer, lab_pointer, raw, body, **args)
-        if not result["changed"] or result["sequence"] != anchor["expected_sequence"]+1:
-            raise ValueError("unexpected simulated publication")
+        result, _ = publish_cycle(store, signer, lab_pointer, raw, body,
+            anchor=lab_anchor, day=day, operations=selected, objects=objects)
         if store.current() != signed:
             raise ValueError("simulated pointer differs from verified signature")
-        verify_visible(store, store.current(), sha=sha,
-                       sequence=result["sequence"], signer=signer)
-        retry = publish_combined(store, signer, lab_pointer, raw, body, **args)
-        if not retry.get("resumed") or store.current() != signed:
-            raise ValueError("simulated retry not idempotent")
     except (ValueError, KeyError):
         report["outcome"] = "experimental_publication_held"
         return report

@@ -75,7 +75,7 @@ class LiveCombinedPreviewTests(unittest.TestCase):
         self.assertFalse(result["simulatedPublication"])
         self.assertEqual(result["outcome"], "inherited_artwork_held")
 
-    @patch("radio_daily_live_combined_preview.publish_combined", side_effect=ValueError("collision"))
+    @patch("radio_daily_live_combined_preview.publish_cycle", side_effect=ValueError("collision"))
     def test_atomic_publication_failure_is_held(self, publish):
         result = self.run_preview(self.f.operations)
         self.assertFalse(result["simulatedPublication"])

@@ -7,7 +7,7 @@ from radio_daily_release_context import prepare, STATE_FILES, MIGRATED_FILES, RE
 from radio_daily_v9_generator import digest
 
 
-def migrate_visible(store, prior_pointer, prior_body, *, anchor, day, state, candidate_sha):
+def advance_visible(store, prior_pointer, prior_body, *, anchor, day, state, candidate_sha):
     if set(state) != set(STATE_FILES):
         raise ValueError("complete predecessor evidence required")
     current = store.current()
@@ -41,6 +41,12 @@ def migrate_visible(store, prior_pointer, prior_body, *, anchor, day, state, can
     if (next_raw != raw or next_selection["advanced"] or next_files
             or next_context["stateMode"] != "unchanged" or store.current() != current):
         raise ValueError("migrated successor not reusable")
-    return dict(migrationVerified=True, nextSelectionVerified=True,
+    report = dict(migrationVerified=True, nextSelectionVerified=True,
         migratedFiles=sorted(files), qualificationReportsToRebuild=list(REQUALIFY),
         migration=context["migration"])
+    return report, next_state
+
+
+def migrate_visible(store, prior_pointer, prior_body, **kwargs):
+    report, _ = advance_visible(store, prior_pointer, prior_body, **kwargs)
+    return report
