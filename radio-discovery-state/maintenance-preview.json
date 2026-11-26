@@ -6,12 +6,9 @@
   "approvedCount": 0,
   "stationCount": 296,
   "streamCount": 358,
-  "checkedCount": 18,
+  "checkedCount": 0,
   "everObservedStreamCount": 358,
-  "sampleCounts": {
-    "audio_hint": 12,
-    "inconclusive": 6
-  },
+  "sampleCounts": {},
   "hlsAttemptedCount": 0,
   "hlsDeferredCount": 0,
   "hlsVerdictCounts": {},

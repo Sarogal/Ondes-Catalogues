@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 79,
+  "dueNameCount": 78,
   "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "ssshhhiiittt!",
+  "retryAfterKey": "suicide machines",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -601,6 +601,24 @@
       "genreSource": "musicbrainz-community",
       "sourceUrl": "https://musicbrainz.org/artist/b10db9ad-b4c3-47f3-a7a4-37864b134f65",
       "artistName": "SOUL ASYLUM",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "steamhammer": {
+      "status": "name_hypothesis",
+      "mbid": "3a787e76-2879-4306-bc04-66aa7373be72",
+      "genres": [
+        "blues rock",
+        "heavy psych",
+        "progressive rock",
+        "psychedelic rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/3a787e76-2879-4306-bc04-66aa7373be72",
+      "artistName": "Steamhammer",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,
