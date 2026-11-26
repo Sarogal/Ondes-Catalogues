@@ -243,8 +243,21 @@ def cycle(report, previous, today, **kwargs):
     results, cursor, summary = research(report, previous["cursor"], today, **kwargs)
     active = {_identity(row) for row in report["records"] if row.get("status") not in SKIP}
     saved = {k: v for k, v in saved.items() if k in active}
+    preserved = 0
     for row in results:
-        saved[_identity(row)] = row
+        key = _identity(row)
+        old = saved.get(key)
+        # Transport failure is not evidence that a previously observed place
+        # disappeared. Keep the old private hint, not a fresh attestation;
+        # Publisher still has to independently re-read all live sources.
+        if (row["status"] in ("research_source_unavailable", "map_response_incomplete")
+                and old is not None
+                and old.get("status") == "independent_evidence_found"
+                and isinstance(old.get("evidence"), dict)):
+            preserved += 1
+            continue
+        saved[key] = row
+    summary["preserved_private_hints_on_outage"] = preserved
     summary["stored_private_results"] = len(saved)
     return {"schema": STATE_SCHEMA, "cursor": cursor,
             "records": [saved[k] for k in sorted(saved)]}, summary

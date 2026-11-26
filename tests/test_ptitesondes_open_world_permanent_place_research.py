@@ -77,6 +77,36 @@ class OpenWorldPermanentPlaceResearchTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             cycle(candidates, state, DAY)
 
+    def test_transport_outage_keeps_private_hint_without_refreshing_it(self):
+        from datetime import timedelta
+        candidates = report(row())
+        state, _ = cycle(candidates, None, DAY,
+                         osm_fetch=lambda *_: OSM, page_read=lambda _: HTML)
+        original = deepcopy(state["records"][0])
+        def unavailable(*_):
+            raise OSError("private transport diagnostic")
+        next_day = DAY + timedelta(days=1)
+        for fetch in (unavailable, lambda *_: {"remark": "incomplete", "elements": []}):
+            state, summary = cycle(candidates, state, next_day, osm_fetch=fetch)
+            self.assertEqual(state["records"][0], original)
+            self.assertEqual(summary["preserved_private_hints_on_outage"], 1)
+            self.assertFalse(summary["publication_ready"])
+            self.assertEqual(summary["public_writes"], 0)
+        self.assertEqual(state["cursor"]["sequence"], 3)
+        # A complete negative map response supersedes the old hint.
+        state, summary = cycle(candidates, state, next_day,
+                               osm_fetch=lambda *_: {"elements": []})
+        self.assertEqual(summary["preserved_private_hints_on_outage"], 0)
+        self.assertEqual(state["records"][0]["status"], "map_identity_missing_or_ambiguous")
+        self.assertIsNone(state["records"][0]["evidence"])
+
+    def test_no_longer_active_identity_drops_old_hint(self):
+        state, _ = cycle(report(row()), None, DAY,
+                         osm_fetch=lambda *_: OSM, page_read=lambda _: HTML)
+        state, summary = cycle(report(row(status="already_public")), state, DAY)
+        self.assertEqual(state["records"], [])
+        self.assertEqual(summary["preserved_private_hints_on_outage"], 0)
+
     def test_typographic_query_expands_accents_case_and_punctuation(self):
         q = typographic_query("Saint-Étienne", "Médiathèque-Ludothèque")
         self.assertIn('[eéèêë]', q)
