@@ -56,7 +56,7 @@ def _unique_site(catalogue, row):
 
 
 def _individual_event(html, url, when, venue, *, accept_generic=False,
-                      fetch=None, cache=None):
+                      fetch=None, cache=None, profile_scan_day=None):
     """Extract exactly one official concert, not genres from unrelated cards.
 
     Generic Event and HTML microdata are accepted only when a separate
@@ -131,7 +131,7 @@ def _individual_event(html, url, when, venue, *, accept_generic=False,
         names, unnamed = bill
         genres, scope = dynamic.event_genres(
             node, url, fetch=fetch if accept_generic else None, cache=cache,
-            html=html)
+            html=html, profile_scan_day=profile_scan_day)
         # Venue-wide genre tags do NOT qualify. Only Event or own performers.
         if not dynamic.triage.genre_evidence({
                 "classification": genres,
