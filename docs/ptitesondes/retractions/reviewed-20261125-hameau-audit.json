@@ -1,0 +1,329 @@
+{
+  "schema": "ptitesondes.reviewed_retraction_audit.v1",
+  "reviewed_on": "2026-11-25",
+  "applied_at": "2026-11-26T05:11:19+01:00",
+  "before_count": 1083,
+  "after_count": 1030,
+  "catalogue_before_sha256": "b44a4ae9a77de940f1aa55d9ab74c9a8e4a7e7188f7e1b799f1bfe8870295eb1",
+  "catalogue_after_sha256": "398aec74f278c01c964930906768d030b2d22714c96a75321bbd83092c7c151a",
+  "withdrawn": [
+    {
+      "id": "openagenda-23913876-2026-11-26",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-11-27",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-11-28",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-11-29",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-11-30",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-01",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-02",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-03",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-04",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-05",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-06",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-07",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-08",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-09",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-10",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-11",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-12",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-13",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-14",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-15",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-16",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-17",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-18",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-19",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-20",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-21",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-22",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-23",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-24",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-25",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-26",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-27",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-28",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-29",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-30",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2026-12-31",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-01",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-02",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-03",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-04",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-05",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-06",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-07",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-08",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-09",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-10",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-11",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-12",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-13",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-14",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-15",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-16",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    },
+    {
+      "id": "openagenda-23913876-2027-01-17",
+      "reason_code": "park_visit_programme_primary",
+      "evidence_url": "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/",
+      "original_source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante"
+    }
+  ]
+}
