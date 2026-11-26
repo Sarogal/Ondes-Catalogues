@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 77,
-  "attemptedCount": 4,
+  "dueNameCount": 74,
+  "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "the last dinner party",
+  "retryAfterKey": "the misfits",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
