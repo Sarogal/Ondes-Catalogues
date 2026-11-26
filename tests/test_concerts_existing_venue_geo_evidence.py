@@ -157,6 +157,55 @@ class ExistingVenueGeoEvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             evidence.verify(bad, VENUE, fetch=lambda *args: self.fail("must not fetch"))
 
+    def test_same_slot_retries_rotate_across_all_rooms_and_event_pages(self):
+        venues = [dict(VENUE, id=f"room-{i}") for i in range(12)]
+        events = [dict(EVENT, id=f"event-{i}-{j}", venueId=f"room-{i}",
+                       status="confirmed", date=f"2027-02-{12+j:02d}")
+                  for i in range(12) for j in range(4)]
+        data = {"venues": venues, "events": events}
+        original = copy.deepcopy(data)
+        day = dt.date(2026, 11, 26)
+        called = []
+        def held(event, venue, **kwargs):
+            called.append((venue["id"], event["id"]))
+            raise evidence.EvidenceHeld("event_fetch_unavailable")
+        prior = None
+        for cycle in range(6):
+            prior = evidence.scan(data, day, slot=1, prior=prior, verify_one=held)
+            self.assertEqual(prior["examinedVenues"], 4)
+            self.assertEqual(prior["eventPagesExamined"], 8)
+            self.assertFalse(prior["publicationAllowed"])
+            if cycle == 2:
+                self.assertEqual(len({vid for vid, _ in called}), 12)
+        self.assertEqual(len(called), 48)
+        self.assertEqual(len(set(called)), 48)
+        self.assertEqual(data, original)
+        self.assertEqual(set(prior["recentVenueIds"]), {v["id"] for v in venues})
+
+    def test_new_room_is_preferred_and_future_or_untrusted_history_ignored(self):
+        venues = [dict(VENUE, id=f"room-{i}") for i in range(5)]
+        events = [dict(EVENT, id=f"event-{i}", venueId=f"room-{i}", status="confirmed")
+                  for i in range(5)]
+        data = {"venues": venues, "events": events}
+        day = dt.date(2026, 11, 26)
+        def held(*args, **kwargs):
+            raise evidence.EvidenceHeld("event_fetch_unavailable")
+        first = evidence.scan(data, day, slot=1, verify_one=held)
+        next_run = evidence.scan(data, day, slot=1, prior=first, verify_one=held)
+        self.assertEqual(len(set(next_run["recentVenueIds"])), 5)
+        first_ids = [v["venueId"] for v in first["held"]]
+        for invalid in ({**first, "publicationAllowed": True},
+                        {**first, "asOf": "2026-11-27"}):
+            reset = evidence.scan(data, day, slot=1, prior=invalid, verify_one=held)
+            self.assertEqual([v["venueId"] for v in reset["held"]], first_ids)
+        # Removing a corrected room also removes its obsolete memory.
+        corrected = first_ids[0]
+        data["venues"] = [dict(v, geoPrecision="named-site-point") if v["id"] == corrected else v
+                          for v in venues]
+        out = evidence.scan(data, day, slot=1, prior=next_run, verify_one=held)
+        self.assertNotIn(corrected, out["recentVenueIds"])
+        self.assertNotIn(corrected, out["recentEventIdsByVenue"])
+
     def test_rotation_covers_more_than_one_batch_without_mutating_catalogue(self):
         venues = [dict(VENUE, id=f"room-{i}") for i in range(9)]
         events = [dict(EVENT, id=f"event-{i}", venueId=f"room-{i}",
