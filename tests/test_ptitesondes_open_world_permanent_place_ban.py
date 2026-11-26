@@ -3,7 +3,7 @@ import unittest
 
 from test_ptitesondes_dila_municipal_domains import CITY, PAGE, mairie, payload
 from ptitesondes_open_world_permanent_place_ban import (
-    official_facts, corroborate_official_ban,
+    official_facts, corroborate_official_ban, discover_official_ban,
 )
 
 VENUE = "Ludothèque des enfants"
@@ -67,6 +67,54 @@ class OfficialPlaceBANTests(unittest.TestCase):
     def test_administrative_identity_must_agree(self):
         self.assertIsNone(self.check(admin=[dict(ADMIN[0], code="99999")]))
         self.assertIsNone(self.check(admin=[]))
+
+    def test_live_discovery_revalidates_hint_and_never_reads_untrusted_url(self):
+        read = []
+        def page(url):
+            read.append(url)
+            if url == PAGE:
+                return HTML
+            return f'<a href="{PAGE}">{VENUE}</a>'
+        row = {"city": CITY, "venue": VENUE,
+               "possible_website_unverified": "https://other.example/lieu"}
+        proof = discover_official_ban(row, directory_fetch=lambda _: DIR,
+            page_read=page, ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN)
+        self.assertIsNotNone(proof)
+        self.assertEqual(read, ["https://www.ville-les-bois.fr/", PAGE])
+        read.clear()
+        row["possible_website_unverified"] = PAGE
+        proof = discover_official_ban(row, directory_fetch=lambda _: DIR,
+            page_read=page, ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN)
+        self.assertIsNotNone(proof)
+        self.assertEqual(read, [PAGE])
+        row["historical_address_unverified"] = {"postal_code": "99999"}
+        self.assertIsNone(discover_official_ban(row, directory_fetch=lambda _: DIR,
+            page_read=page, ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN))
+
+    def test_outage_does_not_stop_independent_ban_rotation(self):
+        from datetime import date
+        from ptitesondes_open_world_permanent_place_research import cycle
+        from test_ptitesondes_open_world_permanent_place_research import report, row
+        candidates = report(*(row(f"Lieu {i}", CITY) for i in range(8)))
+        calls, fallback = [], []
+        def down(*args):
+            calls.append(args)
+            raise OSError("map offline")
+        def alternative(lead):
+            fallback.append(lead["venue"])
+            return {"city": lead["city"], "venue": lead["venue"],
+                    "method": "dila_official_place_address_plus_ban",
+                    "public_eligible": False, "publication_ready": False,
+                    "public_writes": 0}
+        state, summary = cycle(candidates, None, date(2026, 11, 26),
+                               osm_fetch=down, stop_on_outage=True,
+                               limit=8, ban_research=alternative)
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(len(fallback), 8)
+        self.assertEqual(summary["map_skipped_after_outage"], 5)
+        self.assertEqual(summary["ban_fallback_matches"], 8)
+        self.assertEqual(summary["unattempted"], 0)
+        self.assertTrue(all(r["public_eligible"] is False for r in state["records"]))
 
     def test_ban_unavailable_is_not_publication_permission(self):
         def down(_):
