@@ -89,8 +89,11 @@ class CloudPublisherRaceSafetyTests(unittest.TestCase):
                     'fi\n'
                 )
                 hook.chmod(0o755)
+                output = root / "step-output"
+                output.touch()
                 run = subprocess.run(["bash", "-e", "-o", "pipefail", "-c", script],
-                                     cwd=publisher, env=dict(os.environ, CHECKED_BASE=checked),
+                                     cwd=publisher, env=dict(os.environ, CHECKED_BASE=checked,
+                                                             GITHUB_OUTPUT=str(output)),
                                      capture_output=True, text=True, timeout=30)
                 self.assertTrue((publisher / ".git/race-injected").exists())
                 git("fetch", "origin", "main", cwd=publisher)
@@ -99,12 +102,33 @@ class CloudPublisherRaceSafetyTests(unittest.TestCase):
                 if mode == "unrelated":
                     self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
                     self.assertEqual(public, "new")
+                    self.assertEqual(output.read_text(), "")
                     self.assertEqual(git("show", "FETCH_HEAD:unrelated.txt",
                                          cwd=publisher), "concurrent")
                 else:
                     self.assertNotEqual(run.returncode, 0)
                     self.assertEqual(public, "concurrent")
                     self.assertIn("garde-fous ont changé", run.stdout)
+                    self.assertEqual(output.read_text(), "retry_race=true\n")
+
+
+    def test_fresh_retry_is_explicit_bounded_and_has_no_publication_credentials(self):
+        yml = WF.read_text(encoding="utf-8")
+        self.assertIn("retry_race: ${{ steps.commit_catalogue.outputs.retry_race }}", yml)
+        self.assertIn("retry_after_race:\n", yml)
+        retry = yml.split("  retry-fresh:\n", 1)[1].split("  deploy:\n", 1)[0]
+        for required in ("needs.prepare.result == 'failure'",
+                         "needs.prepare.outputs.retry_race == 'true'",
+                         "github.repository == 'Sarogal/Ondes-Catalogues'",
+                         "github.ref == 'refs/heads/main'",
+                         "inputs.mode == 'publish' && !inputs.retry_after_race",
+                         "actions: write", "--ref main",
+                         "-f mode=publish -f retry_after_race=true"):
+            self.assertIn(required, retry)
+        self.assertNotIn("contents: write", retry)
+        self.assertNotIn("secrets.", retry)
+        self.assertNotIn("checkout", retry)
+        self.assertNotIn("git push", retry)
 
 
 if __name__ == "__main__":
