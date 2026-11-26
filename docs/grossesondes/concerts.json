@@ -2538,11 +2538,6 @@
       "aliases": []
     },
     {
-      "id": "guests-nexion",
-      "name": "guests : NEXION",
-      "aliases": []
-    },
-    {
       "id": "downtown-boys-us",
       "name": "DOWNTOWN BOYS (US)",
       "aliases": []
@@ -16032,11 +16027,10 @@
     },
     {
       "id": "go-c-20261214-montreuil-downtown-boys-us",
-      "title": "DOWNTOWN BOYS (US) + GUESTS",
+      "title": "DOWNTOWN BOYS (US)",
       "date": "2026-12-14",
       "artistIds": [
-        "downtown-boys-us",
-        "guests"
+        "downtown-boys-us"
       ],
       "venueId": "go-site-a4221278b655cca782f2",
       "genres": [
@@ -16057,6 +16051,10 @@
         {
           "date": "2026-11-26",
           "change": "Ajout après revue des preuves officielles"
+        },
+        {
+          "date": "2026-11-26",
+          "change": "Identité artistique rectifiée après nouvelle vérification de la fiche officielle"
         }
       ]
     },
@@ -16138,6 +16136,7 @@
   ],
   "retiredArtistIds": [
     "deefait-release-party",
+    "guests-nexion",
     "the-locos-ex-ska-p-en-concert"
   ]
 }
