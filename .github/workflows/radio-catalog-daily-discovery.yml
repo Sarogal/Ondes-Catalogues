@@ -114,6 +114,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_git_lab_transport.py"
       - "radio-catalog-lab/tools/radio_daily_git_lab_reader.py"
       - "radio-catalog-lab/tools/test_radio_daily_git_lab_reader.py"
+      - "radio-catalog-lab/tools/radio_daily_git_lab_transfer.py"
+      - "radio-catalog-lab/tools/test_radio_daily_git_lab_transfer.py"
       - "radio-catalog-lab/tools/radio_daily_restore_preview.py"
       - "radio-catalog-lab/tools/test_radio_daily_restore_preview.py"
       - "radio-catalog-lab/tools/radio_daily_baseline_selection.py"
