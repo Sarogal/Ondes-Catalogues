@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 37,
-  "distinctArtistHints": 55,
+  "stationsWithArtistHints": 39,
+  "distinctArtistHints": 58,
   "attemptedHlsCount": 1,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -95,7 +95,9 @@
       "approved": false,
       "publicationAllowed": false,
       "verdict": "metadata_no_parseable_title",
-      "observations": []
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "0cd363a2-d26f-4957-bc69-9b1f85b5f173",
@@ -116,8 +118,16 @@
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
-      "verdict": "metadata_no_parseable_title",
-      "observations": []
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Queens Of The Stone Age",
+          "titleSha256": "06176c0fdfe39580ce9ad54378b9db77a4cf7f8dc6829e5621eab340182be9c2"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "11d1fe19-b237-4bfc-95fb-fd9757f40916",
@@ -378,6 +388,36 @@
       ],
       "alternativeVersion": 0,
       "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "24145371-b9df-485d-ac2d-3515899a5e3e",
+      "streamSha256": "599105e7b7d3e91984da97018037e1e91c70ce70949f88daff3d692b7038d9f7",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Billy Squier",
+          "titleSha256": "c8e944e49f85e6c6ba5d2c8b8ec8849efff103f2713d305b9a7f3d24c092ba76"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "25d7b677-a866-4b32-aabc-20fa43e2d479",
+      "streamSha256": "f1a6452e4311332b6aa5694cedc2cc2a850e2de4bd46704d1306a2c1a0375ed5",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "25de583d-8165-4a5f-8ba5-39861a77f943",
@@ -908,7 +948,7 @@
     {
       "stationuuid": "7264e476-09d5-4dc0-8580-bf8cc2070265",
       "streamSha256": "b40accf7a7fe6283ba591d75c0b8b3e5074750f4c55d700d0e550e3729cb6d13",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -918,12 +958,31 @@
           "date": "2026-11-25",
           "artistHint": "AC/DC",
           "titleSha256": "f7ba934ba7b2ffbb0987c8dae23d61679043edc02a76ba5a109cb24a486690de"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "Jeff Beck Group",
+          "titleSha256": "1acbc32bc8d6c12cc76d2fba29887d70c31f14528c0eabad995db5f04c970c18"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "c123bef5-256a-427f-a942-570ae9836f68",
       "streamSha256": "ac5e132f18b64939b98ba589e2879817d636b09970400aa35b0dd01538f04016",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "hls_no_parseable_id3",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
+    },
+    {
+      "stationuuid": "c16ffe2f-a305-4f11-9d85-0aa615b9ed04",
+      "streamSha256": "3f86508357456841a1d6c279e22b25814645649f6b65f238d4a1bdda0befde8b",
       "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
