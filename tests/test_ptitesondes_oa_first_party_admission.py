@@ -207,9 +207,9 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
     def test_publish_explicit_minimum_only_with_supported_public_fields(self):
         reference = base()
         reference["events"][0].update(category="concert", age_min=4, age_label="Dès 4 ans")
-        title = "Le voyage des sons"
+        title = "Concert familial"
         event = dict(oa_event(), title={"fr": title},
-                     description={"fr": "Un concert."},
+                     description={"fr": "Tous les styles musicaux."},
                      conditions={"fr": "À partir de 5 ans."}, age=None)
         candidate, status = admit_live_openagenda(
             dict(lead(), title=title), DAY.isoformat(), AGENDA,
