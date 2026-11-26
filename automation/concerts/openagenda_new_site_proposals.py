@@ -160,8 +160,7 @@ def propose(row, catalogue, today, *, fetch=probe.safe_fetch):
             "official place changed from discovered location")
     names, genres = oa.verified_export(
         raw, url, date, place, agenda_uid=agenda_uid, event_uid=event_uid)
-    require(intake.normalized(candidate["leadArtist"].split(" + ")[0])
-            in {intake.normalized(name) for name in names},
+    require(oa.observed_bill_matches(candidate["leadArtist"], names),
             "observed headliner no longer on original bill")
     require(not any(_site_key(v.get("name"), v.get("city")) ==
                     _site_key(place["name"], place["city"])
