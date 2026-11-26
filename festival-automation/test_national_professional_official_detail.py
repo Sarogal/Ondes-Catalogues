@@ -70,6 +70,25 @@ class OfficialDetailResearchTests(unittest.TestCase):
         result, _ = self.run_pages(pages)
         self.assertEqual(result["proofs"], [])
 
+    def test_historical_navigation_does_not_exhaust_current_detail_budget(self):
+        pages = dict(PAGES)
+        pages[ROOT] += "".join(
+            '<a href="/festival-des-rives-%s/">Festival des Rives %s</a>' % (y, y)
+            for y in range(2022, 2027))
+        pages[INDEX] += '<a href="/festival-des-rives-2025/">Festival des Rives</a>'
+        result, calls = self.run_pages(pages)
+        self.assertEqual(calls, [ROOT, INDEX, DETAIL])
+        self.assertEqual(result["status"], "OFFICIAL_DETAIL_PROOF_REVIEW_ONLY")
+
+    def test_mixed_year_link_can_still_veto_current_edition(self):
+        other = ROOT + "festival-des-rives-2026-2027/"
+        pages = dict(PAGES)
+        pages[INDEX] += '<a href="' + other + '">Festival des Rives 2026 / 2027</a>'
+        pages[other] = HTML.replace("4 et 5 juin", "11 et 12 juin")
+        result, calls = self.run_pages(pages)
+        self.assertIn(other, calls)
+        self.assertEqual(result["proofs"], [])
+
     def test_hidden_or_cross_origin_link_not_followed(self):
         pages = dict(PAGES)
         pages[INDEX] = ('<a hidden href="/festival-des-rives/">Festival des Rives</a>'
