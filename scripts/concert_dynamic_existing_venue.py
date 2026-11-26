@@ -661,8 +661,13 @@ def event_genres(raw, official_url, *, fetch=None, cache=None, html=None,
             inline_labels = _visible_artist_description(html, raw.get("name"), name)
         if inline_labels:
             return inline_labels, "official_artist_in_event_detail"
-        if "MusicEvent" not in bridge._event_types(raw.get("@type")):
-            continue  # External profile navigation retains its original scope.
+        if ("MusicEvent" not in bridge._event_types(raw.get("@type"))
+                and raw.get("url") != official_url):
+            # A generic Event needs explicit canonical identity before it
+            # can delegate genre evidence to a named performer profile.
+            # The callers already require independent source attribution,
+            # the exact date, venue and explicitly typed musical roster.
+            continue
         target = person.get("url")
         host = intake.valid_https(target)
         if not host:
