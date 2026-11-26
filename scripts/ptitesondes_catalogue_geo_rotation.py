@@ -26,7 +26,7 @@ def identity(group):
                              separators=(",", ":")).encode()).hexdigest()
 
 
-def rotate(catalogue, today, previous=None, *, researcher=research_group):
+def rotate(catalogue, today, previous=None, *, researcher=research_group, priority_keys=()):
     groups = research_queue(catalogue, today)["research_groups"]
     current = {identity(g): g for g in groups}
     if len(current) != len(groups):
@@ -44,12 +44,21 @@ def rotate(catalogue, today, previous=None, *, researcher=research_group):
                        and isinstance(v, dict)
                        for k, v in previous["latest"].items())):
         raise ValueError("invalid_rotation_identity")
-    # Prune only groups no longer requiring research. New work goes behind
-    # existing pending work; neither a new group nor a failure can jump ahead.
+    # Prune only groups no longer requiring research. Reserve FIFO capacity;
+    # at most one slot per cycle may accelerate a newly actionable hint.
     order = [k for k in pending if k in current]
     present = set(order)
     order.extend(k for k in current if k not in present)
+    priority = set(priority_keys)
     selected = order[:MAX_GROUPS]
+    accelerated = 0
+    if MAX_GROUPS >= 2 and len(order) > MAX_GROUPS:
+        # Preserve the first MAX_GROUPS-1 FIFO places. Select the oldest
+        # hinted group from the remaining queue; no group can starve.
+        candidate = next((k for k in order[MAX_GROUPS-1:] if k in priority), None)
+        if candidate is not None and candidate not in selected:
+            selected = selected[:-1] + [candidate]
+            accelerated = 1
     latest = {k: v for k, v in previous["latest"].items() if k in current}
     for key in selected:
         group = current[key]
@@ -60,10 +69,12 @@ def rotate(catalogue, today, previous=None, *, researcher=research_group):
         except (OSError, ValueError, TypeError, KeyError, TimeoutError):
             result = dict(status="research_retry_later", publication_ready=False)
         latest[key] = dict(day=today.isoformat(), result=result)
-    state = dict(schema=SCHEMA, pending=order[len(selected):] + selected,
+    selected_set = set(selected)
+    state = dict(schema=SCHEMA, pending=[k for k in order if k not in selected_set] + selected,
                  latest=latest)
     summary = dict(group_count=len(groups), examined=len(selected),
                    never_examined=len(current.keys()-latest.keys()),
+                   accelerated_hints=accelerated,
                    venue_points_found=sum(latest[k]["result"].get("status") ==
                                           "independent_venue_point_found"
                                           for k in selected),
@@ -98,7 +109,14 @@ if __name__ == "__main__":
     catalogue = json.loads(a.catalogue.read_text(encoding="utf-8"))
     previous = json.loads(a.state.read_text(encoding="utf-8")) if a.state.exists() else None
     from ptitesondes_acceslibre_geo_hints import load_hints, hinted_researcher
+    hints = load_hints(a.acceslibre_hints, a.day)
+    # Only hints with a venue website can use the present independent route.
+    # Other hints remain in ordinary FIFO and are not discarded.
+    priority_keys = {key for key, value in hints.items()
+                     if isinstance(value, dict) and isinstance(value.get("hint"), dict)
+                     and isinstance(value["hint"].get("website_hint"), str)
+                     and value["hint"]["website_hint"].strip()}
     state, summary = rotate(catalogue, a.day, previous,
-        researcher=hinted_researcher(load_hints(a.acceslibre_hints, a.day)))
+        researcher=hinted_researcher(hints), priority_keys=priority_keys)
     write_state(a.state, state)
     print(json.dumps(summary))
