@@ -90,3 +90,17 @@ class RotationTests(unittest.TestCase):
                             priority_keys={keys["C"], keys["E"]})
         self.assertEqual(seen, list("ABC"))
         self.assertEqual(summary["accelerated_hints"], 0)
+
+
+    def test_provider_aggregate_is_bounded_and_redacted(self):
+        def reader(group, day):
+            return dict(status="held", publication_ready=False,
+                provider_diagnostics={"osm_named": {"calls": 1, "errors": 1},
+                    "official_html": {"calls": 2, "errors": 0},
+                    "ban": {"calls": 1, "errors": 2},
+                    "private-url": {"calls": 1, "errors": 1}})
+        _, summary = rotate(doc("ABCD"), DAY, researcher=reader)
+        self.assertEqual(summary["provider_diagnostics"], {
+            "osm_named": {"calls": 3, "errors": 3},
+            "official_html": {"calls": 6, "errors": 0}})
+        self.assertNotIn("private-url", str(summary))

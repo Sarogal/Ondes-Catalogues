@@ -346,6 +346,23 @@ def directory_for_verified_code(group, code, response):
     return {"total_count": 1, "results": rows} if len(rows) == 1 else empty
 
 
+class ResearchDiagnostics:
+    """Record only fixed provider counters; preserve all proof decisions."""
+    def __init__(self):
+        self.counts = {}
+
+    def wrap(self, provider, reader):
+        def read(*args, **kwargs):
+            row = self.counts.setdefault(provider, {"calls": 0, "errors": 0})
+            row["calls"] += 1
+            try:
+                return reader(*args, **kwargs)
+            except ERRORS:
+                row["errors"] += 1
+                raise
+        return read
+
+
 def research_group(group, today, *, directory_get=fetch_dila,
                    html_get=read_unknown_https, ign_get=fetch_ign,
                    osm_get=fetch_overpass, named_osm_get=fetch_named_osm,
@@ -354,9 +371,19 @@ def research_group(group, today, *, directory_get=fetch_dila,
     # never silently introduce a new live network dependency.
     if directory_code_get is None and directory_get is fetch_dila:
         directory_code_get = fetch_dila_by_code
+    diagnostics = ResearchDiagnostics()
+    directory_get = diagnostics.wrap("dila", directory_get)
+    commune_get = diagnostics.wrap("administrative", commune_get)
+    html_get = diagnostics.wrap("official_html", html_get)
+    ign_get = diagnostics.wrap("ban", ign_get)
+    osm_get = diagnostics.wrap("osm_nearby", osm_get)
+    named_osm_get = diagnostics.wrap("osm_named", named_osm_get)
+    if directory_code_get is not None:
+        directory_code_get = diagnostics.wrap("dila", directory_code_get)
     result = dict(city=group["city"], venue=group["venue"],
                   active_ids=group["active_ids"], missing_ids=group["missing_ids"],
-                  status="venue_proof_not_found", publication_ready=False)
+                  status="venue_proof_not_found", publication_ready=False,
+                  provider_diagnostics=diagnostics.counts)
     try:
         directory = directory_get(group["city"])
     except ERRORS:

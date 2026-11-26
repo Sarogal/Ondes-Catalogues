@@ -241,5 +241,23 @@ class CatalogueGeoProofTests(unittest.TestCase):
             commune_get=lambda _: [dict(nom=g["city"], code=code, codeDepartement="12")],
             directory_code_get=reader, html_get=lambda _: html(), ign_get=lambda _: ban())
         reader.assert_called_once_with(code)
+        self.assertEqual(result["provider_diagnostics"]["dila"], {"calls": 2, "errors": 0})
         self.assertEqual(result["status"], "independent_venue_point_found")
+        self.assertFalse(result["publication_ready"])
+
+    def test_provider_diagnostics_distinguish_transport_failure_from_no_match(self):
+        group = dict(city="Ville", venue="Salle", department="Test (01)",
+                     active_ids=["a"], missing_ids=["a"], source_urls=[])
+        def offline(*args):
+            raise OSError("private URL must not appear")
+        result = research_group(group, DAY, directory_get=offline,
+            commune_get=lambda _: [dict(nom="Ville", code="01001", codeDepartement="01")],
+            named_osm_get=offline)
+        self.assertEqual(result["status"], "directory_unavailable")
+        self.assertEqual(result["provider_diagnostics"], {
+            "dila": {"calls": 1, "errors": 1},
+            "administrative": {"calls": 1, "errors": 0},
+            "osm_named": {"calls": 1, "errors": 1},
+        })
+        self.assertNotIn("private URL", str(result))
         self.assertFalse(result["publication_ready"])
