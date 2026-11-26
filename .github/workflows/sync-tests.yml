@@ -26,3 +26,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m unittest discover -s tests -v
+      - name: P'tites Ondes — reproduction du garde GPS de production isolé
+        env:
+          PYTHONPATH: ${{ github.workspace }}/scripts
+        run: python -m unittest discover -s tests -p 'test_ptitesondes_historical_gps*.py' -v

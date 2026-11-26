@@ -73,6 +73,8 @@ jobs:
         with:
           python-version: '3.12'
       - name: Tests de conservation et de sécurité
+        env:
+          PYTHONPATH: ${{ github.workspace }}/scripts
         run: |
           python -m unittest discover -s tests -p 'test_cloud_policy.py' -v
           python -m unittest discover -s tests -p 'test_daily_outings_proof.py' -v
