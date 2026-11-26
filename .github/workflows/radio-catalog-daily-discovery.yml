@@ -119,6 +119,7 @@ on:
       - "radio-catalog-lab/tools/radio_daily_deployment_verify.py"
       - "radio-catalog-lab/tools/test_radio_daily_deployment_verify.py"
       - "radio-catalog-lab/tools/test_radio_daily_durable_chain.py"
+      - "radio-catalog-lab/tools/test_radio_daily_durable_operations.py"
       - "radio-catalog-lab/tools/radio_daily_restore_preview.py"
       - "radio-catalog-lab/tools/test_radio_daily_restore_preview.py"
       - "radio-catalog-lab/tools/radio_daily_baseline_selection.py"
