@@ -48,6 +48,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_missing_logo.py"
       - "radio-catalog-lab/tools/radio_daily_logo_plan.py"
       - "radio-catalog-lab/tools/test_radio_daily_logo_plan.py"
+      - "radio-catalog-lab/tools/radio_daily_merge_plan.py"
+      - "radio-catalog-lab/tools/test_radio_daily_merge_plan.py"
       - "radio-catalog-lab/tools/radio_daily_unified_generator.py"
       - "radio-catalog-lab/tools/test_radio_daily_unified_generator.py"
       - "radio-catalog-lab/tools/radio_daily_v9_generator.py"

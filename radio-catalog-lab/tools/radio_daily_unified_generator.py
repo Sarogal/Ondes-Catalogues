@@ -13,6 +13,7 @@ from radio_daily_baseline_verify import strict_json, validate_shape, verify_base
 from radio_daily_repair_plan import plan as repair_plan, simulate as repair_simulate
 from radio_daily_status_preview import build as status_build, MAX_CHECKS
 from radio_daily_logo_plan import plan as logo_plan, stage as logo_stage
+from radio_daily_merge_plan import plan as merge_plan, apply as merge_apply, undo as merge_undo
 
 
 def stream_urls(station):
@@ -126,7 +127,10 @@ def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation
         raise ValueError("artwork material without reports")
     else:
         logo_deferred.append({"reason":"artwork_reports_not_supplied"})
-    changed = bool(added or applied or transitions or logo_changes)
+    blocked={p["goStationId"] for p in checked["proposals"]+transitions+logo_changes}
+    merges, merge_deferred=merge_plan(old,maintenance,day,blocked)
+    merge_apply(output,old,merges,day)
+    changed = bool(added or applied or transitions or logo_changes or merges)
     report = {"schemaVersion": 1, "publicationAllowed": False, "signed": False,
               "catalogBaselineSha256": expected, "scanDate": day,
               "baselineSequence": old["release_sequence"], "candidateSequence": None,
@@ -136,8 +140,11 @@ def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation
               "statusTransitions": transitions, "statusDeferred": status_deferred,
               "logoChanges": logo_changes, "logoDeferred": logo_deferred,
               "previewObjectPaths": sorted(objects),
-              "unsupportedOperations": ["merge_redirect"],
-              "removed": [], "existingStationsPreserved": len(old["stations"]),
+              "merges": merges, "mergeDeferred": merge_deferred,
+              "unsupportedOperations": [],
+              "removed": [p["sourceGoStationId"] for p in merges],
+              "existingStationsPreserved": len(old["stations"])-len(merges),
+              "identitiesPreserved": len(old["stations"])+len(old["tombstones"]),
               "tombstonesPreserved": len(old["tombstones"])}
     if not changed:
         return None, report
@@ -145,6 +152,7 @@ def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation
     output["generated_at"] = day + "T00:00:00Z"
     # Reverse only authorized additions, fallback appends and status changes.
     restored = copy.deepcopy(output)
+    merge_undo(restored,old,merges)
     restored["stations"] = restored["stations"][:len(old["stations"])]
     by_id = {s["go_station_id"]: s for s in restored["stations"]}
     for p in applied:
