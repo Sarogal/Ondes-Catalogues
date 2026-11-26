@@ -65,6 +65,13 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
         # Synthetic records: no real event IDs or organiser-specific rules.
         for title, description, expected in (
             ("Petits sons", "Éveil musical.", "eveil-musical"),
+            ("Chanter, bouger, danser", "Séance d'éveil corporel en musique.",
+             "eveil-musical"),
+            ("Les bibliothécaires racontent spécial Noël",
+             "Lectures d'albums, comptines et jeux de doigts pour célébrer l'hiver.",
+             "lecture-jeunesse"),
+            ("Éveil et découverte musicale", "Un rendez-vous pour les enfants.",
+             "eveil-musical"),
             ("Les saisons", "Un spectacle musical, dansé et raconté.", "spectacle-musical"),
             ("Bébé lit", "Lectures & comptines. Histoires choisies par les bibliothécaires.",
              "lecture-jeunesse"),
@@ -92,6 +99,10 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
              {"max": 6}, "oa_direct_out_of_editorial_scope"),
             ("Forum associatif", "Éveil musical.", {"max": 6},
              "oa_direct_primary_activity_outside_scope"),
+            ("Rencontre sonore", "Séance d'éveil corporel en musique.", None,
+             "oa_direct_child_audience_missing"),
+            ("Exposition de photos", "Lectures d'albums, comptines et jeux de doigts.",
+             {"max": 6}, "oa_direct_out_of_editorial_scope"),
         ):
             with self.subTest(title=title):
                 event = dict(oa_event(), title={"fr": title},
