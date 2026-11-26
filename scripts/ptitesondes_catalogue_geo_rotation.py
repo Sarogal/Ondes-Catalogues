@@ -110,12 +110,11 @@ if __name__ == "__main__":
     previous = json.loads(a.state.read_text(encoding="utf-8")) if a.state.exists() else None
     from ptitesondes_acceslibre_geo_hints import load_hints, hinted_researcher
     hints = load_hints(a.acceslibre_hints, a.day)
-    # Only hints with a venue website can use the present independent route.
-    # Other hints remain in ordinary FIFO and are not discarded.
+    # Any validated advisory point can now discover a venue website.
+    # The single accelerated slot remains bounded; all other groups retain FIFO.
     priority_keys = {key for key, value in hints.items()
                      if isinstance(value, dict) and isinstance(value.get("hint"), dict)
-                     and isinstance(value["hint"].get("website_hint"), str)
-                     and value["hint"]["website_hint"].strip()}
+                     and value.get("independent_recheck_required") is True}
     state, summary = rotate(catalogue, a.day, previous,
         researcher=hinted_researcher(hints), priority_keys=priority_keys)
     write_state(a.state, state)

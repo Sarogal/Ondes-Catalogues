@@ -12,7 +12,7 @@ import math
 from pathlib import Path
 import re
 from tempfile import TemporaryDirectory
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 from urllib.request import Request, HTTPRedirectHandler, build_opener
 
 from proof import norm
@@ -24,6 +24,9 @@ from ptitesondes_catalogue_geo_proof_batch import (
     fetch_overpass, _osm_website_host, _coordinates, meters,
     administrative_commune_code, fetch_commune,
 )
+
+from ptitesondes_generic_venue_osm_preflight import osm_hints
+from ptitesondes_delegated_source_authority import _same_host
 
 RESOURCE = "https://www.data.gouv.fr/api/1/datasets/r/5b0f44f2-e6ea-4a58-874d-6fe364b40342"
 # Fixed transport providers for one national public dataset, not venue hosts.
@@ -213,6 +216,26 @@ def load_hints(path, today):
         return {}
 
 
+def _discover_hint_website(group, point, response):
+    """A unique nearby named OSM feature may suggest a site, never certify it."""
+    named = {**group, "key": [norm(group["city"]), norm(group["venue"])]}
+    hits = osm_hints(named, point, response)
+    if len(hits) != 1:
+        return None
+    objects = [x for x in response["elements"] if isinstance(x, dict)
+               and "%s/%s" % (x.get("type"), x.get("id")) == hits[0]["osm_object_hint"]]
+    if len(objects) != 1:
+        return None
+    tags = objects[0]["tags"]
+    websites = [tags[k] for k in ("website", "contact:website") if k in tags]
+    hosts = [_osm_website_host(u) for u in websites]
+    if not hosts or any(h is None or not _same_host(h, hosts[0]) for h in hosts):
+        return None
+    u = urlsplit(websites[0])
+    url = urlunsplit(("https", u.hostname, u.path or "/", "", ""))
+    return url if _safe_url(url) else None
+
+
 def independent_hint_location(group, hint, *, html_get=read_unknown_https,
                               ign_get=fetch_ign, osm_get=fetch_overpass,
                               commune_get=fetch_commune):
@@ -228,16 +251,43 @@ def independent_hint_location(group, hint, *, html_get=read_unknown_https,
         return None
     point = _coordinates((row.get("lat_hint"), row.get("lng_hint")))
     url = row.get("website_hint")
-    if point is None or point == (0, 0) or not _safe_url(url) or not _osm_website_host(url):
+    if point is None or point == (0, 0):
         return None
     try:
         code = administrative_commune_code(group, commune_get(group))
         if code is None or code != row.get("code_insee"):
             return None
-        verified = _external_location(group, url, html_get(url), ign_get, osm_get)
-        if verified is None or meters(point, (verified["lat"], verified["lng"])) > 65:
+        # A missing URL is not a permanent refusal. Use the advisory point
+        # to find a unique named OSM object and discover its website. The
+        # normal venue-page + BAN + independently queried OSM proof still runs.
+        if not _safe_url(url) or not _osm_website_host(url):
+            url = _discover_hint_website(group, point, osm_get(point))
+        if url is None:
             return None
-        return dict(verified, geo_source="Acceslibre discovery + " + verified["geo_source"])
+        host = _osm_website_host(url)
+        # The supplied root may be a multi-venue site. Also try at most two
+        # original same-host event pages, never an unrelated external source.
+        urls = [url]
+        urls += sorted({u for u in group.get("source_urls", [])
+                        if u != url and _safe_url(u) and _osm_website_host(u)
+                        and _same_host(_osm_website_host(u), host)})[:2]
+        locations = []
+        for candidate in urls:
+            try:
+                verified = _external_location(group, candidate, html_get(candidate), ign_get, osm_get)
+                if verified is not None:
+                    if meters(point, (verified["lat"], verified["lng"])) > 65:
+                        return None
+                    locations.append(verified)
+            except (OSError, ValueError, TypeError, KeyError, TimeoutError, UnicodeError):
+                continue
+        if not locations:
+            return None
+        first = locations[0]
+        if any(meters((first["lat"], first["lng"]), (x["lat"], x["lng"])) > 65
+               for x in locations[1:]):
+            return None
+        return dict(first, geo_source="Acceslibre discovery + " + first["geo_source"])
     except (OSError, ValueError, TypeError, KeyError, TimeoutError, UnicodeError):
         return None
 
