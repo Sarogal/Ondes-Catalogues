@@ -482,24 +482,94 @@ def _retry_memory(prior, selected):
     return result
 
 
-def _prioritize_extraction_retries(window, selected, failures, revision, limit):
+_GEO_REPLAY_REASONS = frozenset({
+    "publisher_recheck: Unlisted official source: no unique exact first-party MusicEvent: venue_postal_identity_mismatch",
+    "publisher_recheck: Unlisted official source: no unique exact first-party MusicEvent: venue_street_mismatch",
+})
+
+
+def _venue_fingerprints(catalogue, selected):
+    venues = {v["id"]: v for v in catalogue["venues"]
+              if isinstance(v, dict) and isinstance(v.get("id"), str)}
+    fields = ("name", "city", "address", "postalCode", "latitude", "longitude",
+              "geoPrecision", "geoSource")
+    result = {}
+    exact = set()
+    for row in selected:
+        v = venues.get(row[2])
+        if v is None or row[3].get("source") == "agenda_officiel_openagenda":
+            continue
+        key = _review_key(row)
+        result[key] = hashlib.sha256(json.dumps(
+            [v.get(field) for field in fields], ensure_ascii=False,
+            separators=(",", ":"), sort_keys=True).encode("utf-8")).hexdigest()
+        if (isinstance(v.get("postalCode"), str)
+                and re.fullmatch(r"\d{5}", v["postalCode"])
+                and v.get("geoPrecision") in {"named-site-point", "named-site-area"}):
+            exact.add(key)
+    return result, exact
+
+
+def _geo_retry_memory(prior, selected, fingerprints, exact):
+    if (not isinstance(prior, dict) or prior.get("schema") != SCHEMA
+            or prior.get("publicationAllowed") is not False
+            or prior.get("privateApprovalApplied") is not False):
+        return {}
+    saved = prior.get("venueGeoRetryMemory")
+    if isinstance(saved, dict):
+        return {key: value for key, value in list(saved.items())[-MAX_REVIEW_MEMORY:]
+                if key in fingerprints and (value == "legacy" or _valid_revision(value))}
+    if "venueGeoRetryMemory" in prior:
+        return {}
+    # Migrate the last exact correlated diagnostic from the previous release.
+    index = defaultdict(list)
+    for row in selected:
+        key = _review_key(row)
+        if key in fingerprints:
+            index[(str(row[3].get("candidateId", ""))[:120], row[1], row[2])].append(key)
+    result = {}
+    checks = prior.get("candidateChecks")
+    if not isinstance(checks, list):
+        return result
+    for check in checks[-MAX_REVIEW_CHECKS:]:
+        if (not isinstance(check, dict)
+                or check.get("state") != "held_event_or_source_not_verified"
+                or not isinstance(check.get("reason"), str)
+                or check["reason"] not in _GEO_REPLAY_REASONS):
+            continue
+        identity = (check.get("candidateId"), check.get("date"), check.get("venueId"))
+        if not all(isinstance(part, str) for part in identity):
+            continue
+        keys = index.get(identity, [])
+        if len(keys) == 1:
+            key = keys[0]
+            # If the corrected venue is already present during deployment,
+            # allow a single legacy recheck; otherwise wait for its change.
+            result[key] = "legacy" if key in exact else fingerprints[key]
+    return result
+
+
+def _prioritize_extraction_retries(window, selected, failures, revision, limit,
+                                   geo_stale=()):
     """Use at most one quarter of the budget on changed-code retries.
 
     Replace only rows from the SAME non-OpenAgenda lane; preserve its
     allocation and at least one ordinary rotation pick. Never retry a
     failure with unchanged extraction code merely because it was tagged.
     """
-    if not _valid_revision(revision):
-        return window, set(), 0
-    stale = {key for key, previous in failures.items() if previous != revision}
-    pending = len(stale)
+    extraction_stale = ({key for key, previous in failures.items() if previous != revision}
+                        if _valid_revision(revision) else set())
+    geo_stale = set(geo_stale)
+    stale = extraction_stale | geo_stale
+    pending = len(extraction_stale)
     budget = min(8, limit // 4)
     if not stale or not budget:
         return window, set(), pending
     picked = {_review_key(row) for row in window}
     window = list(window)
     prioritized = set()
-    for row in selected:
+    # Newly repaired venues get first use of the same shared retry quota.
+    for row in sorted(selected, key=lambda row: _review_key(row) not in geo_stale):
         key = _review_key(row)
         if len(prioritized) >= budget:
             break
@@ -630,8 +700,13 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
                 picked.add(key)
     revision = _extractor_revision()
     retry_memory = _retry_memory(prior, selected)
+    fingerprints, exact_geo = _venue_fingerprints(catalogue, selected)
+    geo_memory = _geo_retry_memory(prior, selected, fingerprints, exact_geo)
+    geo_stale = {key for key, previous in geo_memory.items()
+                 if key in exact_geo and fingerprints[key] != previous}
     window, prioritized, pending_retries = _prioritize_extraction_retries(
-        window, selected, retry_memory, revision, limit)
+        window, selected, retry_memory, revision, limit, geo_stale=geo_stale)
+    geo_prioritized = prioritized & geo_stale
     output = copy.deepcopy(before)
     working = copy.deepcopy(catalogue)
     known = {row["event"]["id"] for row in output["approvals"]
@@ -650,6 +725,7 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         # The unchanged code must not repeatedly get priority for one failure.
         if _valid_revision(revision):
             retry_memory.pop(key, None)
+        geo_memory.pop(key, None)
         try:
             approval = propose(row, working, today, fetch=fetch)
             require(approval["event"]["id"] not in known,
@@ -677,6 +753,8 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
             if (reason in _EXTRACTION_REASONS and _valid_revision(revision)
                     and candidate.get("source") != "agenda_officiel_openagenda"):
                 retry_memory[key] = revision
+            if reason in _GEO_REPLAY_REASONS and key in fingerprints:
+                geo_memory[key] = fingerprints[key]
         checks.append(check)
     checked_keys = [_review_key(row) for row in window]
     checked_set = set(checked_keys)
@@ -686,7 +764,13 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         "extractorRevision": revision,
         "extractionRetryMemory": dict(list(retry_memory.items())[-MAX_REVIEW_MEMORY:]),
         "changedExtractorRetryPendingBefore": pending_retries,
-        "changedExtractorPriorityChecks": len(prioritized),
+        "changedExtractorPriorityChecks": len(prioritized - geo_prioritized),
+        "venueGeoRetryMemory": dict(list(geo_memory.items())[-MAX_REVIEW_MEMORY:]),
+        "changedVenueGeoRetryPendingBefore": len(geo_stale),
+        "changedVenueGeoPriorityChecks": len(geo_prioritized),
+        "changedVenueGeoRetryPendingAfter": sum(
+            key in exact_geo and fingerprints[key] != previous
+            for key, previous in geo_memory.items()),
         "changedExtractorRetryPendingAfter": sum(
             previous != revision for previous in retry_memory.values())
             if _valid_revision(revision) else 0,
