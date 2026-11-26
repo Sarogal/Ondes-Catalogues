@@ -30,6 +30,59 @@ def request(params):
 
 
 class WikidataResearchTests(unittest.TestCase):
+    def test_oversized_identity_is_held_without_blocking_next_artist(self):
+        reg = registry()
+        reg["items"]["lead"]["candidate"]["officialArtistNames"] = ["Act A", "Act B", "Act C"]
+        calls = []
+        def bounded(*args):
+            name = args[0]["search"]
+            calls.append(name)
+            if "Act A" in name:
+                raise wd.mb.OversizedDirectoryResponse("private detail never retained")
+            return {"search": []}
+        result = wd.build(reg, DAY, request=bounded)
+        self.assertEqual(result["namesChecked"], 3)
+        self.assertEqual(result["reasonCounts"], {"response_too_large": 1, "not_found": 2})
+        held = result["entries"]["act a"]
+        self.assertEqual(held["status"], "response_too_large")
+        self.assertFalse(held["identityVerified"])
+        self.assertFalse(held["publicationAllowed"])
+        self.assertNotIn("homepageHints", held)
+        self.assertNotIn("genres", held)
+        self.assertNotIn("private detail", str(result))
+        self.assertIsNone(result["serviceFailureKind"])
+        cached = wd.build(reg, DAY, prior=result,
+                                request=lambda *a: self.fail("same-day retry"))
+        self.assertEqual(cached["namesChecked"], 0)
+
+    def test_repeated_oversized_responses_stop_at_two_and_keep_other_names_due(self):
+        reg = registry()
+        reg["items"]["lead"]["candidate"]["officialArtistNames"] = ["Act A", "Act B", "Act C"]
+        def oversized(*args):
+            raise wd.mb.OversizedDirectoryResponse("bounded")
+        result = wd.build(reg, DAY, request=oversized)
+        self.assertEqual(result["namesChecked"], 2)
+        self.assertEqual(result["serviceFailureKind"], "oversized_response")
+        self.assertEqual(set(result["entries"]), {"act a", "act b"})
+        self.assertEqual(result["serviceRetryAfterKey"], "act b")
+        recovered = wd.build(reg, DAY, prior=result,
+                                request=lambda *a: {"search": []})
+        self.assertEqual(recovered["namesChecked"], 1)
+        self.assertEqual(recovered["entries"]["act c"]["status"], "not_found")
+        self.assertFalse(recovered["publicationAllowed"])
+
+    def test_maxlag_and_rate_limit_are_service_wide_stops(self):
+        for kind in ("maxlag", "ratelimited", "readonly", "api_error"):
+            reg = registry()
+            reg["items"]["lead"]["candidate"]["officialArtistNames"] = ["Act A", "Act B"]
+            def unavailable(*args):
+                raise wd.mb.DirectoryServiceError(kind)
+            result = wd.build(reg, DAY, request=unavailable)
+            self.assertEqual(result["namesChecked"], 1)
+            self.assertEqual(result["serviceFailureKind"], kind)
+            self.assertEqual(result["entries"], {})
+            self.assertEqual(result["serviceRetryAfterKey"], "act a")
+
     def test_directory_independent_of_musicbrainz_and_safe_handoff(self):
         result = wd.build(registry(), DAY, request=request)
         entry = result["entries"][NAME.casefold()]
