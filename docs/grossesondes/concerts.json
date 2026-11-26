@@ -2523,11 +2523,6 @@
       "aliases": []
     },
     {
-      "id": "guests",
-      "name": "GUESTS",
-      "aliases": []
-    },
-    {
       "id": "chaabi-live-paradise",
       "name": "CHAÂBI LIVE PARADISE",
       "aliases": []
@@ -2565,6 +2560,31 @@
     {
       "id": "nexion",
       "name": "NEXION",
+      "aliases": []
+    },
+    {
+      "id": "gagner-de-l-argent",
+      "name": "GAGNER DE L'ARGENT",
+      "aliases": []
+    },
+    {
+      "id": "wtazzz",
+      "name": "WTAZZZ",
+      "aliases": []
+    },
+    {
+      "id": "she-past-away",
+      "name": "SHE PAST AWAY",
+      "aliases": []
+    },
+    {
+      "id": "ductape",
+      "name": "DUCTAPE",
+      "aliases": []
+    },
+    {
+      "id": "je-t-aime",
+      "name": "JE T'AIME",
       "aliases": []
     }
   ],
@@ -16060,10 +16080,11 @@
     },
     {
       "id": "go-c-20261212-lyon-gagner-de-l-argent-wtazzz",
-      "title": "GAGNER DE L'ARGENT | WTAZZZ",
+      "title": "GAGNER DE L'ARGENT + WTAZZZ",
       "date": "2026-12-12",
       "artistIds": [
-        "gagner-de-l-argent-wtazzz"
+        "gagner-de-l-argent",
+        "wtazzz"
       ],
       "venueId": "go-site-75bf7ae552b35d5825a6",
       "genres": [
@@ -16084,6 +16105,10 @@
         {
           "date": "2026-11-26",
           "change": "Ajout après revue des preuves officielles"
+        },
+        {
+          "date": "2026-11-26",
+          "change": "Identité artistique rectifiée après nouvelle vérification de la fiche officielle"
         }
       ]
     },
@@ -16118,6 +16143,37 @@
           "change": "Ajout après revue des preuves officielles"
         }
       ]
+    },
+    {
+      "id": "go-c-20271104-strasbourg-she-past-away",
+      "title": "SHE PAST AWAY + DUCTAPE + JE T'AIME",
+      "date": "2027-11-04",
+      "artistIds": [
+        "she-past-away",
+        "ductape",
+        "je-t-aime"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Post Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/she-past-away-ductape-je-taime/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-26",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-26",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
     }
   ],
   "dataPolicy": {
@@ -16136,6 +16192,7 @@
   ],
   "retiredArtistIds": [
     "deefait-release-party",
+    "guests",
     "guests-nexion",
     "the-locos-ex-ska-p-en-concert"
   ]
