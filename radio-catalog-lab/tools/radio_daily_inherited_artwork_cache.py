@@ -120,30 +120,41 @@ def populate(pointer, raw, *, anchor, day, previous, output, limit=MAX_OBJECTS,
         logo = sources[url]
         try:
             data, mime = fetch(url, urlsplit(url).hostname)
-            if mime != logo["mime_type"]:
-                raise ValueError("artwork MIME mismatch")
+        except (OSError,http.client.HTTPException):
+            return name,None,"transport_failure"
+        except (ValueError,RuntimeError):
+            return name,None,"http_or_source_policy_rejected"
+        if mime != logo["mime_type"]:
+            return name,None,"mime_mismatch"
+        if not isinstance(data,bytes) or len(data)!=logo["byte_size"] or digest(data)!=logo["sha256"]:
+            return name,None,"digest_or_size_mismatch"
+        try:
             check_logo(logo,data)
-            return name,data
-        except (ValueError,OSError,RuntimeError,http.client.HTTPException):
-            return name,None
+        except (ValueError,OSError,RuntimeError):
+            return name,None,"decode_or_metadata_mismatch"
+        return name,data,None
     attempted = recovered = 0
+    failures = []
     with ThreadPoolExecutor(max_workers=WORKERS) as pool:
         for i in range(0,len(queue),WORKERS):
             if clock() >= deadline:
                 break
             batch = queue[i:i+WORKERS]
-            for name,data in pool.map(load,batch):
+            for name,data,reason in pool.map(load,batch):
                 attempted += 1
                 if data is not None:
                     with (output/name).open("xb") as target:
                         target.write(data)
                     recovered += 1
+                else:
+                    failures.append({"object":name,"reason":reason})
     return dict(schemaVersion=1,publicationAllowed=False,scanDate=day,
         catalogBaselineSha256=anchor["expected_sha"],objectCount=len(entries),
         cachedCount=hits,recoveredCount=recovered+local_count,attemptedCount=attempted,
         localImportedCount=local_count,localImportedBytes=local_bytes,
         localRejectedCount=local_rejected,networkRecoveredCount=recovered,
-        availableCount=hits+recovered+local_count,remainingCount=len(entries)-hits-recovered-local_count)
+        availableCount=hits+recovered+local_count,remainingCount=len(entries)-hits-recovered-local_count,
+        failedObjects=sorted(failures,key=lambda x:x["object"]))
 
 
 def main():

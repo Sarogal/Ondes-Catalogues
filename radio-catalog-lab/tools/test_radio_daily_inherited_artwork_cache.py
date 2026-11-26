@@ -62,6 +62,22 @@ class InheritedCacheTests(unittest.TestCase):
         self.assertEqual(r["remainingCount"],1)
         self.assertEqual(list((self.root/"out").iterdir()),[])
 
+    def test_failure_diagnostics_contain_only_digest_and_fixed_reason(self):
+        for i,(fetch,reason) in enumerate([
+            (Mock(side_effect=OSError("secret url")),"transport_failure"),
+            (Mock(side_effect=ValueError("unsafe source")),"http_or_source_policy_rejected"),
+            (Mock(return_value=(DATA,"image/webp")),"mime_mismatch"),
+            (Mock(return_value=(OLD,"image/png")),"digest_or_size_mismatch"),
+        ]):
+            report=self.run_cache(fetch,name="failure"+str(i))
+            self.assertEqual(report["failedObjects"],[{"object":filename(self.logo),"reason":reason}])
+            self.assertEqual(report["recoveredCount"],0)
+            self.assertNotIn("secret",json.dumps(report))
+
+    def test_success_has_no_failure_records(self):
+        report=self.run_cache(Mock(return_value=(DATA,"image/png")))
+        self.assertEqual(report["failedObjects"],[])
+
     def test_corrupt_existing_cache_refused(self):
         (self.previous/filename(self.logo)).write_bytes(OLD)
         fetch=Mock()
