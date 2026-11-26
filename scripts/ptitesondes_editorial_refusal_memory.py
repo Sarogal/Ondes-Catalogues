@@ -47,7 +47,8 @@ def policy_fingerprint():
 
 def empty_memory():
     return {"schema": SCHEMA, "policy": policy_fingerprint(),
-            "cursor": 0, "entries": {}, "attempt_sequence": 0, "attempts": {}}
+            "cursor": 0, "entries": {}, "attempt_sequence": 0, "attempts": {},
+            "reconsider": []}
 
 
 def checked_time(row):
@@ -63,11 +64,29 @@ def checked_time(row):
 def fresh_memory(raw, now):
     result = empty_memory()
     if (type(raw) is not dict or raw.get("schema") != SCHEMA
-            or raw.get("policy") != result["policy"]
+            or type(raw.get("policy")) is not str or not HEX.fullmatch(raw["policy"])
             or type(raw.get("entries")) is not dict
             or len(raw["entries"]) > MAX_ENTRIES
             or type(raw.get("cursor")) is not int
             or not 0 <= raw["cursor"] < 10**12):
+        return result
+    changed_policy = raw["policy"] != result["policy"]
+    old_priority = raw.get("reconsider", [])
+    priority = {k for k in old_priority if type(k) is str and HEX.fullmatch(k)} \
+        if type(old_priority) is list and len(old_priority) <= MAX_ENTRIES else set()
+    if changed_policy:
+        # A previous refusal can only request a fresh check, never confer
+        # authority. Retain the identity of valid old refusals, not the denial.
+        priority.update(k for k, row in raw["entries"].items()
+                        if type(k) is str and HEX.fullmatch(k)
+                        and type(row) is dict and type(row.get("reason")) is str
+                        and row["reason"] in REASONS
+                        and all(type(row.get(field)) is str and HEX.fullmatch(row[field])
+                                for field in ("clue_sha256", "source_sha256"))
+                        and checked_time(row) is not None
+                        and checked_time(row) <= now)
+    result["reconsider"] = sorted(priority)[:MAX_ENTRIES]
+    if changed_policy:
         return result
     result["cursor"] = raw["cursor"]
     sequence, attempts = raw.get("attempt_sequence", 0), raw.get("attempts", {})
