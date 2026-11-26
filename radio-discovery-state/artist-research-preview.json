@@ -7,7 +7,7 @@
   "dueNameCount": 23,
   "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "тима гранж (томск)",
+  "retryAfterKey": "wdk",
   "entries": {
     "2000 fm": {
       "status": "not_found",
