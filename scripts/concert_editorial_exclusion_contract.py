@@ -4,7 +4,7 @@ The private ledger retains the exact previously published snapshot. The
 public catalogue stores a minimal receipt outside the visible events array.
 Restoring a verified receipt to the internal historical view permits the
 existing venue/event guards to continue checking their original approvals.
-This module is not yet wired into the production Publisher.
+The production Publisher must independently replay a correction before removal.
 """
 from __future__ import annotations
 
@@ -74,7 +74,7 @@ def plan(row, approval, venue, today):
     receipt = {"eventId": event["id"], "date": row["reviewedAt"],
                "reason": proof["reason"]}
     return {"event": event, "receipt": receipt, "checked": checked,
-            "eventDate": event_date}
+            "eventDate": event_date, "proof": proof}
 
 
 def prepare(reference, current, approvals, today, *, fetch):
@@ -88,6 +88,8 @@ def prepare(reference, current, approvals, today, *, fetch):
     receipts = current.get(RECEIPTS, [])
     require(isinstance(rows, list) and isinstance(receipts, list),
             "invalid correction or receipt ledger")
+    if not rows and not receipts:
+        return current, {}
     original_ids = {e["id"] for e in reference["events"]}
     signed = {a["event"]["id"]: a for a in approvals["approvals"]
               if isinstance(a, dict) and isinstance(a.get("event"), dict)
@@ -145,6 +147,8 @@ def prepare(reference, current, approvals, today, *, fetch):
 
 def apply(catalogue, plans):
     """Remove only the exact, validated event from the visible events array."""
+    if not plans:
+        return catalogue, 0
     result = copy.deepcopy(catalogue)
     active = {eid: p for eid, p in plans.items() if not p.get("deferred")}
     public = {e["id"]: e for e in result["events"]}
@@ -154,3 +158,22 @@ def apply(catalogue, plans):
     if active:
         result[RECEIPTS] = [copy.deepcopy(p["receipt"]) for p in active.values()]
     return result, sum(not p["already"] for p in active.values())
+
+def matches_excluded(approval, plans):
+    """Reject an already excluded source/date, including an alternate ID/slug."""
+    event = approval.get("event", {})
+    for p in plans.values():
+        if p.get("deferred"):
+            continue
+        old = p["event"]
+        if event.get("date") != old["date"]:
+            continue
+        if event.get("officialUrl") == old["officialUrl"]:
+            return True
+        for proof in approval.get("officialEvidence", []):
+            if not isinstance(proof, dict) or proof.get("proofType") not in evidence.PROFILES:
+                continue
+            if (str(proof.get("officialOpenAgendaUid")) == str(p["proof"]["agendaUid"])
+                    and str(proof.get("officialOpenAgendaEventUid")) == str(p["proof"]["eventUid"])):
+                return True
+    return False
