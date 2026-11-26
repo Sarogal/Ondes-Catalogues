@@ -347,7 +347,7 @@ jobs:
           python radio-catalog-lab/tools/radio_daily_decision_preview.py \
             --discovery "$root/candidates.json" --dossiers "$root/qualification-dossiers.json" \
             --baseline-sha256 "$BASELINE_SHA256" --output "$root/decision-preview.json"
-      - name: Observe bounded ICY and alternative artist hints (no editorial approval)
+      - name: Observe bounded ICY, HLS ID3 and alternative artist hints (no editorial approval)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
         shell: bash
         run: |
@@ -359,7 +359,7 @@ jobs:
           fi
           python radio-catalog-lab/tools/radio_daily_metadata_preview.py \
             --discovery "$root/candidates.json" --reconciliation "$root/reconciliation-v8.json" \
-            --continuity "$root/continuity-preview.json" --decisions "$root/decision-preview.json" \
+            --continuity "$root/continuity-preview.json" --decisions "$root/decision-preview.json" --hls "$root/hls-preview.json" \
             --output "$root/metadata-preview.json" --transient-titles "$RUNNER_TEMP/go-radio-transient-titles.json" --limit 6 --allow-network "${previous[@]}"
       - name: Research observed artist names in MusicBrainz (hypotheses only)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
