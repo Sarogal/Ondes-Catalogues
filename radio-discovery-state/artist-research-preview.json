@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 124,
   "dueNameCount": 58,
-  "attemptedCount": 1,
+  "attemptedCount": 6,
   "serviceFailure": "http_503",
-  "retryAfterKey": "copper hollow",
+  "retryAfterKey": "epica",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -193,6 +193,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "danger danger": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Danger Danger",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "dead end tragedy": {
       "status": "name_hypothesis",
       "mbid": "da4474de-a5f3-4f61-ae25-71f70ec3e0bd",
@@ -205,11 +214,65 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "dominum": {
+      "status": "name_hypothesis",
+      "mbid": "a0385d31-16c4-49b6-ab2c-51877aa653e5",
+      "genres": [
+        "power metal"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/a0385d31-16c4-49b6-ab2c-51877aa653e5",
+      "artistName": "Dominum",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "downtown mystics": {
       "status": "not_found",
       "artistName": "Downtown Mystics",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "drake white": {
+      "status": "name_hypothesis",
+      "mbid": "3450511f-aea9-40cd-9618-d26ca7495842",
+      "genres": [
+        "country"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/3450511f-aea9-40cd-9618-d26ca7495842",
+      "artistName": "Drake White",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "dvar": {
+      "status": "name_hypothesis",
+      "mbid": "be84006a-c37a-4a4a-866f-f7e0ab3a5f9c",
+      "genres": [
+        "dark wave"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/be84006a-c37a-4a4a-866f-f7e0ab3a5f9c",
+      "artistName": "Dvar",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "elektron": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Elektron",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },
