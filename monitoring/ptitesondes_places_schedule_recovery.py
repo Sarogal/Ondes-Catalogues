@@ -3,6 +3,8 @@
 Only dispatch the approved private-write pipeline, not the publisher. Observe
 public Actions metadata, never private files or logs. Any active trusted
 intake suppresses a dispatch; the collector retains its existing queue lock.
+A completion-triggered recheck avoids confusing a preview or a partially
+successful legacy collector with persisted generic research.
 """
 import argparse
 from datetime import datetime, timedelta, timezone
@@ -16,6 +18,7 @@ TARGET = "ptitesondes-private-intake-on-public-runners.yml"
 INPUTS = {"cycle": "places", "mode": "write", "recovery": "none"}
 PLACE_STEP = "Rechercher et qualifier les lieux permanents pour enfants"
 WRITE_STEP = "Demander la synchronisation publique après écriture privée validée"
+RESEARCH_STEP = "Attester la persistance de la recherche générique des lieux"
 ACTIVE = {"requested", "queued", "in_progress", "pending", "waiting"}
 MAX_HISTORY = 30
 SUCCESS_GAP = timedelta(hours=4)
@@ -24,7 +27,7 @@ FAILURE_GAP = timedelta(minutes=90)
 
 def trusted(repo, ref, event, pause):
     return (repo == REPO and ref == "refs/heads/main"
-            and event in ("schedule", "push") and pause != "paused")
+            and event in ("schedule", "push", "workflow_run") and pause != "paused")
 
 
 def request(token, url, body=None):
@@ -72,13 +75,20 @@ def place_job_result(doc):
     # A successful preview or an outings-only run is not a persisted cycle.
     p = [s for s in steps if s.get("name") == PLACE_STEP]
     w = [s for s in steps if s.get("name") == WRITE_STEP]
-    if len(p) > 1 or len(w) > 1:
+    r = [s for s in steps if s.get("name") == RESEARCH_STEP]
+    if len(p) > 1 or len(w) > 1 or len(r) > 1:
         raise ValueError("duplicate_job_step")
     if p and p[0].get("conclusion") == "skipped":
         return "not_places"
     if (job.get("conclusion") == "success" and p and w
             and p[0].get("conclusion") == w[0].get("conclusion") == "success"):
-        return "places_write_success"
+        if not r:
+            # Legacy runs never proved the generic state actually persisted.
+            return "places_research_unconfirmed"
+        if r[0].get("conclusion") == "success":
+            return "places_write_success"
+        # A warning in generic research must not count as a successful write.
+        return "places_failure"
     if p and p[0].get("conclusion") == "failure":
         return "places_failure"
     if p and p[0].get("conclusion") == "success" and w and w[0].get("conclusion") == "skipped":

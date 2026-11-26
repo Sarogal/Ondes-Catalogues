@@ -967,8 +967,21 @@ jobs:
                 exit 1
               fi
             fi
+            if [[ "$OPEN_WORLD_PLACE_OK" == 1 ]]; then
+              echo "OPEN_WORLD_PLACE_PERSISTED=1" >> "$GITHUB_ENV"
+            fi
           fi
           echo "Lieux recherchés et qualifiés ; états et preuves exclusivement privés." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Attester la persistance de la recherche générique des lieux
+        if: ${{ success() && env.RUN_MODE == 'write' && env.CYCLE != 'outings' && env.OPEN_WORLD_PLACE_PERSISTED == '1' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          path=automation-intake/ptitesondes/lieux-open-world-research.json
+          test -s "state/$path"
+          git -C state diff --quiet HEAD -- "$path"
+          echo "État générique des lieux présent dans la référence privée sauvegardée."
 
       - name: Vérifier absence d'écriture ou de publication dans le dépôt public
         shell: bash
