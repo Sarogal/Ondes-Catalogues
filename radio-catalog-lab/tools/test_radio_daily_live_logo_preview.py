@@ -1,5 +1,6 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, call
+from urllib.parse import urljoin
 
 from radio_daily_live_logo_preview import preview_logo
 from radio_daily_v9_generator import digest, encode
@@ -41,7 +42,23 @@ class LiveLogoPreviewTests(unittest.TestCase):
     def test_official_page_failure_does_not_authorize_logo(self, page, image):
         result = self.run_preview()
         self.assertEqual(result["outcome"], "live_evidence_deferred")
-        self.assertEqual(result["networkCalls"], 1)
+        self.assertEqual(result["networkCalls"], 2)
+        self.assertEqual(page.call_args_list, [call(PAGE), call(urljoin(PAGE, "/"))])
+        self.assertIsNone(result["candidateSha256"])
+        self.assertEqual(result["objectCount"], 0)
+        image.assert_not_called()
+
+    @patch("radio_daily_live_evidence.fetch_strict_https")
+    @patch("radio_daily_live_evidence.fetch_html")
+    def test_failed_official_path_and_unbound_root_do_not_authorize_logo(self, page, image):
+        root = urljoin(PAGE, "/")
+        page.side_effect = [OSError("old path unavailable"), (root, BODY)]
+        result = self.run_preview()
+        self.assertEqual(result["outcome"], "live_evidence_deferred")
+        self.assertEqual(page.call_args_list, [call(PAGE), call(root)])
+        self.assertEqual(result["networkCalls"], 2)
+        self.assertIsNone(result["candidateSha256"])
+        self.assertEqual(result["recoveredCount"], 0)
         image.assert_not_called()
 
     @patch("radio_daily_live_evidence.fetch_strict_https", return_value=(DATA, "image/png"))
