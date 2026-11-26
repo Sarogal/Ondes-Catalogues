@@ -28,9 +28,18 @@ class PublishedOpenAgendaBillRepair(unittest.TestCase):
             "longDescription": {"fr": description},
         })
         # Recreate an old published error without modifying the real catalogue.
-        with mock.patch.object(fixture.oa, "verified_export",
-                               return_value=(old_names, ["punk"])), \
-             mock.patch.object(fixture.signer.probe, "safe_fetch", side_effect=fetch):
+        # The runner imports the source verifier under both package and
+        # top-level module names. Patch only the historical parser in both
+        # namespaces while constructing the signed legacy fixture.
+        from automation.concerts import openagenda_official_concert as package_oa
+        import openagenda_official_concert as top_oa
+        from contextlib import ExitStack
+        with ExitStack() as stack:
+            for module in {fixture.oa, package_oa, top_oa}:
+                stack.enter_context(mock.patch.object(
+                    module, "verified_export", return_value=(old_names, ["punk"])))
+            stack.enter_context(mock.patch.object(
+                fixture.signer.probe, "safe_fetch", side_effect=fetch))
             approved, report = fixture.producer.build(
                 fixture.observation(name=title, leadArtist=old_names[0]),
                 base, empty, fixture.TODAY, fetch=fetch)
