@@ -152,5 +152,66 @@ class OpenWorldArtistGenreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             research.build(batch, DAY, limit=25)
 
+class DirectoryArtistResearchTests(unittest.TestCase):
+    def directory(self, *, wiki=False, **changes):
+        item = {"status": "hypothesis", "artistName": NAME,
+                "checkedAt": DAY.isoformat(), "publicationAllowed": False,
+                "identityVerified": False, "homepageHints": [URL],
+                "genres": ["Black Metal"]}
+        item.update({"qid": "Q123"} if wiki else
+                    {"mbid": "12345678-1234-1234-1234-123456789abc"})
+        item.update(changes)
+        return {"schema": research.wd.SCHEMA if wiki else research.mb.SCHEMA,
+                "publicationAllowed": False, "approvalsProposed": 0,
+                "entries": {research.mb.exact(NAME): item}}
+
+    def test_directory_lead_is_researched_without_importing_directory_genres(self):
+        for wiki in (False, True):
+            with self.subTest(wiki=wiki):
+                kwargs = {"wikidata" if wiki else "musicbrainz": self.directory(wiki=wiki)}
+                calls = []
+                def fetch(url, cache):
+                    calls.append(url)
+                    return PROFILE
+                result = research.build(registry([]), DAY, fetch=fetch, **kwargs)
+                self.assertEqual(calls, [URL])
+                self.assertEqual(result["directoryHintSources"], 1)
+                self.assertEqual(result["directoryHintSourcesChecked"], 1)
+                fact = next(iter(result["facts"].values()))
+                self.assertEqual(fact["genres"], ["Death Metal"])
+                self.assertFalse(fact["officialDomainVerified"])
+                self.assertEqual(result["approvalsProposed"], 0)
+
+    def test_stale_future_forged_mismatched_and_unsafe_directory_rows_ignored(self):
+        for changes in (
+            {"checkedAt": "2026-10-01"}, {"checkedAt": "2026-11-25"},
+            {"identityVerified": True}, {"publicationAllowed": True},
+            {"artistName": "Different Act"}, {"mbid": "bad"},
+            {"homepageHints": ["https://127.0.0.1/"]},
+        ):
+            with self.subTest(changes=changes):
+                result = research.build(registry([]), DAY,
+                    musicbrainz=self.directory(**changes),
+                    fetch=lambda *a: self.fail("unsafe or stale hint"))
+                self.assertEqual(result["candidateArtistSources"], 0)
+
+    def test_competing_directory_urls_held_but_direct_event_hint_kept(self):
+        other = self.directory(wiki=True, homepageHints=["https://clone.example.org/"])
+        args = {"musicbrainz": self.directory(), "wikidata": other}
+        result = research.build(registry([]), DAY, **args,
+                               fetch=lambda *a: self.fail("ambiguous"))
+        self.assertEqual(result["ambiguousArtistSourcesHeld"], 1)
+        result = research.build(registry(), DAY, **args, fetch=lambda *a: PROFILE)
+        self.assertEqual(result["profilesRefreshed"], 1)
+        self.assertEqual(result["directoryHintSources"], 0)
+
+    def test_contradictory_structured_profile_cannot_be_hidden_by_biography(self):
+        html = PROFILE + PROFILE.replace('"Death Metal"', '"Thrash Metal"') + '<a href="/bio">Bio</a>'
+        def fetch(url, cache):
+            self.assertEqual(url, URL)
+            return html
+        result = research.build(registry(), DAY, fetch=fetch)
+        self.assertEqual(result["memoryFactCount"], 0)
+
 if __name__ == "__main__":
     unittest.main()

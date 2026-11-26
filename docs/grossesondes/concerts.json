@@ -2541,6 +2541,26 @@
       "id": "chaabi-live-paradise",
       "name": "CHAÂBI LIVE PARADISE",
       "aliases": []
+    },
+    {
+      "id": "panzerfaust",
+      "name": "PANZERFAUST",
+      "aliases": []
+    },
+    {
+      "id": "guests-nexion",
+      "name": "guests : NEXION",
+      "aliases": []
+    },
+    {
+      "id": "downtown-boys-us",
+      "name": "DOWNTOWN BOYS (US)",
+      "aliases": []
+    },
+    {
+      "id": "gagner-de-l-argent-wtazzz",
+      "name": "GAGNER DE L'ARGENT | WTAZZZ",
+      "aliases": []
     }
   ],
   "venues": [
@@ -3739,6 +3759,19 @@
       "longitude": 2.3724207,
       "geoPrecision": "named-site-point",
       "id": "go-site-f5054d76985c4c3a9c6e"
+    },
+    {
+      "name": "Kraspek Myzik",
+      "city": "Lyon",
+      "address": "20 Montée Saint-Sébastien",
+      "postalCode": "69001",
+      "department": "69",
+      "region": "Auvergne-Rhône-Alpes",
+      "geoSource": "https://www.openstreetmap.org/node/2092729905",
+      "latitude": 45.7712711,
+      "longitude": 4.8357517,
+      "geoPrecision": "named-site-point",
+      "id": "go-site-75bf7ae552b35d5825a6"
     }
   ],
   "events": [
@@ -15966,6 +15999,96 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Punk Paradise",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-26",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-26",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261213-montreuil-panzerfaust",
+      "title": "PANZERFAUST + guests : NEXION",
+      "date": "2026-12-13",
+      "artistIds": [
+        "panzerfaust",
+        "guests-nexion"
+      ],
+      "venueId": "go-site-a4221278b655cca782f2",
+      "genres": [
+        "black metal",
+        "death metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://openagenda.com/shotgun/events/panzerfaust-guests-nexion",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Chinois",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-26",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-26",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261214-montreuil-downtown-boys-us",
+      "title": "DOWNTOWN BOYS (US) + GUESTS",
+      "date": "2026-12-14",
+      "artistIds": [
+        "downtown-boys-us",
+        "guests"
+      ],
+      "venueId": "go-site-a4221278b655cca782f2",
+      "genres": [
+        "punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://openagenda.com/shotgun/events/downtown-boys-us-guests",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Chinois",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-26",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-26",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261212-lyon-gagner-de-l-argent-wtazzz",
+      "title": "GAGNER DE L'ARGENT | WTAZZZ",
+      "date": "2026-12-12",
+      "artistIds": [
+        "gagner-de-l-argent-wtazzz"
+      ],
+      "venueId": "go-site-75bf7ae552b35d5825a6",
+      "genres": [
+        "punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://openagenda.com/shotgun/events/gagner-de-largent-or-wtazzz",
+      "sourceType": "organisateur",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Kraspek Myzik",
       "ticketUrl": null,
       "lastVerified": "2026-11-26",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
