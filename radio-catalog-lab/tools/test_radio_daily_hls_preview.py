@@ -1,5 +1,5 @@
 import unittest
-from radio_daily_hls_preview import parse_manifest, observe, collect, MAX_MANIFEST, MAX_SEGMENT
+from radio_daily_hls_preview import parse_manifest, observe, collect, MAX_MANIFEST, MAX_SEGMENT, packed_id3
 from radio_daily_qualification_dossiers import safe_digest
 
 URL="https://radio.example.org/live.m3u8"
@@ -70,6 +70,52 @@ class HLSTests(unittest.TestCase):
         self.assertEqual(first["technicallyQualifiedCount"],0)
         second=collect(d,r,a,previous=first,limit=1,probe=lambda u:self.fail("cache"))
         self.assertEqual(second["attemptedCount"],0)
+
+
+def sync_bytes(n):
+    return bytes((n >> shift) & 127 for shift in (21,14,7,0))
+
+
+def id3(frames, version=4):
+    body=b""
+    for name, payload in frames:
+        size=sync_bytes(len(payload)) if version==4 else len(payload).to_bytes(4,"big")
+        body+=name+size+b"\0\0"+payload
+    return b"ID3"+bytes([version,0,0])+sync_bytes(len(body))+body
+
+
+class ID3Tests(unittest.TestCase):
+    def test_v23_and_v24_artist_title(self):
+        for version, marker in ((3,b"\0"),(4,b"\3")):
+            tag=id3([(b"TPE1",marker+b"AC/DC"),(b"TIT2",marker+b"Song")],version)
+            offset,hints=packed_id3(tag+b"audio",URL)
+            self.assertEqual(offset,len(tag))
+            self.assertEqual(hints[0]["artistHint"],"AC/DC")
+            self.assertEqual(hints[0]["titleSha256"],safe_digest("Song"))
+            self.assertEqual(hints[0]["method"],"hls_packed_id3")
+
+    def test_timestamp_only_is_not_music(self):
+        tag=id3([(b"PRIV",b"com.apple.streaming.transportStreamTimestamp\0"+b"\0"*8)])
+        self.assertEqual(packed_id3(tag,URL),(len(tag),[]))
+
+    def test_truncated_and_duplicate_frames_rejected(self):
+        tag=id3([(b"TPE1",b"\3Band"),(b"TIT2",b"\3Song")])
+        self.assertEqual(packed_id3(tag[:-1],URL),(0,[]))
+        duplicate=id3([(b"TPE1",b"\3Band"),(b"TPE1",b"\3Other"),(b"TIT2",b"\3Song")])
+        self.assertEqual(packed_id3(duplicate,URL),(0,[]))
+        self.assertEqual(packed_id3(b"audio"+tag,URL),(0,[]))
+
+    def test_id3_requires_advancing_manifest_and_audio(self):
+        tag=id3([(b"TPE1",b"\3Band"),(b"TIT2",b"\3Song")])
+        frame=b"\xff\xfb\x90\x00"+b"\0"*413
+        for audio, expected in ((frame*8,"hls_id3_artist_title_hint"),(b"not audio","hls_no_parseable_id3")):
+            responses=iter([(URL,manifest(10)),(URL,manifest(11)),("https://radio.example.org/12.aac",tag+audio)])
+            r=observe(URL,fetch=lambda u,n:next(responses),sleep=lambda s:None,metadata=True)
+            self.assertEqual(r["verdict"],expected)
+            self.assertEqual(bool(r["titleHints"]),bool(audio==frame*8))
+        responses=iter([(URL,manifest(10)),(URL,manifest(10))])
+        r=observe(URL,fetch=lambda u,n:next(responses),sleep=lambda s:None,metadata=True)
+        self.assertNotIn("titleHints",r)
 
 if __name__=="__main__":
     unittest.main()
