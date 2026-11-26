@@ -31,6 +31,66 @@ def document(**changes):
 
 
 class ExistingVenueGeoEvidenceTests(unittest.TestCase):
+    def test_named_footer_address_after_exact_visible_event_and_independent_geo(self):
+        event = dict(EVENT, title="Metal night")
+        html = ("<h1>Metal night</h1><p>New Room</p>"
+                "<p>Vendredi 12 02 2027 20:00</p>"
+                "<h2>Vous devriez aimer...</h2><p>Other show</p>"
+                "<footer><p>New Room, Allée des Jardins - 68000 Colmar"
+                " / tél. : 03 00 00 00 00</p></footer>")
+        with patch.object(evidence.official, "official_origin",
+                          return_value="https://unknown-room.fr/agenda"), \
+             patch.object(evidence.geo, "verify",
+                          return_value=(OSM, 48.08, 7.36, "named-site-point")) as geo:
+            row = evidence.verify(event, VENUE, fetch=lambda *a: html)
+            self.assertEqual(row["venuePatch"]["address"], "Allée des Jardins")
+            self.assertEqual(row["venuePatch"]["postalCode"], "68000")
+            self.assertEqual(geo.call_args.args[0]["address"], "Allée des Jardins")
+            self.assertFalse(row["publicationAllowed"])
+            self.assertFalse(row["publisherAuthorityGranted"])
+
+    def test_footer_requires_exact_event_venue_date_origin_and_visible_named_address(self):
+        event = dict(EVENT, title="Metal night")
+        prefix = "<h1>Metal night</h1><p>New Room</p><p>12 02 2027 20:00</p>"
+        footer = "<footer><p>New Room, 19 rue des Jardins - 68000 Colmar</p></footer>"
+        variants = [
+            (prefix.replace("<p>New Room</p>", "<p>Other Room</p>") + footer, True),
+            (prefix.replace("12 02", "13 02") + footer, True),
+            (prefix.replace("Metal night", "Other show") + footer, True),
+            (prefix + footer, False),
+            (prefix + footer.replace("New Room,", "Other Room,"), True),
+            (prefix + footer.replace("Colmar", "Paris"), True),
+            (prefix + footer.replace("<footer>", "<footer hidden>"), True),
+            (prefix + footer.replace("<p>", "<p style='display:none'>"), True),
+            (prefix + footer.replace("</footer>", "<p>New Room, 21 rue des Jardins 68000 Colmar</p></footer>"), True),
+            (prefix + "<p>13 02 2027 20:00</p>" + footer, True),
+            (prefix + "<h2>New Room</h2><p>19 rue des Jardins 75000 Paris</p>" + footer, True),
+            (prefix.replace("<p>New Room</p>", "") + "<h2>Vous devriez aimer...</h2><p>New Room</p>" + footer, True),
+        ]
+        for html, trusted in variants:
+            with self.subTest(html=html, trusted=trusted), \
+                 patch.object(evidence.official, "official_origin",
+                              return_value="https://unknown-room.fr/agenda" if trusted else None), \
+                 patch.object(evidence.geo, "verify",
+                              side_effect=AssertionError("unverified address reached geography")):
+                with self.assertRaises(ValueError):
+                    evidence.verify(event, VENUE, fetch=lambda *a: html)
+
+    def test_footer_does_not_override_explicit_practical_page_conflict(self):
+        event = dict(EVENT, title="Metal night")
+        html = ("<h1>Metal night</h1><p>12 02 2027 20:00</p>"
+                "<p>Lieu</p><p>New Room</p><nav><a href='/infos/'>Infos pratiques</a></nav>"
+                "<footer><p>New Room, 19 rue des Jardins 68000 Colmar</p></footer>")
+        practical = ("<h1>Infos pratiques</h1><h2>New Room</h2>"
+                     "<p>19 rue des Jardins 75000 Paris</p>")
+        with patch.object(evidence.official, "official_origin",
+                          return_value="https://unknown-room.fr/agenda"), \
+             patch.object(evidence.geo, "verify",
+                          side_effect=AssertionError("conflicting address reached geography")):
+            with self.assertRaises(ValueError):
+                evidence.verify(event, VENUE,
+                                fetch=lambda url, cache: html if url == URL else practical)
+
     def test_exact_address_does_not_mutate_original(self):
         site = evidence.extract_address(document(), EVENT, VENUE)
         self.assertEqual(site["address"], "19 rue des Jardins")
