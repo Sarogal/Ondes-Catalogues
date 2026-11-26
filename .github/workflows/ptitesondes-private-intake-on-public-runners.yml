@@ -93,6 +93,10 @@ jobs:
           assert s.count('cp "$OUT/ods-territory-cursor.json" "$STATE/ods-territory-cursor.json"') == 2
           assert s.count('git -C state add -- "automation-intake/ptitesondes/ods-territory-cursor.json"') == 2
           assert "queue: max" in s
+          dispatch_step = s.split("      - name: Demander la synchronisation publique après écriture privée validée", 1)[1].split("\n      - name:", 1)[0]
+          assert "success() && env.RUN_MODE == 'write'" in dispatch_step
+          assert "env.CYCLE != 'places'" not in dispatch_step
+          assert "gh workflow run ptitesondes-cloud-sync.yml" in dispatch_step
           assert 'mapfile -t REVIEW_SLOTS' in s
           assert "vars.PTITESONDES_HTML_QUEUE == 'enabled'" in s
           assert "ptitesondes_html_private_queue_cycle.py" in s
@@ -958,7 +962,7 @@ jobs:
           echo "Aucune écriture vers le catalogue public ; synchronisation et publication autonomes restent indépendantes." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Demander la synchronisation publique après écriture privée validée
-        if: ${{ success() && env.RUN_MODE == 'write' && env.CYCLE != 'places' }}
+        if: ${{ success() && env.RUN_MODE == 'write' }}
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
