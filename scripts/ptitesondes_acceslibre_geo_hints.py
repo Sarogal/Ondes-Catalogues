@@ -21,7 +21,7 @@ from ptitesondes_catalogue_geo_rotation import identity, write_state
 from ptitesondes_dynamic_municipal_source_links import _safe_url
 from ptitesondes_catalogue_geo_proof_batch import (
     research_group, _external_location, read_unknown_https, fetch_ign,
-    fetch_overpass, _osm_website_host, _coordinates, meters,
+    fetch_acceslibre_osm, _osm_website_host, _coordinates, meters,
     administrative_commune_code, fetch_commune,
     administrative_unit_matches, fetch_administrative_unit,
 )
@@ -238,7 +238,7 @@ def _discover_hint_website(group, point, response):
 
 
 def independent_hint_location(group, hint, *, html_get=read_unknown_https,
-                              ign_get=fetch_ign, osm_get=fetch_overpass,
+                              ign_get=fetch_ign, osm_get=fetch_acceslibre_osm,
                               commune_get=fetch_commune,
                               unit_get=fetch_administrative_unit):
     """Acceslibre is discovery only; live venue page + BAN + OSM must agree."""
