@@ -44,7 +44,8 @@ from scripts import concert_dynamic_existing_venue as verified
 
 SCHEMA = "grossesondes.concert.single-official-osm-proposals.v1"
 MAX_CHECKS = 16  # default for standalone callers
-MAX_REVIEW_CHECKS = 32  # bounded network rechecks, never a cap on sources or bands
+MAX_REVIEW_CHECKS = 48  # bounded network rechecks, never a cap on sources or bands
+MAX_REVIEW_SECONDS = 240  # soft elapsed-time budget between complete candidates
 MAX_REVIEW_MEMORY = 4096
 REVIEW_BUCKETS = frozenset({"genre_tag_review", "genre_unknown"})
 
@@ -570,7 +571,7 @@ def _prioritize_extraction_retries(window, selected, failures, revision, limit,
     geo_stale = set(geo_stale)
     stale = extraction_stale | geo_stale
     pending = len(extraction_stale)
-    budget = min(8, limit // 4)
+    budget = limit // 4
     if not stale or not budget:
         return window, set(), pending
     picked = {_review_key(row) for row in window}
@@ -600,7 +601,9 @@ def _prioritize_extraction_retries(window, selected, failures, revision, limit,
 
 
 def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
-          fetch=verified.safe_fetch, prior=None):
+          fetch=verified.safe_fetch, prior=None, max_seconds=MAX_REVIEW_SECONDS):
+    require(type(max_seconds) is int and 1 <= max_seconds <= MAX_REVIEW_SECONDS,
+            "invalid bounded review time")
     require(type(slot) is int and slot in (0, 1, 2)
             and type(limit) is int and 1 <= limit <= MAX_REVIEW_CHECKS,
             "invalid bounded scan")
@@ -650,7 +653,7 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
     other = [row for row in regular
              if row[3].get("reviewBucket") != "genre_tag_review"]
     spare = limit - len(window)
-    tagged_budget = 8 if limit >= 32 else 4 if limit >= 16 else 2
+    tagged_budget = max(2, 4 * (limit // 16))
     take_tagged = min(len(tagged), spare if not other else min(tagged_budget, max(1, spare // 3), spare))
     tstart = (tick * take_tagged) % len(tagged) if tagged else 0
     tagged_ranked = ranked(tagged, tstart)
@@ -723,7 +726,13 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
     reason_counts = Counter()
     checks = []
     started = time.monotonic()
+    examined = []
     for row in window:
+        # Do not interrupt a candidate halfway through independent proof.
+        # Deferred rows retain their original recency and pending retry.
+        if time.monotonic() - started >= max_seconds:
+            break
+        examined.append(row)
         candidate = row[3]
         identifier = str(candidate.get("candidateId", ""))[:120]
         check = {"candidateId": identifier, "date": row[1],
@@ -764,7 +773,7 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
             if reason in _GEO_REPLAY_REASONS and key in fingerprints:
                 geo_memory[key] = fingerprints[key]
         checks.append(check)
-    checked_keys = [_review_key(row) for row in window]
+    checked_keys = [_review_key(row) for row in examined]
     checked_set = set(checked_keys)
     next_memory = [k for k in memory if k not in checked_set] + checked_keys
     return output, {
@@ -772,10 +781,10 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         "extractorRevision": revision,
         "extractionRetryMemory": dict(list(retry_memory.items())[-MAX_REVIEW_MEMORY:]),
         "changedExtractorRetryPendingBefore": pending_retries,
-        "changedExtractorPriorityChecks": len(prioritized - geo_prioritized),
+        "changedExtractorPriorityChecks": len((prioritized - geo_prioritized) & checked_set),
         "venueGeoRetryMemory": dict(list(geo_memory.items())[-MAX_REVIEW_MEMORY:]),
         "changedVenueGeoRetryPendingBefore": len(geo_stale),
-        "changedVenueGeoPriorityChecks": len(geo_prioritized),
+        "changedVenueGeoPriorityChecks": len(geo_prioritized & checked_set),
         "changedVenueGeoRetryPendingAfter": sum(
             key in exact_geo and fingerprints[key] != previous
             for key, previous in geo_memory.items()),
@@ -788,19 +797,21 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         "asOf": today.isoformat(),
         "scanSlot": slot,
         "eligibleQueue": len(selected),
-        "examined": len(window),
+        "examined": len(examined),
         "reviewBudget": limit,
+        "reviewTimeBudgetSeconds": max_seconds,
+        "reviewDeferredByTimeBudget": len(window) - len(examined),
         "reviewElapsedSeconds": round(time.monotonic() - started, 2),
         "openAgendaExamined": sum(
             row[3].get("source") == "agenda_officiel_openagenda"
-            for row in window),
+            for row in examined),
         "officialGenreTaggedExamined": sum(
             row[3].get("source") != "agenda_officiel_openagenda"
             and row[3].get("reviewBucket") == "genre_tag_review"
-            for row in window),
+            for row in examined),
         "otherOfficialExamined": sum(
             row[3].get("source") != "agenda_officiel_openagenda"
-            for row in window),
+            for row in examined),
         "stateCounts": dict(sorted(counts.items())),
         "eligibilityRejections": dict(sorted(eligibility_rejections.items())),
         "candidateChecks": checks,
@@ -819,13 +830,14 @@ def main():
     parser.add_argument("--report", required=True, type=Path)
     parser.add_argument("--scan-slot", choices=(0, 1, 2), type=int, default=0)
     parser.add_argument("--limit", type=int, default=MAX_CHECKS)
+    parser.add_argument("--max-seconds", type=int, default=MAX_REVIEW_SECONDS)
     opts = parser.parse_args()
     data = lambda p: json.loads(p.read_text(encoding="utf-8"))
     proposal, summary = build(
         data(opts.registry), data(opts.catalogue),
         data(opts.candidate),
         dt.datetime.now(ZoneInfo("Europe/Paris")).date(),
-        slot=opts.scan_slot, limit=opts.limit,
+        slot=opts.scan_slot, limit=opts.limit, max_seconds=opts.max_seconds,
         prior=data(opts.report) if opts.report.exists() else None)
     opts.output.write_text(json.dumps(
         proposal, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
