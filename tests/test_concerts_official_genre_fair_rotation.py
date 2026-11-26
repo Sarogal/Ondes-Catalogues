@@ -139,7 +139,36 @@ class FairGenreReviewSlots(unittest.TestCase):
             self.assertEqual(len(seen), 96)
             self.assertEqual(len(prior["recentReviewKeys"]), 96)
             with self.assertRaises(ValueError):
-                pipeline.build({}, CATALOGUE, BEFORE, TODAY, slot=0, limit=33)
+                pipeline.build({}, CATALOGUE, BEFORE, TODAY, slot=0, limit=49)
+
+    def test_expanded_budget_and_time_deferred_rows_keep_original_recency(self):
+        queue = ([row("oa", i) for i in range(24)] +
+                 [row("tag", i, "genre_tag_review") for i in range(24)] +
+                 [row("unknown", i) for i in range(72)])
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose", side_effect=ValueError("Held")):
+            _, complete = pipeline.build({}, CATALOGUE, BEFORE, TODAY, limit=48)
+            self.assertEqual(complete["examined"], 48)
+            self.assertEqual(complete["officialGenreTaggedExamined"], 12)
+            self.assertEqual(complete["reviewDeferredByTimeBudget"], 0)
+            with mock.patch.object(pipeline.time, "monotonic",
+                                   side_effect=[0, 0, 1, 2, 3, 3]):
+                _, partial = pipeline.build({}, CATALOGUE, BEFORE, TODAY,
+                                            limit=48, max_seconds=3)
+            self.assertEqual(partial["examined"], 3)
+            self.assertEqual(partial["reviewDeferredByTimeBudget"], 45)
+            self.assertEqual(len(partial["recentReviewKeys"]), 3)
+            self.assertEqual(len(partial["candidateChecks"]), 3)
+            self.assertEqual(partial["firstReviewInMemory"], 3)
+            _, next_report = pipeline.build({}, CATALOGUE, BEFORE, TODAY,
+                                            limit=48, prior=partial)
+            ids = {c["candidateId"] for c in partial["candidateChecks"]}
+            self.assertFalse(ids & {c["candidateId"] for c in next_report["candidateChecks"]})
+            self.assertEqual(next_report["examined"], 48)
+            self.assertFalse(next_report["publicationAllowed"])
+            for bad in (0, 241, True):
+                with self.assertRaises(ValueError):
+                    pipeline.build({}, CATALOGUE, BEFORE, TODAY, max_seconds=bad)
 
     def test_seen_priority_lanes_spill_into_unseen_general_queue(self):
         queue = ([row("oa", i) for i in range(2)] +

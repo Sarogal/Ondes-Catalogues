@@ -817,7 +817,7 @@ jobs:
               --candidate "$RUNNER_TEMP/concerts-official-approvals-preview.json" \
               --output "$OUTPUT" \
               --report confidential/automation/concerts/intake/single-official-osm-proposals.json \
-              --scan-slot "$SCAN_SLOT" --limit 32 \
+              --scan-slot "$SCAN_SLOT" --limit 48 --max-seconds 240 \
               > "$RUNNER_TEMP/concerts-private-logs/single-official-osm-proposals.log" 2>&1; then
             mv "$OUTPUT" "$RUNNER_TEMP/concerts-official-approvals-preview.json"
             echo "Concerts officiels OSM : propositions privées transmises au Publisher."
