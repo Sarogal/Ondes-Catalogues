@@ -98,17 +98,23 @@ def build(metadata, research, decisions, *, wikidata=None, recordings=None):
             raise ValueError("untrusted decision row")
         bound = bool(decision and decision.get("streamSha256") == row["streamSha256"])
         seen, days, stale = set(), set(), set()
+        history_days, history_pairs = set(), set()
         spellings = {}
         for obs in row["observations"]:
             if not valid_hint(obs) or parse_day(obs["date"]) > day:
                 raise ValueError("invalid observation")
-            age = (today - dt.date.fromisoformat(obs["date"])).days
+            evidence_day = obs.get("broadcastDate", obs["date"])
+            age = (today - dt.date.fromisoformat(evidence_day)).days
             artist = obs["artistHint"].strip()
             pair = (artist, obs["titleSha256"])
             if age >= FRESH_DAYS:
                 stale.add(pair)
                 continue
-            days.add(obs["date"])
+            if obs.get("method") == "station_history_json":
+                history_days.add(evidence_day)
+                history_pairs.add(pair)
+            else:
+                days.add(obs["date"])
             seen.add(pair)
             spellings.setdefault(key(artist), set()).add(artist)
         counts = Counter({k:0 for k in BUCKETS})
@@ -160,7 +166,8 @@ def build(metadata, research, decisions, *, wikidata=None, recordings=None):
                         "matchesDecisionStream":bound, "observedInScan":row.get("observedInScan") is True,
                         "distinctArtistHints":len({a for a,_ in seen}),
                         "distinctArtistTitleHints":len(seen), "distinctTitleHashes":len({h for _,h in seen}),
-                        "observationDates":sorted(days), "stalePairCount":len(stale-seen),
+                        "observationDates":sorted(days), "reportedBroadcastDates":sorted(history_days),
+                        "distinctHistoricalArtistTitleHints":len(history_pairs), "stalePairCount":len(stale-seen),
                         "artistHintCounts":dict(artists), "artistTitleHintCounts":dict(counts),
                         "sourceHintCounts":dict(sorted(source_counts.items())),
                         "verifiedArtistCount":0, "approved":False, "publicationAllowed":False})
@@ -168,6 +175,7 @@ def build(metadata, research, decisions, *, wikidata=None, recordings=None):
             "freshnessDays":FRESH_DAYS, "stationCount":len(records),
             "stationsWithWikidataHints":sum(any(r["sourceHintCounts"].get(k,0) for k in ("wikidata_only","recording_wikidata","linked_sources","recording_linked_sources")) for r in records),
             "stationsWithSourceConflicts":sum(any(r["sourceHintCounts"].get(k,0) for k in ("identity_conflict","genre_conflict","cross_source_identity_unlinked")) for r in records),
+            "stationsWithReportedHistory":sum(bool(r["reportedBroadcastDates"]) for r in records),
             "stationsWithMultipleObservationDays":sum(len(r["observationDates"])>1 for r in records),
             "stationsWithGenreHints":sum(any(r["artistHintCounts"][k] for k in BUCKETS[:-1]) for r in records),
             "verifiedArtistCount":0, "records":records}
