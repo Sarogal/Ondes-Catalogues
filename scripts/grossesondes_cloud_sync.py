@@ -45,6 +45,7 @@ from grossesondes_existing_official_updates import (
     clean_obsolete_date_notes, verified_artist_alias_cleanup,
     expected_ticket_notes_after_official_sale,
     parsed_seasonal_ticket_summary, valid_municipal_venue_label, municipal_venue_note,
+    municipal_lineup_note,
 )
 from grossesondes_structured_edition import (
     PROOF_MODE as EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
@@ -358,6 +359,8 @@ def _verified_official_update_delta(old, new):
         if (new["notes"] != clean_obsolete_date_notes(old["notes"])
                 and new["notes"] != ticket_note
                 and not ("venue" in changed and new["notes"] == municipal_venue_note(
+                    dict(new, notes=old["notes"])))
+                and not ("lineup" in changed and new["notes"] == municipal_lineup_note(
                     dict(new, notes=old["notes"])))):
             return False
     if COMMUNE_UPDATE_FIELDS & changed:

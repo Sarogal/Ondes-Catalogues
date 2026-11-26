@@ -71,6 +71,50 @@ MOTO_ARTICLE = (
 
 
 class ExistingOfficialFestivalTests(unittest.TestCase):
+    def test_counted_inline_roster_and_stale_municipal_note(self):
+        from grossesondes_openagenda_linked_edition import MUNICIPAL_PUBLIC_CONFIDENCE
+        site = "https://agenda.example.org/evenement/festival-brume/"
+        row = festival("festival-brume-2027", site)
+        row.update(name="Festival Brume 2027", city="Exemple",
+                   sourceConfidence=MUNICIPAL_PUBLIC_CONFIDENCE,
+                   venue="Salle des Arts", geoPrecision="commune",
+                   showOnMap=True, lat=48.1, lon=2.1,
+                   notes=("Dates et genre revérifiés sur une fiche municipale officielle ; "
+                          "salle confirmée, artistes à confirmer ; "
+                          "repère indicatif au centre de la commune."))
+        html = ("<article><h1>Festival Brume 2027</h1>"
+                "<p>23 au 25 juillet 2027</p>"
+                "<p><strong>UNE PROGRAMMATION DE FEU</strong></p>"
+                "<p>Vous découvrirez quatres nouveaux groupes : "
+                "<strong>Brume Noire, Rivages, Echo et Fracture</strong>.</p>"
+                "</article>")
+        self.assertEqual(listed_artists(page(html).relevant()),
+                         ["Brume Noire", "Rivages", "Echo", "Fracture"])
+        signed = doc(row)
+        out, report = apply_independently_verified_updates(
+            signed, signed, DAY, fetch=lambda _: html, limit=1, tick=0)
+        updated = out["festivals"][0]
+        self.assertEqual(updated["lineup"],
+                         ["Brume Noire", "Rivages", "Echo", "Fracture"])
+        self.assertEqual(updated["bands"], 4)
+        self.assertIn("artistes annoncés sur la source officielle", updated["notes"])
+        self.assertTrue(_verified_official_update_delta(row, updated))
+        self.assertEqual(report["accepted"], [row["slug"]])
+        self.assertEqual((updated["lat"], updated["lon"]), (48.1, 2.1))
+        self.assertFalse(_verified_official_update_delta(
+            row, dict(updated, notes="Information non prouvée")))
+        for bad in (
+                html.replace("quatres", "trois"),
+                html.replace("Echo", "Rivages"),
+                html.replace("Echo", "billetterie"),
+                html.replace("Echo et Fracture", "Echo et Fracture ; ouverture des portes"),
+                html.replace("<p>Vous", "<p hidden>Vous")):
+            self.assertEqual(listed_artists(page(bad).relevant()), [])
+        out, _ = apply_independently_verified_updates(
+            signed, signed, DAY, fetch=lambda _: html.replace("2027", "2028"),
+            limit=1, tick=0)
+        self.assertEqual(out["festivals"][0], row)
+
     def test_mozhell_official_news_updates_artists_and_price_without_secondary(self):
         row = festival("mozhell-open-air", MOZHELL)
         signed = doc(row)
