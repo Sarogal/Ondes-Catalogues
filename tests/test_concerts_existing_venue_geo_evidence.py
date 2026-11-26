@@ -255,3 +255,21 @@ class LinkedPracticalAddressTests(unittest.TestCase):
                                dt.date(2026, 11, 25), verify_one=fail)
         self.assertEqual(report["reasonCounts"], {"event_fetch_unavailable": 1})
         self.assertEqual(report["held"][0]["reasonCounts"], report["reasonCounts"])
+
+    def test_hidden_practical_address_cannot_be_used(self):
+        event = dict(EVENT, title="Metal night")
+        for hidden in ('hidden', 'aria-hidden="true"', 'style="display:none"'):
+            page = '<h1>Infos pratiques</h1><div ' + hidden + '>' + self.page() + '</div>'
+            with patch.object(evidence.official, "official_origin",
+                              return_value="https://unknown-room.fr/"), self.assertRaises(ValueError):
+                evidence.verify(event, VENUE, fetch=lambda url, cache: self.event() if url == URL else page)
+
+    def test_explicit_wrong_city_is_not_absent_address(self):
+        event = dict(EVENT, title="Metal night")
+        page = ("<p>12 février 2027</p><h1>Metal night</h1>"
+                "<p>Lieu</p><h2>New Room</h2><p>19 rue des Jardins 75001 Paris</p>"
+                '<nav><a href="/infos/">Infos pratiques</a></nav>')
+        with patch.object(evidence.official, "official_origin",
+                          return_value="https://unknown-room.fr/"), self.assertRaises(ValueError):
+            evidence.verify(event, VENUE, fetch=lambda url, cache: (
+                page if url == URL else self.fail("contradiction must not trigger fallback")))

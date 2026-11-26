@@ -81,6 +81,14 @@ class AddressBlocks(visible.VisibleBlocks):
         super().__init__(leaf_divs=True)
 
     def handle_starttag(self, tag, attrs):
+        attributes = dict(attrs)
+        if not self.ignored and (tag == "template" or "hidden" in attributes
+                or attributes.get("aria-hidden", "").lower() == "true"
+                or re.search(r"display\s*:\s*none|visibility\s*:\s*hidden",
+                             attributes.get("style") or "", re.I)):
+            if tag not in visible.VOID:
+                self.ignored = 1
+            return
         if tag == "br" and not self.ignored:
             self.handle_data(" \u241e ")
         super().handle_starttag(tag, attrs)
@@ -180,6 +188,15 @@ def visible_address(html, event, venue):
                 if address:
                     addresses.add(address)
     if not addresses:
+        # Do not reinterpret a conflicting explicit postal address as absent.
+        # A postal-looking line in the immediate named venue block must be
+        # resolved on that event page before any practical-page fallback.
+        for i, (_, value) in enumerate(detail):
+            lines = value.split("\u241e")
+            if _named_location(lines[0], venue):
+                nearby = " ".join(lines[1:] + [v for _, v in detail[i+1:i+3]])
+                require(not re.search(r"\b\d{5}\b", nearby),
+                        "explicit event postal address not verified")
         raise MissingVenueAddress("no explicit visible named-venue address")
     require(len(addresses) == 1, "one explicit visible named-venue address required")
     street, postcode = next(iter(addresses))
