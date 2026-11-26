@@ -26,7 +26,7 @@ SOURCE = "festival_published_tour_research"
 MAX_ROWS = 600
 MAX_GROUPS = 200
 MAX_CANDIDATES = 75
-MAX_LINEUP = 35
+MAX_LINEUP_TEXT_BYTES = 64 * 1024  # Technical payload bound, not an artist count.
 MIN_DISTINCT_CITIES = 2
 MIN_DISTINCT_DATES = 2
 TOUR_WORDS = re.compile(
@@ -72,16 +72,29 @@ def _one_day_future(row, today):
         return None
 
 
+def valid_artist_names(names, *, minimum=2):
+    """Validate the entire roster without an editorial maximum artist count."""
+    if not isinstance(names, list) or len(names) < minimum:
+        return False
+    # Each nonempty name costs at least one byte; bound work before iteration.
+    if len(names) > MAX_LINEUP_TEXT_BYTES:
+        return False
+    if not all(isinstance(n, str) and 2 <= len(n.strip()) <= 130
+               and len(n) <= 130 for n in names):
+        return False
+    if sum(len(n.encode("utf-8", errors="surrogatepass")) + 1
+           for n in names) > MAX_LINEUP_TEXT_BYTES:
+        return False
+    normalized_names = tuple(triage.words(n) for n in names)
+    return (all(normalized_names)
+            and len(set(normalized_names)) == len(names))
+
+
 def _named_lineup(row):
     names = row.get("lineup")
-    if (not isinstance(names, list) or not 2 <= len(names) <= MAX_LINEUP
-            or not all(isinstance(n, str) and 2 <= len(n.strip()) <= 130
-                       for n in names)):
+    if not valid_artist_names(names):
         return None
-    normalized_names = tuple(triage.words(n) for n in names)
-    if not all(normalized_names) or len(set(normalized_names)) != len(names):
-        return None
-    return tuple(sorted(normalized_names))
+    return tuple(sorted(triage.words(n) for n in names))
 
 
 def _qualifies_row(row, today):
