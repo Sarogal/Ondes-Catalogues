@@ -414,6 +414,8 @@ EXTRACTOR_FILES = (
     "automation/concerts/official_visible_tour_bill.py",
     "automation/concerts/open_world_artist_genre.py",
     "automation/concerts/artist_official_bio.py",
+    "automation/concerts/first_party_tec_event.py",
+    "automation/concerts/triage.py",
 )
 _EXTRACTION_REASONS = frozenset({
     "official_event_content: Source admission: unique first-party music event not found: named_bill_missing_or_ambiguous",
