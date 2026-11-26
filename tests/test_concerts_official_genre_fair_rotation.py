@@ -283,6 +283,37 @@ class FairGenreReviewSlots(unittest.TestCase):
                 self.assertEqual(report["changedExtractorPriorityChecks"], 0)
                 self.assertEqual(report["examined"], 16)
 
+    def test_missing_address_replay_migrates_existing_memory_once_per_revision(self):
+        queue = [row("unknown", i) for i in range(60)]
+        old, new = "a" * 64, "b" * 64
+        reason = ("publisher_recheck: Unlisted official source: no unique exact "
+                  "first-party MusicEvent: venue_address_missing")
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose", side_effect=ValueError(reason)), \
+             mock.patch.object(pipeline, "_extractor_revision", return_value=old):
+            _, first = pipeline.build({}, CATALOGUE, BEFORE, TODAY, limit=16)
+            self.assertEqual(len(first["extractionRetryMemory"]), 16)
+        # Simulate the preceding release: it knew the revision but did not
+        # retain this reason in its existing extraction retry dictionary.
+        prior = {**first, "extractionRetryMemory": {}}
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose", side_effect=ValueError(reason)), \
+             mock.patch.object(pipeline, "_extractor_revision", return_value=new):
+            out, retry = pipeline.build({}, CATALOGUE, BEFORE, TODAY,
+                                        limit=16, prior=prior)
+            self.assertEqual(out, BEFORE)
+            self.assertEqual(retry["changedExtractorRetryPendingBefore"], 16)
+            self.assertEqual(retry["changedExtractorPriorityChecks"], 4)
+            self.assertEqual(retry["changedExtractorRetryPendingAfter"], 12)
+            self.assertFalse(retry["publicationAllowed"])
+            _, again = pipeline.build({}, CATALOGUE, BEFORE, TODAY,
+                                      limit=16, prior=retry)
+            self.assertEqual(again["changedExtractorRetryPendingBefore"], 12)
+            self.assertLess(again["changedExtractorRetryPendingAfter"], 12)
+            _, invalid = pipeline.build({}, CATALOGUE, BEFORE, TODAY,
+                                        limit=16, prior={**prior, "publicationAllowed": True})
+            self.assertEqual(invalid["changedExtractorPriorityChecks"], 0)
+
     def test_extraction_revision_ignores_unrelated_failure_reasons(self):
         queue = [row("unknown", i) for i in range(40)]
         with mock.patch.object(pipeline, "eligible", return_value=queue), \
