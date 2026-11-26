@@ -23,10 +23,8 @@ import triage
 
 SCHEMA = "grossesondes.concert.discovery.v1"
 SOURCE = "festival_published_tour_research"
-MAX_ROWS = 600
-MAX_GROUPS = 200
-MAX_CANDIDATES = 75
-MAX_LINEUP = 35
+MAX_INPUT_BYTES = 64 * 1024 * 1024  # Technical file/resource bound.
+MAX_LINEUP_TEXT_BYTES = 64 * 1024  # Technical payload bound, not an artist count.
 MIN_DISTINCT_CITIES = 2
 MIN_DISTINCT_DATES = 2
 TOUR_WORDS = re.compile(
@@ -72,16 +70,29 @@ def _one_day_future(row, today):
         return None
 
 
+def valid_artist_names(names, *, minimum=2):
+    """Validate the entire roster without an editorial maximum artist count."""
+    if not isinstance(names, list) or len(names) < minimum:
+        return False
+    # Each nonempty name costs at least one byte; bound work before iteration.
+    if len(names) > MAX_LINEUP_TEXT_BYTES:
+        return False
+    if not all(isinstance(n, str) and 2 <= len(n.strip()) <= 130
+               and len(n) <= 130 for n in names):
+        return False
+    if sum(len(n.encode("utf-8", errors="surrogatepass")) + 1
+           for n in names) > MAX_LINEUP_TEXT_BYTES:
+        return False
+    normalized_names = tuple(triage.words(n) for n in names)
+    return (all(normalized_names)
+            and len(set(normalized_names)) == len(names))
+
+
 def _named_lineup(row):
     names = row.get("lineup")
-    if (not isinstance(names, list) or not 2 <= len(names) <= MAX_LINEUP
-            or not all(isinstance(n, str) and 2 <= len(n.strip()) <= 130
-                       for n in names)):
+    if not valid_artist_names(names):
         return None
-    normalized_names = tuple(triage.words(n) for n in names)
-    if not all(normalized_names) or len(set(normalized_names)) != len(names):
-        return None
-    return tuple(sorted(normalized_names))
+    return tuple(sorted(triage.words(n) for n in names))
 
 
 def _qualifies_row(row, today):
@@ -114,7 +125,7 @@ def _qualifies_row(row, today):
 
 def correction_research(corrections, today):
     """Reviewed retractions nominate a tour without reviving its festival row."""
-    if not isinstance(corrections, list) or len(corrections) > MAX_ROWS:
+    if not isinstance(corrections, list):
         raise ValueError("Invalid festival corrections")
     selected = {}
     for correction in corrections:
@@ -179,7 +190,6 @@ def correction_research(corrections, today):
 def find_research(catalogue, today, concert_catalogue=None, corrections=None):
     if (not isinstance(catalogue, dict) or catalogue.get("schema") != 1
             or not isinstance(catalogue.get("festivals"), list)
-            or len(catalogue["festivals"]) > MAX_ROWS
             or not isinstance(today, date)):
         raise ValueError("Unsafe signed public festival catalogue")
     groups = defaultdict(list)
@@ -187,8 +197,6 @@ def find_research(catalogue, today, concert_catalogue=None, corrections=None):
         source = _qualifies_row(row, today)
         if source is not None:
             groups[(source["site"], source["lineup"])].append(source)
-    if len(groups) > MAX_GROUPS:
-        raise ValueError("Too many touring research cohorts")
     selected = []
     for (site, lineup), sources in groups.items():
         if (len({source["cityKey"] for source in sources}) <
@@ -235,14 +243,12 @@ def find_research(catalogue, today, concert_catalogue=None, corrections=None):
             if classified["reviewBucket"] != "tour_source_research":
                 raise ValueError("Tour review cannot enter publisher source")
             selected.append(classified)
-    # A saturated old catalogue must be triaged, not silently truncate
-    # a series of genuine touring stops and masquerade as a complete pass.
+    # This offline nomination pass archives every eligible lead. Network
+    # verification budgets and fair rotation belong to the downstream review.
     by_id = {row["candidateId"]: row for row in selected}
     for row in correction_research(corrections if corrections is not None else [], today):
         by_id.setdefault(row["candidateId"], row)
     selected = list(by_id.values())
-    if len(selected) > MAX_CANDIDATES:
-        raise ValueError("Too many published festival-tour nominations")
     selected.sort(key=lambda row: (row["date"], row["candidateId"]))
     return {
         "schema": SCHEMA,
@@ -258,12 +264,22 @@ def main():
     ap.add_argument("--festivals", required=True, type=Path)
     ap.add_argument("--output", required=True, type=Path)
     args = ap.parse_args()
-    data = json.loads(args.festivals.read_text(encoding="utf-8"))
+    # Bound actual input bytes rather than the number of festivals or leads.
+    # Never silently truncate the catalogue or split a touring cohort.
+    remaining = MAX_INPUT_BYTES
+
+    def read_bounded(path):
+        nonlocal remaining
+        with path.open("rb") as stream:
+            payload = stream.read(remaining + 1)
+        if len(payload) > remaining:
+            raise ValueError("Festival tour research input exceeds byte budget")
+        remaining -= len(payload)
+        return json.loads(payload.decode("utf-8"))
+
+    data = read_bounded(args.festivals)
     correction_dir = args.festivals.parent / "festival-corrections"
-    paths = sorted(correction_dir.glob("*.json"))
-    if len(paths) > MAX_ROWS:
-        raise ValueError("Too many reviewed correction files")
-    corrections = [json.loads(p.read_text(encoding="utf-8")) for p in paths]
+    corrections = [read_bounded(p) for p in sorted(correction_dir.glob("*.json"))]
     report = find_research(data, datetime.now(ZoneInfo("Europe/Paris")).date(),
                            corrections=corrections)
     args.output.parent.mkdir(parents=True, exist_ok=True)

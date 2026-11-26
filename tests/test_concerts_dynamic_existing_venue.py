@@ -262,6 +262,52 @@ class UnlistedExistingVenueTests(unittest.TestCase):
             dynamic.validate(signed, venues, artists, TODAY,
                              fetch=fake_fetch({"primary": split}))
 
+    def test_missing_structured_address_requires_exact_visible_named_event_address(self):
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        node = next(dynamic.discover.read_ld(page(EVENT)))
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+        node["location"].pop("address")
+        title = node["name"]
+        street = venue["address"]
+        address = "Parvis des Arts - " + street + " - 31 520 " + venue["city"]
+        block = ("<p>" + venue["name"] + "<br/>Centre culturel<br/>" + address + "</p>")
+        def body(n=node, content=block):
+            return ("<html><main><h1>" + title + "</h1>"
+                    "<p>5 mars 2027</p><script type='application/ld+json'>"
+                    + json.dumps(n) + "</script>" + content + "</main></html>")
+        self.assertTrue(dynamic.validate(signed, venues, artists, TODAY,
+                         fetch=fake_fetch({"primary": body()})))
+        for invalid in (
+            body(content=block.replace(street, "12 rue Autre")),
+            body(content=block.replace("31 520", "75 001")),
+            body(content=block.replace(venue["name"], "Autre Salle")),
+            body(content="<div hidden>" + block + "</div>"),
+            body(content="<footer>" + block + "</footer>"),
+            body(content="<h2>Autres événements</h2>" + block),
+            body(content=block + "<p>" + venue["name"] + "<br/>12 rue Autre 31520 "
+                 + venue["city"] + "</p>"),
+            body().replace("<h1>" + title, "<h1>Autre concert"),
+            body().replace("5 mars", "6 mars"),
+        ):
+            with self.subTest(invalid=invalid[:100]), self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY,
+                                 fetch=fake_fetch({"primary": invalid}))
+        for fields in ({"address": {}}, {"country": "BE"},
+                       {"postalCode": "75001"}, {"description": "Autre adresse"}):
+            wrong = copy.deepcopy(node)
+            wrong["location"].update(fields)
+            with self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY,
+                                 fetch=fake_fetch({"primary": body(wrong)}))
+        with self.assertRaises(ValueError):
+            dynamic.validate(signed, venues, artists, TODAY,
+                fetch=fake_fetch({"primary": body(), "osm": osm(website="https://autre.fr")}))
+
     def test_exact_place_description_replays_when_postal_address_is_empty(self):
         signed = signed_approval()
         proof = signed["officialEvidence"][0]

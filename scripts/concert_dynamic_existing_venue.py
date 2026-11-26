@@ -714,6 +714,95 @@ def _exact_location_description(location, venue):
         re.findall(r"(?<![0-9])[0-9]{5}(?![0-9])", value) == [postal])
 
 
+def _missing_address_from_own_visible_event(raw, event, venue, html):
+    """Recover ONLY an absent structured address from the same exact page.
+
+    This route is called after independent source attribution and the
+    structured date, title roster and named Place have matched. Never use a
+    footer, recommendation, unrelated event, or a conflicting populated
+    structured address. The already published street/postcode must match.
+    """
+    import existing_venue_geo_evidence as geo_evidence
+    from venue_address_osm_source import eligible_address
+
+    location = raw.get("location")
+    if (not isinstance(location, dict)
+            or location.get("address") is not None
+            or not bridge._event_types(location.get("@type")) & {"Place", "MusicVenue"}
+            or raw.get("url") != event.get("officialUrl")
+            or not eligible_address(venue)
+            or geo_evidence.eligible(venue)
+            or not isinstance(html, str) or not 0 < len(html) <= probe.MAX_BYTES):
+        return False
+    for field, expected in (("addressLocality", venue["city"]),
+                            ("postalCode", venue["postalCode"]),
+                            ("streetAddress", venue["address"])):
+        if location.get(field) not in (None, "") and normal(location[field]) != normal(expected):
+            return False
+    for field in ("country", "addressCountry"):
+        country = location.get(field)
+        if country not in (None, ""):
+            if isinstance(country, dict):
+                country = country.get("name") or country.get("@id")
+            if normal(country) not in {"fr", "france", "republique francaise"}:
+                return False
+    if location.get("description") not in (None, "") and not _exact_location_description(
+            dict(location, address={}), venue):
+        return False
+    parsed = geo_evidence.AddressBlocks()
+    parsed.feed(html)
+    parsed.close()
+    headings = [(i, text) for i, (tag, text) in enumerate(parsed.blocks)
+                if tag == "h1"]
+    if len(headings) != 1 or normal(headings[0][1]) != normal(raw.get("name")):
+        return False
+    # Visible event content only. The structured exact date has already
+    # been checked; a conflicting explicit nearby visible date still holds.
+    index = headings[0][0]
+    detail = []
+    for tag, text in parsed.blocks[index + 1:index + 161]:
+        if normal(text) in geo_evidence.STOP | {
+                "vous devriez aimer", "nous vous recommandons egalement",
+                "we also recommend"}:
+            break
+        detail.append((tag, text))
+    dates = {geo_evidence._event_day(text)
+             for _, text in parsed.blocks[max(0, index-6):index] + detail[:12]
+             if geo_evidence._event_day(text)}
+    if dates and dates != {event["date"]}:
+        return False
+    lines = [(tag, line.strip()) for tag, text in detail
+             for line in text.split("\u241e") if line.strip()]
+    observed = set()
+    for i, (_, line) in enumerate(lines):
+        if not geo_evidence._named_location(line, venue):
+            continue
+        for tag, candidate in lines[i+1:i+4]:
+            if tag.startswith("h") or geo_evidence.NONVENUE.search(normal(candidate)):
+                break
+            # French typography may group postal digits as "35 000".
+            candidate = re.sub(r"\b(\d{2})\s+(\d{3})\b(?=\s)", r"\1\2", candidate)
+            if not re.search(r"\b\d{5}\b", candidate):
+                continue
+            # A civic forecourt name may precede the street, separated
+            # explicitly by a dash. It never substitutes for the street.
+            candidate = re.sub(r"^parvis\s+[^–—]{1,100}?\s+[-–—]\s+",
+                               "", candidate, flags=re.I)
+            candidate = re.sub(r"\s+[-–—]\s+(?=\d{5}\s)", " ", candidate)
+            # This replay compares an already verified catalogue address;
+            # unlike discovery, it must also accept complete compound street
+            # labels (e.g. street + business park separated by a comma).
+            # Never infer a street from this text or match a mere substring.
+            postal_codes = re.findall(r"\b\d{5}\b", candidate)
+            expected = normal(" ".join(venue[k] for k in ("address", "postalCode", "city")))
+            actual = normal(candidate)
+            if (postal_codes != [venue["postalCode"]]
+                    or actual not in {expected, expected + " france"}):
+                return False
+            observed.add((normal(venue["address"]), venue["postalCode"]))
+    return observed == {(normal(venue["address"]), venue["postalCode"])}
+
+
 # Fixed replay stages in validation order; never retain exception text from
 # network content. The deepest completed identity check identifies the useful
 # next repair when unrelated recommendation nodes are also present.
@@ -745,7 +834,7 @@ def _replay_reason(exc):
 
 
 def _event(raw, event, venue, artists, *, accept_generic=False,
-           fetch=None, cache=None, html=None):
+           fetch=None, cache=None, html=None, allow_visible_address=False):
     """Verify one complete first-party concert event; never join evidence."""
     types = bridge._event_types(raw.get("@type")) if isinstance(raw, dict) else set()
     require("MusicEvent" in types or (accept_generic and "Event" in types),
@@ -774,19 +863,23 @@ def _event(raw, event, venue, artists, *, accept_generic=False,
             normal(location.get("name")) == normal(venue["name"]),
             "first-party event names another venue")
     addr = location.get("address")
-    require(isinstance(addr, dict), "physical venue address absent")
-    country = addr.get("addressCountry")
-    if isinstance(country, dict):
-        country = country.get("name") or country.get("@id")
-    if not (accept_generic and _exact_location_description(location, venue)):
-        require(normal(country) in {"fr", "france", "republique francaise"},
-                "event takes place outside France")
-        require(normal(addr.get("addressLocality")) == normal(venue["city"]) and
-                str(addr.get("postalCode")) == venue.get("postalCode"),
-                "first-party postal address differs from published venue")
-        # Missing street number is acceptable. It must still identify the site.
-        require(normal(addr.get("streetAddress")) == normal(venue.get("address")),
-                "official street conflicts with published venue")
+    if addr is None and allow_visible_address and accept_generic:
+        require(_missing_address_from_own_visible_event(raw, event, venue, html),
+                "physical venue address absent")
+    else:
+        require(isinstance(addr, dict), "physical venue address absent")
+        country = addr.get("addressCountry")
+        if isinstance(country, dict):
+            country = country.get("name") or country.get("@id")
+        if not (accept_generic and _exact_location_description(location, venue)):
+            require(normal(country) in {"fr", "france", "republique francaise"},
+                    "event takes place outside France")
+            require(normal(addr.get("addressLocality")) == normal(venue["city"]) and
+                    str(addr.get("postalCode")) == venue.get("postalCode"),
+                    "first-party postal address differs from published venue")
+            # Missing street number is acceptable. It must still identify the site.
+            require(normal(addr.get("streetAddress")) == normal(venue.get("address")),
+                    "official street conflicts with published venue")
     genres, scope = event_genres(raw, event["officialUrl"],
                                  fetch=fetch if accept_generic else None,
                                  cache=cache, html=html)
@@ -977,7 +1070,8 @@ def validate(approval, venues, artists, today, *, fetch=None):
         try:
             valid.append(_event(raw, event, venue, resolved,
                                 accept_generic=(is_single_osm or is_address or is_official),
-                                fetch=fetch, cache=cache, html=html))
+                                fetch=fetch, cache=cache, html=html,
+                                allow_visible_address=len(events) == 1))
         except (ValueError, KeyError, TypeError) as exc:
             rejected.add(_replay_reason(exc))
             continue
