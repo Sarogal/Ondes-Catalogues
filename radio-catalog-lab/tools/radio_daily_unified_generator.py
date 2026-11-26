@@ -11,6 +11,7 @@ from pathlib import Path
 from radio_daily_v9_generator import BASELINE, build as add_build, digest, encode, check_catalog, load_bytes
 from radio_daily_baseline_verify import strict_json, validate_shape, verify_baseline
 from radio_daily_repair_plan import plan as repair_plan, simulate as repair_simulate
+from radio_daily_status_preview import build as status_build, MAX_CHECKS
 
 
 def stream_urls(station):
@@ -18,7 +19,7 @@ def stream_urls(station):
 
 
 def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation,
-          repair_report, *, urls=None, expected=BASELINE):
+          repair_report, status_report=None, *, urls=None, expected=BASELINE):
     old = strict_json(raw)
     validate_shape(old)
     if digest(raw) != expected:
@@ -56,21 +57,63 @@ def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation
         repaired_urls.update(stream_urls(s))
         added.append({"goStationId": s["go_station_id"], "stationuuid": uid})
     applied = checked["proposals"] if repaired is not None else []
-    changed = bool(added or applied)
+    transitions, status_deferred = [], []
+    original = {s["go_station_id"]: s for s in old["stations"]}
+    current = {s["go_station_id"]: s for s in output["stations"]}
+    if status_report is not None:
+        if (status_report.get("scanDate") != day
+                or type(status_report.get("attemptedCount")) is not int
+                or not 0 <= status_report["attemptedCount"] <= MAX_CHECKS):
+            raise ValueError("invalid status report date or budget")
+        recomputed = status_build(raw, maintenance, checked, expected=expected, prior=status_report)
+        # The recorded network budget differs from offline recomputation;
+        # every decision, fingerprint and observation must still agree.
+        recomputed["attemptedCount"] = status_report["attemptedCount"]
+        if recomputed != status_report:
+            raise ValueError("unified status report mismatch")
+        repair_ids = {p["goStationId"] for p in checked["proposals"]}
+        redirect_ids = {t.get("redirect_to") for t in old["tombstones"]}
+        for p in sorted(recomputed["proposals"], key=lambda x: x["goStationId"]):
+            sid = p["goStationId"]
+            before = original[sid]
+            station = current[sid]
+            reason = None
+            if before["status"].get("reason_code") == "synthetic_diagnostic_not_for_playback":
+                reason = "synthetic_station_held"
+            elif sid in repair_ids:
+                reason = "repair_transition_conflict"
+            elif p["to"] == "quarantined" and sid in redirect_ids:
+                reason = "redirect_target_held"
+            if reason:
+                status_deferred.append({"goStationId": sid, "reason": reason})
+                continue
+            if digest(encode(before)) != p["stationSha256"] or station["status"]["state"] != p["from"]:
+                raise ValueError("status station changed")
+            previous_status = copy.deepcopy(station["status"])
+            station["status"].update(state=p["to"],
+                reason_code="experimental_recovery_review" if p["to"] == "active" else "experimental_unavailability_review",
+                changed_at=day + "T00:00:00Z")
+            transitions.append(dict(p, previousStatus=previous_status, proposedStatus=copy.deepcopy(station["status"])))
+        if recomputed["massTransitionHeld"]:
+            status_deferred.append({"reason": "mass_transition_held"})
+    else:
+        status_deferred.append({"reason": "status_report_not_supplied"})
+    changed = bool(added or applied or transitions)
     report = {"schemaVersion": 1, "publicationAllowed": False, "signed": False,
               "catalogBaselineSha256": expected, "scanDate": day,
               "baselineSequence": old["release_sequence"], "candidateSequence": None,
               "candidateSha256": None, "changed": changed, "added": added,
               "repaired": applied, "admissionDeferred": deferred,
               "repairDeferred": checked["deferred"] + pending,
-              "unsupportedOperations": ["status_transition", "logo_attachment", "logo_update", "merge_redirect"],
+              "statusTransitions": transitions, "statusDeferred": status_deferred,
+              "unsupportedOperations": ["logo_attachment", "logo_update", "merge_redirect"],
               "removed": [], "existingStationsPreserved": len(old["stations"]),
               "tombstonesPreserved": len(old["tombstones"])}
     if not changed:
         return None, report
     output["release_sequence"] = old["release_sequence"] + 1
     output["generated_at"] = day + "T00:00:00Z"
-    # Reverse only the authorized additions and fallback appends.
+    # Reverse only authorized additions, fallback appends and status changes.
     restored = copy.deepcopy(output)
     restored["stations"] = restored["stations"][:len(old["stations"])]
     by_id = {s["go_station_id"]: s for s in restored["stations"]}
@@ -78,6 +121,11 @@ def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation
         last = by_id[p["goStationId"]]["streams"].pop()
         if last["stream_id"] != p["streamId"]:
             raise ValueError("unexpected repair delta")
+    for p in transitions:
+        station = by_id[p["goStationId"]]
+        if station["status"] != p["proposedStatus"]:
+            raise ValueError("unexpected status delta")
+        station["status"] = p["previousStatus"]
     for k in ("release_sequence", "generated_at"):
         restored[k] = old[k]
     if restored != old:
@@ -92,7 +140,7 @@ def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     names = ("pointer", "baseline", "discovery", "dossiers", "decisions", "maintenance",
-             "repair", "confirmation", "repair-report", "output-dir")
+             "repair", "confirmation", "repair-report", "status-report", "output-dir")
     for name in names:
         p.add_argument("--" + name, type=Path, required=True)
     a = p.parse_args()
@@ -103,7 +151,7 @@ def main():
     # Public runner has no transient repair URLs yet; pending repairs are
     # recorded rather than fetched or guessed. No competing v9 artifact.
     payload, report = build(raw, *(strict_json(load_bytes(getattr(a, k))) for k in
-        ("discovery", "dossiers", "decisions", "maintenance", "repair", "confirmation", "repair_report")))
+        ("discovery", "dossiers", "decisions", "maintenance", "repair", "confirmation", "repair_report", "status_report")))
     a.output_dir.mkdir(parents=True)
     if payload is not None:
         (a.output_dir / "unsigned-candidate-v9.json").write_bytes(payload)

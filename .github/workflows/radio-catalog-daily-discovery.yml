@@ -559,7 +559,8 @@ jobs:
             --discovery "$root/candidates.json" --dossiers "$root/qualification-dossiers.json" \
             --decisions "$root/decision-preview.json" --maintenance "$root/maintenance-preview.json" \
             --repair "$root/repair-preview.json" --confirmation "$root/repair-confirmation-preview.json" \
-            --repair-report "$root/repair-plan-preview.json" --output-dir "$root/v9-preview"
+            --repair-report "$root/repair-plan-preview.json" --status-report "$root/status-transition-preview.json" \
+            --output-dir "$root/v9-preview"
       - name: Prepare safe durable genre hints
         shell: bash
         run: |

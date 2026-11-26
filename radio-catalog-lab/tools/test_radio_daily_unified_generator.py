@@ -11,6 +11,8 @@ from radio_daily_repair_preview import build as repair
 from radio_daily_repair_confirmation import build as confirm
 from test_radio_daily_repair_plan import fixture as repair_fixture, SID, NEW, DAY
 from test_radio_daily_v9_generator import fixture as addition_fixture
+from test_radio_daily_status_preview import setup as status_setup, run as status_run
+from radio_daily_status_preview import build as status_build
 
 
 def repair_inputs(strong=True):
@@ -40,7 +42,67 @@ def run(args, **kwargs):
     return build(*args, expected=digest(args[0]), **kwargs)
 
 
+
+def status_inputs(quarantined=False, redirect=False, count=1, synthetic=False):
+    raw,sha = status_setup(quarantined=quarantined,redirect=redirect,count=count)
+    if synthetic:
+        doc=json.loads(raw)
+        doc["stations"][0]["status"]["reason_code"]="synthetic_diagnostic_not_for_playback"
+        raw=encode(doc)
+        sha=digest(raw)
+    m=p=None
+    for day in ("2026-11-24","2026-11-25",DAY):
+        m,p=status_run(raw,sha,day,m,p,positive=quarantined)
+    d={"schemaVersion":1,"scanDate":DAY,"publicationAllowed":False,"candidates":[]}
+    e={"schemaVersion":1,"scanDate":DAY,"publicationAllowed":False,"approvedCount":0,
+       "catalogBaselineSha256":sha,"records":[]}
+    r=repair(raw,m,d,expected=sha)
+    c=confirm(raw,r,expected=sha)
+    rp=plan(raw,m,r,c,expected=sha)
+    p=status_build(raw,m,rp,expected=sha,prior=p)
+    return raw,d,e,decide(d,e,sha),m,r,c,rp,p
+
 class UnifiedTests(unittest.TestCase):
+    def test_quarantine_preserves_all_other_fields(self):
+        args=status_inputs()
+        payload,report=run(args)
+        old,new=json.loads(args[0]),json.loads(payload)
+        self.assertEqual(new["stations"][0]["status"]["state"],"quarantined")
+        self.assertEqual(len(report["statusTransitions"]),1)
+        new["stations"][0]["status"]=old["stations"][0]["status"]
+        self.assertEqual(new["stations"],old["stations"])
+        self.assertEqual(new["release_sequence"],9)
+
+    def test_restore_preserves_variants(self):
+        args=status_inputs(quarantined=True)
+        payload,report=run(args)
+        old,new=json.loads(args[0]),json.loads(payload)
+        self.assertEqual(new["stations"][0]["status"]["state"],"active")
+        self.assertEqual(new["stations"][0]["streams"],old["stations"][0]["streams"])
+        self.assertFalse(report["publicationAllowed"])
+
+    def test_redirect_protected(self):
+        payload,report=run(status_inputs(redirect=True))
+        self.assertIsNone(payload)
+        self.assertFalse(report["statusTransitions"])
+
+    def test_mass_transition_held(self):
+        payload,report=run(status_inputs(count=4))
+        self.assertIsNone(payload)
+        self.assertIn({"reason":"mass_transition_held"},report["statusDeferred"])
+
+    def test_synthetic_not_restored(self):
+        payload,report=run(status_inputs(quarantined=True,synthetic=True))
+        self.assertIsNone(payload)
+        self.assertEqual(report["statusDeferred"][0]["reason"],"synthetic_station_held")
+
+    def test_forged_status_proposal_refused(self):
+        args=list(status_inputs())
+        args[-1]=copy.deepcopy(args[-1])
+        args[-1]["proposals"][0]["to"]="active"
+        with self.assertRaisesRegex(ValueError,"status report mismatch"):
+            run(args)
+
     def test_addition_preserves_baseline(self):
         args = addition_inputs()
         payload, report = run(args)
