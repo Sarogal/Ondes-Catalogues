@@ -115,12 +115,30 @@ def explicit_programme_category(title, description):
         return None
     for pattern, category, label in (
         (r"^(?:un |une )?eveil musical\b", "eveil-musical", "Éveil musical"),
+        (r"^(?:(?:un |une )?seance d |(?:un |une )?atelier d )?eveil corporel en musique\b",
+         "eveil-musical", "Éveil musical"),
+        (r"^(?:un |une )?eveil et decouverte musicale\b",
+         "eveil-musical", "Éveil musical"),
+        (r"^lectures? d albums (?:et )?comptines?\b",
+         "lecture-jeunesse", "Lecture jeunesse"),
         (r"^(?:un |une )?spectacle musical\b", "spectacle-musical", "Spectacle musical"),
         (r"^(?:lectures?|histoires?) (?:et )?comptines?\b",
          "lecture-jeunesse", "Lecture jeunesse"),
     ):
-        if re.search(pattern, body):
+        if re.search(pattern, body) or (category == "eveil-musical"
+                                        and re.search(pattern, name)):
             return category, label
+    # A youth performance can advertise its theatrical disciplines rather
+    # than the literal words "spectacle pour enfants". Require an explicit
+    # performance-format opening or an advertised musical adventure addressed
+    # directly to the audience, never an incidental mention of a puppet.
+    if (re.search(r"^(?:marionnettes?|mime|magie)(?: (?:et )?(?:marionnettes?|mime|magie)){1,3}\b", body)
+            and re.search(r"\b(?:marionnettes?|mime)\b", body)
+            and re.search(r"\b(?:jeune public|spectacles?|comedien(?:ne)?s?|compagnie|cie|interprete)\b", name + " " + body)):
+        return "spectacle-jeunesse", "Spectacle jeune public"
+    if re.search(r"\bpetits et grands (?:prenez part|participez|embarquez|partez) "
+                 r"(?:a|dans|pour) (?:l |une )aventure musicale\b", body):
+        return "spectacle-musical", "Spectacle musical"
     # An explicitly advertised participatory musical experience combines
     # its central music theme, vocal practice and sound/instrument exploration.
     # All three signals are required; merely mentioning music is insufficient.
