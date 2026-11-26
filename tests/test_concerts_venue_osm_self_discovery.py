@@ -316,6 +316,47 @@ class OpenEndedOSMDiscoveryTests(unittest.TestCase):
         self.assertFalse(discover_osm.eligible({"schemaVersion":1,
             "events":[],"artists":[],"venues":[site]}))
 
+    def test_same_slot_memory_rotates_even_if_every_site_is_held(self):
+        from unittest import mock
+        sites = [dict(venue(), id=f"site-{i}") for i in range(20)]
+        data = dict(catalogue(), venues=sites)
+        memory = {}
+        visited = []
+        def held(v, fetch, cache):
+            visited.append(v["id"])
+            raise TimeoutError("Unavailable")
+        with mock.patch.object(discover_osm, "official_source", side_effect=held):
+            for _ in range(4):
+                report = discover_osm.scan(data, TODAY, slot=1, history=memory)
+                self.assertEqual(report["sourceChecks"]["sourcesHeld"], 5)
+                self.assertFalse(report["publicationAllowed"])
+        self.assertEqual(len(visited), 20)
+        self.assertEqual(len(set(visited)), 20)
+        self.assertEqual(len(next(iter(memory.values()))), 20)
+
+    def test_all_reviewed_readonly_transports_and_no_contradiction_failover(self):
+        calls = []
+        def fetch(url, cache):
+            calls.append(url)
+            if url.startswith(discover_osm.readonly.FRANCE_ENDPOINT):
+                return osm()
+            raise TimeoutError("Transport unavailable")
+        self.assertEqual(discover_osm.official_source(venue(), fetch, {}), HOME)
+        self.assertEqual(len(calls), 4)
+        self.assertTrue(calls[-1].startswith(discover_osm.readonly.FRANCE_ENDPOINT))
+
+        calls.clear()
+        def wrong(url, cache):
+            calls.append(url)
+            if url.startswith(discover_osm.readonly.ENDPOINT):
+                return osm(name="Other room")
+            if url.startswith(discover_osm.readonly.ALTERNATE_ENDPOINT):
+                self.fail("Contradictory evidence must not trigger failover")
+            raise TimeoutError("Transport unavailable")
+        with self.assertRaises(ValueError):
+            discover_osm.official_source(venue(), wrong, {})
+        self.assertEqual(len(calls), 2)
+
     def test_rotation_covers_venues_without_fixed_list(self):
         sites=[{"id":f"place-{n}"} for n in range(23)]
         visited=set()

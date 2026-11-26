@@ -32,6 +32,9 @@ jobs:
           sudo apt-get install -y tesseract-ocr tesseract-ocr-fra tesseract-ocr-eng python3-pil
       - name: Offline rotation tests
         run: /usr/bin/python3 -m unittest discover -s tests -p test_grosses_official_poster_rotation.py -v
+      - name: Read-only real poster regression (public catalogue)
+        if: github.event_name == 'pull_request'
+        run: /usr/bin/python3 scripts/grossesondes_official_poster_rotation.py --catalogue docs/grossesondes/festivals.json --slug festival-666-2027
       - name: Read-only public catalogue rotation
         if: github.event_name != 'pull_request'
         run: |

@@ -125,6 +125,14 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
                 "<p>21 rue des Arts<br>39000 COLONNE</p></main>")
         self.assertEqual(multivenue_department_from_access(event, row, "Colonne",
             lambda _: info), ("39", access))
+        for spelling in ("6 &amp; 7", "6, 7", "6-7"):
+            self.assertEqual(multivenue_department_from_access(
+                event.replace("6 et 7", spelling), row, "Colonne",
+                lambda _: info), ("39", access), spelling)
+        self.assertIsNone(multivenue_department_from_access(
+            event.replace("6 et 7", "6 &amp; 8"), row, "Colonne",
+            lambda _: info))
+
         for bad in (info.replace("Salle des Rives", "Bureau administratif"),
                     info.replace("COLONNE", "Autreville"),
                     info.replace("39000", "20000"),
