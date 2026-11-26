@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "festival-automatio
 from grossesondes_official_poster_ocr import (
     MAX_BYTES, qualified_url, parse_tsv, read_official_poster,
     load_ocr_cache, save_ocr_cache, recognize_poster, poster_review_claims,
+    _choose_ocr_pass,
 )
 from dns_pinned_https import OfficialHTTPStatusError
 
@@ -145,6 +146,25 @@ class PosterOCRTests(unittest.TestCase):
         self.assertEqual(poster_review_claims(row, reading(lines, confidence=40))["claims"], {})
         result = poster_review_claims(row, reading(lines[:2] + ["ALPHA BETA", "45 €"]))
         self.assertEqual(set(result["claims"]), {"dates"})
+
+    def test_contrast_pass_prefers_complete_stronger_geometry_without_mixing(self):
+        def words(*tokens):
+            return [{"text": token, "confidence": confidence,
+                     "box": [i * 60, 0, 50, 20], "review_only": True}
+                    for i, (token, confidence) in enumerate(tokens)]
+        original = words(("2027", 96), ("Exemple", 35))
+        better = words(("2027", 98), ("Exemple", 97), ("Alpha", 95))
+        self.assertIs(_choose_ocr_pass(original, better), better)
+        self.assertIs(_choose_ocr_pass(better, original), better)
+        for unsafe in (words(("2026", 99), ("Exemple", 99), ("Alpha", 99)),
+                       words(("2027", 99), ("Annulé", 99), ("Alpha", 99)),
+                       words(("Exemple", 99), ("Alpha", 99), ("Beta", 99))):
+            self.assertIs(_choose_ocr_pass(original, unsafe), original)
+        dates = words(("2027", 96), ("13", 96), ("au", 96),
+                      ("15", 96), ("août", 96))
+        different = words(("2027", 99), ("13", 99), ("au", 99),
+                          ("16", 99), ("août", 99), ("Alpha", 99))
+        self.assertIs(_choose_ocr_pass(dates, different), dates)
 
     def test_failed_recognition_not_cached(self):
         cache = {}
