@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, timedelta, timezone
 from ptitesondes_places_schedule_recovery import (
-    decide, trusted, place_job_result, REPO, INPUTS, PLACE_STEP, WRITE_STEP,
+    decide, trusted, place_job_result, REPO, INPUTS, PLACE_STEP, WRITE_STEP, RESEARCH_STEP,
 )
 
 NOW = datetime(2026, 11, 26, 21, tzinfo=timezone.utc)
@@ -12,10 +12,13 @@ def run(minutes, id=1, status="completed", event="schedule", branch="main"):
             "created_at": (NOW - timedelta(minutes=minutes)).isoformat()}
 
 
-def job(place="success", write="success", conclusion="success"):
+def job(place="success", write="success", conclusion="success", research="success"):
+    steps = [{"name": PLACE_STEP, "conclusion": place},
+             {"name": WRITE_STEP, "conclusion": write}]
+    if research is not None:
+        steps.append({"name": RESEARCH_STEP, "conclusion": research})
     return {"total_count": 1, "jobs": [{"name": "run-private", "conclusion": conclusion,
-              "steps": [{"name": PLACE_STEP, "conclusion": place},
-                        {"name": WRITE_STEP, "conclusion": write}]}]}
+              "steps": steps}]}
 
 
 class PlaceScheduleRecoveryTests(unittest.TestCase):
@@ -32,6 +35,22 @@ class PlaceScheduleRecoveryTests(unittest.TestCase):
         self.assertEqual(decide([run(20, event="push")], NOW,
                                 lambda _: job(write="skipped")),
                          (True, "places_cycle_due"))
+
+    def test_legacy_success_does_not_mask_missing_generic_research(self):
+        self.assertEqual(decide([run(20)], NOW, lambda _: job(research=None)),
+                         (True, "places_cycle_due"))
+
+    def test_generic_failure_in_otherwise_successful_write_observes_retry_grace(self):
+        self.assertEqual(decide([run(20)], NOW, lambda _: job(research="skipped")),
+                         (False, "failure_retry_grace"))
+        self.assertEqual(decide([run(100)], NOW, lambda _: job(research="skipped")),
+                         (True, "places_cycle_due"))
+
+    def test_preview_completion_can_recover_even_after_legacy_success(self):
+        rows = [run(10, 1, event="push"), run(25, 2, event="workflow_dispatch")]
+        self.assertEqual(decide(rows, NOW, lambda rid: job(
+            write="skipped", research="skipped") if rid == 1 else job(research=None)),
+            (True, "places_cycle_due"))
 
     def test_active_intake_suppresses_dispatch_without_jobs_read(self):
         self.assertEqual(decide([run(10, status="in_progress")], NOW,
@@ -59,6 +78,8 @@ class PlaceScheduleRecoveryTests(unittest.TestCase):
     def test_pause_and_trusted_events(self):
         self.assertTrue(trusted(REPO, "refs/heads/main", "push", ""))
         self.assertTrue(trusted(REPO, "refs/heads/main", "schedule", ""))
+        self.assertTrue(trusted(REPO, "refs/heads/main", "workflow_run", ""))
+        self.assertFalse(trusted(REPO, "refs/heads/main", "workflow_run", "paused"))
         self.assertFalse(trusted(REPO, "refs/heads/main", "schedule", "paused"))
         self.assertFalse(trusted(REPO, "refs/heads/main", "pull_request", ""))
         self.assertEqual(INPUTS, {"cycle": "places", "mode": "write", "recovery": "none"})
