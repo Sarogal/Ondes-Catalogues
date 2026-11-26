@@ -107,6 +107,168 @@ class VisibleBlocks(HTMLParser):
                 return
 
 
+class ArtistCreditLines(VisibleBlocks):
+    """Retain exact bold credits and BR boundaries within visible paragraphs.
+
+    Opt-in only: normal visible evidence parsing remains unchanged. Markers
+    are internal tokens, never accepted from source text or HTML entities.
+    """
+    START = "\ue000"
+    END = "\ue001"
+    BREAK = "\ue002"
+    MARKERS = (START, END, BREAK)
+
+    def __init__(self):
+        super().__init__()
+        self.invalid = False
+
+    def _mark(self, token):
+        if not self.ignored:
+            for frame in self.frames:
+                if frame[0] == "p":
+                    frame[1].append(token)
+
+    def handle_starttag(self, tag, attrs):
+        if not self.ignored and tag not in VOID:
+            flags = dict(attrs)
+            if ("hidden" in flags or str(flags.get("aria-hidden", "")).lower() == "true"
+                    or re.search(r"(?:display\s*:\s*none|visibility\s*:\s*hidden)",
+                                 flags.get("style") or "", re.I)):
+                # Conservative: hidden markup is not reliable visible evidence.
+                # Preserve other extractors; only this optional credit route
+                # refuses a paragraph with hidden material in it.
+                if any(frame[0] == "p" for frame in self.frames):
+                    self.invalid = True
+                self.ignored = 1
+                return
+        if tag in {"strong", "b"}:
+            self._mark(self.START)
+        elif tag == "br":
+            self._mark(self.BREAK)
+        super().handle_starttag(tag, attrs)
+
+    def handle_endtag(self, tag):
+        if tag in {"strong", "b"}:
+            self._mark(self.END)
+        super().handle_endtag(tag)
+
+    def handle_data(self, data):
+        if any(marker in data for marker in self.MARKERS):
+            self.invalid = True
+        super().handle_data(data)
+
+
+# Exact style labels, not substring matching in paragraphs. Generic Rock is
+# retained as a literal label; each caller's existing genre policy decides
+# whether that is sufficient for its admission profile.
+_CREDIT_NEUTRAL = frozenset({
+    "rock", "pop", "jazz", "folk", "electro", "electronique", "techno",
+    "hip hop", "rap", "chanson", "indie pop", "darkwave", "coldwave",
+    "rock alternatif", "alternative rock", "blues", "soul", "reggae",
+    "classique", "musique classique",
+})
+# This is a vocabulary of origin descriptors in artist credits, not a list
+# of authorized countries, artists, venues or sites. Unknown descriptors
+# stay held rather than being misinterpreted as a musical genre.
+_CREDIT_ORIGINS = frozenset({
+    "fr", "france", "uk", "gb", "angleterre", "england", "royaume uni",
+    "united kingdom", "ecosse", "scotland", "irlande", "ireland", "pays de galles",
+    "wales", "us", "usa", "etats unis", "united states", "canada",
+    "allemagne", "germany", "de", "belgique", "belgium", "be",
+    "suisse", "switzerland", "ch", "espagne", "spain", "es",
+    "italie", "italy", "it", "portugal", "pays bas", "netherlands", "nl",
+    "suede", "sweden", "norvege", "norway", "finlande", "finland",
+    "danemark", "denmark", "islande", "iceland", "australie", "australia",
+    "japon", "japan", "bresil", "brazil", "autriche", "austria",
+    "pologne", "poland", "grece", "greece", "mexique", "mexico",
+})
+
+
+def inline_artist_credits(html, title):
+    """Exact title bill independently confirmed by bold, standalone credits.
+
+    Supported grammar: **Artist** - Genre, or **Artist** - Origin - Genre.
+    The bold name and the style must be on the SAME paragraph line, not in
+    separate biographies, adjacent event cards or general venue tags.
+    Never invent a performer, and never replace contradictory roster data.
+    """
+    if not isinstance(html, str) or not 0 < len(html) <= 1_000_000:
+        return None
+    if not isinstance(title, str):
+        return None
+    names = [name.strip() for name in re.split(r"\s+\+\s+", title)]
+    keys = [words(name) for name in names]
+    if (not names or any(not 2 <= len(n) <= 120 for n in names)
+            or not all(keys) or len(set(keys)) != len(keys)
+            or any(bridge.is_unnamed_performer(n) for n in names)):
+        return None
+    from automation.concerts import artist_official_bio as biographies
+    labels = {words(g): g.title() for g in
+              (*POSITIVE_GENRES, *biographies.BIO_GENRES)
+              if words(g) != "hardcore"}
+    labels.update({g: g.title() for g in _CREDIT_NEUTRAL})
+    # Explicit electronic homonyms are neutral, not positive evidence.
+    labels.update({g: g.title() for g in ELECTRONIC_HARDCORE_HOMONYMS})
+    parser = ArtistCreditLines()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (ValueError, TypeError, RecursionError):
+        return None
+    if parser.invalid:
+        return None
+    headings = [(i, text) for i, (kind, text) in enumerate(parser.blocks)
+                if kind == "h1"]
+    if len(headings) != 1 or words(headings[0][1]) != words(title):
+        return None
+    section = []
+    for kind, value in parser.blocks[headings[0][0] + 1:]:
+        if words(value) in END_SECTION | {"vous devriez aimer", "we also recommend"}:
+            break
+        section.append((kind, value))
+    if re.search(r"\b(?:annulee?|reportee?|cancelled|postponed|rescheduled)\b",
+                 words(" ".join(v for _, v in section))):
+        return None
+    found = {}
+    legacy = {}
+    for kind, value in section:
+        if kind == "strong":
+            match = re.fullmatch(r"(.{2,120}?)\s+[–—-]\s+(.{2,80})", value)
+            if match and words(match[2]) in labels:
+                key = words(match[1])
+                if key not in keys or key in legacy:
+                    return None
+                legacy[key] = labels[words(match[2])]
+        if kind != "p":
+            continue
+        for line in value.split(parser.BREAK):
+            match = re.fullmatch(
+                r"\s*" + parser.START + r"\s*(.{2,120}?)\s*" + parser.END
+                + r"\s+[–—-]\s+(.{2,160}?)\s*", line)
+            if not match:
+                continue
+            if any(marker in match[1] or marker in match[2] for marker in parser.MARKERS):
+                return None
+            fields = re.split(r"\s+[–—-]\s+", match[2])
+            if len(fields) == 2 and words(fields[0]) in _CREDIT_ORIGINS:
+                style = fields[1]
+            elif len(fields) == 1:
+                style = fields[0]
+            else:
+                continue
+            label = labels.get(words(style))
+            if label is None:
+                continue
+            key = words(match[1])
+            if key not in keys or key in found:
+                return None  # Another labelled act or duplicate credit.
+            found[key] = label
+    if list(found) != keys or any(found.get(key) != label for key, label in legacy.items()):
+        return None
+    return [{"@type": "MusicGroup", "name": name, "genre": found[key]}
+            for name, key in zip(names, keys)]
+
+
 def _date_in(text):
     """One complete date per event block; disagreement fails closed.
 
