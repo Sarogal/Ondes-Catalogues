@@ -181,6 +181,39 @@ class BacklogFirstPartyTests(unittest.TestCase):
         self.assertFalse(result["safe_to_publish"])
         self.assertEqual(memory["entries"], {})
 
+    def test_itinerant_availability_is_reversible_private_deferral(self):
+        from ptitesondes_editorial_refusal_memory import empty_memory
+        now = datetime(2026, 11, 21, 10, tzinfo=timezone.utc)
+        memory = empty_memory()
+        row = dict(clue(), title="Contes musicaux pour bébés")
+        original = deepcopy(row)
+        event = dict(oa_event(), title={"fr": row["title"]},
+                     description={"fr": "Spectacle pour les enfants. Dispositif itinérant dans différentes structures."},
+                     conditions={"fr": "Renseignements auprès du musée"},
+                     timings=[{"begin": DAY.isoformat() + "T08:00:00+01:00",
+                               "end": DAY.isoformat() + "T19:00:00+01:00"}])
+        first, counts = self.build([row], refusal_memory=memory,
+                                   as_of_utc=now, event_reader=lambda *_: event)
+        self.assertEqual(counts["editorial_new_live_refusals"], 1)
+        self.assertEqual(first["open_world_research"], [])
+        self.assertEqual(first["additions"], [])
+        self.assertEqual(row, original)
+        self.assertEqual(next(iter(memory["entries"].values()))["reason"],
+                         "oa_direct_itinerant_availability_review")
+        _, counts = self.build([row], refusal_memory=memory,
+                               as_of_utc=now + timedelta(hours=1),
+                               event_reader=lambda *_: self.fail("Unexpired refusal"))
+        self.assertEqual(counts["editorial_cached_backlog_deferred"], 1)
+        updated = dict(event, timings=[{"begin": DAY.isoformat() + "T10:00:00+01:00",
+                                      "end": DAY.isoformat() + "T11:00:00+01:00"}])
+        final, counts = self.build([row], refusal_memory=memory,
+                                   as_of_utc=now + timedelta(hours=12),
+                                   event_reader=lambda *_: updated)
+        self.assertEqual(counts["new_dossiers"], 1)
+        self.assertEqual(final["additions"], [])
+        self.assertFalse(final["safe_to_publish"])
+        self.assertEqual(memory["entries"], {})
+
     def test_changed_collector_hint_invalidates_deferral_without_expiry(self):
         from ptitesondes_editorial_refusal_memory import empty_memory
         now = datetime(2026, 11, 21, 10, tzinfo=timezone.utc)

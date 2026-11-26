@@ -17,6 +17,7 @@ REASONS = frozenset({
     "oa_direct_out_of_editorial_scope",
     "oa_direct_primary_activity_outside_scope",
     "oa_direct_evergreen_on_demand_review",
+    "oa_direct_itinerant_availability_review",
 })
 HEX = re.compile(r"[0-9a-f]{64}")
 
