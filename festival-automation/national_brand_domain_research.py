@@ -16,7 +16,7 @@ SCRIPTS = str(Path(__file__).resolve().parents[1] / "scripts")
 if SCRIPTS not in sys.path:
     sys.path.insert(0, SCRIPTS)
 from grossesondes_first_party_direct_edition import (
-    GENERIC_WORDS, verify_first_party_claims,
+    GENERIC_WORDS, verify_first_party_claims, branded_official_site,
     private_proposal, validate_private_proposal,
 )
 
@@ -57,7 +57,15 @@ def research_brand_domain(lead, title, year, today, *, fetch=fetch_public_html):
     if candidate is None or normalized(candidate[0]) != normalized(title):
         return report
     canonical, site = candidate
-    claims = verify_first_party_claims(site, canonical, today, fetch=fetch)
+    diagnostics = {"homepage_read": False, "branded_identity": False}
+    def observed_fetch(url):
+        html = fetch(url)
+        if url == site:
+            diagnostics["homepage_read"] = True
+            diagnostics["branded_identity"] = branded_official_site(site, canonical, html)
+        return html
+    claims = verify_first_party_claims(site, canonical, today, fetch=observed_fetch)
+    report["diagnostics"] = diagnostics
     if claims is None:
         report["status"] = "BRAND_DOMAIN_OR_EDITION_UNPROVEN"
         return report
