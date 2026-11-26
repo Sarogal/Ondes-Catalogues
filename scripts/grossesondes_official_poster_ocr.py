@@ -32,7 +32,7 @@ MAX_WORDS = 1500
 MAX_CACHE = 64
 MAX_CACHE_BYTES = 8 * 1024 * 1024
 MIN_REVIEW_CONFIDENCE = 85
-OCR_PROFILE = "tesseract-fra-eng-psm11-v1"
+OCR_PROFILE = "tesseract-fra-eng-psm11-contrast-v2"
 MIME_FORMAT = {"image/jpeg": "JPEG", "image/png": "PNG", "image/webp": "WEBP"}
 
 
@@ -137,17 +137,63 @@ def parse_tsv(raw):
     return words
 
 
+def _ocr_score(words):
+    """Prefer confident alphanumeric tokens, without merging geometries."""
+    return (sum(w["confidence"] >= MIN_REVIEW_CONFIDENCE
+                and bool(re.search(r"[^\W_]", w["text"])) for w in words),
+            sum(w["confidence"] >= 60
+                and bool(re.search(r"[^\W_]", w["text"])) for w in words))
+
+
+def _choose_ocr_pass(original, alternative):
+    """An alternative must not change detected edition or cancellation signals."""
+    from grossesondes_official_html_edition import explicit_ranges, fold, CANCEL
+    def signals(words):
+        text = fold(" ".join(w["text"] for w in words))
+        years = set(re.findall(r"(?<!\d)20[2-4]\d(?!\d)", text))
+        ranges = {(a, b) for year in years
+                  for _, _, a, b in explicit_ranges(text, int(year))}
+        return years, bool(CANCEL.search(text)), ranges
+    if signals(original) != signals(alternative):
+        return original
+    return alternative if _ocr_score(alternative) > _ocr_score(original) else original
+
+
 def recognize_poster(mime, body):
-    """Local Tesseract; bounded image, no shell, no network, no paid service."""
+    """Two bounded local OCR passes; preserve one complete word geometry."""
+    from PIL import Image, ImageOps
     with tempfile.TemporaryDirectory(prefix="go-poster-") as directory:
         path = Path(directory) / "poster.png"
         normalized_image(mime, body, path)
-        completed = subprocess.run(
-            ["tesseract", str(path), "stdout", "-l", "fra+eng", "--psm", "11", "tsv"],
-            shell=False, capture_output=True, timeout=25, check=True)
-        if len(completed.stdout) > MAX_TSV:
-            raise ValueError("OCR output exceeds budget")
-        return parse_tsv(completed.stdout.decode("utf-8", errors="strict"))
+        deadline = monotonic() + 25
+
+        def run(image_path):
+            remaining = deadline - monotonic()
+            if remaining <= 0:
+                raise TimeoutError("OCR time budget")
+            completed = subprocess.run(
+                ["tesseract", str(image_path), "stdout", "-l", "fra+eng", "--psm", "11", "tsv"],
+                shell=False, capture_output=True, timeout=remaining, check=True)
+            if len(completed.stdout) > MAX_TSV:
+                raise ValueError("OCR output exceeds budget")
+            return parse_tsv(completed.stdout.decode("utf-8", errors="strict"))
+
+        original = run(path)
+        if monotonic() >= deadline - 2:
+            return original
+        # Improve contrast on illustrated posters, preserving image dimensions.
+        try:
+            alternate_path = Path(directory) / "contrast.png"
+            with Image.open(path) as image:
+                adjusted = ImageOps.autocontrast(image, cutoff=1)
+                histogram = adjusted.histogram()
+                if sum(histogram[:128]) > sum(histogram[128:]):
+                    adjusted = ImageOps.invert(adjusted)
+                adjusted.save(alternate_path, format="PNG")
+            alternative = run(alternate_path)
+            return _choose_ocr_pass(original, alternative)
+        except (OSError, ValueError, TypeError, UnicodeError, subprocess.SubprocessError):
+            return original
 
 
 def _valid_cached_words(words):
