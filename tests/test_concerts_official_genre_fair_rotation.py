@@ -180,6 +180,41 @@ class FairGenreReviewSlots(unittest.TestCase):
                 self.assertEqual(report["examined"], 16)
                 self.assertEqual(report["firstReviewInMemory"], 16)
 
+    def test_real_extractor_fingerprint_and_post_merge_trigger_cover_same_files(self):
+        import fnmatch
+        import re
+        import tempfile
+        from pathlib import Path
+
+        paths = pipeline.EXTRACTOR_FILES
+        actual = pipeline._extractor_revision()
+        self.assertTrue(pipeline._valid_revision(actual))
+        self.assertEqual(actual, pipeline._extractor_revision())
+        workflow = (pipeline.ROOT / ".github/workflows/"
+                    "grossesondes-concerts-private-intake-on-public-runners.yml").read_text(
+                        encoding="utf-8")
+        push = workflow.split("  workflow_dispatch:", 1)[0]
+        patterns = re.findall(r"^\s+- '([^']+)'$", push, re.MULTILINE)
+        for path in paths:
+            with self.subTest(path=path):
+                self.assertTrue((pipeline.ROOT / path).is_file())
+                self.assertTrue(any(fnmatch.fnmatchcase(path, p) for p in patterns))
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for path in paths:
+                target = root / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(b"fixture source")
+            with mock.patch.object(pipeline, "ROOT", root):
+                initial = pipeline._extractor_revision()
+                self.assertTrue(pipeline._valid_revision(initial))
+                (root / "unrelated-radio-catalogue.json").write_text("{}", encoding="utf-8")
+                self.assertEqual(initial, pipeline._extractor_revision())
+                (root / paths[0]).write_bytes(b"changed extractor")
+                self.assertNotEqual(initial, pipeline._extractor_revision())
+                (root / paths[0]).unlink()
+                self.assertIsNone(pipeline._extractor_revision())
+
     def test_extractor_revision_retries_are_bounded_and_keep_other_lanes(self):
         queue = ([row("oa", i) for i in range(24)] +
                  [row("tag", i, "genre_tag_review") for i in range(24)] +
