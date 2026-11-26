@@ -15,7 +15,7 @@ from radio_daily_repair_preview import build as repair
 from radio_daily_repair_confirmation import build as confirm
 from radio_daily_repair_plan import plan
 from test_radio_daily_logo_plan import reports,DATA,DAY,SID
-from test_radio_daily_repair_plan import fixture
+from test_radio_daily_repair_plan import fixture, NEW
 
 def sign(doc):
     body=encode(doc)
@@ -48,7 +48,51 @@ def run(old,new,evidence):
     q,b,y=sign(new)
     return migrate(p,a,q,b,old_anchor=x,new_anchor=y,day=DAY,**evidence)
 
+def repair_setup():
+    raw,sha,m,r,c=fixture()
+    l=logo(raw,DAY,expected=sha)
+    n=missing(raw,DAY,expected=sha)
+    st=status(raw,m,plan(raw,m,r,c,expected=sha),expected=sha)
+    old=json.loads(raw)
+    new=copy.deepcopy(old)
+    new["release_sequence"]=9
+    return old,new,dict(maintenance=m,logo=l,missing=n,status=st,repair=r,confirmation=c)
+
 class MigrationTests(unittest.TestCase):
+    def test_compatible_repair_history_retained(self):
+        old,new,e=repair_setup()
+        result=run(old,new,e)
+        self.assertEqual(result["confirmation"]["records"],e["confirmation"]["records"])
+        self.assertEqual(result["repairPlan"]["proposalCount"],1)
+        self.assertEqual(result["migration"]["repairHistoriesRetained"],1)
+
+    def test_repair_already_applied_not_carried(self):
+        old,new,e=repair_setup()
+        v=copy.deepcopy(new["stations"][0]["streams"][0])
+        v.update(stream_id="two",priority=1,url=NEW,previous_urls=[])
+        new["stations"][0]["streams"].append(v)
+        result=run(old,new,e)
+        self.assertEqual(result["confirmation"]["records"],[])
+        self.assertEqual(result["repairPlan"]["proposalCount"],0)
+
+    def test_repair_url_claimed_elsewhere_not_carried(self):
+        old,new,e=repair_setup()
+        other=copy.deepcopy(new["stations"][0])
+        other.update(go_station_id="go-station-000002",display_name="Other Radio",
+                     legacy_aliases=[],radio_browser_uuids=[])
+        other["streams"][0].update(url=NEW,previous_urls=[])
+        new["stations"].append(other)
+        result=run(old,new,e)
+        self.assertEqual(result["confirmation"]["records"],[])
+        self.assertEqual(result["repairPlan"]["proposalCount"],0)
+
+    def test_changed_station_status_resets_repair_history(self):
+        old,new,e=repair_setup()
+        new["stations"][0]["status"]["state"]="quarantined"
+        result=run(old,new,e)
+        self.assertEqual(result["confirmation"]["records"],[])
+        self.assertEqual(result["repairPlan"]["proposalCount"],0)
+
     def test_preserve_unchanged_stream_and_missing_logo(self):
         old,new,e=setup()
         result=run(old,new,e)
