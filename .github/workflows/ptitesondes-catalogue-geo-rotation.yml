@@ -72,7 +72,7 @@ jobs:
           install -d -m 700 "$WORK"
           SRC="state/automation-intake/ptitesondes/catalogue-geo-rotation.json"
           if [[ -f "$SRC" ]]; then cp -- "$SRC" "$WORK/state.json"; fi
-          if ! python scripts/ptitesondes_catalogue_geo_rotation.py --catalogue docs/ptitesondes/sorties.json --day "$(TZ=Europe/Paris date +%F)" --state "$WORK/state.json" --live > "$WORK/summary.json" 2> "$WORK/errors.log"; then
+          if ! python scripts/ptitesondes_catalogue_geo_rotation.py --catalogue docs/ptitesondes/sorties.json --day "$(TZ=Europe/Paris date +%F)" --state "$WORK/state.json" --acceslibre-hints state/automation-intake/ptitesondes/acceslibre-geo-hints.json --live > "$WORK/summary.json" 2> "$WORK/errors.log"; then
             echo "::error::GPS research incomplete; private state unchanged."
             exit 1
           fi
