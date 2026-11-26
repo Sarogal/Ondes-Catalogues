@@ -859,8 +859,9 @@ jobs:
               --output "$OUT/lieux-open-world-research.json" --date "$DAY" \
               > "$LOG/lieux-open-world-research.log" 2>&1; then
             OPEN_WORLD_PLACE_OK=1
-            python - "$LOG/lieux-open-world-research.log" <<'PY'
+            PYTHONPATH=public/scripts python - "$LOG/lieux-open-world-research.log" <<'PY'
           import json, os, sys
+          from ptitesondes_open_world_permanent_place_research import public_diagnostic_lines
           r = json.load(open(sys.argv[1], encoding="utf-8"))
           fields = ("eligible_for_research", "examined", "unattempted", "stored_private_results")
           assert all(type(r.get(k)) is int and r[k] >= 0 for k in fields)
@@ -869,6 +870,10 @@ jobs:
               out.write("### Recherche générique des lieux (privée)\n")
               for k in fields:
                   line = f"- {k}: {r[k]}"
+                  print(line)
+                  out.write(line + "\n")
+              for diagnostic in public_diagnostic_lines(r):
+                  line = "- " + diagnostic
                   print(line)
                   out.write(line + "\n")
           PY
