@@ -134,6 +134,21 @@ def _named_location(text, venue):
         value == label + " " + name for label in PLACE_LABELS)))
 
 
+def _event_day(text):
+    day = visible._date_in(text)
+    if day is not None:
+        return day
+    match = re.fullmatch(r"(?:(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+)?"
+                         r"(\d{1,2})\s+(\d{1,2})\s+(20\d{2})(?:\s+\d{1,2}:\d{2})?",
+                         text.strip(), re.I)
+    if match:
+        try:
+            return dt.date(int(match[3]), int(match[2]), int(match[1])).isoformat()
+        except ValueError:
+            return "_invalid_date"
+    return None
+
+
 def visible_address(html, event, venue):
     """Only a dated exact event heading and an explicitly named address.
 
@@ -151,16 +166,16 @@ def visible_address(html, event, venue):
             "visible event heading differs from published concert")
     detail = parser.blocks[headings[0][0] + 1:][:160]
     cut = next((i for i, (tag, text) in enumerate(detail)
-                if tag in {"h2", "h3", "h4"} and triage.words(text) in STOP),
+                if triage.words(text) in STOP | {"vous devriez aimer", "nous vous recommandons egalement", "we also recommend"}),
                len(detail))
     detail = detail[:cut]
     # Date fields may precede the sole event heading. Require a nearby
     # unambiguous date, and never replace a contradictory date after it.
     preceding = parser.blocks[max(0, headings[0][0] - 6):headings[0][0]]
-    before_days = {visible._date_in(text) for _, text in preceding
-                   if visible._date_in(text)}
-    after_day = next((visible._date_in(text) for _, text in detail[:12]
-                      if visible._date_in(text)), None)
+    before_days = {_event_day(text) for _, text in preceding
+                   if _event_day(text)}
+    after_day = next((_event_day(text) for _, text in detail[:12]
+                      if _event_day(text)), None)
     require((after_day == event["date"] and
              (not before_days or before_days == {event["date"]}))
             or (after_day is None and before_days == {event["date"]}),
@@ -415,15 +430,7 @@ def _footer_after_exact_event(html, event, venue):
                                          "we also recommend"}:
             break
         detail.append((tag, text))
-    dates = {visible._date_in(text) for _, text in detail if visible._date_in(text)}
-    # Full numeric dates shown as weekday, day month year are a common
-    # visible format. Require all such date fields to agree.
-    for _, text in detail:
-        hit = re.fullmatch(r"(?:(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+)?"
-                           r"(\d{1,2})\s+(\d{1,2})\s+(20\d{2})(?:\s+\d{1,2}:\d{2})?",
-                           text.strip(), re.I)
-        if hit:
-            dates.add(dt.date(int(hit[3]), int(hit[2]), int(hit[1])).isoformat())
+    dates = {_event_day(text) for _, text in detail if _event_day(text)}
     require(dates == {event["date"]}, "footer event date unconfirmed")
     require(any(_named_location(t, venue) for _, t in detail),
             "footer event venue unconfirmed")
@@ -495,12 +502,19 @@ def verify(event, venue, *, fetch=probe.safe_fetch, cache=None):
     try:
         site = extract_address(html, event, venue)
     except MissingVenueAddress:
+        # Keep the existing practical-page route first. If it actually
+        # fetched a page, a conflicting or unverifiable address must not be
+        # bypassed by a footer. Only an absent/unusable link permits fallback.
+        practical_fetched = False
+        def practical_fetch(url, shared):
+            nonlocal practical_fetched
+            practical_fetched = True
+            return fetch(url, shared)
         try:
-            site = linked_practical_address(html, event, venue, fetch, cache)
+            site = linked_practical_address(html, event, venue, practical_fetch, cache)
         except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
-            # Try the footer only with independently verified origin AND
-            # exact visible individual show identity. Never borrow an address
-            # from a recommendation or override a conflicting body address.
+            if practical_fetched:
+                raise EvidenceHeld("linked_practical_address_unconfirmed") from exc
             try:
                 site = _footer_after_exact_event(html, event, venue)
             except (ValueError, TypeError, KeyError, OSError, TimeoutError):
