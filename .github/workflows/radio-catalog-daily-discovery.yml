@@ -65,6 +65,8 @@ on:
       - "radio-catalog-lab/tools/radio_daily_unified_generator.py"
       - "radio-catalog-lab/tools/test_radio_daily_unified_generator.py"
       - "radio-catalog-lab/tools/radio_daily_live_evidence.py"
+      - "radio-catalog-lab/tools/radio_daily_proposal_subset.py"
+      - "radio-catalog-lab/tools/test_radio_daily_proposal_subset.py"
       - "radio-catalog-lab/tools/test_radio_daily_live_evidence.py"
       - "radio-catalog-lab/tools/radio_daily_live_release_preview.py"
       - "radio-catalog-lab/tools/radio_daily_live_combined_preview.py"

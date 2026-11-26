@@ -10,11 +10,13 @@ from radio_daily_baseline_verify import verify_baseline
 from radio_daily_lab_signing import validate_candidate
 from radio_daily_repair_plan import plan
 from radio_daily_repair_material import recover
+from radio_daily_repair_confirmation import MAX_CHECKS
+from radio_daily_proposal_subset import select_proposals
 from radio_daily_v9_generator import digest, encode
 
 
 def expected_repair_release(prior_pointer, prior_body, *, anchor, day, maintenance,
-                   repair, confirmation, search, fetch, probe, continuity, hls):
+                   repair, confirmation, search, fetch, probe, continuity, hls, selected=None):
     old = verify_baseline(prior_pointer, prior_body, **anchor)
     sha = anchor["expected_sha"]
     if any(x.get("scanDate") != day for x in (maintenance, repair, confirmation)):
@@ -24,14 +26,15 @@ def expected_repair_release(prior_pointer, prior_body, *, anchor, day, maintenan
     report = plan(prior_body, maintenance, repair, confirmation, expected=sha)
     if not report["proposals"]:
         raise ValueError("no qualified repair proposal")
+    proposals = select_proposals(report["proposals"], "goStationId", selected, MAX_CHECKS)
     urls, held = recover(prior_body, maintenance, repair, confirmation, report,
-                         expected=sha, search=search, fetch=fetch)
-    keys = {(p["goStationId"], p["streamSha256"]) for p in report["proposals"]}
+                         expected=sha, search=search, fetch=fetch, selected=selected)
+    keys = {(p["goStationId"], p["streamSha256"]) for p in proposals}
     if held or set(urls) != keys:
         raise ValueError("fresh broadcaster material incomplete")
     expected = copy.deepcopy(old)
     rows = {r["go_station_id"]: r for r in expected["stations"]}
-    for p in report["proposals"]:
+    for p in proposals:
         sid, fingerprint = p["goStationId"], p["streamSha256"]
         row = rows[sid]
         if (row["editorial"]["admission_state"] not in ("approved", "legacy_preserved")

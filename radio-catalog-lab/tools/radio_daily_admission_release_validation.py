@@ -18,12 +18,14 @@ from radio_daily_repair_confirmation import confirm_page
 from radio_stream_technical_probe import validate_endpoint
 from radio_daily_v9_generator import GENRES, digest, encode
 
+from radio_daily_proposal_subset import select_proposals
+
 MAX_ADMISSIONS = 4
 DIRECTORY_LIMIT = 100
 
 
 def qualify_admission(prior_pointer, prior_body, *, anchor, day, discovery, dossiers,
-                      search, fetch, probe, continuity, hls):
+                      search, fetch, probe, continuity, hls, selected=None):
     old = verify_baseline(prior_pointer, prior_body, **anchor)
     sha = anchor["expected_sha"]
     if discovery.get("scanDate") != day or dossiers.get("scanDate") != day:
@@ -32,8 +34,9 @@ def qualify_admission(prior_pointer, prior_body, *, anchor, day, discovery, doss
         raise ValueError("explicit fresh evidence services required")
     decisions = decide(discovery, dossiers, sha)
     ready = [r for r in decisions["records"] if r["decision"] == "ready_for_staging_review"]
-    if not 0 < len(ready) <= MAX_ADMISSIONS:
+    if not ready:
         raise ValueError("no qualified admission or admission budget exceeded")
+    ready = select_proposals(ready, "stationuuid", selected, MAX_ADMISSIONS)
     reconciliation = {r["stationuuid"]: r["classification"]
         for r in review_candidates(old, discovery)["candidates"]}
     sources = {checked_uuid(r["stationuuid"]): r for r in discovery["candidates"]}

@@ -5,18 +5,21 @@ from radio_daily_baseline_verify import strict_json
 from radio_daily_repair_plan import plan
 from radio_daily_repair_preview import match, PAGE_SIZE
 from radio_daily_repair_confirmation import confirm_page, MAX_CHECKS
+from radio_daily_proposal_subset import select_proposals
 from radio_daily_editorial_preview import homepage_url, fetch_html
 from radio_catalog_daily_candidate_reconcile import index_catalog
 from radio_daily_discovery import fetch_page, resolve_api_mirrors
 from radio_stream_technical_probe import validate_endpoint
 
 
-def recover(raw,maintenance,repair,confirmation,report,*,expected=BASELINE,search=None,fetch=None):
+def recover(raw,maintenance,repair,confirmation,report,*,expected=BASELINE,search=None,fetch=None,selected=None):
     if plan(raw,maintenance,repair,confirmation,expected=expected)!=report:
         raise ValueError("repair material plan mismatch")
     proposals=report["proposals"]
     if not proposals:
         return {},[]
+    if selected is not None:
+        proposals=select_proposals(proposals,"goStationId",selected,MAX_CHECKS)
     if len(proposals)>MAX_CHECKS:
         return {},[{"reason":"repair_material_budget_held"}]
     if search is None or fetch is None:

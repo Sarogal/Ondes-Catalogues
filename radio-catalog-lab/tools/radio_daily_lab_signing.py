@@ -54,7 +54,7 @@ def validate_candidate(prior_pointer, prior_body, candidate, *, expected_sha,
         reference["generated_at"] = old["generated_at"]
     if repair_evidence is not None:
         from radio_daily_repair_release_validation import expected_repair_release
-        if not isinstance(repair_evidence, dict) or set(repair_evidence) != {
+        if not isinstance(repair_evidence, dict) or set(repair_evidence)-{"selected"} != {
                 "maintenance", "repair", "confirmation", "search", "fetch",
                 "probe", "continuity", "hls"}:
             raise ValueError("invalid repair evidence contract")

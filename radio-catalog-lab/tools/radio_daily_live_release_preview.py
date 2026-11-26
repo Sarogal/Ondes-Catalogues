@@ -7,7 +7,9 @@ from radio_daily_v9_generator import digest, encode, load_bytes
 from radio_daily_decision_preview import decide
 from radio_daily_repair_plan import plan
 from radio_daily_repair_preview import PAGE_SIZE
-from radio_daily_admission_release_validation import DIRECTORY_LIMIT
+from radio_daily_admission_release_validation import DIRECTORY_LIMIT, MAX_ADMISSIONS
+from radio_daily_repair_confirmation import MAX_CHECKS
+from radio_daily_proposal_subset import isolate
 from radio_daily_admission_release_validation import qualify_admission, validate_admission_release
 from radio_daily_repair_release_validation import qualify_repair, validate_repair_release
 from radio_daily_live_evidence import LiveEvidence, EvidenceDeferred
@@ -32,23 +34,13 @@ def run(pointer, raw, *, anchor, day, discovery, dossiers, maintenance, repair, 
         ("repair", repairs, qualify_repair, validate_repair_release,
          dict(maintenance=maintenance, repair=repair, confirmation=confirmation)),
     ):
-        result = dict(proposalCount=len(proposed), networkCalls=0, candidateSha256=None,
-                      outcome="no_proposal")
-        if proposed:
-            live = LiveEvidence(directory_limit=PAGE_SIZE if kind == "repair" else DIRECTORY_LIMIT)
-            args = dict(anchor=anchor, day=day, **evidence, **live.services())
-            try:
-                candidate = qualify(pointer, raw, **args)
-                verified = validate(pointer, raw, candidate, **args)
-                if verified != digest(candidate):
-                    raise ValueError("strict live candidate digest mismatch")
-                result.update(outcome="strict_gate_validated", candidateSha256=verified)
-                operations[kind] = dict(candidate=candidate, evidence=dict(evidence, **live.services()))
-            except EvidenceDeferred:
-                result["outcome"] = "live_evidence_deferred"
-            except ValueError:
-                result["outcome"] = "strict_gate_held"
-            result["networkCalls"] = live.calls
+        live = LiveEvidence(directory_limit=PAGE_SIZE if kind == "repair" else DIRECTORY_LIMIT)
+        result, material = isolate(pointer, raw, anchor=anchor, day=day, proposed=proposed,
+            key="goStationId" if kind == "repair" else "stationuuid", qualify=qualify,
+            validate=validate, evidence=evidence, live=live,
+            maximum=MAX_CHECKS if kind == "repair" else MAX_ADMISSIONS)
+        if material is not None:
+            operations[kind] = material
         results[kind] = result
     try:
         results["logo"] = preview_logo(pointer, raw, anchor=anchor, day=day,
