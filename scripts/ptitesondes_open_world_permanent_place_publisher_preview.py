@@ -50,15 +50,16 @@ def read_private(token):
     return json.loads(raw)
 
 
-def review(private, today, *, osm_fetch=fetch_named, page_read=read_unknown_https,
+def review_drafts(private, today, *, osm_fetch=fetch_named, page_read=read_unknown_https,
            directory_fetch=fetch_dila, admin_fetch=fetch_admin):
     counts = Counter()
+    drafts = []
     summary = {"private_candidates": 0, "rechecked": 0,
                "independently_corroborated": 0, "complete_draft_records": 0, "counts": {},
                "publication_ready": False, "public_writes": 0}
     if private is None:
         summary["counts"] = {"private_research_not_yet_available": 1}
-        return summary
+        return drafts, summary
     if (type(today) is not date or not isinstance(private, dict)
             or private.get("schema") != STATE_SCHEMA
             or not isinstance(private.get("records"), list)
@@ -115,6 +116,7 @@ def review(private, today, *, osm_fetch=fetch_named, page_read=read_unknown_http
                                         proof["official_url"], pages[proof["official_url"]],
                                         maps[0], admin, today)
                     if draft is not None:
+                        drafts.append(draft)
                         summary["complete_draft_records"] += 1
                     else:
                         counts["draft_facts_not_complete"] += 1
@@ -125,7 +127,12 @@ def review(private, today, *, osm_fetch=fetch_named, page_read=read_unknown_http
         except (ValueError, OSError, TypeError, KeyError, UnicodeError):
             counts["independent_source_unavailable"] += 1
     summary["counts"] = dict(counts)
-    return summary
+    return drafts, summary
+
+
+def review(private, today, **kwargs):
+    """Public-log-safe diagnostic API; never returns candidate details."""
+    return review_drafts(private, today, **kwargs)[1]
 
 
 def main():

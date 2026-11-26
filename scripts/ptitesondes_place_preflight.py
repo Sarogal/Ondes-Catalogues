@@ -322,6 +322,42 @@ def private_json(token):
     return json.loads(raw)
 
 
+def merge_open_world_drafts(current, drafts, today):
+    """Append freshly reconstructed records only; preserve historical bytes.
+
+    Internal function: live_review obtains drafts in memory from independent
+    sources, never from a serialized private proposal or CLI input.
+    """
+    validate(current)
+    approved = []
+    counts = {"open_world_added": 0, "open_world_duplicate": 0,
+              "open_world_invalid": 0}
+    for p in drafts:
+        try:
+            if p.get("reviewed_at") != today.isoformat():
+                raise ValueError("stale fresh draft")
+            if (not re.fullmatch(r"osm-node-[1-9]\d*", p.get("id", ""))
+                    or p.get("geo_source_url") !=
+                    "https://www.openstreetmap.org/node/" + p["id"].removeprefix("osm-node-")):
+                raise ValueError("draft identity mismatch")
+            validate({"version": 1, "updated_at": today.isoformat(),
+                      "places": [p]})
+            all_places = current["places"] + approved
+            source = {"facts": p, "osm": {}, "aliases": []}
+            if (any(x["id"] == p["id"] for x in all_places)
+                    or duplicate(all_places, source, p["lat"], p["lng"])):
+                counts["open_world_duplicate"] += 1
+                continue
+            approved.append(p)
+            counts["open_world_added"] += 1
+        except (ValueError, TypeError, KeyError, OverflowError, AttributeError):
+            counts["open_world_invalid"] += 1
+    out = ({"version": 1, "updated_at": today.isoformat(),
+            "places": current["places"] + approved} if approved else current)
+    assert_append_only(current, out)
+    return out, counts
+
+
 def live_review(token, current, today, registry_file=REGISTRY):
     private = private_json(token)
     sources = json.loads(registry_file.read_text(encoding="utf-8"))
@@ -330,7 +366,24 @@ def live_review(token, current, today, registry_file=REGISTRY):
     validate(live)
     if live != current:
         raise ValueError("GitHub Pages baseline differs from repository")
-    return evaluate(private, current, sources, today)
+    candidate, outcomes = evaluate(private, current, sources, today)
+    # An optional open-world branch must never discard independently valid
+    # pinned additions or block the ordinary outings publisher.
+    from ptitesondes_open_world_permanent_place_publisher_preview import (
+        read_private, review_drafts,
+    )
+    try:
+        drafts, summary = review_drafts(read_private(token), today)
+        candidate, counts = merge_open_world_drafts(candidate, drafts, today)
+        outcomes.append({"id": "open-world", "status": "numeric_summary",
+                         "rechecked": summary["rechecked"],
+                         "complete_drafts": summary["complete_draft_records"],
+                         "counts": {**summary["counts"], **counts}})
+    except (ValueError, TypeError, KeyError, OSError, UnicodeError, OverflowError):
+        outcomes.append({"id": "open-world", "status": "deferred",
+                         "reason": "open_world_independent_review_unavailable"})
+    assert_append_only(current, candidate)
+    return candidate, outcomes
 
 
 def main():

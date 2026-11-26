@@ -120,10 +120,6 @@ jobs:
             python scripts/ptitesondes_place_preflight.py --mode apply
           fi
           python scripts/ptitesondes_places.py docs/ptitesondes/lieux.json --previous /tmp/ptitesondes-lieux-before-release.json
-      - name: Contre-preuve indépendante des lieux inconnus (lecture seule)
-        env:
-          PRIVATE_INTAKE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
-        run: python scripts/ptitesondes_open_world_permanent_place_publisher_preview.py
       - name: Lire, contrôler et fusionner sans écriture distante
         id: sync
         env:

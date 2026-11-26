@@ -41,7 +41,8 @@ ACCESS = (
 RESTRICTED = re.compile(r"\b(?:non ouvert(?:e)?|pas ouvert(?:e)?|fermeture temporaire|"
                         r"uniquement sur invitation|reserve aux adherents|"
                         r"reserve aux professionnels|acces interdit|"
-                        r"acces reserve|ferme au public|fermee au public)\b")
+                        r"acces reserve|ferme au public|fermee au public|pas de|aucun(?:e)?|"
+                        r"sans espace jeunesse|interdit aux enfants)\b")
 
 
 class NoRedirect(HTTPRedirectHandler):
