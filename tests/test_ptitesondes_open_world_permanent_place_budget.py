@@ -1,7 +1,9 @@
 """Bounded live research must not pretend unprocessed leads were examined."""
 from datetime import date
 import unittest
-from ptitesondes_open_world_permanent_place_research import research, cycle, MAX_BATCH
+from ptitesondes_open_world_permanent_place_research import (
+    research, cycle, MAX_BATCH, public_diagnostic_lines,
+)
 from test_ptitesondes_open_world_permanent_place_research import row, report
 
 DAY = date(2026, 11, 26)
@@ -53,6 +55,37 @@ class PlaceResearchBudgetTests(unittest.TestCase):
             stop_on_outage=True, osm_fetch=outage)
         self.assertEqual(len(set(seen)), 6)
         self.assertEqual(summary["unattempted"], 4)
+
+    def test_public_diagnostics_distinguish_outage_from_no_match(self):
+        summary = {
+            "stop_reason": "provider_outage",
+            "counts": {"research_source_unavailable": 3,
+                       "map_identity_missing_or_ambiguous": 2,
+                       "independent_evidence_found": 1},
+            "osm_transport": {"named.fossgis.http_429": 1,
+                              "named.private_coffee.timeout": 2,
+                              "named.fossgis.cooldown": 2},
+        }
+        self.assertEqual(public_diagnostic_lines(summary), [
+            "stop_reason: provider_outage",
+            "counts.map_identity_missing_or_ambiguous: 2",
+            "counts.independent_evidence_found: 1",
+            "counts.research_source_unavailable: 3",
+            "osm_transport.named.fossgis.cooldown: 2",
+            "osm_transport.named.fossgis.http_429: 1",
+            "osm_transport.named.private_coffee.timeout: 2",
+        ])
+
+    def test_public_diagnostics_never_forward_unknown_text_or_keys(self):
+        summary = {
+            "stop_reason": "private venue / https://secret.example",
+            "counts": {"private venue": 3, "research_source_unavailable": True,
+                       "independent_evidence_found": "private venue"},
+            "osm_transport": {"named.fossgis.private_url": 2,
+                              "named.private_coffee.timeout": -1,
+                              "named.fossgis.success": 10001},
+        }
+        self.assertEqual(public_diagnostic_lines(summary), [])
 
     def test_invalid_time_budget_rejected(self):
         for bad in (0, 601, True, "10"):

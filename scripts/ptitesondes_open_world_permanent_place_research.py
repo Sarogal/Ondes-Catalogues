@@ -12,7 +12,10 @@ from collections import Counter
 from time import monotonic
 
 from ptitesondes_family_national_source_preflight import norm_text
-from ptitesondes_generic_venue_osm_preflight import fetch_osm_query, MAX_ELEMENTS
+from ptitesondes_generic_venue_osm_preflight import (
+    fetch_osm_query, MAX_ELEMENTS, osm_transport_diagnostics,
+    OSM_ENDPOINT_LABELS, OSM_CATEGORIES,
+)
 from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
 from ptitesondes_delegated_source_authority import _url_host, _same_host
 from ptitesondes_independent_venue_site_proof import _osm_website_host
@@ -247,6 +250,39 @@ def cycle(report, previous, today, **kwargs):
             "records": [saved[k] for k in sorted(saved)]}, summary
 
 
+# Public logs may contain only fixed labels and integer aggregates.
+PUBLIC_STOP_REASONS = ("batch_complete", "time_budget", "provider_outage")
+PUBLIC_RESULT_CODES = (
+    "map_response_incomplete", "map_identity_missing_or_ambiguous",
+    "map_feature_requires_other_proof", "map_postcode_missing",
+    "postal_evidence_conflict", "map_website_missing_or_conflicting",
+    "official_venue_page_missing", "independent_evidence_found",
+    "official_page_unavailable_or_unmatched", "research_source_unavailable",
+)
+
+
+def public_diagnostic_lines(summary):
+    """Redact unknown labels, arbitrary text and non-integer values."""
+    lines = []
+    reason = summary.get("stop_reason")
+    if isinstance(reason, str) and reason in PUBLIC_STOP_REASONS:
+        lines.append("stop_reason: " + reason)
+    for key, allowed in (
+        ("counts", PUBLIC_RESULT_CODES),
+        ("osm_transport", tuple(
+            "named.%s.%s" % (endpoint, category)
+            for endpoint in OSM_ENDPOINT_LABELS for category in OSM_CATEGORIES)),
+    ):
+        values = summary.get(key)
+        if not isinstance(values, dict):
+            continue
+        for label in allowed:
+            count = values.get(label)
+            if type(count) is int and 0 <= count <= 10000:
+                lines.append(f"{key}.{label}: {count}")
+    return lines
+
+
 def main():
     import argparse
     from pathlib import Path
@@ -274,6 +310,7 @@ def main():
         print(json.dumps({"error_stage": stage, "publication_ready": False,
                           "public_writes": 0}, sort_keys=True))
         raise SystemExit(1) from None
+    summary["osm_transport"] = osm_transport_diagnostics()
     print(json.dumps(summary, sort_keys=True))
 
 
