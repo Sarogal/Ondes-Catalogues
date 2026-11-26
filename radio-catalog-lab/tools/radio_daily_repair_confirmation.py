@@ -265,6 +265,7 @@ def main():
     p.add_argument("--previous",type=Path)
     p.add_argument("--limit",type=int,default=0)
     p.add_argument("--allow-network",action="store_true")
+    p.add_argument("--baseline-sha256",default=BASELINE)
     a=p.parse_args()
     if a.limit and not a.allow_network:
         p.error("network must be explicit")
@@ -280,7 +281,7 @@ def main():
         return fetch_page(hosts,"name",name,0,PAGE_SIZE)
     transport=PinnedHttpTransport()
     report=build(load(a.baseline),json.loads(load(a.repair)),
-                 prior=json.loads(load(a.previous)) if a.previous else None,
+                 expected=a.baseline_sha256,prior=json.loads(load(a.previous)) if a.previous else None,
                  limit=a.limit,search=search,fetch=fetch_html,
                  probe=lambda u:probe_url(u,transport.request),
                  hls_probe=observe_hls,continuity_probe=observe_url)

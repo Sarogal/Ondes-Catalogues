@@ -133,12 +133,13 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ("baseline","maintenance","repair","confirmation","output"):
         p.add_argument("--"+name,required=True,type=Path)
+    p.add_argument("--baseline-sha256",default=BASELINE)
     a=p.parse_args()
     def load(path):
         if path.stat().st_size>MAX_BYTES:
             raise ValueError("oversize repair plan input")
         return path.read_bytes()
-    report=plan(load(a.baseline),*(strict_json(load(getattr(a,k))) for k in ("maintenance","repair","confirmation")))
+    report=plan(load(a.baseline),*(strict_json(load(getattr(a,k))) for k in ("maintenance","repair","confirmation")),expected=a.baseline_sha256)
     payload=encode(report)
     if len(payload)>MAX_BYTES:
         raise ValueError("oversize repair plan")

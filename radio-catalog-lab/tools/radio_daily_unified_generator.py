@@ -196,20 +196,22 @@ def main():
         p.add_argument("--" + name, type=Path, required=True)
     p.add_argument("--allow-repair-material-network", action="store_true")
     p.add_argument("--allow-logo-material-network", action="store_true")
+    p.add_argument("--baseline-sha256",default=BASELINE)
+    p.add_argument("--baseline-sequence",type=int,default=8)
     a = p.parse_args()
     if a.output_dir.exists():
         raise ValueError("fresh output directory required")
     raw = load_bytes(a.baseline)
-    verify_baseline(load_bytes(a.pointer), raw)
+    verify_baseline(load_bytes(a.pointer), raw, expected_sha=a.baseline_sha256, expected_sequence=a.baseline_sequence)
     evidence = [strict_json(load_bytes(getattr(a, k))) for k in
         ("discovery", "dossiers", "decisions", "maintenance", "repair", "confirmation", "repair_report", "status_report", "logo_maintenance", "missing_logo")]
     urls, held = ({}, [])
     if a.allow_repair_material_network:
-        urls, held = live_recover(raw, *evidence[3:7])
+        urls, held = live_recover(raw, *evidence[3:7],expected=a.baseline_sha256)
     artwork, artwork_held, objects = {}, [], {}
     if a.allow_logo_material_network:
-        artwork, artwork_held = recover_artwork(raw,evidence[2]["scanDate"],*evidence[8:10])
-    payload, report = build(raw, *evidence, urls=urls, artwork=artwork, object_output=objects)
+        artwork, artwork_held = recover_artwork(raw,evidence[2]["scanDate"],*evidence[8:10],expected=a.baseline_sha256)
+    payload, report = build(raw, *evidence, urls=urls, artwork=artwork, object_output=objects,expected=a.baseline_sha256,expected_sequence=a.baseline_sequence)
     report["logoMaterialDeferred"] = artwork_held
     report["logoMaterialRecoveredCount"] = len(artwork)
     report["repairMaterialDeferred"] = held

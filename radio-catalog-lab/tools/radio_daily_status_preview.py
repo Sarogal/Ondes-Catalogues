@@ -171,6 +171,7 @@ def main():
     p.add_argument("--previous",type=Path)
     p.add_argument("--limit",type=int,default=0)
     p.add_argument("--allow-network",action="store_true")
+    p.add_argument("--baseline-sha256",default=BASELINE)
     a=p.parse_args()
     if a.limit and not a.allow_network:
         p.error("network must be explicit")
@@ -179,7 +180,7 @@ def main():
             raise ValueError("oversize status input")
         return path.read_bytes()
     report=build(read(a.baseline),strict_json(read(a.maintenance)),strict_json(read(a.repair_plan)),
-                 prior=strict_json(read(a.previous)) if a.previous else None,
+                 expected=a.baseline_sha256,prior=strict_json(read(a.previous)) if a.previous else None,
                  limit=a.limit,icy=observe_url,hls=observe_hls)
     payload=encode(report)
     if len(payload)>MAX_BYTES:

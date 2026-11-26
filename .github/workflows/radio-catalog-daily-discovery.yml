@@ -60,6 +60,7 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_unified_generator.py"
       - "radio-catalog-lab/tools/radio_daily_v9_generator.py"
       - "radio-catalog-lab/tools/test_radio_daily_v9_generator.py"
+      - "radio-catalog-lab/tools/test_radio_daily_baseline_cli.py"
       - "radio-catalog-lab/tools/radio_daily_release_context.py"
       - "radio-catalog-lab/tools/test_radio_daily_release_context.py"
       - "radio-catalog-lab/tools/radio_daily_baseline_selection.py"
@@ -234,18 +235,18 @@ jobs:
               "${prior[@]}" \
               --output "$RUNNER_TEMP/go-radio-discovery/candidates.json"
           fi
-      - name: Reconcile candidates against pinned TEST v8 (read-only)
+      - name: Select signed bootstrap and reconcile candidates (read-only)
         shell: bash
         env:
-          BASELINE_SHA256: f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40
+          BOOTSTRAP_SHA256: f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40
         run: |
           set -euo pipefail
-          baseline="$RUNNER_TEMP/go-radio-v8-baseline.json"
+          baseline="$RUNNER_TEMP/go-radio-selected-baseline.json"
           curl --fail --silent --show-error --max-time 45 --max-filesize 2000000 \
-            "https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/feature/go-radio-test-v2-isolated-20261123/grossesondes/radio-test-v2/releases/${BASELINE_SHA256}.json" \
+            "https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/feature/go-radio-test-v2-isolated-20261123/grossesondes/radio-test-v2/releases/${BOOTSTRAP_SHA256}.json" \
             --output "$baseline"
-          printf '%s  %s\n' "$BASELINE_SHA256" "$baseline" | sha256sum --check --strict
-          pointer="$RUNNER_TEMP/go-radio-v8-pointer.json"
+          printf '%s  %s\n' "$BOOTSTRAP_SHA256" "$baseline" | sha256sum --check --strict
+          pointer="$RUNNER_TEMP/go-radio-selected-pointer.json"
           curl --fail --silent --show-error --max-time 45 --max-filesize 16384 \
             "https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/feature/go-radio-test-v2-isolated-20261123/grossesondes/radio-test-v2/current.json" \
             --output "$pointer"
@@ -255,6 +256,17 @@ jobs:
             --day "$(date -u +%F)" \
             --selection-report "$RUNNER_TEMP/go-radio-discovery/baseline-selection.json" \
             --report "$RUNNER_TEMP/go-radio-discovery/release-context.json"
+          python - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          context=json.loads((Path(os.environ["RUNNER_TEMP"])/"go-radio-discovery/release-context.json").read_text())
+          assert context["signatureVerified"] is True and context["publicationAllowed"] is False
+          sha=context["selectedSha256"]
+          seq=context["selectedSequence"]
+          assert re.fullmatch("[0-9a-f]{64}",sha) and type(seq) is int and seq>=8
+          with open(os.environ["GITHUB_ENV"],"a") as f:
+              f.write(f"BASELINE_SHA256={sha}\nBASELINE_SEQUENCE={seq}\n")
+          PY
           # Digest is pinned to the previously signed TEST v8. This is a
           # classification-only report, not authority to admit or sign.
           python radio-catalog-lab/tools/radio_catalog_daily_candidate_reconcile.py \
@@ -375,8 +387,6 @@ jobs:
       - name: Join qualification evidence by UUID (no admission)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
         shell: bash
-        env:
-          BASELINE_SHA256: f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40
         run: |
           set -euo pipefail
           root="$RUNNER_TEMP/go-radio-discovery"
@@ -392,8 +402,6 @@ jobs:
       - name: Evaluate decision policy (staging review only)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
         shell: bash
-        env:
-          BASELINE_SHA256: f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40
         run: |
           set -euo pipefail
           root="$RUNNER_TEMP/go-radio-discovery"
@@ -473,7 +481,7 @@ jobs:
           root="$RUNNER_TEMP/go-radio-discovery"
           python radio-catalog-lab/tools/radio_daily_qualification_v3_preview.py \
             --decisions "$root/decision-preview.json" --programme "$root/programme-preview.json" \
-            --baseline-sha256 f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40 \
+            --baseline-sha256 "$BASELINE_SHA256" \
             --output "$root/qualification-v3-preview.json"
       - name: Sample existing TEST v8 streams for maintenance review
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
@@ -486,7 +494,7 @@ jobs:
             previous=(--previous "$RUNNER_TEMP/go-radio-previous/maintenance-preview.json")
           fi
           python radio-catalog-lab/tools/radio_daily_maintenance_preview.py \
-            --baseline "$RUNNER_TEMP/go-radio-v8-baseline.json" \
+            --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" --baseline-sha256 "$BASELINE_SHA256" \
             --output "$root/maintenance-preview.json" --limit 20 --workers 4 --allow-network "${previous[@]}"
       - name: Search replacement stream identities (review only)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
@@ -499,7 +507,7 @@ jobs:
             previous=(--previous "$RUNNER_TEMP/go-radio-previous/repair-preview.json")
           fi
           python radio-catalog-lab/tools/radio_daily_repair_preview.py \
-            --baseline "$RUNNER_TEMP/go-radio-v8-baseline.json" \
+            --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" --baseline-sha256 "$BASELINE_SHA256" \
             --maintenance "$root/maintenance-preview.json" --discovery "$root/candidates.json" \
             --output "$root/repair-preview.json" --limit 4 --allow-network "${previous[@]}"
       - name: Confirm replacement hints against broadcaster (review only)
@@ -513,7 +521,7 @@ jobs:
             previous=(--previous "$RUNNER_TEMP/go-radio-previous/repair-confirmation-preview.json")
           fi
           python radio-catalog-lab/tools/radio_daily_repair_confirmation.py \
-            --baseline "$RUNNER_TEMP/go-radio-v8-baseline.json" --repair "$root/repair-preview.json" \
+            --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" --baseline-sha256 "$BASELINE_SHA256" --repair "$root/repair-preview.json" \
             --output "$root/repair-confirmation-preview.json" --limit 4 --allow-network "${previous[@]}"
       - name: Generate digest-only maintenance repair plan (never a catalogue)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
@@ -522,7 +530,7 @@ jobs:
           set -euo pipefail
           root="$RUNNER_TEMP/go-radio-discovery"
           python radio-catalog-lab/tools/radio_daily_repair_plan.py \
-            --baseline "$RUNNER_TEMP/go-radio-v8-baseline.json" --maintenance "$root/maintenance-preview.json" \
+            --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" --baseline-sha256 "$BASELINE_SHA256" --maintenance "$root/maintenance-preview.json" \
             --repair "$root/repair-preview.json" --confirmation "$root/repair-confirmation-preview.json" \
             --output "$root/repair-plan-preview.json"
       - name: Review quarantine and restoration transitions (no writes)
@@ -536,7 +544,7 @@ jobs:
             previous=(--previous "$RUNNER_TEMP/go-radio-previous/status-transition-preview.json")
           fi
           python radio-catalog-lab/tools/radio_daily_status_preview.py \
-            --baseline "$RUNNER_TEMP/go-radio-v8-baseline.json" --maintenance "$root/maintenance-preview.json" \
+            --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" --baseline-sha256 "$BASELINE_SHA256" --maintenance "$root/maintenance-preview.json" \
             --repair-plan "$root/repair-plan-preview.json" --output "$root/status-transition-preview.json" \
             --limit 4 --allow-network "${previous[@]}"
       - name: Audit existing signed logo sources (no artwork writes)
@@ -550,7 +558,7 @@ jobs:
             previous=(--previous "$RUNNER_TEMP/go-radio-previous/logo-maintenance-preview.json")
           fi
           python radio-catalog-lab/tools/radio_daily_logo_maintenance.py \
-            --baseline "$RUNNER_TEMP/go-radio-v8-baseline.json" --output "$root/logo-maintenance-preview.json" \
+            --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" --baseline-sha256 "$BASELINE_SHA256" --output "$root/logo-maintenance-preview.json" \
             --limit 8 --allow-network "${previous[@]}"
       - name: Search station-bound missing artwork (review only)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
@@ -563,7 +571,7 @@ jobs:
             previous=(--previous "$RUNNER_TEMP/go-radio-previous/missing-logo-preview.json")
           fi
           python radio-catalog-lab/tools/radio_daily_missing_logo.py \
-            --baseline "$RUNNER_TEMP/go-radio-v8-baseline.json" --output "$root/missing-logo-preview.json" \
+            --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" --baseline-sha256 "$BASELINE_SHA256" --output "$root/missing-logo-preview.json" \
             --limit 4 --allow-network "${previous[@]}"
       - name: Generate single unsigned catalogue candidate (artifact only)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
@@ -572,7 +580,7 @@ jobs:
           set -euo pipefail
           root="$RUNNER_TEMP/go-radio-discovery"
           python radio-catalog-lab/tools/radio_daily_unified_generator.py \
-            --pointer "$RUNNER_TEMP/go-radio-v8-pointer.json" --baseline "$RUNNER_TEMP/go-radio-v8-baseline.json" \
+            --pointer "$RUNNER_TEMP/go-radio-selected-pointer.json" --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" --baseline-sha256 "$BASELINE_SHA256" --baseline-sequence "$BASELINE_SEQUENCE" \
             --discovery "$root/candidates.json" --dossiers "$root/qualification-dossiers.json" \
             --decisions "$root/decision-preview.json" --maintenance "$root/maintenance-preview.json" \
             --repair "$root/repair-preview.json" --confirmation "$root/repair-confirmation-preview.json" \

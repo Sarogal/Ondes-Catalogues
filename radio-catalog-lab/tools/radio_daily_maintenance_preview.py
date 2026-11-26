@@ -225,6 +225,7 @@ def main():
     p.add_argument("--limit",type=int,default=0)
     p.add_argument("--workers",type=int,default=1)
     p.add_argument("--allow-network",action="store_true")
+    p.add_argument("--baseline-sha256",default=BASELINE)
     a=p.parse_args()
     if a.limit and not a.allow_network:
         p.error("explicit network opt-in required")
@@ -235,7 +236,7 @@ def main():
     transport=PinnedHttpTransport() if a.limit else None
     probe=(lambda u:probe_url(u,transport.request)) if transport else None
     report=build(read(a.baseline),dt.datetime.now(dt.timezone.utc).date().isoformat(),
-                 prior=json.loads(read(a.previous)) if a.previous else None,
+                 expected=a.baseline_sha256,prior=json.loads(read(a.previous)) if a.previous else None,
                  limit=a.limit,workers=a.workers,probe=probe,
                  hls_probe=observe_hls if a.limit else None)
     payload=json.dumps(report,ensure_ascii=False,indent=2)+"\n"

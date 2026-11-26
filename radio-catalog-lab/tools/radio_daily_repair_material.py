@@ -61,11 +61,11 @@ def recover(raw,maintenance,repair,confirmation,report,*,expected=BASELINE,searc
     return result,deferred
 
 
-def live_recover(raw,maintenance,repair,confirmation,report):
+def live_recover(raw,maintenance,repair,confirmation,report,*,expected=BASELINE):
     hosts=None
     def search(name):
         nonlocal hosts
         if hosts is None:
             hosts=resolve_api_mirrors()[:2]
         return fetch_page(hosts,"name",name,0,PAGE_SIZE)
-    return recover(raw,maintenance,repair,confirmation,report,search=search,fetch=fetch_html)
+    return recover(raw,maintenance,repair,confirmation,report,expected=expected,search=search,fetch=fetch_html)

@@ -165,6 +165,7 @@ def main():
     p.add_argument("--output",type=Path,required=True)
     p.add_argument("--limit",type=int,default=0)
     p.add_argument("--allow-network",action="store_true")
+    p.add_argument("--baseline-sha256",default=BASELINE)
     a=p.parse_args()
     if a.limit and not a.allow_network:
         p.error("network must be explicit")
@@ -173,7 +174,7 @@ def main():
             raise ValueError("oversize artwork maintenance input")
         return path.read_bytes()
     report=build(read(a.baseline),dt.datetime.now(dt.timezone.utc).date().isoformat(),
-                 prior=strict_json(read(a.previous)) if a.previous else None,limit=a.limit)
+                 expected=a.baseline_sha256,prior=strict_json(read(a.previous)) if a.previous else None,limit=a.limit)
     payload=encode(report)
     if len(payload)>MAX_BYTES:
         raise ValueError("oversize artwork maintenance report")

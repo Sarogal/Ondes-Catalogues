@@ -176,6 +176,7 @@ def main():
     p.add_argument("--previous",type=Path)
     p.add_argument("--limit",type=int,default=0)
     p.add_argument("--allow-network",action="store_true")
+    p.add_argument("--baseline-sha256",default=BASELINE)
     a=p.parse_args()
     if a.limit and not a.allow_network:
         p.error("network must be explicit")
@@ -190,7 +191,7 @@ def main():
             hosts=resolve_api_mirrors()[:2]
         return fetch_page(hosts,"name",name,0,PAGE_SIZE)
     result=build(load(a.baseline),json.loads(load(a.maintenance)),json.loads(load(a.discovery)),
-                 prior=json.loads(load(a.previous)) if a.previous else None,limit=a.limit,
+                 expected=a.baseline_sha256,prior=json.loads(load(a.previous)) if a.previous else None,limit=a.limit,
                  search=search if a.limit else None)
     payload=json.dumps(result,ensure_ascii=False,indent=2)+"\n"
     if len(payload.encode())>MAX_BYTES:
