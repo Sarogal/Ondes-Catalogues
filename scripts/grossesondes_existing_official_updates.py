@@ -27,6 +27,7 @@ from grossesondes_official_status import (
 )
 from grossesondes_admin_marker import historical_proof
 from grossesondes_dated_ticket_tables import dated_ticket_table_summary, parse_dated_ticket_summary
+from grossesondes_announced_tariffs import announced_tariffs, parse_announced_tariffs
 from grossesondes_institutional_edition import VisibleInstitutionHeadings
 from grossesondes_archived_html_intake import (
     official_date, official_structured_date, matching_official_jsonld_present,
@@ -1647,7 +1648,25 @@ def apply_independently_verified_updates(
                     fields.append("price")
                     sources.extend(dated_grids)
             previous_tiers = parsed_seasonal_ticket_summary(old.get("price"))
-            if prices and not seasonal_offers and not previous_tiers and not old_grid and not dated_grids:
+            previous_announced = parse_announced_tariffs(old.get("price"), old)
+            announced = {}
+            for url, html in html_pages:
+                summary = announced_tariffs(html, old, today, exact_edition_city)
+                if summary:
+                    announced[url] = summary
+            if (len(set(announced.values())) == 1 and not prices
+                    and not seasonal_offers and not seasonal_conflict and not dated_grids):
+                summary = next(iter(announced.values()))
+                parsed = parse_announced_tariffs(summary, old)
+                if (parsed and summary != old.get("price")
+                        and (old.get("price") is None or
+                             (previous_announced and set(previous_announced[0]) <= set(parsed[0])
+                              and previous_announced[1] in (None, parsed[1])))):
+                    new["price"] = summary
+                    fields.append("price")
+                    sources.extend(announced)
+
+            if prices and not seasonal_offers and not previous_tiers and not old_grid and not dated_grids and not previous_announced and not announced:
                 summary = " ; ".join(
                     f"Pass {n} jour{'s' if n > 1 else ''} : {prices[n]}"
                     for n in sorted(prices, reverse=True))
