@@ -50,10 +50,14 @@ class Client:
         with self.opener.open(req, timeout=8) as response:
             raw = response.read(MAX_BYTES + 1)
         if len(raw) > MAX_BYTES:
-            raise ValueError("Oversized directory response")
+            raise mb.OversizedDirectoryResponse("Oversized directory response")
         data = json.loads(raw)
-        if not isinstance(data, dict) or "error" in data:
+        if not isinstance(data, dict):
             raise ValueError("Directory unavailable")
+        if "error" in data:
+            error = data["error"]
+            code = error.get("code") if isinstance(error, dict) else None
+            raise mb.DirectoryServiceError(code if isinstance(code, str) else None)
         return data
 
 
@@ -177,10 +181,21 @@ def build(registry, today, *, prior=None, limit=MAX_NAMES, request=None):
             break
     request = request if request is not None else Client()
     counters, checked, failure, retry = Counter(), 0, None, None
+    oversized = 0
     for _, _, _, key, name in ordered[:limit]:
         checked += 1
         try:
             result = research(name, request)
+        except mb.OversizedDirectoryResponse:
+            entries[key] = {"status": "response_too_large", "artistName": name,
+                            "checkedAt": today.isoformat(), "identityVerified": False,
+                            "publicationAllowed": False}
+            counters["response_too_large"] += 1
+            oversized += 1
+            if oversized >= 2:
+                failure, retry = "oversized_response", key
+                break
+            continue
         except (ValueError, TypeError, AttributeError, KeyError, OSError, TimeoutError) as exc:
             counters["serviceHeld"] += 1
             failure, retry = mb.service_failure_kind(exc), key
