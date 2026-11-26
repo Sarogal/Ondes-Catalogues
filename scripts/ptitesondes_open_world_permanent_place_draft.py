@@ -38,7 +38,7 @@ ACCESS = (
     (r"\bouvert(?:e)? a tous\b", "ouvert à tous — tarif à vérifier"),
     (r"\bouvert(?:e)? au public\b", "ouvert au public — tarif à vérifier"),
 )
-RESTRICTED = re.compile(r"\b(?:non ouvert|pas ouvert|fermeture temporaire|"
+RESTRICTED = re.compile(r"\b(?:non ouvert(?:e)?|pas ouvert(?:e)?|fermeture temporaire|"
                         r"uniquement sur invitation|reserve aux adherents|"
                         r"reserve aux professionnels|acces interdit|"
                         r"acces reserve|ferme au public|fermee au public)\b")
