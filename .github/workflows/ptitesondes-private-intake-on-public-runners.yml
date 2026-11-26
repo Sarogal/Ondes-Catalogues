@@ -646,12 +646,15 @@ jobs:
           r = json.load(open(sys.argv[1], encoding="utf-8"))
           fields = ("editorial_cached_queue_deferred", "editorial_live_queue_deferred",
                     "editorial_queue_live_reads", "editorial_cached_backlog_deferred",
-                    "editorial_new_live_refusals")
+                    "editorial_new_live_refusals", "editorial_reconsider_examined",
+                    "editorial_reconsider_remaining", "agenda_requests", "agenda_reused",
+                    "event_requests", "event_reused")
           assert all(type(r.get(k)) is int and r[k] >= 0 for k in fields)
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
               out.write("### Réexamen éditorial temporaire (état privé)\n")
               for k in fields:
                   out.write(f"- {k}: {r[k]}\n")
+                  print(f"- {k}: {r[k]}")
           PY
             else
               echo "::warning::Réexamen du backlog OpenAgenda indisponible ; les anciens dossiers sont conservés."
