@@ -302,6 +302,7 @@ jobs:
           if ! python public/automation/concerts/venue_osm_self_discovery.py \
               --catalogue public/docs/grossesondes/concerts.json \
               --output "$RUNNER_TEMP/concerts-osm-venues/candidates.json" \
+              --history confidential/automation/concerts/intake/osm-venue-discovery-history.json \
               --scan-slot "$SCAN_SLOT" --max-venues 5 \
               > "$RUNNER_TEMP/concerts-private-logs/osm-venue-discovery.log" 2>&1; then
             echo "::warning::Veille OSM indisponible : aucune nouvelle source n'est admise."
@@ -1264,6 +1265,9 @@ jobs:
           export GIT_CONFIG_KEY_0='http.https://github.com/.extraheader'
           export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $HEADER"
           git add --sparse -- automation/concerts/intake/registry.json automation/concerts/intake/official-review.json automation/concerts/intake/approval-preflight.json automation/concerts/intake/published-watch.json
+          if [ -f automation/concerts/intake/osm-venue-discovery-history.json ]; then
+            git add --sparse -- automation/concerts/intake/osm-venue-discovery-history.json
+          fi
           if [ -f automation/concerts/intake/generic-detail-history.json ]; then
             git add --sparse -- automation/concerts/intake/generic-detail-history.json
           fi
