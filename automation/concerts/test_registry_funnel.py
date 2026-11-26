@@ -50,12 +50,49 @@ class FunnelTests(unittest.TestCase):
         self.assertIs(result["publicationAllowed"], False)
         self.assertEqual((r, a, c), before)
 
-    def test_stability_is_distinct_day_only_and_never_inferred_from_observations(self):
-        unstable = row("one", _record={"stableObservations": 1, "observations": 99})
-        r, a, c = fixtures(unstable)
+    def test_first_observation_matches_reviewed_rechecker_but_never_approves(self):
+        r, a, c = fixtures(
+            row("first", _record={"stableObservations": 1, "observations": 99}),
+            row("missing", _record={"stableObservations": 0, "observations": 99}),
+            row("unknown", source="agenda_officiel_unknown",
+                _record={"stableObservations": 1}),
+        )
         out = f.build(r, a, c, dt.date(2026, 11, 9))
-        self.assertEqual(out["readyForIndependentRecheck"], 0)
+        self.assertEqual(out["readyForIndependentRecheck"], 1)
+        self.assertEqual(out["stableCandidatesInSupportedSourceQueue"], 0)
+        self.assertEqual(out["exclusiveBlockingReasons"]["observation_identity_missing"], 1)
         self.assertEqual(out["exclusiveBlockingReasons"]["awaiting_distinct_day_stability"], 1)
+        self.assertEqual(out["privateApprovedEventsTotal"], 0)
+        self.assertFalse(out["publicationAllowed"])
+
+    def test_openagenda_new_site_uses_real_offline_admission_selector(self):
+        url = "https://openagenda.com/fr/agenda/events/12345678_example"
+        def oa(key, bucket, **kwargs):
+            return row(key, source="agenda_officiel_openagenda",
+                       sourceUrl=url + "-" + key,
+                       sourcePage=url + "-" + key,
+                       eventDetailUrl=url + "-" + key,
+                       openAgendaUid="9969608", openAgendaEventUid="12345678",
+                       leadArtist="A", reviewBucket=bucket,
+                       _record={"stableObservations": 1}, **kwargs)
+        r, a, c = fixtures(oa("tagged", "genre_tag_review"),
+                           oa("unknown", "genre_unknown"),
+                           oa("duplicate", "genre_tag_review", possibleExistingConcert=True))
+        c.update(venues=[], artists=[])
+        saved = copy.deepcopy((r, a, c))
+        out = f.build(r, a, c, dt.date(2026, 11, 9))
+        route = out["dynamicIndependentRecheck"]
+        self.assertTrue(route["evaluated"])
+        self.assertEqual(route["eligibleByRoute"], {"openAgendaNewSite": 2})
+        self.assertEqual(route["eligibleDistinctCandidateRows"], 2)
+        self.assertEqual(route["genreUnknownEligibleRows"], 1)
+        self.assertEqual(out["exclusiveBlockingReasons"], {
+            "ready_for_dynamic_independent_recheck": 1,
+            "musical_genre_unconfirmed": 1,
+            "possible_duplicate_requires_reconciliation": 1})
+        self.assertFalse(route["publicationAllowed"])
+        self.assertEqual((r, a, c), saved)
+        self.assertNotIn(url, str(route))
 
     def test_unlisted_outdoor_places_are_reported_without_granting_trust(self):
         r, a, c = fixtures(
@@ -183,11 +220,10 @@ class FunnelTests(unittest.TestCase):
         matrix = out["sourceBlockingReasons"]
         self.assertEqual(sum(sum(k.values()) for k in matrix.values()), 3)
         self.assertEqual(matrix["agenda_officiel_molotov_genre"],
-                         {"ready_for_independent_recheck": 1,
-                          "awaiting_distinct_day_stability": 1})
+                         {"ready_for_independent_recheck": 2})
         self.assertEqual(matrix["agenda_officiel_rex_genre"],
                          {"musical_genre_unconfirmed": 1})
-        self.assertEqual(out["readyForIndependentRecheck"], 1)
+        self.assertEqual(out["readyForIndependentRecheck"], 2)
         self.assertNotIn("private-molotov-123", str(matrix))
         self.assertNotIn("official.example", str(matrix))
         self.assertIs(out["publicationAllowed"], False)
