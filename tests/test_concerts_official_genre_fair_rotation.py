@@ -297,6 +297,60 @@ class FairGenreReviewSlots(unittest.TestCase):
             self.assertEqual(next_report["changedExtractorPriorityChecks"], 0)
             self.assertEqual(next_report["firstReviewInMemory"], 16)
 
+    def test_postal_hold_requeued_only_after_exact_venue_correction(self):
+        import copy
+
+        queue = [row("unknown", i) for i in range(60)]
+        cat = {**CATALOGUE, "venues": [
+            {"id": "official-room-" + str(i), "name": "Room " + str(i),
+             "city": "Tours", "postalCode": "À vérifier", "address": "À vérifier",
+             "geoPrecision": "centre de commune"}
+            for i in range(13)]}
+        reason = next(iter(pipeline._GEO_REPLAY_REASONS))
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose", side_effect=ValueError(reason)), \
+             mock.patch.object(pipeline, "_extractor_revision", return_value="a" * 64):
+            _, first = pipeline.build({}, cat, BEFORE, TODAY, limit=16)
+            self.assertEqual(len(first["venueGeoRetryMemory"]), 16)
+            _, unchanged = pipeline.build({}, cat, BEFORE, TODAY, limit=16, prior=first)
+            self.assertEqual(unchanged["changedVenueGeoPriorityChecks"], 0)
+            target = first["candidateChecks"][0]["venueId"]
+            corrected = copy.deepcopy(cat)
+            next(v for v in corrected["venues"] if v["id"] == target).update(
+                postalCode="37000", address="12 rue Exemple",
+                geoSource="https://www.openstreetmap.org/way/123",
+                geoPrecision="named-site-area", latitude=47.395, longitude=0.688)
+            out, retry = pipeline.build({}, corrected, BEFORE, TODAY, limit=16, prior=first)
+            self.assertGreater(retry["changedVenueGeoRetryPendingBefore"], 0)
+            self.assertGreater(retry["changedVenueGeoPriorityChecks"], 0)
+            self.assertLessEqual(retry["changedVenueGeoPriorityChecks"], 4)
+            self.assertEqual(retry["changedVenueGeoRetryPendingAfter"], 0)
+            self.assertEqual(out, BEFORE)
+            self.assertFalse(retry["publicationAllowed"])
+            self.assertEqual(retry["examined"], 16)
+            _, again = pipeline.build({}, corrected, BEFORE, TODAY, limit=16, prior=retry)
+            self.assertEqual(again["changedVenueGeoPriorityChecks"], 0)
+            legacy = {k: v for k, v in first.items() if k != "venueGeoRetryMemory"}
+            _, migrated = pipeline.build({}, corrected, BEFORE, TODAY, limit=16, prior=legacy)
+            self.assertGreater(migrated["changedVenueGeoPriorityChecks"], 0)
+            _, invalid = pipeline.build({}, corrected, BEFORE, TODAY, limit=16,
+                                        prior={**first, "publicationAllowed": True})
+            self.assertEqual(invalid["changedVenueGeoPriorityChecks"], 0)
+
+    def test_geographic_and_extractor_retries_share_one_budget(self):
+        queue = [row("unknown", i) for i in range(50)]
+        window = queue[20:36]
+        old = "a" * 64
+        new = "b" * 64
+        extraction = {pipeline._review_key(r): old for r in queue[:10]}
+        geographic = {pipeline._review_key(r) for r in queue[10:20]}
+        actual, prioritized, pending = pipeline._prioritize_extraction_retries(
+            window, queue, extraction, new, 16, geo_stale=geographic)
+        self.assertEqual(len(actual), 16)
+        self.assertEqual(len(prioritized), 4)
+        self.assertTrue(prioritized <= geographic)
+        self.assertEqual(pending, 10)
+
     def test_double_budget_reuses_unused_lanes(self):
         queue = [row("unknown", i) for i in range(40)]
         with mock.patch.object(pipeline, "eligible", return_value=queue), \
