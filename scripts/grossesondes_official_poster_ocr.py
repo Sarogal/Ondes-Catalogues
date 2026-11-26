@@ -302,6 +302,81 @@ def read_official_poster(site, url, *, cache, fetch=None, recognize=None):
     return out
 
 
+def poster_word_lines(words):
+    """Return separated geometric lines, or None for ambiguous overlap."""
+    lines = []
+    # Group vertically overlapping words conservatively, without merging
+    # across unusually large horizontal gaps (e.g. sponsor columns).
+    for word in sorted(words, key=lambda w: (w["box"][1] + w["box"][3]/2, w["box"][0])):
+        x, y, width, height = word["box"]
+        if width <= 0 or height <= 0:
+            continue
+        center = y + height/2
+        choices = [line for line in lines
+                   if abs(center - line["center"]) <= .30 * min(height, line["height"])]
+        if len(choices) == 1:
+            choices[0]["words"].append(word)
+        elif not choices:
+            lines.append({"center": center, "height": height, "words": [word]})
+        else:
+            return None
+    texts = []
+    for line in lines:
+        ordered = sorted(line["words"], key=lambda w: w["box"][0])
+        current = []
+        previous = None
+        for word in ordered:
+            x, y, width, height = word["box"]
+            if previous is not None:
+                px, py, pw, ph = previous["box"]
+                if x - px - pw > 2.5 * max(height, ph) or x < px + pw - min(width, pw)*.2:
+                    if current:
+                        texts.append(current)
+                    current = []
+            current.append(word)
+            previous = word
+        if current:
+            texts.append(current)
+    return texts
+
+
+def poster_known_artist_candidates(reading, artist_names):
+    """Exact known-name hints, not lineup claims or a whitelist.
+
+    A whole high-confidence geometric segment must match a known name.
+    A sponsor can still match: never grant field or publication authority.
+    Unknown names remain eligible for future independent identification.
+    """
+    from grossesondes_official_html_edition import fold
+    words = reading.get("words")
+    if (reading.get("status") != "review_only" or reading.get("review_only") is not True
+            or not _valid_cached_words(words)):
+        return []
+    lines = poster_word_lines(words)
+    if lines is None:
+        return []
+    def key(value):
+        return " ".join(re.findall(r"[a-z0-9]+", fold(value)))
+    known = {}
+    for name in artist_names:
+        if not isinstance(name, str) or len(name) > 110:
+            continue
+        normalized = key(name)
+        if len(normalized.replace(" ", "")) >= 4 and re.search(r"[a-z]", normalized):
+            known.setdefault(normalized, set()).add(name)
+    matches = set()
+    for line in lines:
+        if not all(w["confidence"] >= MIN_REVIEW_CONFIDENCE for w in line):
+            continue
+        normalized = key(" ".join(w["text"] for w in line))
+        if re.search(r"\b(?:sponsors?|partenaires?|presented|presente|billetterie|tickets?)\b", normalized):
+            continue
+        names = known.get(normalized, set())
+        if len(names) == 1:
+            matches.update(names)
+    return sorted(matches)
+
+
 def poster_review_claims(row, reading):
     """Edition-bound diagnostic claims; no publication authority.
 
@@ -330,40 +405,10 @@ def poster_review_claims(row, reading):
         return out
     out["diagnostics"]["word_count"] = len(words)
     out["diagnostics"]["strong_word_count"] = sum(w["confidence"] >= MIN_REVIEW_CONFIDENCE for w in words)
-    lines = []
-    # Group vertically overlapping words conservatively, without merging
-    # across unusually large horizontal gaps (e.g. sponsor columns).
-    for word in sorted(words, key=lambda w: (w["box"][1] + w["box"][3]/2, w["box"][0])):
-        x, y, width, height = word["box"]
-        if width <= 0 or height <= 0:
-            continue
-        center = y + height/2
-        choices = [line for line in lines
-                   if abs(center - line["center"]) <= .30 * min(height, line["height"])]
-        if len(choices) == 1:
-            choices[0]["words"].append(word)
-        elif not choices:
-            lines.append({"center": center, "height": height, "words": [word]})
-        else:
-            out["diagnostics"]["ambiguous_line_geometry"] = True
-            return out
-    texts = []
-    for line in lines:
-        ordered = sorted(line["words"], key=lambda w: w["box"][0])
-        current = []
-        previous = None
-        for word in ordered:
-            x, y, width, height = word["box"]
-            if previous is not None:
-                px, py, pw, ph = previous["box"]
-                if x - px - pw > 2.5 * max(height, ph) or x < px + pw - min(width, pw)*.2:
-                    if current:
-                        texts.append(current)
-                    current = []
-            current.append(word)
-            previous = word
-        if current:
-            texts.append(current)
+    texts = poster_word_lines(words)
+    if texts is None:
+        out["diagnostics"]["ambiguous_line_geometry"] = True
+        return out
     all_text = " ".join(w["text"] for w in words)
     years = set(re.findall(r"(?<!\d)20[2-4]\d(?!\d)", all_text))
     out["diagnostics"].update(year_matches=years == {str(start.year)},
