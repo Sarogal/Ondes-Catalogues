@@ -433,7 +433,33 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "www.radiomorcoteinternational.com",
+        "homepageSha256": "6a8f035a2cf711c9f6546deca7bc89df206a947440dd283755d34e7db8819c73",
+        "identityNameSha256": "10462144fcb0335bf055925a1e318c7e254a94865965f16e61b8c791f548ba14",
+        "observedDate": "2026-11-26",
+        "retrieval": "html_observed",
+        "identityNameMatch": true,
+        "signal": "no_format_evidence",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [],
+        "primaryElectronicTerms": [],
+        "pageSha256": "ed60776ffe76e24e36197a8f1e582914430cab7c97b9ced205aa797bfb0ad47f",
+        "finalPageSha256": "6a8f035a2cf711c9f6546deca7bc89df206a947440dd283755d34e7db8819c73",
+        "imageHintSha256": [
+          "2e7509786a4ba4886cf53632a87f2c8530a2106c5b835bb4f5f98d7687f61ccb",
+          "331b998e99f4fac5c4f2a228a9dbc648ccfc8d6864fa586a55bf002a5c1b8c84",
+          "e3088eb45d4b70295761acb4ecaeda3d535897324715042727039afff0ac6159"
+        ],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": true,
+        "programmeScopeEvidence": false,
+        "programmeScopeSources": [],
+        "programmeScopeTerms": [],
+        "otherFormatTerms": [],
+        "declaredStreamLinked": false,
+        "streamSha256": "810cd26ac3b640719b181159532a9a2ef750dd20d2262b9fa117a0bc2a8ce074"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -4100,7 +4126,31 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "www.rm.fm",
+        "homepageSha256": "f3e760806b641eca8922f783f0515deaf26e9908988fbf447c7d13e307153c6a",
+        "identityNameSha256": "a83200ae4f56c9b253b312ac1f43d875552b5e25a148cbb66d94a48c5aac68cc",
+        "observedDate": "2026-11-26",
+        "retrieval": "html_observed",
+        "identityNameMatch": false,
+        "signal": "no_format_evidence",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [],
+        "primaryElectronicTerms": [],
+        "pageSha256": "cce8d90dbc2429d49dcc4748646e90dd00a6e79ffdcb1e82d6eaddd36c6263a1",
+        "finalPageSha256": "f3e760806b641eca8922f783f0515deaf26e9908988fbf447c7d13e307153c6a",
+        "imageHintSha256": [
+          "a0c1a9c45dc2ba51e8c3fb02e0530a71c06a1b3c53abac01bf4bc36547424be5"
+        ],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": false,
+        "programmeScopeEvidence": false,
+        "programmeScopeSources": [],
+        "programmeScopeTerms": [],
+        "otherFormatTerms": [],
+        "declaredStreamLinked": false,
+        "streamSha256": "cf9456eb48746077c2743b972d475238f611c9da63a84c430c49892e8ed9f3d8"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -4575,7 +4625,45 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "www.rockantenne.de",
+        "homepageSha256": "2e3fe4ad4414dbd6f53f89486e081429d5d26419fb64be24170287d0dc2f705f",
+        "identityNameSha256": "0e1bd5c5534f61fb998498949b42fb7eeb3987387f71cee1959a9a322d42806d",
+        "observedDate": "2026-11-26",
+        "retrieval": "html_observed",
+        "identityNameMatch": true,
+        "signal": "identity_and_target_indication",
+        "primaryTargetTerms": [
+          "punk",
+          "punk rock"
+        ],
+        "visibleTargetTerms": [
+          "hair metal",
+          "hard rock",
+          "heavy metal",
+          "metal",
+          "punk",
+          "punk rock",
+          "punkrock"
+        ],
+        "primaryElectronicTerms": [],
+        "pageSha256": "fd666dff6e4bcf76a66b0a602506c9fbaf6ebed9876743439143a2102439c7cc",
+        "finalPageSha256": "2e3fe4ad4414dbd6f53f89486e081429d5d26419fb64be24170287d0dc2f705f",
+        "imageHintSha256": [
+          "274a1ec83d75d16c639fb667d4cb157cc7f65dfb2d808e8a248d9003b505c3ca",
+          "34552293542ab5dc67fc6d8d2ab319f723c924b123b3b6f0bb251e9932b2a2cc",
+          "40ef974dfefd4f136f9c46f5eb26720f9e22a59d4a03c013644faf16e078a444",
+          "6d9b44b0899f97971375fdb616a690a1b5d025d22380a1c8d6042f4979d550d2"
+        ],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": false,
+        "programmeScopeEvidence": false,
+        "programmeScopeSources": [],
+        "programmeScopeTerms": [],
+        "otherFormatTerms": [],
+        "declaredStreamLinked": false,
+        "streamSha256": "b3f8d7a57a3afee2430b5bc053abde597dacf4b6e25d28b30fbee86ff1c8c633"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -9635,7 +9723,32 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "www.soundis.ro",
+        "homepageSha256": "8889ce1d9227b870956ddf954099c1f68af14a573d993896023d7206b00bb1c5",
+        "identityNameSha256": "159d14d77aa48f70730138fab8257e46f0959bf8f6e0aa55f0ffd509f3ec1a46",
+        "observedDate": "2026-11-26",
+        "retrieval": "html_observed",
+        "identityNameMatch": true,
+        "signal": "no_format_evidence",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [],
+        "primaryElectronicTerms": [],
+        "pageSha256": "4d7742b8ea21f1b56e8f5a939767381b1d83fccf6dde92e191a50418f5b91173",
+        "finalPageSha256": "8889ce1d9227b870956ddf954099c1f68af14a573d993896023d7206b00bb1c5",
+        "imageHintSha256": [
+          "67297a9fe9eb7276dac9f2d09d263ef9568b9ba38d6c4edd5cb9df2959896521",
+          "f214e2ff2bb2f0d980f402999050ce9c1abc39754c64f53d5e744d9e7fd231cb"
+        ],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": false,
+        "programmeScopeEvidence": false,
+        "programmeScopeSources": [],
+        "programmeScopeTerms": [],
+        "otherFormatTerms": [],
+        "declaredStreamLinked": false,
+        "streamSha256": "d7348572336110b900839f8108e8e2d873b3f3a5889a5a99516439ab01237e87"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10134,7 +10247,33 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "www.rockradiouk.com",
+        "homepageSha256": "2031286a8ac9c59e6c8485c81f6428c812c145f934845ce734cdbc34113ca87d",
+        "identityNameSha256": "bc50ca6be67ded5f15ade655e0de8468049802115497af8206d71cf2d86deac6",
+        "observedDate": "2026-11-26",
+        "retrieval": "html_observed",
+        "identityNameMatch": false,
+        "signal": "unbound_target_indication",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [
+          "metal"
+        ],
+        "primaryElectronicTerms": [],
+        "pageSha256": "b33373b555db52a8272149faaa6edc4cf5364de35f4925f921b59eddabcc8620",
+        "finalPageSha256": "2031286a8ac9c59e6c8485c81f6428c812c145f934845ce734cdbc34113ca87d",
+        "imageHintSha256": [
+          "fc34072d51adf7dbfd0a319ed13a492679e9e6692766813cbf3c17985153bc35"
+        ],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": false,
+        "programmeScopeEvidence": false,
+        "programmeScopeSources": [],
+        "programmeScopeTerms": [],
+        "otherFormatTerms": [],
+        "declaredStreamLinked": false,
+        "streamSha256": "3db12730b755989de338f8a94c14d866f2c843226981e74ccf6d9f185038cdb4"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10481,7 +10620,34 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "www.rockconnection77.com",
+        "homepageSha256": "45a4f05bd95731ec48094096f6fad088676320e1ebbe8522e521c3af884b6891",
+        "identityNameSha256": "028aa69c63a5e6429680e89ed040a4c9217ed7480499b712dbc7b3813f2271ff",
+        "observedDate": "2026-11-26",
+        "retrieval": "html_observed",
+        "identityNameMatch": false,
+        "signal": "unbound_target_indication",
+        "primaryTargetTerms": [
+          "hard rock"
+        ],
+        "visibleTargetTerms": [],
+        "primaryElectronicTerms": [],
+        "pageSha256": "55401b028ef79f4470ddd021f1b035a81187ae3d3fe4a82a6b3f4b748f5bb706",
+        "finalPageSha256": "45a4f05bd95731ec48094096f6fad088676320e1ebbe8522e521c3af884b6891",
+        "imageHintSha256": [],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": false,
+        "programmeScopeEvidence": false,
+        "programmeScopeSources": [],
+        "programmeScopeTerms": [],
+        "otherFormatTerms": [
+          "country",
+          "indie"
+        ],
+        "declaredStreamLinked": false,
+        "streamSha256": "6bc179b03dad50e0a25f295f449f464f1d8623ef454ec275512581955e034e70"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -10858,7 +11024,31 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "www.radiorockcorner.de",
+        "homepageSha256": "34e50e4f9a11b2a8f2361567e084e4b44dfdda0f5394eeed6514a2042ad80b71",
+        "identityNameSha256": "0a23a737679ff60ffb7a2679fe5fd9906ba024ae1b0dd1fda16f48fb6065e3af",
+        "observedDate": "2026-11-26",
+        "retrieval": "html_observed",
+        "identityNameMatch": true,
+        "signal": "no_format_evidence",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [
+          "metal"
+        ],
+        "primaryElectronicTerms": [],
+        "pageSha256": "5d9213d1627a832eba151062f127c643a825cc4fef7603e43b7c9793ee4a940b",
+        "finalPageSha256": "34e50e4f9a11b2a8f2361567e084e4b44dfdda0f5394eeed6514a2042ad80b71",
+        "imageHintSha256": [],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": false,
+        "programmeScopeEvidence": false,
+        "programmeScopeSources": [],
+        "programmeScopeTerms": [],
+        "otherFormatTerms": [],
+        "declaredStreamLinked": false,
+        "streamSha256": "ffd43159ad703308a2fa2c3bf95f8a0eb0cc20cfeb3abec28010e6fdb90744b3"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -11988,7 +12178,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "4566531dbd4311deaf0cac5b8c4b1848f5232820ffe9ead59ca6a58b9208aff2",
+        "observedDate": "2026-11-26",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-26"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4002,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "aac_adts",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "missing_source",
         "sourceSha256": null,
@@ -12315,7 +12521,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "3aa0ad7bdd1da97b23357424f97f458c1ec7df16543dc61b9825a4124e84d481",
+        "observedDate": "2026-11-26",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-26"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4195,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
         "sourceSha256": null,
@@ -12619,7 +12841,21 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "e7ce64edc0c9b343c33b302ab134c8126d7880518bb442353a9608452476fa7d",
+        "observedDate": "2026-11-26",
+        "verdict": "finite_response_review",
+        "positiveObservationDates": [],
+        "windowCount": 0,
+        "sampleBytes": 0,
+        "elapsedMs": 0,
+        "coherentWindowCount": 0,
+        "distinctWindowCount": 0,
+        "frameCodec": null,
+        "finiteResponse": true,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "query_source_review",
         "sourceSha256": null,
@@ -12711,7 +12947,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "172cfb13cf412fe34e22eb2c6fff3f90d25de223bdc19bac6342c0e49ec89ec6",
+        "observedDate": "2026-11-26",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-26"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4000,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "aac_adts",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "missing_source",
         "sourceSha256": null,
@@ -12908,7 +13160,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "e4c5eec897eb2f0a19c4e10ba7f0aab556509d0125d5131447b5678428cac1b8",
+        "observedDate": "2026-11-26",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-26"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4000,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "homepage_unconfirmed",
         "sourceSha256": null,
@@ -13058,7 +13326,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "b97b706ff8bb39419c7a726e4e3752d0877348106f3a35d5170cd5ce4f6d669d",
+        "observedDate": "2026-11-26",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-26"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4198,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "same_reported_host",
         "sourceSha256": "e0bf88f01925916bf091f2a13fd5a7954c9b7004c01dc018ca523b51763c6d19",
@@ -16897,7 +17181,33 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "www.rockradiouk.com",
+        "homepageSha256": "2031286a8ac9c59e6c8485c81f6428c812c145f934845ce734cdbc34113ca87d",
+        "identityNameSha256": "d826dc2c7fe7bee9db9da4fcbbf8e8faff8c9526e2bd3a8898decf9e1f4b0a3a",
+        "observedDate": "2026-11-26",
+        "retrieval": "html_observed",
+        "identityNameMatch": false,
+        "signal": "unbound_target_indication",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [
+          "metal"
+        ],
+        "primaryElectronicTerms": [],
+        "pageSha256": "b33373b555db52a8272149faaa6edc4cf5364de35f4925f921b59eddabcc8620",
+        "finalPageSha256": "2031286a8ac9c59e6c8485c81f6428c812c145f934845ce734cdbc34113ca87d",
+        "imageHintSha256": [
+          "fc34072d51adf7dbfd0a319ed13a492679e9e6692766813cbf3c17985153bc35"
+        ],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": false,
+        "programmeScopeEvidence": false,
+        "programmeScopeSources": [],
+        "programmeScopeTerms": [],
+        "otherFormatTerms": [],
+        "declaredStreamLinked": false,
+        "streamSha256": "d6bbf934aa1854e2e89099d43b1b576d7a35a3781793f35304139771bd3b2d15"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -17314,7 +17624,34 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "www.rockconnection77.com",
+        "homepageSha256": "45a4f05bd95731ec48094096f6fad088676320e1ebbe8522e521c3af884b6891",
+        "identityNameSha256": "bd3218420315aa1be67ed32af8ad8343a0919bf69428c81d8a4da04429a590d8",
+        "observedDate": "2026-11-26",
+        "retrieval": "html_observed",
+        "identityNameMatch": true,
+        "signal": "identity_and_target_indication",
+        "primaryTargetTerms": [
+          "hard rock"
+        ],
+        "visibleTargetTerms": [],
+        "primaryElectronicTerms": [],
+        "pageSha256": "55401b028ef79f4470ddd021f1b035a81187ae3d3fe4a82a6b3f4b748f5bb706",
+        "finalPageSha256": "45a4f05bd95731ec48094096f6fad088676320e1ebbe8522e521c3af884b6891",
+        "imageHintSha256": [],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": false,
+        "programmeScopeEvidence": false,
+        "programmeScopeSources": [],
+        "programmeScopeTerms": [],
+        "otherFormatTerms": [
+          "country",
+          "indie"
+        ],
+        "declaredStreamLinked": false,
+        "streamSha256": "fc25c92a0e94a603e6b1e451f368cbef23f018cdcaaef3e5565258254a4153f2"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -17780,7 +18117,29 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "www.rock105tao.com",
+        "homepageSha256": "9aaa0fcbe882c399e9430a0d9bd03fd571d9570ff38bd8ef46eeb557a2d548d0",
+        "identityNameSha256": "b455e14b14a27c061815edd7e3c4cbbf6be6c24a7b0b75db3a2d3c7594125079",
+        "observedDate": "2026-11-26",
+        "retrieval": "html_observed",
+        "identityNameMatch": false,
+        "signal": "no_format_evidence",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [],
+        "primaryElectronicTerms": [],
+        "pageSha256": "e43b126c74f58c0153cc3ffc46387c9b8b91675bd6bf73c01b6c69567a444858",
+        "finalPageSha256": "9aaa0fcbe882c399e9430a0d9bd03fd571d9570ff38bd8ef46eeb557a2d548d0",
+        "imageHintSha256": [],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": false,
+        "programmeScopeEvidence": false,
+        "programmeScopeSources": [],
+        "programmeScopeTerms": [],
+        "otherFormatTerms": [],
+        "declaredStreamLinked": false,
+        "streamSha256": "5d44c7eb3a5fc33710011ad88bd5cd1b2cc0ed71e1c0607865effefc39e38d34"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {

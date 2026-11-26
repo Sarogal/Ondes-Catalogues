@@ -3,8 +3,8 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 51,
-  "dueNameCount": 11,
+  "observedNameCount": 55,
+  "dueNameCount": 9,
   "attemptedCount": 6,
   "serviceFailure": null,
   "retryAfterKey": null,
@@ -70,6 +70,15 @@
     "braindead": {
       "status": "ambiguous_or_incomplete",
       "artistName": "BrainDead",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "brigadnyj podrjad": {
+      "status": "not_found",
+      "artistName": "Brigadnyj podrjad",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
@@ -243,6 +252,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "lionheart": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Lionheart",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "marc freak": {
       "status": "not_found",
       "artistName": "Marc Freak",
@@ -273,6 +291,15 @@
     "naked eyes": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Naked Eyes",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "nazareth": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Nazareth",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
@@ -468,6 +495,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "upload": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Upload",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "vertical67": {
       "status": "not_found",
       "artistName": "VERTICAL67",
@@ -489,6 +525,24 @@
     "womb": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Womb",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "zz top": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "ZZ Top",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "норвежская сказка: читает воронмрак (улан-удэ)": {
+      "status": "not_found",
+      "artistName": "Норвежская Сказка: Читает Воронмрак (Улан-Удэ)",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,

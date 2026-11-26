@@ -3,11 +3,11 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 51,
-  "dueNameCount": 35,
-  "attemptedCount": 5,
-  "serviceFailure": "http_503",
-  "retryAfterKey": "megadeth",
+  "observedNameCount": 55,
+  "dueNameCount": 39,
+  "attemptedCount": 8,
+  "serviceFailure": null,
+  "retryAfterKey": null,
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -159,6 +159,63 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "mlkuz": {
+      "status": "not_found",
+      "artistName": "MLKUZ",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "naked eyes": {
+      "status": "name_hypothesis",
+      "mbid": "d5d477bc-97c5-410c-983b-ff541580566f",
+      "genres": [
+        "new wave",
+        "pop rock",
+        "synth-pop"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/d5d477bc-97c5-410c-983b-ff541580566f",
+      "artistName": "Naked Eyes",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "nazareth": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Nazareth",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "never obey again": {
+      "status": "name_hypothesis",
+      "mbid": "66aa370c-12de-4f77-8a02-986c1619a52e",
+      "genres": [],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/66aa370c-12de-4f77-8a02-986c1619a52e",
+      "artistName": "Never Obey Again",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "nine inch nails": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Nine Inch Nails",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "panda bear, cindy lee": {
       "status": "not_found",
       "artistName": "Panda Bear, Cindy Lee",
@@ -167,11 +224,56 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "phinehas": {
+      "status": "name_hypothesis",
+      "mbid": "6f6a03c2-f41c-47a8-b5a1-8039f3d33200",
+      "genres": [
+        "christian metal",
+        "melodic metalcore",
+        "metalcore"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/6f6a03c2-f41c-47a8-b5a1-8039f3d33200",
+      "artistName": "Phinehas",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "poison": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Poison",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "rage": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Rage",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "ratt": {
+      "status": "name_hypothesis",
+      "mbid": "e0827234-3be3-4973-be59-1aa9575b9c76",
+      "genres": [
+        "glam",
+        "glam metal",
+        "hard rock",
+        "heavy metal",
+        "metal"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/e0827234-3be3-4973-be59-1aa9575b9c76",
+      "artistName": "Ratt",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },

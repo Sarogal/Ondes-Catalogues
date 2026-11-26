@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 35,
-  "distinctArtistHints": 51,
+  "stationsWithArtistHints": 37,
+  "distinctArtistHints": 55,
   "attemptedHlsCount": 1,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -338,6 +338,42 @@
           "date": "2026-11-26",
           "artistHint": "shopify.com",
           "titleSha256": "2d36510b4d1effc8f6e0550ca7aafb89d8cbf8186a79b4f68e7f2e753e669315"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "1f951feb-544e-447b-8143-8b9656a46cf2",
+      "streamSha256": "46f041d06693161d3d591762b00e4c31baedad602ba255617dd2ef0cc1251930",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Nazareth",
+          "titleSha256": "c7bc5043fff7b017cc8aaf8dc60c5055202f51d28fbaeeb10c26d47c1af89db2"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "221e04bb-6d8a-4e13-a9b6-621561fc07f8",
+      "streamSha256": "f394d77bc4632ffb0cf78070229363f8a3554d8c93cc92c4a221539ac2c4a5a4",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Upload",
+          "titleSha256": "248c0344090baa954cb4d127dcd182a25a8155de01388d9d4fdaa443c2cfe960"
         }
       ],
       "alternativeVersion": 0,
@@ -814,17 +850,19 @@
     {
       "stationuuid": "652a2fa1-d3fe-4724-a3eb-3d6b7fb1e687",
       "streamSha256": "d7735960dc083e55ebbcf7c294be2faf0e517ed4355da8d8c7459963cdebd976",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
       "verdict": "metadata_no_parseable_title",
-      "observations": []
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "6928b97f-56f2-459e-b7e8-d76997fd9802",
       "streamSha256": "7420bb7ecd89803cc9d82f15696d5af755f543e5265467929b1c1eaf5644e4d2",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -834,13 +872,20 @@
           "date": "2026-11-25",
           "artistHint": "Blondinka Ksju",
           "titleSha256": "854145b288566f78288b0c7277d8c9aa6244e169c177571c7081b5a44c216cf6"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "Brigadnyj podrjad",
+          "titleSha256": "76ba276527159e50abaaf215ebe2853747fecf10987681a835c875fb8469ba07"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "6fc8bce6-0ab9-4d0a-a703-992634eddf61",
       "streamSha256": "91952bac6ff32ecefb03a9be8829f86c7f873623b54c2c87af06159d675a8bf3",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -850,8 +895,15 @@
           "date": "2026-11-25",
           "artistHint": "Dead End Tragedy",
           "titleSha256": "477e1092c6cd65d297316cf7df3311e748c0def319f9c431c2b2a938e1ecf248"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "Lionheart",
+          "titleSha256": "f313edf5505e24a5f0e4141817d9083971c877021ef305d5bb0c769760da9f0b"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "7264e476-09d5-4dc0-8580-bf8cc2070265",
@@ -868,6 +920,18 @@
           "titleSha256": "f7ba934ba7b2ffbb0987c8dae23d61679043edc02a76ba5a109cb24a486690de"
         }
       ]
+    },
+    {
+      "stationuuid": "c123bef5-256a-427f-a942-570ae9836f68",
+      "streamSha256": "ac5e132f18b64939b98ba589e2879817d636b09970400aa35b0dd01538f04016",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "hls_no_parseable_id3",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     }
   ]
 }
