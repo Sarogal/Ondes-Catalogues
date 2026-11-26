@@ -195,3 +195,81 @@ class ExistingVenueGeoEvidenceTests(unittest.TestCase):
                            document(location={"@type": "Place", "name": "New Room", "address": {}})):
             with self.assertRaises(ValueError):
                 evidence.extract_address(structured + html, event, VENUE)
+
+
+class LinkedPracticalAddressTests(unittest.TestCase):
+    def event(self, location="New Room, Grande Salle", link="/infos/"):
+        return ("<p>12 février 2027</p><h1>Metal night</h1>"
+                "<p>Lieu</p><p>" + location + "</p><nav>"
+                '<a href="' + link + '">Infos pratiques</a></nav>')
+
+    def page(self):
+        return ("<h1>Infos pratiques</h1><h2>New Room</h2>"
+                "<p>Concerts et musique actuelle</p>"
+                "<p>19 rue des Jardins 68000 Colmar<br>03 00 00 00 00</p>")
+
+    def test_dated_event_can_follow_visible_official_practical_link(self):
+        event = dict(EVENT, title="Metal night")
+        urls = []
+        def fetch(url, cache):
+            urls.append(url)
+            return self.event() if url == URL else self.page()
+        with patch.object(evidence.official, "official_origin",
+                          return_value="https://unknown-room.fr/agenda"), \
+             patch.object(evidence.geo, "verify",
+                          return_value=(OSM, 48.08, 7.36, "named-site-point")):
+            proof = evidence.verify(event, VENUE, fetch=fetch)
+        self.assertEqual(urls, [URL, "https://unknown-room.fr/infos/"])
+        self.assertEqual(proof["venuePatch"]["address"], "19 rue des Jardins")
+
+    def test_offsite_hidden_or_unbound_link_cannot_supply_address(self):
+        event = dict(EVENT, title="Metal night")
+        for html, origin in (
+            (self.event(location="Other Room"), "https://unknown-room.fr/"),
+            (self.event(link="https://other.fr/infos/"), "https://unknown-room.fr/"),
+            (self.event().replace("<nav>", "<nav hidden>"), "https://unknown-room.fr/"),
+            (self.event(), None),
+        ):
+            with self.subTest(html=html), patch.object(
+                    evidence.official, "official_origin", return_value=origin):
+                with self.assertRaises(ValueError):
+                    evidence.verify(event, VENUE, fetch=lambda url, cache: (
+                        html if url == URL else self.fail("unsafe link fetched")))
+
+    def test_practical_address_conflict_and_ticket_office_are_rejected(self):
+        event = dict(EVENT, title="Metal night")
+        for page in (
+            self.page() + "<h2>New Room</h2><p>21 rue des Jardins 68000 Colmar</p>",
+            "<h1>Infos pratiques</h1><h2>New Room</h2>"
+            "<p>Billetterie</p><p>19 rue des Jardins 68000 Colmar</p>",
+        ):
+            with patch.object(evidence.official, "official_origin",
+                              return_value="https://unknown-room.fr/"), self.assertRaises(ValueError):
+                evidence.verify(event, VENUE, fetch=lambda url, cache: self.event() if url == URL else page)
+
+    def test_scan_reports_fixed_reason_without_raw_error(self):
+        event = dict(EVENT, status="confirmed")
+        def fail(*args, **kwargs):
+            raise evidence.EvidenceHeld("event_fetch_unavailable")
+        report = evidence.scan({"venues": [VENUE], "events": [event]},
+                               dt.date(2026, 11, 25), verify_one=fail)
+        self.assertEqual(report["reasonCounts"], {"event_fetch_unavailable": 1})
+        self.assertEqual(report["held"][0]["reasonCounts"], report["reasonCounts"])
+
+    def test_hidden_practical_address_cannot_be_used(self):
+        event = dict(EVENT, title="Metal night")
+        for hidden in ('hidden', 'aria-hidden="true"', 'style="display:none"'):
+            page = '<h1>Infos pratiques</h1><div ' + hidden + '>' + self.page() + '</div>'
+            with patch.object(evidence.official, "official_origin",
+                              return_value="https://unknown-room.fr/"), self.assertRaises(ValueError):
+                evidence.verify(event, VENUE, fetch=lambda url, cache: self.event() if url == URL else page)
+
+    def test_explicit_wrong_city_is_not_absent_address(self):
+        event = dict(EVENT, title="Metal night")
+        page = ("<p>12 février 2027</p><h1>Metal night</h1>"
+                "<p>Lieu</p><h2>New Room</h2><p>19 rue des Jardins 75001 Paris</p>"
+                '<nav><a href="/infos/">Infos pratiques</a></nav>')
+        with patch.object(evidence.official, "official_origin",
+                          return_value="https://unknown-room.fr/"), self.assertRaises(ValueError):
+            evidence.verify(event, VENUE, fetch=lambda url, cache: (
+                page if url == URL else self.fail("contradiction must not trigger fallback")))
