@@ -129,6 +129,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_github_readback.py"
       - "radio-catalog-lab/tools/radio_daily_github_json_reader.py"
       - "radio-catalog-lab/tools/test_radio_daily_github_json_reader.py"
+      - "radio-catalog-lab/tools/radio_daily_protected_signer.py"
+      - "radio-catalog-lab/tools/test_radio_daily_protected_signer.py"
       - "radio-catalog-lab/tools/radio_daily_restore_preview.py"
       - "radio-catalog-lab/tools/test_radio_daily_restore_preview.py"
       - "radio-catalog-lab/tools/radio_daily_baseline_selection.py"
@@ -740,6 +742,8 @@ jobs:
             --cache-dir "$RUNNER_TEMP/go-radio-discovery/inherited-artwork-cache"
       - name: Read-only GitHub laboratory ref smoke
         if: github.ref == 'refs/heads/feature/radio-daily-discovery-lab-20261120'
+        env:
+          RADIO_GITHUB_READ_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           PYTHONPATH=radio-catalog-lab/tools python - <<'PY'
@@ -747,11 +751,12 @@ jobs:
           from radio_daily_github_readback import GitHubReadback
           from radio_daily_github_transfer_contract import DESTINATION
           from radio_daily_git_lab_transport import REF, ZERO
-          reader = GitHubJSONReader(max_calls=2, max_seconds=30)
+          import os
+          reader = GitHubJSONReader(token=os.environ["RADIO_GITHUB_READ_TOKEN"], max_calls=2, max_seconds=30)
           try:
               head = GitHubReadback(reader).read_head(DESTINATION, REF)
           except (ValueError, OSError):
-              print("GITHUB_LAB_READBACK_SMOKE held; no write attempted")
+              print("GITHUB_LAB_READBACK_SMOKE held", reader.diagnostic, "; no write attempted")
           else:
               print("GITHUB_LAB_READBACK_SMOKE verified", "absent" if head == ZERO else "present")
           PY

@@ -30,7 +30,7 @@ def response(doc=None,status=200,remaining=None):
 
 class GitHubJSONReaderTests(unittest.TestCase):
     def repo(self):
-        return response(dict(full_name="Sarogal/Ondes-Catalogues",private=False))
+        return response(dict(full_name="Sarogal/Ondes-Catalogues",private=False,id=1438875064))
 
     @patch("radio_daily_github_json_reader.http.client.HTTPSConnection")
     def test_public_repo_verified_before_missing_ref(self,factory):
@@ -65,7 +65,7 @@ class GitHubJSONReaderTests(unittest.TestCase):
     def test_wrong_repo_or_rate_limit_held(self,factory):
         conn=factory.return_value
         for repo in (response(dict(full_name="other/repo",private=False)),
-                     response(dict(full_name="Sarogal/Ondes-Catalogues",private=False),remaining="0")):
+                     response(dict(full_name="Sarogal/Ondes-Catalogues",private=False,id=1438875064),remaining="0")):
             conn.getresponse.side_effect=[repo]
             reader=GitHubJSONReader(resolver=resolver)
             with self.assertRaises(ValueError):
@@ -85,3 +85,17 @@ class GitHubJSONReaderTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             GitHubReadback(reader).read_head(DESTINATION,REF)
         factory.assert_not_called()
+
+    @patch("radio_daily_github_json_reader.http.client.HTTPSConnection")
+    def test_repository_id_pin_and_safe_status_diagnostic(self,factory):
+        conn=factory.return_value
+        conn.getresponse.side_effect=[response(dict(full_name="Sarogal/Ondes-Catalogues",private=False,id=1))]
+        reader=GitHubJSONReader(resolver=resolver)
+        with self.assertRaises(ValueError):
+            GitHubReadback(reader).read_head(DESTINATION,REF)
+        self.assertEqual(reader.diagnostic,"repository_identity")
+        conn.getresponse.side_effect=[self.repo(),response(status=403)]
+        reader=GitHubJSONReader(resolver=resolver)
+        with self.assertRaises(ValueError):
+            GitHubReadback(reader).read_head(DESTINATION,REF)
+        self.assertEqual(reader.diagnostic,"http_403")
