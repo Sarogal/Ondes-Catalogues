@@ -258,12 +258,23 @@ def main():
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--date", type=date.fromisoformat, required=True)
     args = p.parse_args()
-    report = _read(args.qualification, 4_000_000)
-    previous = (_read(args.previous, 6_000_000)
-                if args.previous.exists() or args.previous.is_symlink() else None)
-    state, summary = cycle(report, previous, args.date, limit=MAX_BATCH,
-                           time_budget=LIVE_BUDGET_SECONDS, stop_on_outage=True)
-    _atomic_json(args.output, state)
+    stage = "read_qualification"
+    try:
+        report, _ = _read(args.qualification, 4_000_000)
+        stage = "read_previous"
+        previous = (_read(args.previous, 6_000_000)[0]
+                    if args.previous.exists() or args.previous.is_symlink() else None)
+        stage = "research_cycle"
+        state, summary = cycle(report, previous, args.date, limit=MAX_BATCH,
+                               time_budget=LIVE_BUDGET_SECONDS, stop_on_outage=True)
+        stage = "persist_result"
+        _atomic_json(args.output, state)
+    except (ValueError, OSError, TypeError, KeyError, OverflowError, UnicodeError):
+        # Never expose a traceback, private paths, venue identities or source
+        # addresses in the public job summary. The prior state stays intact.
+        print(json.dumps({"error_stage": stage, "publication_ready": False,
+                          "public_writes": 0}, sort_keys=True))
+        raise SystemExit(1) from None
     print(json.dumps(summary, sort_keys=True))
 
 
