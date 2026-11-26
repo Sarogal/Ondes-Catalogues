@@ -1394,7 +1394,7 @@ def weekday_labelled_official_dates(html, row, year):
         matches.add((dates[0], dates[-1]))
     return next(iter(matches)) if len(matches) == 1 else None
 
-def multivenue_department_from_access(html, row, city, fetch):
+def multivenue_department_from_access(html, row, city, fetch, *, diagnostic=None):
     """Disambiguate a proven commune using a named participating venue.
 
     The signed professional event must prove its exact dates and same town
@@ -1407,6 +1407,8 @@ def multivenue_department_from_access(html, row, city, fetch):
     the independent government commune resolver must still prove uniqueness.
     """
     from grossesondes_openagenda_linked_edition import PROFESSIONAL_PUBLIC_CONFIDENCE
+    diagnostic = diagnostic if isinstance(diagnostic, dict) else {}
+    diagnostic["multivenue_postcode"] = "signed_multivenue_identity_unproven"
     site = row.get("officialSite")
     if (row.get("sourceConfidence") != PROFESSIONAL_PUBLIC_CONFIDENCE
             or row.get("source") != site or safe_public_url(site) != site
@@ -1449,6 +1451,9 @@ def multivenue_department_from_access(html, row, city, fetch):
         for raw in " ".join(body.parts).split(body.SEP):
             if not 0 < len(raw) <= 1600:
                 continue
+            # HTML indentation, line wrapping and nested inline tags are
+            # not part of the venue's identity or the printed date.
+            raw = " ".join(raw.split())
             paragraph = fold(raw)
             dates = {(a,b) for _,_,a,b in current_visible_ranges(paragraph, start.year)}
             if dates != {(start, end)}:
@@ -1460,10 +1465,13 @@ def multivenue_department_from_access(html, row, city, fetch):
                 match = re.search(r"\b(?:scènes|scenes|salles)\s+(?:de|du|des)\s+(.+)",
                                   sentence, re.I)
                 if match:
-                    stage_lists.append(" " + fold(match[1]) + " ")
+                    stage_lists.append(" " + " ".join(fold(match[1]).split()) + " ")
         if not stage_lists:
+            diagnostic["multivenue_postcode"] = "dated_stage_list_absent"
             return None
         found = {}
+        matched_headings = 0
+        usable_sections = 0
         # The already fetched signed event can itself carry the address
         # under a participating venue's own heading. Also check the bounded
         # access pages, so conflicting department evidence still vetoes.
@@ -1476,16 +1484,18 @@ def multivenue_department_from_access(html, row, city, fetch):
                 parser.feed(access)
                 parser.close()
                 for i, heading in enumerate(parser.headings):
-                    name = fold(heading)
+                    name = " ".join(fold(heading).split())
                     if len(name.replace(" ", "")) < 6 or not any(
                             " " + name + " " in s for s in stage_lists):
                         continue
+                    matched_headings += 1
                     begin = parser.heading_starts[i]
                     finish = (parser.heading_starts[i+1] if i+1 < len(parser.headings)
                               else len(parser.parts))
                     section = " ".join(" ".join(parser.parts[begin:finish]).split())
                     if not 0 < len(section) <= 2200:
                         continue
+                    usable_sections += 1
                     city_pattern = r"[\W_]+".join(map(re.escape, fold(city).split()))
                     # Require an actual street address, followed closely by
                     # the exact printed postcode and commune. No phone number.
@@ -1500,8 +1510,15 @@ def multivenue_department_from_access(html, row, city, fetch):
                             found.setdefault(dep, link)
             except (OSError, ValueError, TypeError, UnicodeError, KeyError):
                 continue
+        diagnostic["multivenue_postcode"] = (
+            "unique_named_venue_department" if len(found) == 1 else
+            "conflicting_named_venue_departments" if len(found) > 1 else
+            "named_venue_heading_absent" if not matched_headings else
+            "named_venue_section_unusable" if not usable_sections else
+            "named_venue_postcode_absent")
         return next(iter(found.items())) if len(found) == 1 else None
     except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+        diagnostic["multivenue_postcode"] = "parsing_failed"
         return None
 
 
@@ -1853,10 +1870,13 @@ def apply_independently_verified_updates(
                             nonlocal access_calls
                             access_calls += 1
                             return fetch(url)
-                        extra = multivenue_department_from_access(root_html, old, claim["city"], read_access)
+                        extra = multivenue_department_from_access(
+                            root_html, old, claim["city"], read_access,
+                            diagnostic=municipal_diagnostic)
                         report["rechecked_pages"] += access_calls
                         if extra:
                             department, access_url = extra
+                            municipal_diagnostic["multivenue_postcode"] = "department_selected_admin_pending"
                             try:
                                 resolved = commune_resolver(claim["city"], department)
                                 if (resolved and isinstance(resolved.get("codeInsee"), str)
@@ -1864,8 +1884,11 @@ def apply_independently_verified_updates(
                                     commune = resolved
                                     claim["venue_source"] = access_url
                                     commune_diagnostic = "admin_resolution_returned_from_named_venue_postcode"
+                                    municipal_diagnostic["multivenue_postcode"] = "admin_resolution_returned"
+                                else:
+                                    municipal_diagnostic["multivenue_postcode"] = "department_selected_admin_unresolved"
                             except (OSError, TimeoutError, ValueError, UnicodeError):
-                                pass
+                                municipal_diagnostic["multivenue_postcode"] = "department_selected_admin_fetch_failed"
                     if (commune and normal_city(commune.get("city")) == normal_city(claim["city"])
                             and type(commune.get("lat")) in (float, int)
                             and type(commune.get("lon")) in (float, int)
@@ -2144,6 +2167,7 @@ def apply_independently_verified_updates(
                     "commune_diagnostic": ("accepted" if "geoVerification" in fields
                                            else commune_diagnostic),
                     "municipal_venue_diagnostic": municipal_diagnostic.get("municipal_venue"),
+                    "multivenue_postcode_diagnostic": municipal_diagnostic.get("multivenue_postcode"),
                     "fields_proposed": list(fields),
                     "ticket_note_proof": ({
                         "old_note_outdated": (
