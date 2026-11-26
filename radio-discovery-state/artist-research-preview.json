@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 42,
+  "dueNameCount": 41,
   "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "sodom",
+  "retryAfterKey": "suicide machines",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -931,6 +931,21 @@
       "genreSource": "musicbrainz-community",
       "sourceUrl": "https://musicbrainz.org/artist/b10db9ad-b4c3-47f3-a7a4-37864b134f65",
       "artistName": "SOUL ASYLUM",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "ssshhhiiittt!": {
+      "status": "name_hypothesis",
+      "mbid": "6885e4b4-03e6-48c4-8943-cda1658fbe46",
+      "genres": [
+        "garage rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/6885e4b4-03e6-48c4-8943-cda1658fbe46",
+      "artistName": "ssshhhiiittt!",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,
