@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 from datetime import date, datetime, timezone
 import json
+import re
+from urllib.parse import urlsplit
 from pathlib import Path
 import sys
 from time import monotonic
@@ -12,15 +14,45 @@ from dns_pinned_https import fetch_public_html, OfficialHTTPStatusError
 from grossesondes_existing_official_updates import (
     signed_rotation, current_official_poster_candidates, page, home_matches_edition,
 )
-from grossesondes_official_html_edition import visible_official_edition
+from grossesondes_official_html_edition import visible_official_edition, fold
 from grossesondes_official_poster_ocr import (
     read_official_poster, poster_review_claims, load_ocr_cache, save_ocr_cache,
+    qualified_url, MIN_REVIEW_CONFIDENCE,
 )
 
 MAX_HOSTS = 8
 MAX_IMAGES = 2
 MAX_BROWSER_HOSTS = 2
 MAX_RUN_SECONDS = 180
+
+
+def contextual_poster_match(site, url, row, page_date_match, reading, result):
+    """Review-only association: exact visible edition + named first-party image.
+
+    The URL is a freshly discovered visible candidate, not a user-supplied
+    proof or a standalone source. Never emit fields from this association.
+    """
+    if (not page_date_match or not qualified_url(site, url)
+            or result.get("status") != "edition_identity_or_dates_unproven"):
+        return False
+    diagnostic = result.get("diagnostics", {})
+    if (diagnostic.get("year_matches") is not True
+            or diagnostic.get("contradictory_dates") is not False
+            or diagnostic.get("cancellation_detected") is not False):
+        return False
+    year = date.fromisoformat(row["startDate"]).year
+    name = re.sub(r"\b20[2-4]\d\b", "", fold(row["name"]))
+    brand = [w for w in re.findall(r"[a-z0-9]+", name)
+             if w not in ("festival", "fest")]
+    filename = fold(urlsplit(url).path.rsplit("/", 1)[-1])
+    tokens = set(re.findall(r"[a-z0-9]+", filename))
+    years = set(re.findall(r"(?<!\d)20[2-4]\d(?!\d)", filename))
+    if (len("".join(brand)) < 3 or not set(brand).issubset(tokens)
+            or years != {str(year)}):
+        return False
+    return any(w["confidence"] >= MIN_REVIEW_CONFIDENCE
+               and re.search(r"(?<!\d)" + str(year) + r"(?!\d)", w["text"])
+               for w in reading.get("words", []))
 
 
 def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
@@ -52,7 +84,8 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
                     break
     report = {"review_only": True, "publication_authorized": False,
               "checked_hosts": 0, "images_read": 0, "edition_matches": 0,
-              "budget_exhausted": False, "browser_hosts": 0, "rows": []}
+              "budget_exhausted": False, "browser_hosts": 0,
+              "contextual_edition_matches": 0, "rows": []}
     deadline = monotonic() + MAX_RUN_SECONDS
     for site, rows in selected:
         if monotonic() >= deadline:
@@ -118,10 +151,13 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
                 result = poster_review_claims(row, reading)
                 matched = result["status"] == "edition_matches_review_only"
                 report["edition_matches"] += int(matched)
+                contextual = contextual_poster_match(site, url, row, page_date_match, reading, result)
+                report["contextual_edition_matches"] += int(contextual)
                 # No recognized text, image bytes, or URL in public logs.
                 diagnostic["images"].append({
                     "status": reading.get("status"),
                     "qualification": result["status"],
+                    "contextual_edition_match": contextual,
                     "qualification_diagnostics": result.get("diagnostics", {}),
                     "claim_types": sorted(result["claims"]),
                     "sha256": reading.get("sha256"),
