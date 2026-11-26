@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'scripts/ptitesondes_catalogue_geo_rotation.py'
+      - 'scripts/ptitesondes_acceslibre_geo_hints.py'
       - 'scripts/ptitesondes_catalogue_geo_proof_batch.py'
       - 'tests/test_ptitesondes_catalogue_geo_proof_batch.py'
       - 'tests/test_ptitesondes_catalogue_geo_rotation.py'
@@ -11,6 +12,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/ptitesondes-catalogue-geo-rotation.yml'
+      - 'scripts/ptitesondes_acceslibre_geo_hints.py'
   schedule:
     - cron: '42 01 * * *'
     - cron: '42 05 * * *'
