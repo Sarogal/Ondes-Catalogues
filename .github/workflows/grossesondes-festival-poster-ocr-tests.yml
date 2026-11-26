@@ -1,0 +1,33 @@
+name: Grosses Ondes — OCR affiches, validation locale
+on:
+  pull_request:
+    paths:
+      - scripts/grossesondes_official_poster_ocr.py
+      - tests/test_grosses_official_poster_ocr.py
+      - .github/workflows/grossesondes-festival-poster-ocr-tests.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/grossesondes_official_poster_ocr.py
+      - tests/test_grosses_official_poster_ocr.py
+      - .github/workflows/grossesondes-festival-poster-ocr-tests.yml
+permissions:
+  contents: read
+jobs:
+  ocr:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      GO_REAL_POSTER_OCR: "1"
+      OMP_THREAD_LIMIT: "2"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install open-source OCR
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-fra tesseract-ocr-eng python3-pil fonts-dejavu-core
+          tesseract --version
+      - name: Validate OCR, cache and network guards offline
+        run: /usr/bin/python3 -m unittest discover -s tests -p test_grosses_official_poster_ocr.py -v

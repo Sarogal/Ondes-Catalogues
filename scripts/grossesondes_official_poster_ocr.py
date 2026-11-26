@@ -8,6 +8,8 @@ from __future__ import annotations
 import csv
 from hashlib import sha256
 import io
+import json
+import os
 from pathlib import Path
 import re
 import ssl
@@ -27,13 +29,15 @@ MAX_SIDE = 6000
 MAX_TSV = 256_000
 MAX_WORDS = 1500
 MAX_CACHE = 64
+MAX_CACHE_BYTES = 8 * 1024 * 1024
 OCR_PROFILE = "tesseract-fra-eng-psm11-v1"
 MIME_FORMAT = {"image/jpeg": "JPEG", "image/png": "PNG", "image/webp": "WEBP"}
 
 
 def qualified_url(site, url):
     """Same-origin, visible-candidate URL contract; no new domain or redirect."""
-    if safe_public_url(site) != site or safe_public_url(url) != url:
+    if (not isinstance(site, str) or not isinstance(url, str)
+            or safe_public_url(site) != site or safe_public_url(url) != url):
         return False
     path = urlsplit(url).path
     return (urlsplit(site).hostname == urlsplit(url).hostname
@@ -144,11 +148,81 @@ def recognize_poster(mime, body):
         return parse_tsv(completed.stdout.decode("utf-8", errors="strict"))
 
 
+def _valid_cached_words(words):
+    if not isinstance(words, list) or len(words) > MAX_WORDS:
+        return False
+    for word in words:
+        if not isinstance(word, dict) or set(word) != {"text", "confidence", "box", "review_only"}:
+            return False
+        text, confidence, box = word["text"], word["confidence"], word["box"]
+        if (not isinstance(text, str) or not 0 < len(text) <= 200
+                or any(ord(c) < 32 for c in text)
+                or type(confidence) not in (float, int) or not 0 <= confidence <= 100
+                or not isinstance(box, list) or len(box) != 4
+                or any(type(x) is not int or not 0 <= x <= MAX_SIDE for x in box)
+                or word["review_only"] is not True):
+            return False
+    return True
+
+
+def load_ocr_cache(path):
+    """Read bounded, versioned diagnostic state; corruption is a cache miss."""
+    try:
+        with Path(path).open("rb") as handle:
+            raw = handle.read(MAX_CACHE_BYTES + 1)
+        if len(raw) > MAX_CACHE_BYTES:
+            return {}
+        doc = json.loads(raw)
+        if not isinstance(doc, dict) or doc.get("profile") != OCR_PROFILE:
+            return {}
+        entries = doc.get("entries")
+        if not isinstance(entries, dict) or len(entries) > MAX_CACHE:
+            return {}
+        return {(OCR_PROFILE, digest): words for digest, words in entries.items()
+                if re.fullmatch(r"[0-9a-f]{64}", digest) and _valid_cached_words(words)}
+    except (OSError, ValueError, TypeError, RecursionError, UnicodeError):
+        return {}
+
+
+def save_ocr_cache(path, cache):
+    """Atomically save only bounded OCR diagnostics in caller-owned state.
+
+    The caller must use a private, trusted state directory, never docs/ or a
+    public artifact. No source URL, downloaded image, or editorial proof.
+    """
+    entries = {}
+    for k, words in list(cache.items())[-MAX_CACHE:]:
+        if (isinstance(k, tuple) and len(k) == 2 and k[0] == OCR_PROFILE
+                and isinstance(k[1], str) and re.fullmatch(r"[0-9a-f]{64}", k[1])
+                and _valid_cached_words(words)):
+            entries[k[1]] = words
+    while True:
+        raw = json.dumps({"profile": OCR_PROFILE, "entries": entries},
+                         ensure_ascii=False, allow_nan=False,
+                         separators=(",", ":")).encode("utf-8")
+        if len(raw) <= MAX_CACHE_BYTES:
+            break
+        entries.pop(next(iter(entries)))
+    destination = Path(path)
+    tmp = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=destination.parent, prefix=".poster-ocr-",
+                                         delete=False) as handle:
+            tmp = Path(handle.name)
+            handle.write(raw)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp, destination)
+    finally:
+        if tmp is not None:
+            tmp.unlink(missing_ok=True)
+
+
 def read_official_poster(site, url, *, cache, fetch=None, recognize=None):
     """Cache successful OCR by bytes and profile, not URL. Never authorize edits.
 
-    The caller owns the bounded in-memory cache; cross-run persistence and
-    edition/field verification are a separate Publisher integration.
+    The caller owns the bounded cache and optional private persistence;
+    edition/field verification remains a separate Publisher integration.
     """
     out = {"status": "unqualified", "review_only": True}
     if not qualified_url(site, url):
@@ -162,9 +236,13 @@ def read_official_poster(site, url, *, cache, fetch=None, recognize=None):
         digest = sha256(body).hexdigest()
         cache_key = (OCR_PROFILE, digest)
         out["sha256"] = digest
-        cached = cache_key in cache
+        cached = cache_key in cache and _valid_cached_words(cache[cache_key])
         words = cache[cache_key] if cached else recognize(mime, body)
-        if not cached and len(cache) < MAX_CACHE:
+        if not _valid_cached_words(words):
+            raise ValueError("Invalid OCR word result")
+        if not cached:
+            if len(cache) >= MAX_CACHE:
+                cache.pop(next(iter(cache)))
             cache[cache_key] = words
         out.update(status="review_only", words=words, cache_hit=cached)
     except OfficialHTTPStatusError as exc:

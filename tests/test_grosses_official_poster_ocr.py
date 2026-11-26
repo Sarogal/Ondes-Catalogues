@@ -1,5 +1,8 @@
 """Offline security and cache regressions for official poster OCR."""
 import sys
+import io
+import os
+import tempfile
 from pathlib import Path
 import unittest
 from unittest.mock import Mock
@@ -9,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "festival-automatio
 
 from grossesondes_official_poster_ocr import (
     MAX_BYTES, qualified_url, parse_tsv, read_official_poster,
+    load_ocr_cache, save_ocr_cache, recognize_poster,
 )
 from dns_pinned_https import OfficialHTTPStatusError
 
@@ -67,6 +71,47 @@ class PosterOCRTests(unittest.TestCase):
             self.assertEqual(result["status"], "image_or_ocr_unavailable")
         recognize.assert_not_called()
         self.assertEqual(cache, {})
+
+    def test_persistent_cache_roundtrip_and_changed_poster(self):
+        words = parse_tsv(HEADER + "5\t1\t2\t40\t12\t97\tExample\n")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "private-cache.json"
+            cache = {}
+            recognize = Mock(return_value=words)
+            read_official_poster(SITE, POSTER, cache=cache,
+                                 fetch=lambda *_: ("image/jpeg", b"first"), recognize=recognize)
+            save_ocr_cache(path, cache)
+            restored = load_ocr_cache(path)
+            self.assertEqual(restored, cache)
+            hit = read_official_poster(SITE, POSTER, cache=restored,
+                                       fetch=lambda *_: ("image/jpeg", b"first"), recognize=recognize)
+            self.assertTrue(hit["cache_hit"])
+            miss = read_official_poster(SITE, POSTER, cache=restored,
+                                        fetch=lambda *_: ("image/jpeg", b"changed"), recognize=recognize)
+            self.assertFalse(miss["cache_hit"])
+            self.assertEqual(recognize.call_count, 2)
+            path.write_text('{"profile":"old","entries":{}}')
+            self.assertEqual(load_ocr_cache(path), {})
+            path.write_text("not json")
+            self.assertEqual(load_ocr_cache(path), {})
+
+    @unittest.skipUnless(os.environ.get("GO_REAL_POSTER_OCR") == "1",
+                         "Dedicated real OCR runner only")
+    def test_real_tesseract_reads_generated_raster(self):
+        from PIL import Image, ImageDraw, ImageFont
+        image = Image.new("RGB", (1400, 500), "white")
+        draw = ImageDraw.Draw(image)
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 80)
+        draw.text((30, 30), "FESTIVAL EXEMPLE", font=font, fill="black")
+        draw.text((30, 180), "13 AOÛT 2027", font=font, fill="black")
+        draw.text((30, 330), "PASS 45 EUROS", font=font, fill="black")
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG")
+        words = recognize_poster("image/png", buffer.getvalue())
+        text = " ".join(word["text"] for word in words).upper()
+        for expected in ("FESTIVAL", "EXEMPLE", "2027", "45"):
+            self.assertIn(expected, text)
+        self.assertTrue(all(word["review_only"] for word in words))
 
     def test_failed_recognition_not_cached(self):
         cache = {}
