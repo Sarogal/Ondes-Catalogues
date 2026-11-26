@@ -89,7 +89,7 @@ def eligible(catalogue):
     ], key=lambda v: v["id"])
 
 
-def select(venues, day, slot, limit):
+def select(venues, day, slot, limit, recent=()):
     require(isinstance(day, dt.date) and not isinstance(day, dt.datetime)
             and type(slot) is int and slot in (0,1,2)
             and type(limit) is int and 1 <= limit <= 10,
@@ -98,8 +98,9 @@ def select(venues, day, slot, limit):
         return []
     # Rotate by slot and day; never permanently process only first N sites.
     offset = ((day.toordinal() * 3 + slot) * limit) % len(venues)
-    return [venues[(offset+n) % len(venues)]
-            for n in range(min(limit, len(venues)))]
+    rotated = venues[offset:] + venues[:offset]
+    rank = {key: n for n, key in enumerate(recent)}
+    return sorted(rotated, key=lambda v: rank.get(discover.detail_key(v["id"]), -1))[:limit]
 
 
 def official_source(venue, fetch, cache):
@@ -116,8 +117,16 @@ def official_source(venue, fetch, cache):
     try:
         body = fetch(url, cache)
     except (ValueError,OSError,TimeoutError):
-        url=readonly.element("node",node_id)
-        body=fetch(url,cache)
+        # All three reviewed read-only transports may independently be
+        # unavailable. A returned contradictory object is never retried.
+        for provider in range(len(readonly.ENDPOINTS)):
+            try:
+                body=fetch(readonly.element("node",node_id,provider=provider),cache)
+                break
+            except (ValueError,OSError,TimeoutError):
+                continue
+        else:
+            raise ValueError("Unlisted OSM venue discovery: all named-node transports unavailable")
     require(isinstance(body, str) and 0 < len(body) <= probe.MAX_BYTES
             and "<!DOCTYPE" not in body.upper()
             and "<!ENTITY" not in body.upper(),
@@ -247,12 +256,21 @@ def event_leads(html, url, source, catalogue, today):
 
 
 def scan(catalogue,today,*,slot=0,max_venues=MAX_VENUES,
-         max_details=MAX_DETAILS,fetch=probe.safe_fetch):
+         max_details=MAX_DETAILS,fetch=probe.safe_fetch, history=None):
     require(1<=max_details<=4,"invalid detail budget")
     candidates={}
     diagnostics=Counter()
     venues=eligible(catalogue)
-    for venue in select(venues,today,slot,max_venues):
+    active={discover.detail_key(v["id"]) for v in venues}
+    recent=[key for key in (history or {}).get(discover.detail_key("osm-venue-scheduling"), [])
+            if key in active]
+    # Use the existing hashed scheduling file schema, with a hashed key
+    # for this independent source rotation (no candidate authority).
+    for venue in select(venues,today,slot,max_venues,recent=recent):
+        key=discover.detail_key(venue["id"])
+        if key in recent:
+            recent.remove(key)
+        recent.append(key)
         cache={}
         diagnostics["roomsConsidered"]+=1
         try:
@@ -303,6 +321,8 @@ def scan(catalogue,today,*,slot=0,max_venues=MAX_VENUES,
         except (ValueError,TypeError,KeyError,OSError,TimeoutError,
                 ElementTree.ParseError):
             diagnostics["sourcesHeld"]+=1
+    if history is not None:
+        history[discover.detail_key("osm-venue-scheduling")]=recent
     classified,shortlist,counts=triage.classify(candidates.values(),catalogue)
     return {
         "schema":SCHEMA,
@@ -324,13 +344,16 @@ def main():
     p.add_argument("--output",type=Path,required=True)
     p.add_argument("--scan-slot",type=int,choices=(0,1,2),default=0)
     p.add_argument("--max-venues",type=int,default=MAX_VENUES)
+    p.add_argument("--history",type=Path)
     args=p.parse_args()
+    history=discover.load_detail_history(args.history)
     report=scan(json.loads(args.catalogue.read_text(encoding="utf-8")),
                 dt.datetime.now(ZoneInfo("Europe/Paris")).date(),
-                slot=args.scan_slot,max_venues=args.max_venues)
+                slot=args.scan_slot,max_venues=args.max_venues,history=history)
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(report,indent=2,ensure_ascii=False)+"\n",
                            encoding="utf-8")
+    discover.store_detail_history(args.history,history)
     print("Named-OSM unknown-source reconnaissance complete. "
           "Candidate proposals quarantined; publication forbidden.")
 
