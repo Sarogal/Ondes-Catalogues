@@ -264,7 +264,7 @@ def poster_review_claims(row, reading):
     """
     from grossesondes_official_html_edition import explicit_ranges, fold, CANCEL
     out = {"status": "edition_unproven", "review_only": True,
-           "publication_authorized": False, "claims": {}}
+           "publication_authorized": False, "claims": {}, "diagnostics": {}}
     if not isinstance(row, dict) or not isinstance(reading, dict):
         return out
     words = reading.get("words")
@@ -281,6 +281,8 @@ def poster_review_claims(row, reading):
     brand_words = [w for w in tokens(brand) if w not in ("festival", "fest")]
     if not brand_words or len("".join(brand_words)) < 3 or start.year != end.year:
         return out
+    out["diagnostics"]["word_count"] = len(words)
+    out["diagnostics"]["strong_word_count"] = sum(w["confidence"] >= MIN_REVIEW_CONFIDENCE for w in words)
     lines = []
     # Group vertically overlapping words conservatively, without merging
     # across unusually large horizontal gaps (e.g. sponsor columns).
@@ -296,6 +298,7 @@ def poster_review_claims(row, reading):
         elif not choices:
             lines.append({"center": center, "height": height, "words": [word]})
         else:
+            out["diagnostics"]["ambiguous_line_geometry"] = True
             return out
     texts = []
     for line in lines:
@@ -316,6 +319,8 @@ def poster_review_claims(row, reading):
             texts.append(current)
     all_text = " ".join(w["text"] for w in words)
     years = set(re.findall(r"(?<!\d)20[2-4]\d(?!\d)", all_text))
+    out["diagnostics"].update(year_matches=years == {str(start.year)},
+                              cancellation_detected=bool(CANCEL.search(fold(all_text))))
     if years != {str(start.year)} or CANCEL.search(fold(all_text)):
         out["status"] = "edition_conflict_or_year_missing"
         return out
@@ -326,6 +331,13 @@ def poster_review_claims(row, reading):
     ranges = {(a,b) for line in strong for _,_,a,b in explicit_ranges(fold(line), start.year)}
     all_ranges = {(a,b) for line in texts for _,_,a,b in
                   explicit_ranges(fold(" ".join(w["text"] for w in line)), start.year)}
+    out["diagnostics"].update(
+        brand_matches=brand_ok,
+        strong_date_range_count=len(ranges),
+        all_date_range_count=len(all_ranges),
+        strong_exact_dates=(start, end) in ranges,
+        contradictory_dates=bool(all_ranges - {(start, end)}),
+    )
     if not brand_ok or ranges != {(start,end)} or all_ranges != {(start,end)}:
         out["status"] = "edition_identity_or_dates_unproven"
         return out

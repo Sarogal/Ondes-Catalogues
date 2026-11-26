@@ -6400,20 +6400,31 @@
       "price": "Tarifs annoncés — Pass 2 jours : dès 81 € ; Pass samedi : 48 € ; Pass dimanche : 48 €",
       "verificationStatus": "Site et édition revérifiés indépendamment",
       "lastVerified": "2026-11-26",
-      "lat": null,
+      "lat": 48.8637,
       "endDate": "2027-02-07",
       "dateRangeIsContinuous": false,
-      "city": null,
+      "city": "Montreuil",
       "notes": "Édition revérifiée sur la fiche officielle professionnelle ; lieu, artistes et GPS à confirmer.",
       "sourceConfidence": "Provenance OpenData et fiche professionnelle revérifiées",
       "department": null,
       "status": "Annoncé",
-      "showOnMap": false,
-      "lon": null,
+      "showOnMap": true,
+      "lon": 2.4491,
       "region": null,
       "auditSources": [
         "https://lamarbrerie.fr/disorder-festival-a-dark-celebration-2/"
-      ]
+      ],
+      "geoCity": "Montreuil",
+      "geoPrecision": "commune",
+      "geoInsee": "93048",
+      "geoSource": "https://geo.api.gouv.fr/communes?nom=Montreuil&fields=nom%2Ccode%2CcodeDepartement%2Cdepartement%2Ccentre&format=geojson&geometry=centre&zone=metro%2Cdrom%2Ccom",
+      "geoVerification": {
+        "proofMode": "current-edition-commune-direct-official.v1",
+        "firstObserved": "2026-11-26",
+        "verifiedAt": "2026-11-26",
+        "officialSite": "https://lamarbrerie.fr/disorder-festival-a-dark-celebration-2/",
+        "markerMeaning": "centre_indicatif_de_commune"
+      }
     }
   ]
 }

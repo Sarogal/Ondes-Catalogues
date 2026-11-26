@@ -130,6 +130,9 @@ class PosterOCRTests(unittest.TestCase):
                  "Ville : Exempleville", "Pass : 45 €", "Sponsor Gamma"]
         result = poster_review_claims(row, reading(lines))
         self.assertEqual(result["status"], "edition_matches_review_only")
+        self.assertTrue(result["diagnostics"]["brand_matches"])
+        self.assertTrue(result["diagnostics"]["strong_exact_dates"])
+        self.assertFalse(result["diagnostics"]["contradictory_dates"])
         self.assertEqual(result["claims"]["artist_labels"], ["Artistes : Alpha, Beta"])
         self.assertEqual(result["claims"]["location_labels"], ["Ville : Exempleville"])
         self.assertEqual(result["claims"]["price_labels"], ["Pass : 45 €"])

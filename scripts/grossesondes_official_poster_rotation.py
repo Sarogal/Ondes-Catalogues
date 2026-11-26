@@ -12,6 +12,7 @@ from dns_pinned_https import fetch_public_html, OfficialHTTPStatusError
 from grossesondes_existing_official_updates import (
     signed_rotation, current_official_poster_candidates, page, home_matches_edition,
 )
+from grossesondes_official_html_edition import visible_official_edition
 from grossesondes_official_poster_ocr import (
     read_official_poster, poster_review_claims, load_ocr_cache, save_ocr_cache,
 )
@@ -92,7 +93,14 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
             raw_count = len(candidates)
             if not candidates and rendered is not None:
                 candidates = current_official_poster_candidates(rendered, site, row)
+            try:
+                start, end = date.fromisoformat(row["startDate"]), date.fromisoformat(row["endDate"])
+                page_date_match = any(visible_official_edition(source, row["name"], start, end)
+                                      for source in (html, rendered) if source)
+            except (ValueError, TypeError, KeyError):
+                page_date_match = False
             diagnostic = {"slug": row["slug"], "status": "no_candidate",
+                          "exact_visible_page_dates": page_date_match,
                           "raw_html_chars": len(html),
                           "raw_candidates": raw_count,
                           "browser_status": browser_status,
@@ -114,6 +122,7 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
                 diagnostic["images"].append({
                     "status": reading.get("status"),
                     "qualification": result["status"],
+                    "qualification_diagnostics": result.get("diagnostics", {}),
                     "claim_types": sorted(result["claims"]),
                     "sha256": reading.get("sha256"),
                     "cache_hit": reading.get("cache_hit", False)})

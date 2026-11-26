@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - scripts/grossesondes_official_poster_rotation.py
+      - scripts/grossesondes_official_poster_ocr.py
+      - tests/test_grosses_official_poster_ocr.py
       - tests/test_grosses_official_poster_rotation.py
       - .github/workflows/grossesondes-festival-poster-rotation-preview.yml
   workflow_dispatch:
