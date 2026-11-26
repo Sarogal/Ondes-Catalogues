@@ -96,6 +96,57 @@ class PublishedOpenAgendaBillRepair(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     contract.plan(bad, ledger["approvals"][0], current, fixture.TODAY)
 
+    def test_preflight_composes_independent_maintenance_deltas(self):
+        base, current, ledger, fetch = self.initial(
+            ["Example Band", "guests : Other Band"],
+            "Example Band + guests : Other Band")
+        report = builder.build_promotional(current, ledger, fixture.TODAY,
+                                           fetch=fetch)
+        row = report["proposals"][0]
+        proposal = copy.deepcopy(ledger)
+        proposal["lineupCorrections"] = [row]
+        with mock.patch.object(contract, "network_fetch",
+                               side_effect=lambda url: fetch(url, {})):
+            before, counts_before = sync.merge(base, current, ledger, fixture.TODAY)
+            after, counts_after = sync.merge(base, current, proposal, fixture.TODAY)
+
+        # Exercise the exact-delta comparator with the independently
+        # validated Publisher's simultaneous exclusion and retirement.
+        # The individual maintenance contracts have their own real-Publisher
+        # tests; no authority is granted by the comparator's mock.
+        original = copy.deepcopy(current)
+        excluded = dict(current["events"][-1], id="other-event")
+        orphan = {"id": "orphan", "name": "Orphan Identity", "aliases": []}
+        original["events"].append(excluded)
+        original["artists"].append(orphan)
+        receipt = {"eventId": "other-event", "reason": "venue-name-genre-contamination",
+                   "date": fixture.TODAY.isoformat()}
+        ledger["editorialCorrections"] = [{"originalEvent": excluded}]
+        ledger["artistIdentityRetirements"] = [{"artistId": "orphan"}]
+        for cat, stats in ((before, counts_before), (after, counts_after)):
+            cat["editorialExclusions"] = [receipt]
+            cat["retiredArtistIds"] = ["orphan"]
+            stats.update(editorialExclusions=1, deferredEditorialCorrections=0,
+                         retiredArtists=1)
+        with mock.patch.object(sync, "merge", side_effect=[
+                (before, counts_before), (after, counts_after)]):
+            proposed, status = preflight.select(ledger, report, base, original,
+                                                fixture.TODAY)
+        self.assertTrue(status["validatedByPublisher"], status)
+        self.assertEqual(proposed["editorialCorrections"], ledger["editorialCorrections"])
+        self.assertEqual(proposed["artistIdentityRetirements"], ledger["artistIdentityRetirements"])
+        self.assertEqual(proposed["lineupCorrections"], [row])
+        for altered in (dict(after, retiredArtistIds=["orphan", "other"]),
+                        dict(after, events=after["events"][1:])):
+            with mock.patch.object(sync, "merge", side_effect=[
+                    (before, counts_before), (altered, counts_after)]):
+                rejected, status = preflight.select(ledger, report, base, original,
+                                                    fixture.TODAY)
+            self.assertEqual(rejected, ledger)
+            self.assertEqual(status["held"], 1)
+            self.assertFalse(status["validatedByPublisher"])
+            self.assertTrue(status["heldDiagnostics"])
+
     def test_ambiguous_pipe_and_network_failure_never_sign_correction(self):
         base, current, ledger, fetch = self.initial(
             ["Example Band | Other Band"], "Example Band | Other Band",
