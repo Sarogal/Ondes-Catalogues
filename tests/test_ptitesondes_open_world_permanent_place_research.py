@@ -1,10 +1,11 @@
 from datetime import date
 from copy import deepcopy
+from unittest.mock import patch
 import unittest
 from test_ptitesondes_open_world_permanent_place_evidence import (
     CITY, VENUE, URL, HTML, OSM,
 )
-from ptitesondes_open_world_permanent_place_research import named_query, research, cycle
+from ptitesondes_open_world_permanent_place_research import named_query, research, cycle, typographic_query, fetch_named
 
 DAY = date(2026, 11, 26)
 
@@ -75,6 +76,34 @@ class OpenWorldPermanentPlaceResearchTests(unittest.TestCase):
         state["records"][0]["public_eligible"] = True
         with self.assertRaises(ValueError):
             cycle(candidates, state, DAY)
+
+    def test_typographic_query_expands_accents_case_and_punctuation(self):
+        q = typographic_query("Saint-Étienne", "Médiathèque-Ludothèque")
+        self.assertIn('[eéèêë]', q)
+        self.assertIn('[[:space:][:punct:]’–—]+', q)
+        self.assertIn('",i]', q)
+        self.assertNotIn("Médiathèque-Ludothèque", q)
+        with patch("ptitesondes_open_world_permanent_place_research.fetch_osm_query",
+                   return_value=OSM) as provider:
+            self.assertIs(fetch_named("Saint-Étienne", "Médiathèque-Ludothèque"), OSM)
+        self.assertEqual(provider.call_args.args[0], q)
+
+    def test_typographic_search_never_copies_regex_or_query_injection(self):
+        q = typographic_query('Ville";out;', 'Lieu .* "test"')
+        self.assertNotIn('";out;', q)
+        self.assertNotIn('.*', q)
+        with self.assertRaises(ValueError):
+            typographic_query("Ville\n", VENUE)
+
+    def test_normalized_homonyms_remain_ambiguous(self):
+        osm = deepcopy(OSM)
+        second = deepcopy(osm["elements"][0])
+        second["id"] += 1
+        second["tags"]["name"] = VENUE.upper()
+        osm["elements"].append(second)
+        _, _, summary = research(report(row()), None, DAY, osm_fetch=lambda *_: osm,
+                                  page_read=lambda _: self.fail("ambiguous identity"))
+        self.assertEqual(summary["counts"], {"map_identity_missing_or_ambiguous": 1})
 
     def test_input_injection_and_permission_flags(self):
         query = named_query('Ville";out;', 'Lieu "test"')
