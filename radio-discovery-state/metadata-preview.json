@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 101,
-  "distinctArtistHints": 118,
+  "stationsWithArtistHints": 107,
+  "distinctArtistHints": 124,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -2253,6 +2253,114 @@
           "date": "2026-11-26",
           "artistHint": "Michael Schulte",
           "titleSha256": "0f940fb0cd1c1f3d834ce8d6a32e7bfcb8504a636d98aacafcd382dc24f9d9a3"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "ec5f9687-4dc2-4358-ad16-bed7a17cc0a0",
+      "streamSha256": "5d44c7eb3a5fc33710011ad88bd5cd1b2cc0ed71e1c0607865effefc39e38d34",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "EVA UNDER FIRE",
+          "titleSha256": "fc4195d2c6d148bcf0b7aed9b8024930f9f9da145eb206c55a429c7096aafb2b"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "ed02a49b-11e2-4de3-b279-279529290257",
+      "streamSha256": "4e27e4d6738f20999869a79a2470b349aa03f07f91b60abd99443bce0f4e76cb",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Danger Danger",
+          "titleSha256": "6d61d005b34eaeca1479e1312a86f6d4a8e733d0731370a43034e5a51247cdd0"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "f27af422-8ec6-48eb-aa62-f73a1d629eb3",
+      "streamSha256": "cedd7ef8b0e550a707e9fd7ff45ca15f3e4f7e9c73dadfcae6ba9d91d7f58aae",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "The Presidents of the United States of America",
+          "titleSha256": "233d6f4cc7e2ae83f8e7f171edb466a3ae242308325f735298f7d291d25176ad"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "f2d38d55-01ef-4d78-9686-61f54d48ee03",
+      "streamSha256": "842ccd47492aa3a28fbb799b2cddbad6acdbcceaefe54a0de086a3b9a73651ad",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Blodwen",
+          "titleSha256": "de8acb5a270b41303e2c412390da6aa84ef57aa5ae1b21eb806361552f1bd04d"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "f4df535d-d65b-46ad-8498-df5b56a011c7",
+      "streamSha256": "e44844cc2e8cc0cfe95618a5e3229acd019f69703518d6add6c44019e890e355",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Elektron",
+          "titleSha256": "300189cc6e37b37bcae9f35caccfec83053ddb02320ad087a73d32c79d935239"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "f95f4310-ff8c-4106-9b8e-18f05e594f1f",
+      "streamSha256": "53948485098b57585dda110ae9c67bcf5fca741c1335e4b93742af7f7b973ef9",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Steamhammer",
+          "titleSha256": "0e9b3aa04e8a8308827108f4a300821d9c6b657f033c29275ca63c9f10ae8993"
         }
       ],
       "alternativeVersion": 0,

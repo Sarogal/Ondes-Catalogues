@@ -5,10 +5,10 @@
   "approvedCount": 0,
   "publicationAllowed": false,
   "analyzerVersion": 2,
-  "attemptedCount": 0,
-  "candidateCount": 2,
+  "attemptedCount": 2,
+  "candidateCount": 4,
   "counts": {
-    "broadcaster_unlinked": 2
+    "broadcaster_unlinked": 4
   },
   "records": [
     {
@@ -37,6 +37,50 @@
       "goStationId": "go-station-000034",
       "stationuuid": "558c4adf-b1ab-4c2e-99ab-ae2755f2a538",
       "streamSha256": "fd8bf257cf563d6709895a38eeda27bc64e7f8da0d60136c8d5c81e454e1a4b7",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "status": "broadcaster_unlinked",
+          "declaration": null,
+          "pageSha256": null,
+          "rootPageSha256": null,
+          "route": null,
+          "continuity": "not_checked",
+          "analyzerVersion": 2
+        }
+      ],
+      "positiveDates": [],
+      "continuityDates": [],
+      "reviewStatus": "broadcaster_unlinked",
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "goStationId": "go-station-000157",
+      "stationuuid": "8677e3a3-291f-4608-9c50-5a9f50e91b0e",
+      "streamSha256": "53f7e40692bd633234f4098d4b97fc058e5aa09ee7ec9d12a3ec9cd6b04efcee",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "status": "broadcaster_unlinked",
+          "declaration": null,
+          "pageSha256": null,
+          "rootPageSha256": null,
+          "route": null,
+          "continuity": "not_checked",
+          "analyzerVersion": 2
+        }
+      ],
+      "positiveDates": [],
+      "continuityDates": [],
+      "reviewStatus": "broadcaster_unlinked",
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "goStationId": "go-station-000157",
+      "stationuuid": "bd8a6b13-7a0e-4a07-b4bb-ed6c18aab910",
+      "streamSha256": "f62f67063dccbecf449ab631a4cb516850d173ed55515dcfcd7ac8cf95b98030",
       "observations": [
         {
           "date": "2026-11-26",

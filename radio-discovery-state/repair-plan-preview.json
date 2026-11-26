@@ -10,10 +10,15 @@
     {
       "goStationId": "go-station-000034",
       "reason": "broadcaster_unlinked"
+    },
+    {
+      "goStationId": "go-station-000157",
+      "reason": "multiple_candidates"
     }
   ],
   "deferredCounts": {
-    "broadcaster_unlinked": 2
+    "broadcaster_unlinked": 2,
+    "multiple_candidates": 1
   },
   "proposalCount": 0,
   "proposals": [],
