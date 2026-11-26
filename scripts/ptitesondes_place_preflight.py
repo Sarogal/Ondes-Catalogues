@@ -336,9 +336,11 @@ def merge_open_world_drafts(current, drafts, today):
         try:
             if p.get("reviewed_at") != today.isoformat():
                 raise ValueError("stale fresh draft")
-            if (not re.fullmatch(r"osm-node-[1-9]\d*", p.get("id", ""))
-                    or p.get("geo_source_url") !=
-                    "https://www.openstreetmap.org/node/" + p["id"].removeprefix("osm-node-")):
+            from ptitesondes_places import ban_place_provenance
+            osm_identity = (re.fullmatch(r"osm-node-[1-9]\d*", p.get("id", ""))
+                    and p.get("geo_source_url") ==
+                    "https://www.openstreetmap.org/node/" + p["id"].removeprefix("osm-node-"))
+            if not osm_identity and not ban_place_provenance(p):
                 raise ValueError("draft identity mismatch")
             validate({"version": 1, "updated_at": today.isoformat(),
                       "places": [p]})

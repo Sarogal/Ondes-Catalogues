@@ -26,7 +26,9 @@ class PlaceResearchCLITests(unittest.TestCase):
                     "--date", DAY.isoformat()]
             real_cycle = mod.cycle
             def offline_cycle(report, previous, today, **kwargs):
+                self.assertTrue(callable(kwargs.pop("ban_research")))
                 return real_cycle(report, previous, today,
+                    ban_research=lambda _: None,
                     osm_fetch=lambda *_: {"elements": []},
                     page_read=lambda _: self.fail("unexpected page read"), **kwargs)
             with patch.object(sys, "argv", args), patch.object(mod, "cycle", side_effect=offline_cycle):

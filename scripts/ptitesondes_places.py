@@ -4,11 +4,12 @@ These are permanent places, NOT sessions. Do not generate dated outings
 from opening hours, a season period or an exhibition range.
 """
 from datetime import date
+from hashlib import sha256
 import json
 import math
 from pathlib import Path
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
 import unicodedata
 
 CATEGORIES = {
@@ -36,6 +37,27 @@ def norm(s):
     normalized = unicodedata.normalize("NFKD", str(s or "").lower())
     return " ".join(re.sub(r"[^a-z0-9]+", " ", "".join(
         c for c in normalized if not unicodedata.combining(c))).split())
+
+
+def ban_place_id(city, name):
+    return "ban-place-" + sha256((norm(city) + "\0" + norm(name)).encode()).hexdigest()[:24]
+
+
+def ban_place_source_url(address):
+    return "https://data.geopf.fr/geocodage/search?" + urlencode(
+        {"q": address.replace(", ", " ", 1), "limit": 2})
+
+
+def ban_place_provenance(p):
+    """Only the canonical exact-address query and deterministic place identity."""
+    try:
+        return (p["id"] == ban_place_id(p["city"], p["name"])
+                and p["geo_source_url"] == ban_place_source_url(p["address"])
+                and bool(re.fullmatch(
+                    r"[0-9]{1,4}(?: (?:bis|ter|quater|[a-z]))? .{3,120}, [0-9]{5} .{2,180}",
+                    p["address"], re.I)))
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return False
 
 
 def hostname(url):
@@ -102,7 +124,10 @@ def validate(doc):
             raise ValueError("Activités invalides")
         if hostname(p["official_url"]) == hostname(p["geo_source_url"]):
             raise ValueError("La source géographique doit être indépendante")
-        if (not p["geo_source_url"].startswith("https://mapcarta.com/fr/")
+        if p["id"].startswith("ban-place-") or p["geo_source_url"].startswith("https://data.geopf.fr/"):
+            if not ban_place_provenance(p):
+                raise ValueError("Provenance IGN/BAN du lieu invalide")
+        elif (not p["geo_source_url"].startswith("https://mapcarta.com/fr/")
                 and not p["geo_source_url"].startswith("https://www.openstreetmap.org/")
                 and not p["geo_source_url"].startswith("https://www.tofromfrance.com/")):
             raise ValueError("Provenance GPS non autorisée")

@@ -149,7 +149,8 @@ def _inspect(row, osm_fetch, page_read):
 
 def research(report, previous, today, *, limit=DEFAULT_BATCH,
              osm_fetch=fetch_named, page_read=read_unknown_https,
-             time_budget=None, clock=monotonic, stop_on_outage=False):
+             time_budget=None, clock=monotonic, stop_on_outage=False,
+             ban_research=None):
     if (type(today) is not date or type(limit) is not int or not 1 <= limit <= MAX_BATCH
             or not isinstance(report, dict) or report.get("schema") !=
             "ptitesondes.place_review.v1" or not isinstance(report.get("records"), list)
@@ -159,6 +160,8 @@ def research(report, previous, today, *, limit=DEFAULT_BATCH,
             (type(time_budget) is not int or not 1 <= time_budget <= LIVE_BUDGET_SECONDS)
             or not callable(clock) or type(stop_on_outage) is not bool):
         raise ValueError("invalid_place_research_budget")
+    if ban_research is not None and not callable(ban_research):
+        raise ValueError("invalid_ban_research")
     if previous is None:
         previous = {"schema": SCHEMA, "sequence": 0, "attempts": {}}
     if (not isinstance(previous, dict) or set(previous) != {"schema", "sequence", "attempts"}
@@ -190,19 +193,46 @@ def research(report, previous, today, *, limit=DEFAULT_BATCH,
     started = clock() if time_budget is not None else None
     consecutive_unavailable = 0
     stop_reason = "batch_complete"
+    fallback_attempts = fallback_matches = map_skipped = 0
     for key in selected:
         if started is not None and clock() - started >= time_budget:
             stop_reason = "time_budget"
             break
-        if stop_on_outage and consecutive_unavailable >= MAX_CONSECUTIVE_UNAVAILABLE:
+        outage = stop_on_outage and consecutive_unavailable >= MAX_CONSECUTIVE_UNAVAILABLE
+        if outage and ban_research is None:
             stop_reason = "provider_outage"
             break
         row = rows[key]
-        status, proof = _inspect(row, osm_fetch, page_read)
-        if status in ("research_source_unavailable", "map_response_incomplete"):
-            consecutive_unavailable += 1
+        if outage:
+            map_skipped += 1
+            status, proof = "research_source_unavailable", None
         else:
-            consecutive_unavailable = 0
+            status, proof = _inspect(row, osm_fetch, page_read)
+            if status in ("research_source_unavailable", "map_response_incomplete"):
+                consecutive_unavailable += 1
+            else:
+                consecutive_unavailable = 0
+        # Don't override a positive map contradiction with a second pathway.
+        # An unavailable or incomplete map, missing feature/address/site, or
+        # unmatched official page can be researched independently.
+        if (proof is None and ban_research is not None
+                and status not in ("postal_evidence_conflict",
+                                   "map_website_missing_or_conflicting")
+                and (started is None or clock() - started < time_budget)):
+            fallback_attempts += 1
+            try:
+                alternative = ban_research(row)
+            except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
+                alternative = None
+            if (isinstance(alternative, dict)
+                    and alternative.get("method") == "dila_official_place_address_plus_ban"
+                    and alternative.get("public_eligible") is False
+                    and alternative.get("publication_ready") is False
+                    and alternative.get("public_writes") == 0
+                    and alternative.get("city") == row["city"]
+                    and alternative.get("venue") == row["venue"]):
+                status, proof = "independent_evidence_found", alternative
+                fallback_matches += 1
         seq += 1
         attempts[key] = seq
         results.append({"city": row["city"], "venue": row["venue"],
@@ -212,6 +242,9 @@ def research(report, previous, today, *, limit=DEFAULT_BATCH,
     summary = {"eligible_for_research": len(rows), "examined": len(results),
                "unattempted": len(set(rows) - set(attempts)),
                "selected": len(selected), "stop_reason": stop_reason,
+               "ban_fallback_attempts": fallback_attempts,
+               "ban_fallback_matches": fallback_matches,
+               "map_skipped_after_outage": map_skipped,
                "counts": dict(Counter(r["status"] for r in results)),
                "publication_ready": False, "public_writes": 0}
     return results, state, summary
@@ -280,6 +313,10 @@ def public_diagnostic_lines(summary):
     reason = summary.get("stop_reason")
     if isinstance(reason, str) and reason in PUBLIC_STOP_REASONS:
         lines.append("stop_reason: " + reason)
+    for label in ("ban_fallback_attempts", "ban_fallback_matches", "map_skipped_after_outage"):
+        count = summary.get(label)
+        if type(count) is int and 0 <= count <= MAX_BATCH:
+            lines.append(f"{label}: {count}")
     for key, allowed in (
         ("counts", PUBLIC_RESULT_CODES),
         ("osm_transport", tuple(
@@ -313,8 +350,10 @@ def main():
         previous = (_read(args.previous, 6_000_000)[0]
                     if args.previous.exists() or args.previous.is_symlink() else None)
         stage = "research_cycle"
+        from ptitesondes_open_world_permanent_place_ban import discover_official_ban
         state, summary = cycle(report, previous, args.date, limit=MAX_BATCH,
-                               time_budget=LIVE_BUDGET_SECONDS, stop_on_outage=True)
+                               time_budget=LIVE_BUDGET_SECONDS, stop_on_outage=True,
+                               ban_research=discover_official_ban)
         stage = "persist_result"
         _atomic_json(args.output, state)
     except (ValueError, OSError, TypeError, KeyError, OverflowError, UnicodeError):
