@@ -22,6 +22,45 @@ class ConcurrentPublishRetryGuardTests(unittest.TestCase):
         self.assertIn("python scripts/grossesondes_cloud_sync.py --mode", w)
         self.assertIn("GROSSES_ONDES_CLOUD_SYNC", w)
 
+    def test_retry_repeats_original_numeric_slot_and_budget(self):
+        import sys
+        sys.path.insert(0, str(ROOT / "scripts"))
+        from grossesondes_cloud_sync import resolve_retry_scan, official_update_scan_limit
+        from grossesondes_existing_official_updates import signed_rotation
+        from datetime import date
+        day = "2026-11-26"
+        slot = date.fromisoformat(day).toordinal() * 2
+        # A retry crossing the next half-day must not select a different batch.
+        for event, budget in (("push", 48), ("workflow_run", 24)):
+            self.assertEqual(official_update_scan_limit(event), budget)
+            tick, limit = resolve_retry_scan("workflow_dispatch", slot + 1,
+                                             "true", str(slot), str(budget))
+            self.assertEqual((tick, limit), (slot, budget))
+            rows = {"schema": 1, "festivals": [
+                {"officialSite": "https://festival-%d.example.fr/" % i,
+                 "startDate": "2027-07-01", "endDate": "2027-07-02"}
+                for i in range(53)]}
+            before = signed_rotation(rows, day, limit=budget, tick=slot)
+            after = signed_rotation(rows, day, limit=official_update_scan_limit(
+                "workflow_dispatch", limit), tick=tick)
+            self.assertEqual(before, after)
+        self.assertEqual(resolve_retry_scan("workflow_dispatch", slot, "true", "", ""),
+                         (slot, 48))
+        self.assertEqual(resolve_retry_scan("push", slot, "false", "", ""),
+                         (slot, None))
+        for args in (("push", slot, "true", str(slot), "48"),
+                     ("workflow_dispatch", slot, "false", str(slot), "48"),
+                     ("workflow_dispatch", slot, "true", str(slot), "60"),
+                     ("workflow_dispatch", slot, "true", str(slot - 15), "48"),
+                     ("workflow_dispatch", slot, "true", str(slot + 1), "48"),
+                     ("workflow_dispatch", slot, "true", "", "48")):
+            with self.assertRaises(ValueError):
+                resolve_retry_scan(*args)
+        self.assertIn('retry_scan_tick="$SCAN_TICK"', self.workflow)
+        self.assertIn('retry_scan_limit="$SCAN_LIMIT"', self.workflow)
+        self.assertIn("steps.sync.outputs.scan_tick", self.workflow)
+        self.assertIn("steps.sync.outputs.scan_limit", self.workflow)
+
     def test_no_reuse_of_stale_candidate_or_second_nonfastforward_retry(self):
         w = self.workflow
         self.assertIn("git push origin HEAD:main", w)

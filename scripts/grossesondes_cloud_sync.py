@@ -126,13 +126,35 @@ def signed_tourism_scan_limit(event_name):
     return 20 if event_name == "push" else 4
 
 
-def official_update_scan_limit(event_name):
-    """Recheck a broader bounded group after a trusted code rollout.
-
-    Regular morning/evening schedules retain their complementary rotation.
-    Every official update is still independently fetched and verified.
-    """
+def official_update_scan_limit(event_name, retry_limit=None):
+    """Keep normal rotation, or repeat the original bounded retry budget."""
+    if retry_limit is not None:
+        if event_name != "workflow_dispatch" or type(retry_limit) is not int or retry_limit not in (24, 48):
+            raise ValueError("Invalid publication retry scan budget")
+        return retry_limit
     return 48 if event_name == "push" else 24
+
+
+def resolve_retry_scan(event_name, default_tick, retry_once, tick, limit):
+    """Only numeric scheduling selectors, never stale proof or private URLs.
+
+    Preserve both dimensions of the original scan, even across a Paris
+    half-day boundary. The fresh signed catalogue and live proof remain
+    mandatory; a stale/invalid retry selector fails closed.
+    """
+    if retry_once == "false" and not tick and not limit:
+        return default_tick, None
+    if event_name != "workflow_dispatch" or retry_once != "true":
+        raise ValueError("Retry scan selectors outside independent retry")
+    # Compatibility with already queued old dispatches. A new retry always
+    # supplies both values. The old retry used 24 even after a 48-site push.
+    if not tick and not limit:
+        return default_tick, 48
+    if (not re.fullmatch(r"[1-9][0-9]{0,11}", tick)
+            or limit not in ("24", "48")
+            or not 0 <= default_tick - int(tick) <= 14):
+        raise ValueError("Invalid or stale publication retry scan")
+    return int(tick), int(limit)
 
 
 def git_blob_sha(data):
@@ -1435,6 +1457,12 @@ def main():
     rotation_tick = (int(raw_rotation) if raw_rotation else
                      today.toordinal() * 2 +
                      (1 if datetime.now(ZoneInfo("Europe/Paris")).hour >= 15 else 0))
+    event_name = os.environ.get("GITHUB_EVENT_NAME", "")
+    rotation_tick, retry_limit = resolve_retry_scan(
+        event_name, rotation_tick,
+        os.environ.get("GROSSES_ONDES_RETRY_ONCE", "false"),
+        os.environ.get("GROSSES_ONDES_RETRY_SCAN_TICK", ""),
+        os.environ.get("GROSSES_ONDES_RETRY_SCAN_LIMIT", ""))
     out,report=build_candidate(
         snapshot,published,patch,sources,today.isoformat(),
         trusted_published=True, geo_review=geo_review,
@@ -1443,8 +1471,9 @@ def main():
         official_update_browser_fetcher=isolated_browser_fetch,
         official_update_browser_sites=tuple(isolated_pages),
         official_update_tick=rotation_tick,
-        official_update_limit=official_update_scan_limit(
-            os.environ.get("GITHUB_EVENT_NAME", "")))
+        official_update_limit=official_update_scan_limit(event_name, retry_limit))
+    report["official_update_scan_tick"] = rotation_tick
+    report["official_update_scan_limit"] = official_update_scan_limit(event_name, retry_limit)
     report["patch"]=path
     report["patch_age_days"]=(today-datetime.strptime(patch["generated_at"],"%Y-%m-%d").date()).days
     report["stale_patch_reproved_live"]=report["patch_age_days"]>7

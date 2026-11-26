@@ -100,6 +100,14 @@ on:
         description: Réessai unique après une concurrence de publication
         type: boolean
         default: false
+      retry_scan_tick:
+        description: Créneau numérique du contrôle initial (réessai uniquement)
+        type: string
+        default: ''
+      retry_scan_limit:
+        description: Budget numérique du contrôle initial (réessai uniquement)
+        type: string
+        default: ''
 
 permissions:
   contents: write
@@ -244,12 +252,17 @@ jobs:
         env:
           GROSSES_ONDES_INTAKE_READ_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
           GROSSES_ONDES_CLOUD_SYNC: ${{ vars.GROSSES_ONDES_CLOUD_SYNC }}
+          GROSSES_ONDES_RETRY_ONCE: ${{ inputs.retry_once || false }}
+          GROSSES_ONDES_RETRY_SCAN_TICK: ${{ inputs.retry_scan_tick || '' }}
+          GROSSES_ONDES_RETRY_SCAN_LIMIT: ${{ inputs.retry_scan_limit || '' }}
           # Keep scan rotation tied to the Paris half-day slot in
           # grossesondes_cloud_sync.py, not github.run_number: PR-only test
           # runs advance that counter without scanning any official sites.
           MODE: ${{ (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_run') && vars.GROSSES_ONDES_CLOUD_SYNC == 'enabled' && 'publish' || inputs.mode || 'preview' }}
         run: |
           python scripts/grossesondes_cloud_sync.py --mode "$MODE"
+          # These are numeric scheduling parameters only, not cached proofs.
+          python -c 'import json; d=json.load(open("/tmp/grossesondes_cloud/report.json")); print("scan_tick="+str(d["official_update_scan_tick"])); print("scan_limit="+str(d["official_update_scan_limit"]))' >> "$GITHUB_OUTPUT"
           if git diff --quiet -- docs/grossesondes/festivals.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
@@ -311,6 +324,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RETRY_ONCE: ${{ inputs.retry_once || false }}
+          SCAN_TICK: ${{ steps.sync.outputs.scan_tick }}
+          SCAN_LIMIT: ${{ steps.sync.outputs.scan_limit }}
         run: |
           set -euo pipefail
           if [ "$RETRY_ONCE" = "true" ]; then
@@ -320,7 +335,8 @@ jobs:
           # workflow_dispatch is an independent, sequential run: tests, fresh
           # private intake, independent official proof, signed main recheck.
           gh workflow run grossesondes-cloud-sync.yml --repo "$GITHUB_REPOSITORY" \
-            --ref main -f mode=publish -f retry_once=true
+            --ref main -f mode=publish -f retry_once=true \
+            -f retry_scan_tick="$SCAN_TICK" -f retry_scan_limit="$SCAN_LIMIT"
       - name: Autoriser Pages uniquement après push réel du commit prouvé
         id: confirm
         env:
