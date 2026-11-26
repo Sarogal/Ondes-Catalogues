@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 124,
   "dueNameCount": 26,
-  "attemptedCount": 1,
+  "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "queens of the stone age",
+  "retryAfterKey": "sodom",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -893,6 +893,15 @@
       "genreSource": "musicbrainz-community",
       "sourceUrl": "https://musicbrainz.org/artist/04f52a1e-5942-4665-90c8-acc03992b08f",
       "artistName": "PööLoY GLääNZ",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "r.e.m.": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "R.E.M.",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,
