@@ -847,6 +847,30 @@ jobs:
             echo "::error::Qualification des lieux échouée."
             exit 1
           fi
+          # Open-world research: never a proposal, and all evidence stays private.
+          OPEN_WORLD_PLACE_OK=0
+          if python public/scripts/ptitesondes_open_world_permanent_place_research.py \
+              --qualification "$OUT/lieux-qualification.json" \
+              --previous "$STATE/lieux-open-world-research.json" \
+              --output "$OUT/lieux-open-world-research.json" --date "$DAY" \
+              > "$LOG/lieux-open-world-research.log" 2>&1; then
+            OPEN_WORLD_PLACE_OK=1
+            python - "$LOG/lieux-open-world-research.log" <<'PY'
+          import json, os, sys
+          r = json.load(open(sys.argv[1], encoding="utf-8"))
+          fields = ("eligible_for_research", "examined", "unattempted", "stored_private_results")
+          assert all(type(r.get(k)) is int and r[k] >= 0 for k in fields)
+          assert r["publication_ready"] is False and r["public_writes"] == 0
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+              out.write("### Recherche générique des lieux (privée)\n")
+              for k in fields:
+                  line = f"- {k}: {r[k]}"
+                  print(line)
+                  out.write(line + "\n")
+          PY
+          else
+            echo "::warning::Recherche générique des lieux indisponible ; état privé précédent conservé."
+          fi
           if ! python src/automation/place_ministry_current_audit.py --date "$DAY" --backlog "$OUT/lieux-backlog.json" --output "$OUT/lieux-current-municipal-audit.json" --summary "$OUT/lieux-current-municipal-summary.json" > "$LOG/lieux-ministry.log" 2>&1; then
             echo "::error::Audit municipal échoué."
             exit 1
@@ -901,6 +925,11 @@ jobs:
             git -C state config user.name 'github-actions[bot]'
             git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git -C state add -- automation-intake/ptitesondes/lieux-backlog.json automation-intake/ptitesondes/lieux-qualification.json automation-intake/ptitesondes/lieux-current-municipal-audit.json automation-intake/ptitesondes/lieux-osm-poi-triage.json automation-intake/ptitesondes/lieux-official-proof.json automation-intake/ptitesondes/lieux-release-review.json
+            if [[ "$OPEN_WORLD_PLACE_OK" == 1 ]]; then
+              test -s "$OUT/lieux-open-world-research.json"
+              cp "$OUT/lieux-open-world-research.json" "$STATE/lieux-open-world-research.json"
+              git -C state add -- automation-intake/ptitesondes/lieux-open-world-research.json
+            fi
             if [[ "$WATCH_OK" == 1 ]]; then
               cp "$OUT/lieux-agenda-watch.json" "$STATE/lieux-agenda-watch.json"
               cp "$OUT/lieux-agenda-candidates.json" "$STATE/lieux-agenda-candidates.json"
