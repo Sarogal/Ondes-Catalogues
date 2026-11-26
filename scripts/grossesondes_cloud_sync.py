@@ -44,7 +44,7 @@ from grossesondes_existing_official_updates import (
     COMMUNE_FIELDS as COMMUNE_UPDATE_FIELDS,
     clean_obsolete_date_notes, verified_artist_alias_cleanup,
     expected_ticket_notes_after_official_sale,
-    parsed_seasonal_ticket_summary,
+    parsed_seasonal_ticket_summary, valid_municipal_venue_label, municipal_venue_note,
 )
 from grossesondes_structured_edition import (
     PROOF_MODE as EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
@@ -284,7 +284,7 @@ def _verified_official_update_delta(old, new):
     if (not changed or not changed <= OFFICIAL_UPDATE_FIELDS or
             not ({"lineup", "price"} & changed)
             and not (COMMUNE_UPDATE_FIELDS & changed)
-            and not newly_dated and "notes" not in changed):
+            and not newly_dated and "notes" not in changed and "venue" not in changed):
         return False
     date_fields = {"startDate", "endDate", "days", "dateRangeIsContinuous",
                    "status", "verificationStatus"}
@@ -317,6 +317,25 @@ def _verified_official_update_delta(old, new):
             return False
     elif changed & date_fields:
         return False
+    if "venue" in changed:
+        from grossesondes_openagenda_linked_edition import MUNICIPAL_PUBLIC_CONFIDENCE
+        geo = old.get("geoVerification")
+        site = old.get("officialSite")
+        if (old.get("venue") is not None
+                or old.get("sourceConfidence") != MUNICIPAL_PUBLIC_CONFIDENCE
+                or not isinstance(site, str) or old.get("source") != site
+                or not valid_municipal_venue_label(new.get("venue"))
+                or old.get("geoPrecision") != "commune"
+                or old.get("showOnMap") is not True
+                or not isinstance(geo, dict)
+                or geo.get("proofMode") != "current-edition-commune-direct-official.v1"
+                or geo.get("markerMeaning") != "centre_indicatif_de_commune"
+                or changed & COMMUNE_UPDATE_FIELDS
+                or not isinstance(new.get("auditSources"), list)
+                or not any(u != site and isinstance(u, str)
+                           and urlsplit(u).hostname == urlsplit(site).hostname
+                           for u in new["auditSources"])):
+            return False
     if "notes" in changed:
         # A Publisher may remove an obsolete undated claim OR reconcile a
         # specifically superseded ticket-status sentence. This guard verifies
@@ -337,7 +356,9 @@ def _verified_official_update_delta(old, new):
             old["notes"], match.group(1) + " €")
             if match else old["notes"])
         if (new["notes"] != clean_obsolete_date_notes(old["notes"])
-                and new["notes"] != ticket_note):
+                and new["notes"] != ticket_note
+                and not ("venue" in changed and new["notes"] == municipal_venue_note(
+                    dict(new, notes=old["notes"])))):
             return False
     if COMMUNE_UPDATE_FIELDS & changed:
         # Verify the certified marker IN ISOLATION so a price/roster update
