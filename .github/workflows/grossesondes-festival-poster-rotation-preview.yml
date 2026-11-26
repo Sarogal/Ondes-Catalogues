@@ -1,0 +1,43 @@
+name: Grosses Ondes — rotation affiches OCR, lecture seule
+on:
+  pull_request:
+    paths:
+      - scripts/grossesondes_official_poster_rotation.py
+      - tests/test_grosses_official_poster_rotation.py
+      - .github/workflows/grossesondes-festival-poster-rotation-preview.yml
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: Existing public festival slug (optional)
+        required: false
+        type: string
+  schedule:
+    - cron: '23 */4 * * *'
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    env:
+      OMP_THREAD_LIMIT: '2'
+      FESTIVAL_SLUG: ${{ inputs.slug }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install local OCR
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-fra tesseract-ocr-eng python3-pil
+      - name: Offline rotation tests
+        run: /usr/bin/python3 -m unittest discover -s tests -p test_grosses_official_poster_rotation.py -v
+      - name: Read-only real poster regression (public catalogue)
+        if: github.event_name == 'pull_request'
+        run: /usr/bin/python3 scripts/grossesondes_official_poster_rotation.py --catalogue docs/grossesondes/festivals.json --slug festival-666-2027
+      - name: Read-only public catalogue rotation
+        if: github.event_name != 'pull_request'
+        run: |
+          args=(--catalogue docs/grossesondes/festivals.json)
+          if [[ -n "$FESTIVAL_SLUG" ]]; then args+=(--slug "$FESTIVAL_SLUG"); fi
+          /usr/bin/python3 scripts/grossesondes_official_poster_rotation.py "${args[@]}"

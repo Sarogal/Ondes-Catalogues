@@ -71,6 +71,55 @@ MOTO_ARTICLE = (
 
 
 class ExistingOfficialFestivalTests(unittest.TestCase):
+    def test_current_official_poster_discovery_is_review_only(self):
+        from grossesondes_existing_official_updates import current_official_poster_candidates
+        site = "https://festival-exemple.fr/"
+        row = festival("festival-123", site)
+        row["name"] = "Festival 123 2027"
+        html = ('<main><img src="/images/123-2027.jpg">'
+                '<img src="/images/123-2026.jpg">'
+                '<img src="/images/123-2026-2027.jpg">'
+                '<img src="https://external.example/123-2027.jpg">'
+                '<img hidden src="/images/affiche-2027.png">'
+                '<div hidden><img src="/images/poster-2027.jpg"></div>'
+                '<img src="/images/other-2027.png">'
+                '<img src="/images/123-2027.svg">'
+                '<img src="/images/123-2027.jpg?x=1">'
+                '<footer><img src="/images/123-2027-footer.jpg"></footer></main>')
+        self.assertEqual(current_official_poster_candidates(html, site, row),
+                         [site + "images/123-2027.jpg"])
+        self.assertEqual(row["lineup"], [])
+        self.assertIsNone(row["lat"])
+
+    def test_poster_hero_and_lazy_images_but_not_logo_or_hidden_navigation(self):
+        from grossesondes_existing_official_updates import current_official_poster_candidates
+        site = "https://festival-exemple.fr/"
+        row = festival("festival-123", site)
+        row["name"] = "Festival 123 2027"
+        html = ('<header><img src="/logo-123-2027.jpg">'
+                '<img src="/placeholder.png" data-src="/images/123-2027.jpg">'
+                '<nav><img src="/poster-2027.jpg"></nav></header>'
+                '<main><img data-original="/affiche-2027.png">'
+                '<img hidden data-src="/hidden-123-2027.jpg">'
+                '<img data-lazy-src="https://outside.example/123-2027.jpg"></main>')
+        self.assertEqual(current_official_poster_candidates(html, site, row),
+                         [site + "affiche-2027.png", site + "images/123-2027.jpg"])
+
+    def test_poster_neutral_filename_can_use_own_editorial_metadata(self):
+        from grossesondes_existing_official_updates import current_official_poster_candidates
+        site = "https://festival-exemple.fr/"
+        row = festival("festival-123", site)
+        row["name"] = "Festival 123 2027"
+        html = ('<main><img src="/a.jpg" alt="Affiche 2027">'
+                '<img src="/b.png" title="Affiche Festival 123">'
+                '<img src="/c.jpg" alt="Affiche 2026">'
+                '<img src="/2026.jpg" alt="Affiche 2027">'
+                '<img src="/d.jpg" alt="Logo Festival 123">'
+                '<img src="/e.jpg" alt="Affiche">'
+                '<img hidden src="/f.jpg" alt="Affiche 2027"></main>')
+        self.assertEqual(current_official_poster_candidates(html, site, row),
+                         [site + "a.jpg", site + "b.png"])
+
     def test_multivenue_homonym_uses_only_current_named_venue_address(self):
         from grossesondes_openagenda_linked_edition import PROFESSIONAL_PUBLIC_CONFIDENCE
         from grossesondes_existing_official_updates import multivenue_department_from_access
@@ -90,6 +139,14 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
                 "<p>21 rue des Arts<br>39000 COLONNE</p></main>")
         self.assertEqual(multivenue_department_from_access(event, row, "Colonne",
             lambda _: info), ("39", access))
+        for spelling in ("6 &amp; 7", "6, 7", "6-7"):
+            self.assertEqual(multivenue_department_from_access(
+                event.replace("6 et 7", spelling), row, "Colonne",
+                lambda _: info), ("39", access), spelling)
+        self.assertIsNone(multivenue_department_from_access(
+            event.replace("6 et 7", "6 &amp; 8"), row, "Colonne",
+            lambda _: info))
+
         for bad in (info.replace("Salle des Rives", "Bureau administratif"),
                     info.replace("COLONNE", "Autreville"),
                     info.replace("39000", "20000"),
