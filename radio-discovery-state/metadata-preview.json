@@ -4,9 +4,25 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 24,
-  "distinctArtistHints": 27,
+  "stationsWithArtistHints": 26,
+  "distinctArtistHints": 31,
   "records": [
+    {
+      "stationuuid": "017f1b35-7330-4ccc-a8eb-0544a7a9b611",
+      "streamSha256": "2c9ec5aa863946e78cdd1173b91c3693693c72bc0ee0fb2dc4873b381b850c80",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "ZZ Top",
+          "titleSha256": "b97c07e390a36747d43181d52fce801aa9b6506d017e9c7e422eef6609ab41e7"
+        }
+      ]
+    },
     {
       "stationuuid": "0231aca1-4e0c-41e4-9b17-74538f1d3c25",
       "streamSha256": "dd296e44bf28597be6fe06a86d97aa060e9cf544930d6db081702fc22d14bdf9",
@@ -66,6 +82,16 @@
       ]
     },
     {
+      "stationuuid": "0bc40b21-cd89-4dcb-ad47-18528395168a",
+      "streamSha256": "1120980f1d05276076fcbf6adcfda68bd56292fa889300d48907cf0fa360048b",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": []
+    },
+    {
       "stationuuid": "10d01aca-f5de-4591-b4e0-441ce8e1ddfe",
       "streamSha256": "557aaa2ff12b76757fa71e73ac8c531052135e5f5927e64558aa2af1165fd00f",
       "observedDate": "2026-11-26",
@@ -88,6 +114,22 @@
           "date": "2026-11-26",
           "artistHint": "Bates FM",
           "titleSha256": "e8dddbb7f115cd2de287c59bf62c05b482c3a56e56107925547e868fe578a2e6"
+        }
+      ]
+    },
+    {
+      "stationuuid": "125f0f3a-4833-4e2d-856a-106fba6cd6cd",
+      "streamSha256": "fcd9ff98cc5aa45e64cef6e0b6b825cfabbf71d20128fdc21f7df8284d0b4e20",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "MLKUZ",
+          "titleSha256": "55d88bf51765d0854be30863775e508745c47a3710c3957176addd529f8760b7"
         }
       ]
     },
@@ -193,7 +235,7 @@
     {
       "stationuuid": "3cf8f90f-0776-44ef-ac57-1eb446abfbe4",
       "streamSha256": "efd4f4b76d9b1b919f4de6a1c32726c57a58dd4f4cc9b5536f0ce5230b64e94a",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -203,13 +245,18 @@
           "date": "2026-11-25",
           "artistHint": "WDK",
           "titleSha256": "fbbe661ee46b878303ea7870d65e4ad433addbcec5024a4c55ee1dc66144001d"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "La Pulqueria",
+          "titleSha256": "15dfde7fcc3771825558a95712d1b13496a18c8d66355364a6bff273ab4bbdc1"
         }
       ]
     },
     {
       "stationuuid": "3e416d41-3433-4f74-bb32-c224bda34016",
       "streamSha256": "600f26605e986226e5d5cddc48f3d2e4ac950ad2ba5bf70a13b26a80af00924c",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -219,7 +266,7 @@
     {
       "stationuuid": "418b964f-a3df-4b72-a2ff-173ec7e1c1ff",
       "streamSha256": "ee105dc19818e10b108cf9eb99ce662922d5dba7b074ef7aa8f392669dea95b0",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -229,6 +276,11 @@
           "date": "2026-11-25",
           "artistHint": "Panda Bear, Cindy Lee",
           "titleSha256": "6d3b491cc4b3b8c942decedece5f1f363e8f996b489f995acb320c18f73b3ca5"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "The Last Dinner Party",
+          "titleSha256": "cd9bd5818ea299de775b3b7d4c57b2ae5d8b4d24ffd819a8f067089c46b7b093"
         }
       ]
     },

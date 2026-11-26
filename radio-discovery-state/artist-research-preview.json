@@ -3,17 +3,35 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 27,
-  "dueNameCount": 22,
-  "attemptedCount": 3,
+  "observedNameCount": 31,
+  "dueNameCount": 24,
+  "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "норвежская сказка: читает воронмрак (улан-удэ)",
+  "retryAfterKey": "aisyk",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
       "artistName": "38 Special",
       "source": "musicbrainz",
       "checkedAt": "2026-11-25",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "ac/dc": {
+      "status": "name_hypothesis",
+      "mbid": "66c662b6-6e2f-4930-8610-912e24c63ed1",
+      "genres": [
+        "blues rock",
+        "classic rock",
+        "hard rock",
+        "rock",
+        "rock and roll"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/66c662b6-6e2f-4930-8610-912e24c63ed1",
+      "artistName": "AC/DC",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
       "identityVerified": false,
       "publicationAllowed": false
     },
