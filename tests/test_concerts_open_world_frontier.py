@@ -67,6 +67,26 @@ class OpenWorldFrontierTests(unittest.TestCase):
                          {"Former Club", "Brand New Venue", "Unlisted Club"})
         self.assertTrue(all(v["researchOnly"] for v in report["venueResearch"]))
 
+    def test_large_explicit_bill_retains_every_artist_in_research_frontier(self):
+        names = [f"New Artist {i:03d}" for i in range(65)]
+        private = registry({
+            "show": lead("show", "2027-03-01", names[0],
+                         "Unknown Venue", "Lyon", dept="69",
+                         officialArtistNames=names),
+        })
+        # Isolate the 65 new relations from the default historical fixture.
+        result = frontier.build(public(events=[]), private, TODAY)
+        self.assertEqual(result["counts"]["unlistedArtists"], 65)
+        self.assertEqual(result["counts"]["artistVenueDateRelations"], 65)
+        self.assertTrue(set(names) <= {a["name"] for a in result["artistResearch"]})
+        self.assertFalse(result["publicationAllowed"])
+        self.assertEqual(result["approvalsProposed"], 0)
+        self.assertEqual(frontier.observed_artists({
+            "leadArtist": " + ".join(names)}), names)
+        self.assertEqual(frontier.observed_artists({
+            "officialArtistNames": names + [None, "Guest", names[0]],
+            "leadArtist": "Not on bill"}), names)
+
     def test_solo_is_not_inferred_to_be_band_member_or_replacement(self):
         private = registry({
             "a": lead("a", "2027-01-02", "Old Group Solo",

@@ -126,7 +126,16 @@ def main():
         return json.loads(path.read_text(encoding="utf-8"))
     today = dt.datetime.now(ZoneInfo("Europe/Paris")).date()
     current = load(args.catalogue)
-    research = evidence.scan(current, today, slot=args.slot)
+    # The previous private report is scheduling memory only; malformed or
+    # absent data must never prevent fresh independent geographic research.
+    prior = None
+    try:
+        saved = load(args.report)
+        if isinstance(saved, dict):
+            prior = saved.get("research")
+    except (OSError, ValueError, TypeError):
+        pass
+    research = evidence.scan(current, today, slot=args.slot, prior=prior)
     previous = load(args.before)
     proposed, report = select(previous, research, load(args.reference), current, today)
     if args.apply and report["validatedByPublisher"]:
@@ -134,9 +143,7 @@ def main():
         report["applied"] = True
     # Never write public data. The separate trusted Publisher replays evidence.
     args.report.parent.mkdir(parents=True, exist_ok=True)
-    args.report.write_text(json.dumps({"research": research, "preflight": report},
-                                      ensure_ascii=False, indent=2) + "\n",
-                           encoding="utf-8")
+    atomic_store(args.report, {"research": research, "preflight": report})
     print("Private geographic preflight complete; see private report.")
 
 

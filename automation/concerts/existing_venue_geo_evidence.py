@@ -134,6 +134,21 @@ def _named_location(text, venue):
         value == label + " " + name for label in PLACE_LABELS)))
 
 
+def _event_day(text):
+    day = visible._date_in(text)
+    if day is not None:
+        return day
+    match = re.fullmatch(r"(?:(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+)?"
+                         r"(\d{1,2})\s+(\d{1,2})\s+(20\d{2})(?:\s+\d{1,2}:\d{2})?",
+                         text.strip(), re.I)
+    if match:
+        try:
+            return dt.date(int(match[3]), int(match[2]), int(match[1])).isoformat()
+        except ValueError:
+            return "_invalid_date"
+    return None
+
+
 def visible_address(html, event, venue):
     """Only a dated exact event heading and an explicitly named address.
 
@@ -151,16 +166,16 @@ def visible_address(html, event, venue):
             "visible event heading differs from published concert")
     detail = parser.blocks[headings[0][0] + 1:][:160]
     cut = next((i for i, (tag, text) in enumerate(detail)
-                if tag in {"h2", "h3", "h4"} and triage.words(text) in STOP),
+                if triage.words(text) in STOP | {"vous devriez aimer", "nous vous recommandons egalement", "we also recommend"}),
                len(detail))
     detail = detail[:cut]
     # Date fields may precede the sole event heading. Require a nearby
     # unambiguous date, and never replace a contradictory date after it.
     preceding = parser.blocks[max(0, headings[0][0] - 6):headings[0][0]]
-    before_days = {visible._date_in(text) for _, text in preceding
-                   if visible._date_in(text)}
-    after_day = next((visible._date_in(text) for _, text in detail[:12]
-                      if visible._date_in(text)), None)
+    before_days = {_event_day(text) for _, text in preceding
+                   if _event_day(text)}
+    after_day = next((_event_day(text) for _, text in detail[:12]
+                      if _event_day(text)), None)
     require((after_day == event["date"] and
              (not before_days or before_days == {event["date"]}))
             or (after_day is None and before_days == {event["date"]}),
@@ -322,6 +337,106 @@ def linked_practical_address(html, event, venue, fetch, cache):
     return site
 
 
+class NamedFooterBlocks(AddressBlocks):
+    """Read address blocks only from a real, visible footer."""
+    def __init__(self):
+        super().__init__()
+        self.in_footer = False
+        self.outer_hidden = 0
+
+    def handle_starttag(self, tag, attrs):
+        flags = dict(attrs)
+        if self.outer_hidden:
+            if tag not in visible.VOID:
+                self.outer_hidden += 1
+            return
+        if not self.in_footer:
+            if tag in {"script", "style", "template", "noscript", "svg", "form"} or (
+                    "hidden" in flags or (flags.get("aria-hidden") or "").lower() == "true"
+                    or re.search(r"display\s*:\s*none|visibility\s*:\s*hidden",
+                                 flags.get("style") or "", re.I)):
+                if tag not in visible.VOID:
+                    self.outer_hidden = 1
+                return
+            if tag == "footer":
+                self.in_footer = True
+            return
+        super().handle_starttag(tag, attrs)
+
+    def handle_data(self, data):
+        if self.in_footer and not self.outer_hidden:
+            super().handle_data(data)
+
+    def handle_endtag(self, tag):
+        if self.outer_hidden:
+            if tag not in visible.VOID:
+                self.outer_hidden -= 1
+            return
+        if self.in_footer:
+            if tag == "footer" and not self.ignored:
+                self.in_footer = False
+                self.frames.clear()
+            else:
+                super().handle_endtag(tag)
+
+
+def _named_footer_address(html, venue):
+    """A complete named footer address is a location hint, not an event proof."""
+    parser = NamedFooterBlocks()
+    parser.feed(html)
+    parser.close()
+    addresses = set()
+    for _, text in parser.blocks:
+        # Keep the name, street, postcode and municipality within ONE block.
+        # Optional phone metadata is not part of the address.
+        if NONVENUE.search(triage.words(text)):
+            continue
+        match = re.fullmatch(r"(.{2,140}?)[,:\u241e]\s*(.+)", text)
+        if not match or not _named_location(match[1], venue):
+            continue
+        rest = re.sub(r"\s*/\s*t[ée]l\.?\s*:\s*[+0-9 .()\-]+$", "",
+                      match[2], flags=re.I)
+        # Postal separators are not part of the street name.
+        rest = re.sub(r"\s+[–—-]\s+(?=\d{5}\s)", " ", rest)
+        address = _postal_line(rest, venue["city"])
+        require(address is not None, "named footer postal address unconfirmed")
+        addresses.add(address)
+    require(len(addresses) == 1, "one named visible footer address required")
+    street, postcode = next(iter(addresses))
+    site = dict(venue, address=street, postalCode=postcode)
+    require(address_source.eligible_address(site), "non-geocodable footer address")
+    return site
+
+
+def _footer_after_exact_event(html, event, venue):
+    """Require the published event's own visible title, date and named place.
+
+    Only used on a known official venue origin after missing body address.
+    A generic site footer, even on a venue domain, cannot identify the room
+    of a show which does not itself explicitly identify that room.
+    """
+    require(official.official_origin(venue, event["officialUrl"]) is not None,
+            "footer address requires independently bound event domain")
+    parsed = AddressBlocks()
+    parsed.feed(html)
+    parsed.close()
+    headings = [(i, t) for i, (tag, t) in enumerate(parsed.blocks) if tag == "h1"]
+    require(len(headings) == 1 and triage.words(headings[0][1]) == triage.words(event.get("title")),
+            "footer event title unconfirmed")
+    i = headings[0][0]
+    detail = []
+    for tag, text in parsed.blocks[i+1:]:
+        if triage.words(text) in STOP | {"vous devriez aimer", "nous vous recommandons egalement",
+                                         "we also recommend"}:
+            break
+        detail.append((tag, text))
+    dates = {_event_day(text) for _, text in detail if _event_day(text)}
+    require(dates == {event["date"]}, "footer event date unconfirmed")
+    require(any(_named_location(t, venue) for _, t in detail),
+            "footer event venue unconfirmed")
+    return _named_footer_address(html, venue)
+
+
 def extract_address(html, event, venue):
     """Only an unambiguous, exact, dated event and its own physical Place."""
     url = event.get("officialUrl")
@@ -387,10 +502,23 @@ def verify(event, venue, *, fetch=probe.safe_fetch, cache=None):
     try:
         site = extract_address(html, event, venue)
     except MissingVenueAddress:
+        # Keep the existing practical-page route first. If it actually
+        # fetched a page, a conflicting or unverifiable address must not be
+        # bypassed by a footer. Only an absent/unusable link permits fallback.
+        practical_fetched = False
+        def practical_fetch(url, shared):
+            nonlocal practical_fetched
+            practical_fetched = True
+            return fetch(url, shared)
         try:
-            site = linked_practical_address(html, event, venue, fetch, cache)
+            site = linked_practical_address(html, event, venue, practical_fetch, cache)
         except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
-            raise EvidenceHeld("linked_practical_address_unconfirmed") from exc
+            if practical_fetched:
+                raise EvidenceHeld("linked_practical_address_unconfirmed") from exc
+            try:
+                site = _footer_after_exact_event(html, event, venue)
+            except (ValueError, TypeError, KeyError, OSError, TimeoutError):
+                raise EvidenceHeld("linked_practical_address_unconfirmed") from exc
     except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
         raise EvidenceHeld("event_identity_or_address_unconfirmed") from exc
 
@@ -434,7 +562,55 @@ def verify(event, venue, *, fetch=probe.safe_fetch, cache=None):
             "publisherAuthorityGranted": False}
 
 
-def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify):
+def _recent_keys(raw, active):
+    """Keep only unique active IDs, oldest to newest; advisory scheduling."""
+    if not isinstance(raw, list):
+        return []
+    seen = set()
+    result = []
+    for key in reversed(raw):
+        if isinstance(key, str) and key in active and key not in seen:
+            seen.add(key)
+            result.append(key)
+    return list(reversed(result))
+
+
+def _review_history(prior, groups, today):
+    if (not isinstance(prior, dict)
+            or prior.get("schema") != SCHEMA + ".scan"
+            or prior.get("publicationAllowed") is not False
+            or prior.get("publisherAuthorityGranted") is not False):
+        return [], {}
+    try:
+        if dt.date.fromisoformat(prior["asOf"]) > today:
+            return [], {}
+    except (KeyError, TypeError, ValueError):
+        return [], {}
+    active = {vid for vid, rows in groups.items() if rows}
+    venues = _recent_keys(prior.get("recentVenueIds"), active)
+    saved = prior.get("recentEventIdsByVenue")
+    events = {}
+    if isinstance(saved, dict):
+        for vid in active:
+            keys = {row["id"] for row in groups[vid]}
+            recent = _recent_keys(saved.get(vid), keys)
+            if recent:
+                events[vid] = recent
+    return venues, events
+
+
+def _least_recent(rotated, recent):
+    rank = {key: i for i, key in enumerate(recent)}
+    return sorted(rotated, key=lambda key: rank.get(key, -1))
+
+
+def _touch(recent, key):
+    if key in recent:
+        recent.remove(key)
+    recent.append(key)
+
+
+def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify, prior=None):
     """Bounded private research. Rotate over all eligible venues and their events.
 
     A permanent hold at the first room cannot starve the remaining rooms.
@@ -469,7 +645,8 @@ def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify):
                      key=lambda vid: (-len(groups[vid]), vid))
     cycle = today.toordinal() * 3 + slot
     start = (cycle * limit) % len(ordered) if ordered else 0
-    chosen = (ordered[start:] + ordered[:start])[:limit]
+    recent_venues, recent_events = _review_history(prior, groups, today)
+    chosen = _least_recent(ordered[start:] + ordered[:start], recent_venues)[:limit]
     report = {"schema": SCHEMA + ".scan", "asOf": today.isoformat(),
               "eligibleVenues": len(groups), "venuesWithFutureOfficialEvents": len(ordered),
               "examinedVenues": len(chosen), "eventPagesExamined": 0,
@@ -478,12 +655,17 @@ def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify):
     cache = {}
     reasons = Counter()
     for vid in chosen:
+        _touch(recent_venues, vid)
         rows = sorted(groups[vid], key=lambda e: (e["date"], e["id"]))
         # Avoid retrying only the same event page for a room indefinitely.
         offset = cycle % len(rows)
-        selected = (rows[offset:] + rows[:offset])[:per_venue]
+        by_id = {row["id"]: row for row in rows}
+        history = recent_events.setdefault(vid, [])
+        rotated = [row["id"] for row in rows[offset:] + rows[:offset]]
+        selected = [by_id[key] for key in _least_recent(rotated, history)[:per_venue]]
         venue_reasons = Counter()
         for event in selected:
+            _touch(history, event["id"])
             report["eventPagesExamined"] += 1
             try:
                 proof = verify_one(event, venues[vid], cache=cache)
@@ -498,4 +680,6 @@ def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify):
             report["held"].append({"venueId": vid, "reason": "no_verified_address",
                                    "reasonCounts": dict(sorted(venue_reasons.items()))})
     report["reasonCounts"] = dict(sorted(reasons.items()))
+    report["recentVenueIds"] = recent_venues
+    report["recentEventIdsByVenue"] = dict(sorted(recent_events.items()))
     return report

@@ -20,6 +20,9 @@ on:
       - 'automation/concerts/open_world_visible_cards.py'
       - 'automation/concerts/generic_first_party_venue_specs_v1.json'
       - 'automation/concerts/official_html_evidence.py'
+      - 'automation/concerts/event_site_microdata.py'
+      - 'automation/concerts/official_visible_tour_bill.py'
+      - 'automation/concerts/artist_official_bio.py'
       - 'automation/concerts/first_party_tec_event.py'
       - 'automation/concerts/published_watch.py'
       - 'automation/concerts/official_rss_jsonld_bridge.py'
@@ -215,6 +218,7 @@ jobs:
           set -euo pipefail
           if ! python public/automation/concerts/discover.py \
              --output "$RUNNER_TEMP/concerts-discovery" \
+             --detail-history confidential/automation/concerts/intake/generic-detail-history.json \
              > "$RUNNER_TEMP/concerts-private-logs/discovery.log" 2>&1; then
             echo "::error::La collecte Concerts a échoué ; les sorties restent confidentielles"
             exit 1
@@ -1047,7 +1051,8 @@ jobs:
         run: |
           set -euo pipefail
           REPORT=confidential/automation/concerts/intake/existing-venue-geo-preflight.json
-          rm -f "$REPORT"
+          # Retain the prior private report for fair scheduling. The preflight
+          # independently rechecks current evidence and atomically replaces it.
           UTC_HOUR=$(date -u +%H)
           SCAN_SLOT=$((10#$UTC_HOUR / 8))
           OPTIONS=()
@@ -1259,6 +1264,9 @@ jobs:
           export GIT_CONFIG_KEY_0='http.https://github.com/.extraheader'
           export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $HEADER"
           git add --sparse -- automation/concerts/intake/registry.json automation/concerts/intake/official-review.json automation/concerts/intake/approval-preflight.json automation/concerts/intake/published-watch.json
+          if [ -f automation/concerts/intake/generic-detail-history.json ]; then
+            git add --sparse -- automation/concerts/intake/generic-detail-history.json
+          fi
           if [ -f automation/concerts/intake/open-world-frontier.json ]; then
             git add --sparse -- automation/concerts/intake/open-world-frontier.json
           fi

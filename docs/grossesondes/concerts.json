@@ -2538,11 +2538,6 @@
       "aliases": []
     },
     {
-      "id": "gagner-de-l-argent-wtazzz",
-      "name": "GAGNER DE L'ARGENT | WTAZZZ",
-      "aliases": []
-    },
-    {
       "id": "baikal",
       "name": "BAÏKAL",
       "aliases": []
@@ -16192,6 +16187,7 @@
   ],
   "retiredArtistIds": [
     "deefait-release-party",
+    "gagner-de-l-argent-wtazzz",
     "guests",
     "guests-nexion",
     "the-locos-ex-ska-p-en-concert"

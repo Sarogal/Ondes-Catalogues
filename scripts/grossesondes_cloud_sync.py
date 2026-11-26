@@ -40,6 +40,7 @@ from grossesondes_future_city_publisher import (
     apply_independently_verified_city, private_city_report,
 )
 from grossesondes_dated_ticket_tables import parse_dated_ticket_summary
+from grossesondes_announced_tariffs import parse_announced_tariffs
 from grossesondes_existing_official_updates import (
     apply_independently_verified_updates, CHANGEABLE as OFFICIAL_UPDATE_FIELDS,
     COMMUNE_FIELDS as COMMUNE_UPDATE_FIELDS,
@@ -437,8 +438,16 @@ def _verified_official_update_delta(old, new):
         new_tiers = parsed_seasonal_ticket_summary(price)
         if old_tiers and (not new_tiers or not set(old_tiers) <= set(new_tiers)):
             return False
+        old_announced = parse_announced_tariffs(old.get("price"), old)
+        new_announced = parse_announced_tariffs(price, old)
+        if old_announced and (not new_announced
+                or not set(old_announced[0]) <= set(new_announced[0])
+                or old_announced[1] not in (None, new_announced[1])):
+            return False
+        if new_announced and old.get("price") is not None and not old_announced:
+            return False
         if ("billetterie officielle ouverte" not in price
-                and not new_tiers and not new_grid):
+                and not new_tiers and not new_grid and not new_announced):
             return False
         if new_tiers and old.get("price") is not None and not old_tiers:
             return False

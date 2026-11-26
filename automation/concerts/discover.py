@@ -11,6 +11,7 @@ import os
 import re
 import sys
 import time
+import tempfile
 import unicodedata
 import urllib.error
 import urllib.parse
@@ -744,9 +745,53 @@ def linked_first_party_event_urls(page_html, source_url, today):
     return links
 
 
+DETAIL_HISTORY_SCHEMA = "grossesondes.concert.generic-detail-scheduling.v1"
+
+
+def detail_key(url):
+    return hashlib.sha256(url.encode("utf-8")).hexdigest()
+
+
+def load_detail_history(path):
+    if path is None:
+        return {}
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if (not isinstance(raw, dict) or raw.get("schema") != DETAIL_HISTORY_SCHEMA
+                or raw.get("publicationAllowed") is not False
+                or not isinstance(raw.get("sources"), dict)):
+            return {}
+        return {key: list(dict.fromkeys(items))
+                for key, items in raw["sources"].items()
+                if isinstance(key, str) and re.fullmatch(r"[0-9a-f]{64}", key)
+                and isinstance(items, list) and
+                all(isinstance(i, str) and re.fullmatch(r"[0-9a-f]{64}", i)
+                    for i in items)}
+    except (OSError, ValueError, TypeError):
+        return {}
+
+
+def store_detail_history(path, history):
+    if path is None:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=".concert-detail-", suffix=".json",
+                                      dir=str(path.parent))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as out:
+            json.dump({"schema": DETAIL_HISTORY_SCHEMA, "publicationAllowed": False,
+                       "sources": history}, out, sort_keys=True)
+            out.write("\n")
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
 def select_generic_official_detail_links(links, day, scan_slot, limit=3,
                                          known=None, artist_names=(),
-                                         already_published_artist_names=()):
+                                         already_published_artist_names=(),
+                                         recent_attempts=()):
     """Rotate bounded first-party details; give existing artists a discovery hint.
 
     Already published official URLs never displace unseen pages. On an
@@ -767,13 +812,18 @@ def select_generic_official_detail_links(links, day, scan_slot, limit=3,
     if not ordered or not limit:
         return []
 
+    rank = {key: i for i, key in enumerate(recent_attempts)}
+
     def rotate(pool, quota, stride=None):
         if not pool or not quota:
             return []
         offset = ((day.toordinal() * 3 + scan_slot)
                   * (stride if stride is not None else limit)) % len(pool)
-        return [pool[(offset + i) % len(pool)]
-                for i in range(min(quota, len(pool)))]
+        rotated = pool[offset:] + pool[:offset]
+        if rank:
+            # Unattempted pages first, then oldest attempts. Scheduling only.
+            rotated.sort(key=lambda link: rank.get(detail_key(link), -1))
+        return rotated[:quota]
 
     if not isinstance(known, (set, frozenset)):
         return rotate(ordered, limit)
@@ -842,7 +892,8 @@ def select_generic_official_detail_links(links, day, scan_slot, limit=3,
     return selected + rotate(published, limit - len(selected))
 
 def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0,
-                artist_names=(), published_artists_by_venue=None):
+                artist_names=(), published_artists_by_venue=None,
+                detail_history=None):
     if scan_slot not in (0, 1, 2):
         raise ValueError("Only the three bounded local scan windows are allowed")
     sites = sources.get("venues") or []
@@ -860,6 +911,9 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0,
     rss_probe_queue = []
     for source in chosen:
         base = source["url"]
+        history_key = detail_key(base)
+        recent = (detail_history.get(history_key, [])
+                  if detail_history is not None else [])
         info = {"venue": source["name"], "url": base}
         try:
             if not robots_allow(base, robot_cache):
@@ -909,6 +963,11 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0,
                         **identity, "sourceUrl": link,
                     }) is not None
                 ]
+            # Prune only a successfully read index; other sources keep history.
+            active = {detail_key(link) for link in links}
+            recent = [key for key in recent if key in active]
+            if detail_history is not None:
+                detail_history[history_key] = recent
             for link in ([] if source.get("adapter") in (
                     "tetris_official_detail_review", "cargo_official_detail_review",
                     "bbc_official_detail_review",
@@ -931,7 +990,12 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0,
                                       norm(source.get("city")),
                                       str(source.get("department"))), ()
                                  ) if reviewed_generic_source else ()
-                             ))):
+                             ), recent_attempts=recent)):
+                if detail_history is not None:
+                    key = detail_key(link)
+                    if key in recent:
+                        recent.remove(key)
+                    recent.append(key)
                 if robots_allow(link, robot_cache):
                     try:
                         text, url = download(link)
@@ -2795,6 +2859,7 @@ def candidate_sort_key(candidate):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
+    parser.add_argument("--detail-history", type=Path)
     args = parser.parse_args()
     dest = Path(args.output)
     dest.mkdir(parents=True, exist_ok=True)
@@ -2815,11 +2880,13 @@ def main():
     venues_checks, ticket_checks = [], []
     scan_slot = scan_slot_for_hour(
         dt.datetime.now(ZoneInfo("Europe/Paris")).hour)
+    detail_history = load_detail_history(args.detail_history)
     venue_candidates = scan_venues(
         source_file, known, day, venues_checks, scan_slot=scan_slot,
         artist_names=[a.get("name") for a in catalog.get("artists", [])
                       if isinstance(a, dict)],
-        published_artists_by_venue=published_venue_artist_hints(catalog, day))
+        published_artists_by_venue=published_venue_artist_hints(catalog, day),
+        detail_history=detail_history)
     partner_checks = []
     partner_candidates = scan_partner_ics(partner_sources, known, day, partner_checks)
     api_candidates = scan_ticketmaster(os.environ.get("TICKETMASTER_API_KEY", "").strip(), known, day, ticket_checks)
@@ -2929,6 +2996,7 @@ def main():
                        entry.get("city", "?") + " — " + entry.get("name", "?") + " (" +
                        entry["reviewBucket"] + ") — " + entry.get("sourceUrl", "sans lien"))
     (dest / "rapport.md").write_text("\n".join(summary) + "\n", encoding="utf-8")
+    store_detail_history(args.detail_history, detail_history)
     print("Veille terminée :", len(venue_candidates), "pistes salles /", len(partner_candidates), "pistes calendriers tiers /", len(api_candidates), "candidats Ticketmaster. Aucun déploiement.")
     return 0
 

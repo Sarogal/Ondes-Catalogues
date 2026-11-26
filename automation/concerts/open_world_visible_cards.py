@@ -52,10 +52,10 @@ def _date(text):
 
 def _artists(label):
     label = " ".join(str(label or "").split())
-    if not 2 <= len(label) <= 600:
+    if not 2 <= len(label) <= MAX_HTML:
         return None
     names = [x.strip() for x in ARTIST_SPLIT.split(label)]
-    if (not 1 <= len(names) <= 30
+    if (not names
             or any(not 2 <= len(x) <= 120 for x in names)
             or any(words(x) in PLACEHOLDER for x in names)
             or len({words(x) for x in names}) != len(names)):
@@ -78,7 +78,7 @@ def extract(html, room, city, today):
             or not isinstance(city, str) or not 2 <= len(city) <= 120
             or not isinstance(today, dt.date) or isinstance(today, dt.datetime)):
         return []
-    parser = visible.VisibleBlocks()
+    parser = visible.VisibleBlocks(complete_blocks=True)
     try:
         parser.feed(html)
         parser.close()
@@ -183,7 +183,7 @@ def verified_detail(html, room, city, when, *, address=None, postal=None,
         return held("invalid_date")
     if not isinstance(html, str) or len(html) > MAX_HTML:
         return held("invalid_html")
-    parsed = visible.VisibleBlocks(leaf_divs=True)
+    parsed = visible.VisibleBlocks(leaf_divs=True, complete_blocks=True)
     try:
         parsed.feed(html)
         parsed.close()
