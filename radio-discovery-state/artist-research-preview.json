@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 50,
-  "attemptedCount": 2,
+  "dueNameCount": 49,
+  "attemptedCount": 3,
   "serviceFailure": "http_503",
-  "retryAfterKey": "inminente",
+  "retryAfterKey": "judas priest",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -366,6 +366,24 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "jeff beck group": {
+      "status": "name_hypothesis",
+      "mbid": "a6339659-c879-4f88-9908-206d47963e29",
+      "genres": [
+        "blues rock",
+        "hard rock",
+        "jazz rock",
+        "rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/a6339659-c879-4f88-9908-206d47963e29",
+      "artistName": "Jeff Beck Group",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "johnny hates jazz": {
       "status": "name_hypothesis",
       "mbid": "1cf1db8f-06bc-4c02-a608-4fc7980bbfcc",
@@ -385,6 +403,15 @@
     "journey": {
       "status": "ambiguous_or_incomplete",
       "artistName": "JOURNEY",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "jovian year": {
+      "status": "not_found",
+      "artistName": "Jovian Year",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,

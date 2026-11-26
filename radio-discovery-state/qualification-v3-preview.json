@@ -4733,16 +4733,16 @@
       "programmeBound": true,
       "programmeEvidence": {
         "artistHints": {
-          "target_hint": 1,
+          "target_hint": 2,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 0
         },
         "pairHints": {
-          "target_hint": 1,
+          "target_hint": 2,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 0
         },
         "collaborationMemberHints": {
           "target_hint": 0,
@@ -4751,8 +4751,7 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "musicbrainz_only": 1,
-          "no_usable_source": 1
+          "musicbrainz_only": 2
         },
         "independentObservationDays": [
           "2026-11-25",
