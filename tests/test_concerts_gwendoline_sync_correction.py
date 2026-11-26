@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 from scripts import concerts_cloud_sync as sync
+from test_concerts_cloud_sync import protect_public_snapshot
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -75,14 +76,14 @@ class SignedExistingConcertCorrection(unittest.TestCase):
         self.approval = signature()
 
     def test_prior_catalogue_is_untouched_and_protected(self):
-        sync.protect_reference(self.reference, self.current)
+        protect_public_snapshot(self.reference, self.current)
         self.assertEqual(len([e for e in self.current["events"]
                               if e["id"] == IDENT]), 1)
         self.assertEqual(get_event(self.current)["title"], "Gwendoline + Bleu Panique")
         self.assertIn("bleu-panique",
                       {a["id"] for a in self.current["artists"]})
         before = simulated_prepublication(self.current)
-        sync.protect_reference(self.reference, before)
+        protect_public_snapshot(self.reference, before)
         self.assertEqual(get_event(before)["title"], "Gwendoline")
         self.assertNotIn("bleu-panique", {a["id"] for a in before["artists"]})
 
@@ -100,7 +101,7 @@ class SignedExistingConcertCorrection(unittest.TestCase):
         self.assertEqual(
             {k: v for k, v in candidate.items() if k not in ("artists", "events")},
             {k: v for k, v in self.current.items() if k not in ("artists", "events")})
-        sync.protect_reference(self.reference, candidate)
+        protect_public_snapshot(self.reference, candidate)
         sync.validate_catalogue(candidate)
         before = get_event(original)
         after = get_event(candidate)
