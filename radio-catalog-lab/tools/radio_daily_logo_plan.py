@@ -8,7 +8,7 @@ from urllib.parse import urlsplit
 from radio_daily_v9_generator import BASELINE, digest, encode
 from radio_daily_baseline_verify import strict_json
 from radio_daily_maintenance_preview import age, digest as url_digest
-from radio_daily_logo_maintenance import build as maintenance_build, MAX_SOURCES, valid_metadata, source_policy
+from radio_daily_logo_maintenance import build as maintenance_build, MAX_SOURCES, valid_metadata, source_policy, source_reference
 from radio_daily_missing_logo import build as missing_build, MAX_STATIONS, MAX_IMAGES, candidates
 from radio_daily_editorial_preview import homepage_url, related_host
 from radio_daily_repair_preview import page_key
@@ -93,4 +93,6 @@ def stage(station, proposal, material, *, decode=decode_image):
     path=sha+"."+EXTENSIONS[mime]
     descriptor={"asset_id":"sha256:"+sha,"sha256":sha,"revision":previous["revision"]+1 if previous else 1,
         "url":PREVIEW_BASE+path,"byte_size":len(data),"width":width,"height":height,"mime_type":mime}
+    # Refuse material that cannot retain its safe official provenance.
+    source_reference(descriptor,source)
     return descriptor,path,data
