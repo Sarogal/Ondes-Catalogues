@@ -64,5 +64,32 @@ class MetadataTests(unittest.TestCase):
         r["candidates"][0]["classification"]="possible_variant_or_duplicate"
         self.assertEqual(collect(d,r,c,q,limit=1,observe=lambda u:self.fail("duplicate"))["attemptedCount"],0)
 
+
+    def test_fallback_persists_provenance_not_plain_title(self):
+        transient=[]
+        def fallback(url, station):
+            self.assertEqual(url, URL)
+            self.assertEqual(station["stationuuid"], UID)
+            return [{"artistHint":"AC/DC","titleHint":"Thunderstruck",
+                     "titleSha256":safe_digest("Thunderstruck"),"method":"icecast_json",
+                     "sourceSha256":safe_digest("https://radio.example.org/status-json.xsl")}]
+        first=collect(*reports(),limit=1,observe=lambda u:{"verdict":"metadata_no_parseable_title","titleHints":[]},
+                      alternative=fallback,transient_titles=transient)
+        row=first["records"][0]
+        self.assertEqual(row["verdict"],"alternative_artist_title_hint")
+        self.assertEqual(row["observations"][0]["method"],"icecast_json")
+        self.assertNotIn("Thunderstruck",str(first))
+        self.assertEqual(transient[0]["titleHint"],"Thunderstruck")
+        second=collect(*reports("2026-11-26"),previous=first,limit=1,
+                       observe=lambda u:{"verdict":"metadata_no_parseable_title","titleHints":[]},
+                       alternative=lambda u,s:[])
+        self.assertEqual(second["records"][0]["observations"],row["observations"])
+        self.assertEqual(second["approvedCount"],0)
+
+    def test_no_fallback_when_icy_works(self):
+        result=collect(*reports(),limit=1,observe=sample,
+                       alternative=lambda u,s:self.fail("ICY already works"))
+        self.assertEqual(result["records"][0]["verdict"],"icy_artist_title_hint")
+
 if __name__=="__main__":
     unittest.main()
