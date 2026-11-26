@@ -5,8 +5,8 @@
   "approvedCount": 0,
   "publicationAllowed": false,
   "eligibleStationCount": 77,
-  "dueStationCount": 1,
-  "attemptedCount": 1,
+  "dueStationCount": 0,
+  "attemptedCount": 0,
   "serviceFailureCount": 0,
   "stationsWithFreshHints": 3,
   "counts": {
