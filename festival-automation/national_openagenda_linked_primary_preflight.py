@@ -29,7 +29,7 @@ from national_openagenda_research import (SOURCE as OPENAGENDA_DATASET,
 from national_professional_profile_discovery import discover as discover_professional_profiles
 from national_professional_official_detail import examine as examine_professional_details
 from national_cultural_venue_discovery import cultural_detail
-from national_brand_domain_research import research_brand_domain
+from national_brand_domain_research import research_brand_domain, brand_private_proposal
 from national_generic_primary_domain_preflight import (
     _edition_name, _published, QUEUE_SCHEMA,
 )
@@ -306,8 +306,10 @@ def stable_private_proposals(state, queue, catalogue, report, today):
     if not isinstance(records, dict):
         raise ValueError("Invalid observation registry")
     accepted, slugs = [], set()
-    current_hints = {lead["source_url"]: lead.get("professional_source_hints_review_only")
-                     for lead in validated_openagenda_leads(state, today)}
+    fresh_leads = {lead["source_url"]: lead
+                   for lead in validated_openagenda_leads(state, today)}
+    current_hints = {url: lead.get("professional_source_hints_review_only")
+                     for url, lead in fresh_leads.items()}
     for row in report["rows"]:
         if (isinstance(row, dict)
                 and row.get("status") in ("OPENAGENDA_OFFICIAL_LINK_UNPROVEN",
@@ -336,7 +338,17 @@ def stable_private_proposals(state, queue, catalogue, report, today):
                         accepted.append(proposal)
                         slugs.add(proposal["slug"])
                         break
-                continue
+                if source is not None and any(p["slug"] in slugs and p["name"] == source["title"]
+                                                  for p in accepted):
+                    continue
+            if source is not None and source["url"] in fresh_leads:
+                proposal = brand_private_proposal(
+                    fresh_leads[source["url"]], source["title"], source["year"], today,
+                    row.get("brand_domain_research_review_only"))
+                if proposal is not None and proposal["slug"] not in slugs:
+                    accepted.append(proposal)
+                    slugs.add(proposal["slug"])
+            continue
         if (not isinstance(row, dict)
                 or row.get("status") not in (
                     "FIRST_DAY_OPENAGENDA_FIRST_PARTY_PRIVATE",
