@@ -3,9 +3,9 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 93,
-  "dueNameCount": 7,
-  "attemptedCount": 6,
+  "observedNameCount": 97,
+  "dueNameCount": 5,
+  "attemptedCount": 5,
   "serviceFailure": null,
   "retryAfterKey": null,
   "entries": {
@@ -154,6 +154,15 @@
     "brigadnyj podrjad": {
       "status": "not_found",
       "artistName": "Brigadnyj podrjad",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "copper hollow": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Copper Hollow",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
@@ -507,6 +516,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "monster magnet": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Monster Magnet",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "naked eyes": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Naked Eyes",
@@ -582,6 +600,15 @@
     "poison": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Poison",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "pulso roto": {
+      "status": "not_found",
+      "artistName": "PULSO ROTO",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
@@ -690,6 +717,15 @@
       "sourceUrl": "https://www.wikidata.org/wiki/Q3486312",
       "genreSource": "wikidata-P136",
       "artistName": "Skip the Use",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "soul asylum": {
+      "status": "identity_held",
+      "artistName": "SOUL ASYLUM",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
@@ -871,6 +907,15 @@
     "vinnie moore": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Vinnie Moore",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "vixen": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Vixen",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,

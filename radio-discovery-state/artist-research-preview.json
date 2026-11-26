@@ -3,11 +3,11 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 93,
-  "dueNameCount": 65,
-  "attemptedCount": 3,
-  "serviceFailure": "timeout",
-  "retryAfterKey": "kayo dot",
+  "observedNameCount": 97,
+  "dueNameCount": 67,
+  "attemptedCount": 1,
+  "serviceFailure": "http_503",
+  "retryAfterKey": "kornkob95",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",

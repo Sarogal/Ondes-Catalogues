@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 76,
-  "distinctArtistHints": 93,
+  "stationsWithArtistHints": 80,
+  "distinctArtistHints": 97,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -1725,6 +1725,18 @@
       "alternativeAttempted": true
     },
     {
+      "stationuuid": "bd0dc889-b736-4b75-a35b-70a606482a47",
+      "streamSha256": "281768ee2f882e47128035a230d461ef13a9a86f5732b74145a25c2f64780e3f",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
+    },
+    {
       "stationuuid": "c123bef5-256a-427f-a942-570ae9836f68",
       "streamSha256": "ac5e132f18b64939b98ba589e2879817d636b09970400aa35b0dd01538f04016",
       "observedDate": "2026-11-26",
@@ -1747,6 +1759,90 @@
       "observations": [],
       "alternativeVersion": 3,
       "alternativeAttempted": true
+    },
+    {
+      "stationuuid": "c22f97d4-26b6-46ac-a415-54b1bdd85f0d",
+      "streamSha256": "c74e3e9aabe91cf381a7ff62de555f77e0d90c91155f089b02a9652dc4b8c930",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Copper Hollow",
+          "titleSha256": "0aeff97c5c61c359c2b2a3ded99d0d2de1c021fcdf976e9e14e02120f1f2d02f"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "c62a1cf3-dd53-4f8d-ab12-3567faa4f59f",
+      "streamSha256": "3ad5d4218373f86acc3c86a2bef61d00868d3d98e7b6d71fd548dc298d3c04e4",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
+    },
+    {
+      "stationuuid": "c79485f1-013e-46ec-a2ef-8eb3cef2d6dd",
+      "streamSha256": "27eafc1ecfd5840a8c031a42546a9eb06095536f7b38b4ea73f04c209d736126",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "SOUL ASYLUM",
+          "titleSha256": "4748d1cfbb74cb1fada56bf3b2dd8b3d172a0d9955b2bb95f4e1feca3d2a4813"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "c9e17187-7b9f-48af-8454-0cf8462302c7",
+      "streamSha256": "fddf34061b7fd8ee9eb7f65671814212918fe4fd90f4302cfe31dd283ec0d04b",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Monster Magnet",
+          "titleSha256": "1997391d48d321ed7b0bc56a650e2ab183a8aa79a3669204d99d7389cecdd826"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "cbb233ad-fad1-46e1-b89b-9389f457f204",
+      "streamSha256": "a17eec45505d491732e62e5cb5caa9bc079da9a14833ae04de8fb063b849af28",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "PULSO ROTO",
+          "titleSha256": "f87e72561c237d6b8654007cfdda2c2df6a96b129b951b422f78a6eb12379655"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     }
   ]
 }

@@ -1,0 +1,2767 @@
+{
+  "approvedCount": 0,
+  "attemptedCount": 0,
+  "candidateCatalogueWritten": false,
+  "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
+  "counts": {
+    "no_transition": 296
+  },
+  "massTransitionHeld": false,
+  "proposalCount": 0,
+  "proposals": [],
+  "publicationAllowed": false,
+  "records": [
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000001",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "025fe3000e0158c1cc7ebfe48b2f7bddba64635c1ad46564f17f10efe9136660"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000002",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "0cbe75a9f67b234dfb31b976cea54d9efd7c24f75fd930f8307671388a567f22"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000004",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "1b7dae90e2ee3ff8e92562a81830d963b97747434aceedb192fa2ffcc70ad538"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000005",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "fef82677da207dca7c34e7e91d566fc332f389e49c03fa08cd3c1680e79c77a0"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000006",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "b5ab240afa7e56ba1b357026058070fdd5ee12e92d793665179161929c4122e5"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000007",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "5a04e4dd900c93f34e696e93874cd6827a69a4005ad71a4fb47b002d6af1af6e"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000008",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "0f571c52a9bac4237131559c8fff3780d9b6b850de7929888f9d2bc5f4329db0"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000009",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "4da5c5ed22bdf6049884f4b92dffd4ab0a17e31a0d19cb392ca4f6113448e8df"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000011",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "bc02a508e8b14ed3676b57647549b994c9146d8d348c6ab3c67d0d443082321f"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000012",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "8778c9d9392bba522fd10fb7aa67a466202e5ea21a39ffa9773a9ddb01369028"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000014",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "4f634e955eeed0e76d479f1df875a3f668cbbad8967a687b015d891c5f58cf11"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "quarantined",
+      "decision": "no_transition",
+      "goStationId": "go-station-000015",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "b9ad563ce7069134400220cc3ddc0ed33b9a1210c2cb1823ca9d38e151b32edf"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000016",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "f20bd214a5e8719ef2169ce1c08cf016924ff307db09bd186d57bae004c3c542"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000017",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "79b3eb4a0fcef5379dbaa974d69145d876e650ea2ea6abb00f35667ceccf6573"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000018",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "7501715d8a3fdb51d73798337aa77f66abee3cc8c121cd927f3ba0511dfd82af"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000019",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "d41ee6999a5664cf3d3cf69928fed43c293c7e513bd49fe6032e6c8e19351a51"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000020",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "017ae9f58e01b0ad9eeee83975c550fb11133412cd3fcd30774ec289ab428446"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000021",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "3bd365e5173ad63055a9db1b238e9ca28a6af0d7b99aa0a53c03de618befd115"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000022",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "2e1f95dd3850ac0e8af44c0e46e8acab5513793750981057c7f958849909c873"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000023",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "3b2e5260912f718628497100edb106028a9be607b8deb6a137c2adc638157a9d"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000024",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "251a58778556f5ec91e125f973728d93208999aae66a582dce5ab2bb30514f32"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000025",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "e6d7a14f51b7264db3e8593cca0d06079c6db0e7f2c99531f93a64cb0e0c4d17"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000026",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "7d458e5550c3d948feb7cb252692853e7347d13858eb2fa0ac0d6762d9d0e512"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000027",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "9b5f9401fe61939c814f372d71d23826bbf1865c1c9f194e108d808dc444d37c"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000028",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "48d663cd706704124ad94d74dba84444a4fdac320e3f3b84369d0852f94fb448"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000029",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "3cae2e2b4cd9eb0817c111a27dcdc496006487c07614ffa0ac2f0a4c03bbbabd"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000030",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "78c1d9b354ae54543379b435ce3be0a3655e025875be6f0dcb5ec869706aa7ab"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000031",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "12efc86e09991a75bdb7e23d1e795237e0ad241af7ef4a61ba12ef26b559584a"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000032",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "a0b559059514f885e9f694151ef9ecd09cc58f1006d9ff0626617d74eaa14f63"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000033",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "b85a8fbf08292e159d53e701837f18134c3ebec2a973584c8e017b6e2ff06823"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "quarantined",
+      "decision": "no_transition",
+      "goStationId": "go-station-000034",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "bc48dd9a914e4d3408348226b35081ad2df78252e8f980d65e1cfce5ff0c04ad"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000035",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "2f21e044611dbe7730df2d4c227ab114c50c89a70c5e61e36b1fd558e71c9551"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000036",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "a01586f4aa4ac18d25b7fe0e76195cb006effbe2f6e91bf6d9453440c565a6ee"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000037",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "97212f4f939413341e610be8af2f1da603a99b6435c3fb1a712194853a84b7b4"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000038",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "f554fc6e08d71c64008cd9495161d7de7be4bf604e69521d8053a3ff4fb0d8a5"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000039",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "9d275b0a775426528e38d593448e7f88150d9aadfa363f598360f09524fa91fd"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000040",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "fc5c6462ac0e1c60552dae8a153eb2ffb7742db6fd8347401090907f2787f5ab"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000041",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "76519634c8effebf6981aa7313e49b33cc64eae6dc52c91cf24eb5c10f28512b"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000042",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "fabe584d762fdb3c4907abc85863b5749e876897409f1a51d8b379322e9afa09"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000043",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "a8fc9603a6363a36840ea00e752acd685f72c0935fadce9df95cd0fed3ad7444"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000044",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "e64513189e3b3a3331342ddf4ae323f7fd8f5770e8342f4e91031cc2e8fb59a4"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000045",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "9a957316557d49d777ff2b5d8be4d4fcc10b49dc78520ddaad4eb6125074b345"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000046",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c191d0390aeba81f4570268066130b10650ae3c58dc5802e11cb7ab510c9690a"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000047",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "f45dd16c11ad543d16f26b4be78f526112a70f0484ac2814f5444522aa8fe488"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000048",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "3623d8f01b72720be0299a5a27aff51ec97ff6cf74edbbf0234994cd46aad41e"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000049",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "0afb1b4fb96ab4f202f1d28369c9237dd2d9f9d5767aaef6e30cdcba8d7786ab"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000050",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "d7eb9d83d950d624f20250be4ec4fd745bf687c5f8a12b1be1887f7e94e1bf9d"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000051",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "d783b0e3c3c1240f11dc412ed8fdbac9ec87e5560d65dc46c997e76ff6d5fc6e"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000052",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "9a268bc007040f226d04631d713dd566ea0d4ca7e269eee630073711b508d7aa"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000053",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "fbfe9f068d7a2166b08ae65bd0e9326ffd7a43174df0f467d024d5060b1f5068"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000054",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "0d93f74f2abf2e29e04ccc097ab07a94056347c6447e3a1e1b445ba51784b8b4"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000055",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "2b9a9a35601a6da5cd1b0f769f032d85944d3b3cdbb423019c0d447fc9b166f8"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000056",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c4d4d8a02bb9c312e6a86892b72f06ac794fdc715113d3e5a31d8d892e3c68c6"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000057",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "391468f65c9396aba521e9b5e535c8046d8fb09abea4cb7eac4920f9b617143b"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000058",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "27edeca56f881627571b88e404d5caeab21113d573d76030b9389c206de34492"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000059",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "7e8daed32d993cb44d140d33936bad41bbbbef7362c29572c1c28ba870118341"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000062",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "a07d2f08288fc9be3332d175bd4a9b8654966268d32fe944d3933318e607b9ce"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000063",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c1466ca4de06bd21c45168304e447ada875565eb61f5d88eda0e60f6f5f3b3e4"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000064",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "499f10af0e4367fc5df67f5a206727d0bf47e1042d7e9c83e176d88e0c318481"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000065",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "1a3de43ae6cf1e4a52b26ad616a7b4dd7b48ddfa2b310b1c2d5b90d9e2a22f11"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000066",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "86f074d5407889f6165ae121fb17baf29dac41ecc4d7a06269fba7e25a81b117"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000067",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "85e49236978c7074f294bd8eae536156db19b4f1d86eb76d3dd8a0c330f35221"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000068",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "198564373b4c0293abebf95a2572e7d1ab057d2b34272fb61d3c822c2e009b51"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000069",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "08835abcac689eb5badafbd0eb3efe3279f3c7df1573b9e2a642f19931bd8f6c"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000070",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "dce5029a8a9fc47ca228b2fd5bc0f13b1daab3295a9643761e4ce9d718fb2e09"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000071",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "3ccbf3cb2a622dc3936dbb1f8bed3484aaadb032e98df4cd4911df342a86c7a4"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000073",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "9d91eb7f61281a2ba6485fa2b576144986754ef070baf713454bf5ba07e6d057"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000074",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "4a2b4b42eaa7ae286cb9a7d7228af4ade2e55d3ac30c8df7f4206b376a4b6155"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000075",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "bb90d0f6585a3401a5eb9db9a24aefc2bfb5d94ec7fc73efbb763e6fe717bd04"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000076",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "32bd0ad8ff44a854d5b975600563315b509ae63a084c03f0f8f09c5d991590b8"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000077",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "08a12f521c49c15ac34bda9108ec0b1b924270bca340e4124078aa12e2323b15"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000078",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "b23a47569e8bc9a66c33c3be9c896f8eed0f4bb65a558080299228e7c7d06edf"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000079",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "ed922cc6b907ec3847162fc4bff86d3b5c67d45250a9f99720f318025ba42501"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "quarantined",
+      "decision": "no_transition",
+      "goStationId": "go-station-000080",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "ccdcfd12116c2885a05704e9e5fefd8bc0a13551c30f3a31b2f6583a080f52c9"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000081",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "ed0a38e987d7d95f6ab30a25615b90bf071b273599e97fb49ed0eef8ada49d8d"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000082",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "45ee6d004c8dc751981af8b0d70aaaf55175f466779cab1e6ff9a377715e178e"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000083",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "17dbd71fd614c278c90753eb2986be84c211de61e3e60db71ec2c2ff4617f338"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000084",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "34d3515137856629d18e36ccb9152f0e0ad68081afa12d51ad407d2760b811a4"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "quarantined",
+      "decision": "no_transition",
+      "goStationId": "go-station-000085",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "4e6fc26e009c3a03ee2f9b7ec2443d73b74a1be7323359cf07f1e491622375ef"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000086",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "2d442a4c34c0831bc5dd74bad4360942b726c591b413c09226f9f52d6a2e30cb"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000087",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "0ae1bdc4af6222bc1874d0f1756ec24fc761916cd33a34d2ed85a00cee6e3313"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000088",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "fd8195b60b7d70911389eb9a38076b048a7260ac1bcf46c2307e0f1378b8af23"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000089",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "e6c347843f8b3a2a4749c3e8acbf65d6a149935367bf44313f521a541e0efcd0"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000090",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "fd91a9794a7b1cac6e984368a9470539b74d0dfaddb7f71a23f5b6fd06d6de69"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000091",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "6d87fe16244ae9be62db4f4ed294b7e73bb0e54754a0b46deebf28653b410ebd"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000092",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "8af188c0021961b058a4df236944f8bbd3e4edd4b59bade37a5e5672294daa94"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000093",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "81eccc2cca2b8b091a2d62dc4368da14e908815af2f8be4c58b8ec27d0315737"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000094",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "fc45d29cc54f720cea7f444829f69ecff5a67c9ce7ab150d9c239ad41c716f43"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000095",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "d72bc9e17e546a53190c07ee4473f573764c804ae200ea9cceb459d0a48a4ee3"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000096",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "a4a78e2319d42caf4e504f6dc4ec1e850f3ec988ebd31b2ca5a497519ced2a45"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000098",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "2e514c033c5f11012ec33c1cca3128422efb8f960e593986b5954adb9e104c4c"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000099",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "e96f79d3ec2eefc7eefa6cd55499a9314766bb6d9e61dd4a18cee5eade5f8a3c"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000100",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "8349187d92921db8e44b6d1b5532c4c295ae66918b1c02c5c4e973b2053c1346"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000101",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "f39f5f37e4241ca391aa14bd7714b788e8709f0103b15ce0f81d71630a7c23b9"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000102",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "e140676c0c26aec8a406963cfee86e6c0c64d2deed31f8d4a49e4618a023dd02"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000103",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "0c1375b8f503328a19173d2c25f397ea5a9288d80efd2c9ef68a386b82a177d4"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000104",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "734530c05f46aa9ab7e25a72496eff681d753a7401aaa9d5de1a6ad48f92165d"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000107",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "447cc222f5f3685da965019144bbf22f7d2c9c2767404bcbed995043d726cc4f"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000108",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "558534ff5d019c73740e5eb961c47a6762d44abbc623611c4771fe7958fb82dd"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000109",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "39e2c4bb9d0c74fced27654fd86f7fc2e6be1b0dabf2e8393ce4ffa49f179759"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000110",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "2a3a7cbd798f13dbbedcafd158d36c9992ca5f2ac6a11c362ce60213fd7049f0"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000111",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "7744f6780e189481e38656dc3f1d201393117a14a89c6b1c725370b89028e3c8"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000113",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "0ed85be7a39219109dab34a134b4559caf25f616f8c03963f1f50480626c5e20"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000114",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "6c58a82a804415f00ad00fe5be0fa87e15093fc78d80229fb4baa755d7fdc761"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000115",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "5420fffeb1b8ba5632832e9a4141ec42897a779bfc0c5c19d47ddfd0f09dc188"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000116",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "9ebb750be634676666116a25302da4d7fc4ab48caff79b125d706baf9bba9ae7"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000117",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "bc445c2d1c253091311dbb45e03ea65ee27751012a1083d0873f92925afad975"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000118",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "6f221be8d750fd6dada0de92c286fdf947031a6da9299ccb41941dd7600c4b88"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000119",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "22979957a26c10b7ff384d7987f2cfe99445441654b7b43746db470947ec0ea8"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000120",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c74664b3ff240618d3509bba51ef685403a8e28db3c377ad0a2a882536a7fa22"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000121",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "177eb3c4492975966d4f2d972c0aaef3ebb0c5fcba784b4bb7ee8b78f8f1347f"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000123",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "1a1a831ada3d7018ac6f1d7f9825483687cd10a495cc17a576881fe0d5646ae4"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000124",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "99e6513c51446ae93ddedd2b95285a93d8dda13ecbf6b755ff44b2bd9bc91bae"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000125",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "b66d050d946277df4bb858ea0a9442fab177081bac97beed1bfe8e6c961653fb"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000126",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "d1e7fc56484e7c565909e91c1c3bac9ec5971a5c4924b857a250b902304fdc53"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000127",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "839b55c5d41b20c1cb0bf5f2c82e8cbd7518f13ea682001b88359844a0d2013f"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000128",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "cfb2083807157dff51e38bb30eb806b2e049c94ed25fa50fe261d1657bab73c8"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "quarantined",
+      "decision": "no_transition",
+      "goStationId": "go-station-000129",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "fd06752554d454bf91d96edbb0d62607094ef66ed44ad7b08cb86cc799966267"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000130",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "7d4a537e510bc0bb68b1121a30cd0ccb434aed4ca76904b2553a8fc1e7233a77"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000131",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "f90d3c48973701ac4c3d1a8536e30f96e6170a56e064e49419a2c6d652c1536e"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000132",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "df6e8f8d19889acdf3ef21cdb615e17383d5ab208ad770cfac7c00c207335bcd"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000133",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "0a185b5032692cf6e1db431d6062ed2461096521703c3a5baca1dd59a084c8f9"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000134",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "b85506ab5578c48b4b49b4d585a07201caf6accfad64ba2da5e95c6cac470aee"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000135",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c0820760ee23420716973ec92c37b357f0dde5634eff1455b3fd4c13bee5ed7f"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000136",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "a2420dbe06b424976578ba5fa09f678ea02d397ff101d90ead3b7378bb26ae40"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000137",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "b6f66e2fc733dc985a268e0b75e2b2ee130c8338a6088e551f4c3c1f73c50fc7"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000138",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "06ccd70a9bbce8d779220f4ead8ab43bddb59f3dfd4fba3ef058cb0438c9939a"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000140",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "d67c66c7f7d488c194e8c938b6731421ead3ead0ae085c31045a55a12621f2d5"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000141",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "10c48303b974456638bbb277e9d32a2706e8e81b98625f7e35fe63a005468c0a"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000142",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "e7a5d545ecee3a0049ca64e1f6b27329c4b77fffe74fc8e8349e813bf6a33d61"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000144",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "97f952bb932a38682fe1f4477cf9cea770b0d125b8775697697f6e64f3f7c808"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000145",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "ed2358cdfa156d6f191c30c19bec305c459c21acf7c7457b3e0d73873840b28f"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000146",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "4732bebb4defd24a93021e8847a84c0a0784784164e94151e9e7822f3dcf073d"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000150",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "f8643f1745d050cd0e2a14e7ea734daa36a71b81045ff121fa1415aaedc2e4be"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000152",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "6319cb91c4db69018a6fef38122c4ea3c80d3457cae1bd7b38a303984943fbfa"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000153",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "4f2b3eefeedcecef9469b1423a50a045dd8f9785f85cdd869c28d6a3042e68d0"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000155",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "a830585f29c81072211afab87159e98315068868ceb7fd3c3ee628ef35b20277"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000156",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "bbfdc7309d8491fdf039cdf841140a0776fabadfdd8f883031adff11f6730482"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000157",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "1162baf1b26a5f80fae9fa0703fbcc51cf181bca3347978dd3162bde81b64913"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000158",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "6fed483d643a6ba650e418312746cf4fc3229288e15d572fe57891d0d3375f5b"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000159",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "a06b2e057dc892a1630d01ca5599e148dbb935e883989062d2941dede33d0e3a"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000160",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "19fc2d38570f3e11851b54903f8340029db5655c3f36450264cf205964c3680d"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000161",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "36dc093fb83b84e2f1c382e7cd95ab9e5b7ecec54a318edd20dad2084bc9c262"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000162",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "6775407d8dcbe04f6d8413506b6a14fe500cf73a6d8f0f56bae2df2ea542dfa9"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000163",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "08544218af87920085f054c28e1e348037289b2ebed690a0c3c947d6cab7f821"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000164",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "9bbf97d07425fab408290f01300d1ff7d2730cc6dce9dafa236d09c2ba9b1d19"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000165",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "0b69bec9b990bf6a30e1ee71ea2b270265cc8f4b54329a518a876ca397397c55"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000166",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "6cf30f6b23c1ab846d5f4116f3b5b01e1a89686cbc5796b7ebfb2458a00d5ca2"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000167",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "22673570ebef4fc00815cf3061223aa6a6324c31ca468f7a9e2c958938078c4e"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000168",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "cfd7eb496eccaeb46525fef3709f49e70bc14a3970a01c2374ce71f3f5a5ebbe"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000169",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "a997f91990d572d81766b6357c7c5508b95ebeef12ef2aefaea185251e685470"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000170",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "3a68d569525e65523a488bc99b0e7f4760a7d6030f236d54cac6608484216e97"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000171",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "1c60c916e3241965385a2cea83719aa7921d619d598a0e8e6cade368d216c1be"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000172",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "1c108fdd3863fae7ce4c9316fd385afb569d45747f3f02e2637bceac59df062f"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000173",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c831548313182fe7502bb5998f64c57f5aa5b0252e95e577e2e38ae635414a82"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000174",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "d8385bcb1451b8f79d42c0b7bb036f35518ac3c589a4b2ae658ca0115a9548b9"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000175",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "18c624ed9ec20ea4d49be9429f8e1ba49624db689b05ea13f85af7e1c7dc0d6d"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000176",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "ebf3e11ce489d5c5e3ff97c29d5b3eb3d30c4dc8616731b0cd3977f499b53c19"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000177",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "6edce2d26395141278eb2d563e3c42d20f9fa86be4a5ef61c70e27ce5c824706"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000178",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "a65cac2407f60ddd6f4c10d88626d2bf191a46403e1b4403f5914f85dc42adce"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000179",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "dd081f6a2929f6641a487f7b6e662d8f30fdfa203c451ef8773ec49fc7676d38"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "quarantined",
+      "decision": "no_transition",
+      "goStationId": "go-station-000180",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "2afb71970ab3a566b76f9b1a8970516c7f0d0e12f71ada35aea771c75138e26c"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000181",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "42a463fb6266a70729b2e1a490664082073e2243411675658b971aad61d8678c"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000182",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "6ce99097d8ed8c45dfab7d6370b4424030399e60522beec686ec3b3e2ea71cbb"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000183",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "e7f37e9ae3646dd8175aa285522d3e849864b9263d208d82c4f2a8d662667f11"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000184",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c152a0a642403e60fe39d3c39b2cf1308ac562a1993ea252c0e9f2faf709d836"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000185",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "9cd7ebc3536bde44caddfe0fb1cfe71a9c5781e88db80ccd57c8c04c55d6b517"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000186",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "94db61de0ce17fe2bc2dcb5cc202caa6e6694358a2aa093c295dd9f38f1df51a"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000187",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "e8e048d431bc2fcda6b9bace1753c2679f653087e6fbdc3b08c0d4165ab2e655"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000188",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "cd5cd6256293e65f74d365f69759a17eac719ebd6b65e95b71a1f1f84e1861a7"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000189",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "b9274fa64e0839b06ef928d21699a01e281cb1893a593bde3037529a6d8ac234"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000190",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "a8c6bdabb141f9d119d74b1e76870ed9e4914371aefc61db39d5a6db9b1ac1cf"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000191",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "cf185514a71cd0dcd69412b00958d939ed133286308754b6473f0f40f9f119a5"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000192",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "81f3d69d8e3ed1a71316268ac8ca2b8b5f072e80ef936dfa260e6e5d582a6395"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000193",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "34ed92dd08876a82910714ce9e10926e7c1b9fd5690f83b4a1e016ab61d7dc04"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000194",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "8952fc705e74ff92906bcd254cd5746afbe50d3bf9775ceefacd32f42c8a6f20"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000195",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "2cd8438664fba3daf28526b868930ef2c4eca84fea5495be68c48d5b77d356bf"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000196",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "b24419e68fb47aec9b2fe9a7d9314e7aae4c2272d64d4dc1674c8fa3bbb3b3b3"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000197",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "afc5921750ce3369ebc2de05f5670fab41904603aee8eac5e9cc7241c01aa8a9"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000198",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "d24c4f409e3a98157176be7853adb99eb3cabcbc69050cae1d46713e5753f5c7"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000199",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "e1120bd369a2d6153c677ee4f8d30b7481fdf44cd89d34e1dbd4f810f86064a3"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000200",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "9b0c45a302b29383f4d8a137cd3fd5f7d3e83ea900267eefa7f5776238559731"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000201",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "eca95837702c89f0b7d96790f399604cb1ebb87c4e4973a8915e0fe3d3cfb348"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000202",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "3c7ea55b52ec52dc17b8f18832267b335403f51a563e443b309204f58f802787"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000203",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "b3d37a466ceee36c21b0d7026f5bfa5881504871b021192135093401c747a97e"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000204",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "6562d019e0523a7bc8f782565db35d6f7e9d66a5cac8ccaaf5d5ee4889d4edba"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000205",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c9bcd8382b2ae5e419662741ae0ba0cd77be634e3222672088184bace0bc014e"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000206",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "cbf3b9b7b04750e8704780845f14fbb407595c727d1246b896d4c0fee2669204"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000207",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "985ea02e07d22d2977b256f375bfcadd8e7e9216d44f4970ffcb66d73aec3357"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000209",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "b26cb734b866e4723ef2aee33ddb9a3f7ee6c5e3fdf034d08080372426e62b87"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "quarantined",
+      "decision": "no_transition",
+      "goStationId": "go-station-000210",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "72827085383eba41567e7201eaafeab873c4611bfe7c18b76c1826c09cfe79e2"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000211",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "dd7d1e57da5ed7a1eb3b19b58828abddf0196f0237186bcb97306b8dac033a6e"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000212",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "1198a99a78c167f40c90d3c6654e55e30e838f5a853f426822ef57debdaecf1e"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000213",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "8b868b9c95be8e64ccdb5cb10071c5f4a5544651038570d0563fdeac4b45f5df"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000214",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "ca41702750373c5ee2898284e65525c1fd3ca90287b8b3e6d1785dc392fddf51"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000215",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "5cc586dc86b46114b070f185a56484bde3d420de905f91c270b910c5c0d57966"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000216",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "f014f2e9474b246685b9df38a30ea2cade721bb5aceadcea64d4fcad90ad29ac"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000217",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "40b732ed1d63d037ec890e0adbdeb6c5c3607e2d6916962806f9f2f3d74863ab"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000218",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "2f8d67d1e4f042a8e958f61ec44a2f135d60971c1908377e4ae9786b4c538895"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000219",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "b258fb8b3df860b19c4a88134ed810da6342c01f7c5a960c41a3ccf95539d604"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000220",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "ec965bbb2498b822356f7976d09c1ad4c7459d2a410a6a797b8e78e532e88181"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000221",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "37ba7d87e73cb2aa0e0295f43122ea47cfa2c62167a7eb9b3a503dd5cafd23af"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000222",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "6cc311b32f5acc3d4f7241c8dc3e07f9778b9b1f8bc9cbf552dfc1abeb054198"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000223",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c4eece795aa160d3d0fc32ecee8d4f0ca36798f1c3d71c631db78f274d4c150b"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000224",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "df0e5e2ed23361a7853085d7b25232df661a7fb0b411a34e43454aed055fc7cf"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000225",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "4a72076e4ff85bb994805a2694d6e3d98f0c9c6458dfcbfb0eb91698757b9b62"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000226",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "b48737105d6af15b84cd1043e9425f78dbf48a5361bcf140625652b0fab83f90"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000227",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "60d242188f4cc4b9e7a24e337fc4bff09ca263ccd0d50354e702969903de6e85"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000228",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "b57688a476b7813c9fa3d5a53f184cc8d5eb59974930b58f754e74b4278ead98"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000229",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c4d90eb6ec80e2be1e2e9b36b3d79d12a2e1b3a9082acae8fc5c79a6b7826a37"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000230",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "b56cc3bf86ee39f8f2aab51af3277a9e2a61442b99e34a9e4082743472b7c492"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000232",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "744f86da2ef2e5ed03a39b770ab2817f3a5d6281d3c8bb395b694af8c27bf6bd"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000233",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c4f64378a3b8628cf15b6057d8c64b0ed0d295ff60d68756e5af1694049e37dd"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000234",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "46972ebd54002560bbeafd78dc0b5244c4009bf1d1f2efb3c119d4823dba0ac3"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000235",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "ddc9c1100640c42ef36f3efba618739513a06c83072b9b73dc1680e0c8b48e22"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000236",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "1a8de40d28965a48c3b6701c43216ca693d9dc239df1761c879e2c4a57670fc6"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000237",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c5fed8fda7b157a40cb551bcce227253a363fc5ce5ec120ebe6e4406ae23936c"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000239",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "7ce6b4e921f9b16a1eafca39a01c1b51c1c88ae634fe6373cf298a3b4c4815f9"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000240",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "0e5b676d00dbcd9ec97a9bf410247875e01166b33efbd4a45629cdbe97c08c09"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000241",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "ff2121dea7e3b08dde3286ce3f12c3292def4fe2982cfeab74d48ce22bd4b384"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000242",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "20b78572d06780075e3a29ce7babd61e045fc77408b83182e2b8cf7d60cf0106"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000243",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "77e4aa2c708ccabb8f5f0b03f3e4e14eb53998d9e596a4c3d5bfc2f440ca3537"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000244",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "b0f942fc6cc25fb15fe24fb5f0cfd63b85ea2fe5eb45eeec2996fd55b103704f"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000245",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "4508c4d4d4bceeece7430f83f2f97c7c5bbaf2491530fe779f817f2c7fec8e0e"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000247",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "1e744764ba2a3de74446e53098e50306445a45a0d7abe551c6dcd0cf5c3afdd7"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000248",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "037ab17f40dcddaf7b79198111dc97d3b5f04a1c0bbc128fbe694fd0d1c67d3c"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000249",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "59814158dac4091321100624f2d0a6eb1be4ba48ae40d3436a545f51d4e86ead"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000250",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "d53e3f79d8c01e366a85c56fd8e0cb68b2d95ef4f6e515d74602c1c63d510d73"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000251",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "f3709188890082808e86370fafc01343090496385e7122d41b292d63ab44ac02"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000252",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "f0f18b0840b1d1761394a7c73dacb1866fdc407a4a3ec5ddd25f151f4781a3d8"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000254",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "2a8024e22fce05fe92de8bff3216b9ce48283d7796fbd92912ff4b1fd3b2268f"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000255",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "a057cf711a7f3522fdb47c61460694b5b26939857722dec423a537eb8c53f427"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000256",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "8c2dd4e3c01d842264127ee969192deb4074e284c8d062380447d2a500334cb1"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000257",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "283ac659619222607e959d1c520baaa2e5ef7444a6c14a57f2d06952899372c7"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000258",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "8d8beaebc01a5dc4de98852933a64385bc649796658b1bcf7d3e799f9ac81a5f"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000259",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "97e0feb3d50a8e3ce3f2b02ccd5bf08f1a8580db81464d22b9d7b254b406b423"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000260",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "93192b83548b0053179bf7315c253e1a4891c2bd447cef0e9bcfbba90625a47a"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000261",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "1d9fe90f8d9faad9307ca40d2c3f82056f17b84964697183812b2ab5bd5df903"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000262",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "ca6dbda0ac1afa78d5e24896f7269b99ac38847965bb48712aaf287ec14a0ac7"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000263",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c38dcc4e355e099055ac5eeb952fe4a3f463321598d77605835e3b7a71a6f540"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000264",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c61469857471ca46066254d9fe9f7e5fb976e4f4a40259e73de7c3698616c622"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000265",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "7da2a33cd21b9cf3344ae67297e738341599c344c832a4901f7f0fa168aa58e0"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000266",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "4984730de022df5891aaabd6a0bdfe0e13c7761d366466e0a5a32b20f96b49c9"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000267",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "a23dae2b0614451429b998fbce5dbf5bddbd287f50a828a292ba9f6ec33e6519"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000268",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "343bfa3db4fee7922f1b182cd4665fc3a9d509e2c27b8796b12ec915ded0b5c0"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000270",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c63e19e2b96e35046396fed8e59e031d423d9593375279b04d3f5f77971a3e86"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000271",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "baef2765893ecb8253b0e37a07c958d6696208778bc612d65ebe8e2bb7e9e1e6"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000272",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "9e052fdfd19b86d7e36108bb55b17c2fea4fc7044806e54ffd9a142550337213"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000273",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "34bc76e7a4780ee74b7af12f3fc190f83d83bb6879405393150c72de5fefaeb2"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000274",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "af7a122f8f6eb052cc5ec47a5b0b5a8db93c5342fe35de33a6eb5b175ac1c523"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000275",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "96d8bb13d71517ff7f4974ae1a1af609ac241eb263dc0009b85913ec7d10c680"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000277",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "6606995d86e12de4cd68a43976655ef219e87d4e3f8a9666cd41b84c5e503dc3"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000278",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "2d3e6177c596c37ab10eb480afa28dbb704f499bcae7a8a0db392e933c92dccb"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000279",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "82467d697e9fc3bbdbf9906060d051768bb93f39f05f511e475288f600c13784"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000280",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "facc4a674d06a1e8dc4a8ffdd9953a7035f410ecb237f9d3e60655067e405f74"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000281",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "6e3dda73e38ae112b5517d90799fc09f4ec9bc2eadf7fde607be1a93526de4a4"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000282",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "1faf411fa3d3ebdaeb046daa0554dd330c0eb358b66bf654d4b02141624ecde8"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000283",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "97c0b63f3fa52782433ed39ae2b11bd675668577d0392e09d17781f0dfad509e"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000284",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "75ee7db06931bf71c327add61d1631331d3d4703276af97d307417ff184ca1a9"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000285",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "81bd0b0337d43caebd16fbf25a2d24e011d2e0cb710fed63e707bb7363534208"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000286",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c101c84c5cc1c3ffa59f187161c9a9a830bf6b8735e226254f3c113900f13aae"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000287",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "d0696e28fddbfa8a5c35f55f7a8acb0e6f3d5455ee86fa59f7a30a5d17d0d06a"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000288",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "e436d939b743dfaac3b7e2983443ba0697e442ab39efe35ac5458a37e11401d4"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000289",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "9f0fa22af2017eb34e50d12a066e61ac7e1bc626602e737cc42299d1e9fa95fc"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000290",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "86df526fb432abc25f7e5601bf4787428bbdd9cc4b4b77e556321e4126587789"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000291",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "d84bbd1e934f172221d4b445c1cc1a3e39872d4c9746a7b7b576ab0d1427fc08"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000292",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "30ed6cc049ebb20f75b492ad1b5cefc3998005bb9fbe2fc327ffd32dda9495b8"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000293",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "13c87ef63a6369196f55256296a91228633bddf273c95e4ed353b091f542ec21"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000294",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "328d4cd63e1258c2d6ffcf4615472144e0323f52e087697f959a8b47c8a876da"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000295",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "34c838828da9f4647d2c6301df37e0fda87fe91e1afdc3243adcacf2f2782f40"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000296",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "405b254a3c842523b91b0753c3663fad948088e231e71c181d61e7e67a2bb58b"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000297",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "38485405f23918a05bee04fd432163bd6a14fd4e75faaebdf6092ea34e87356f"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000298",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c621609e9eae70bf9a3d5caa8e05baf9e3715fc5053e734cf9aacf75370ff34b"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000299",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "5729f37ec4e44fde1b0a45a693a9942d61cac9b87594cad3a2a9c377a5849443"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000300",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "9ad2f0c9a40276c23bf2f5f8e11a42b875ac4545f1de2c1a2c0026bfe8fce57c"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000301",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "e7597550f24f02071f59b001a43b80d101bb6d82742bf881b6194e7e194f5b68"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000302",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "aff365ecc924e6f6031e5af1fc7981ecace2f72785919d5c3513df0b32f731eb"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000303",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "7d516b9fed790a8cdfe4a3905364e5bfb3f820a786520e3fe2454c5c24e3e42e"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000304",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "5a7be84097f0a5867b44301ed9ee3027d8e957e2c7680e20be192a4105d0f92f"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000305",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "2c79942f6b52d4a7892676e309a1396de4a5a8d8c6739444da552dde1bdfa6ea"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "quarantined",
+      "decision": "no_transition",
+      "goStationId": "go-station-000306",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "6fc8722411bcf81abdf74786cfb43a40f0e1da49943a9dd3ad672ca9fa2f5dee"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000307",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "d8c29209e45e28b9e6de616834ce6282abd09d07a8a56b46808132129347464f"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000308",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "0f2949a4d2588913eb9b82e5c6dbd6c4948d2a2dcc509956e7140d8db37e75c0"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000309",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "e131abf48900ac4c4c028bbdc5f2faffb8c6b482df088ebfe3c6208ece0926e8"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000310",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "6e529d47f441c1f9276ab252bfb385304fcb6ff9a23a15931ccdd4bc3e5cb3eb"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000311",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "99c151e02c403430a2ff628ad8b86226097f2d10affc563b4f11f2a01f3edc7f"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000312",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "d65b2033e14d5307244ef7438705a6554d7fa852549943f932db48a58873c45a"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000313",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "e48f78b98840b3d207092a5915ef84b2bcdc85251ac4e519978c0c1fd23fa72f"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "quarantined",
+      "decision": "no_transition",
+      "goStationId": "go-station-000314",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "5fa37018c8fbfb0da0cfa6924318b9a6991fda225b60192f2ce84682bf0c8c52"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000315",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "7cfff656db74e10f8bb6a027e91431daa72f60d40997552992d62d4a558c41aa"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000316",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "f66d563b91bcc6cd1d6531c46e7dfa425cf0a24207b021848e520e06fea84ca7"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-000317",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "004f7113fd67a930495c21c4063090037de14ad52db35333ed4a1853ab764664"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "quarantined",
+      "decision": "no_transition",
+      "goStationId": "go-station-900001",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "b312f5618fe300ff54ba538ff02fe79744604f0dae104505c5023d425da4308a"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "quarantined",
+      "decision": "no_transition",
+      "goStationId": "go-station-900002",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "6742ca9272d9fa7fdca2b3214401ff012c845cb6afb88d54ce27f4580187c8c2"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-900010",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "c86c7bb191ecc76e83067feb062a44313605c74f0d33629e101126de354c1527"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-900011",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "4e1b08aff15439b8d352a9dfb822c3f4657a82284eb84dd873282e18eed66485"
+    }
+  ],
+  "scanDate": "2026-11-26",
+  "schemaVersion": 1,
+  "streams": [
+    {
+      "goStationId": "go-station-000015",
+      "observations": [],
+      "publicationAllowed": false,
+      "streamId": "legacy-stream-001",
+      "streamSha256": "c48196f532c5d00bc70074abc681ff185eec20cc7dc290185e25a7166a7a1ef0"
+    },
+    {
+      "goStationId": "go-station-000034",
+      "observations": [],
+      "publicationAllowed": false,
+      "streamId": "legacy-stream-001",
+      "streamSha256": "fbcce98e50568e4441d88c7444369aa204311be8095dbddd89e8ab40e821f367"
+    },
+    {
+      "goStationId": "go-station-000080",
+      "observations": [],
+      "publicationAllowed": false,
+      "streamId": "legacy-stream-001",
+      "streamSha256": "4e8b2b48e3570a949d1daecf7c97bfccbc582e253a27ef28a9e511cb714e187d"
+    },
+    {
+      "goStationId": "go-station-000085",
+      "observations": [],
+      "publicationAllowed": false,
+      "streamId": "legacy-stream-001",
+      "streamSha256": "486f3205dc434f4232256af5e0160b67c6191862df9da1554ae1da52b5a67483"
+    },
+    {
+      "goStationId": "go-station-000129",
+      "observations": [],
+      "publicationAllowed": false,
+      "streamId": "legacy-stream-001",
+      "streamSha256": "f7f5c1ab00354bd85ec186c822d609308facdc167e7f764d4dd9c949e80a133e"
+    },
+    {
+      "goStationId": "go-station-000180",
+      "observations": [],
+      "publicationAllowed": false,
+      "streamId": "legacy-stream-001",
+      "streamSha256": "cc451da3d5fde8cc6046150a742b6a3e7d48fa8011028fe96399e02e37d53ae3"
+    },
+    {
+      "goStationId": "go-station-000210",
+      "observations": [],
+      "publicationAllowed": false,
+      "streamId": "legacy-stream-001",
+      "streamSha256": "5fc4eb66dd4b131a8319f905d1892520fe79ed01f35f2ff6fe393b03377f952e"
+    },
+    {
+      "goStationId": "go-station-000210",
+      "observations": [],
+      "publicationAllowed": false,
+      "streamId": "legacy-stream-002",
+      "streamSha256": "717c7230d06ddb6802e6d2c4aa09cd0d15fa72fedf44dffe0a33f622e2e89172"
+    },
+    {
+      "goStationId": "go-station-000306",
+      "observations": [],
+      "publicationAllowed": false,
+      "streamId": "legacy-stream-001",
+      "streamSha256": "f31b1d3200d2c9e8743cf23e265e1e630ba2afdccd2c0a91cd2a897866f97c00"
+    },
+    {
+      "goStationId": "go-station-000314",
+      "observations": [],
+      "publicationAllowed": false,
+      "streamId": "legacy-stream-001",
+      "streamSha256": "86fc31b555c69742f6c8050484c47f14867cb6494431260fadf3b0a0df941b2d"
+    },
+    {
+      "goStationId": "go-station-900001",
+      "observations": [],
+      "publicationAllowed": false,
+      "streamId": "test-candidate-1",
+      "streamSha256": "8692f498a023bf15237f4c8b722179633a8bbe73f9ca11c4d438da0b745e6ae5"
+    },
+    {
+      "goStationId": "go-station-900002",
+      "observations": [],
+      "publicationAllowed": false,
+      "streamId": "test-candidate-1",
+      "streamSha256": "0b667351ddb1904e27d037500da0669ff382aeca11f050d71243c938a7477802"
+    }
+  ]
+}
