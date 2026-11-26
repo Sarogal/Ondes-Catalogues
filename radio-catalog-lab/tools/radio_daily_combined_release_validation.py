@@ -24,7 +24,7 @@ GATES = {
 }
 
 
-def compose(prior_pointer, prior_body, *, anchor, day, operations, objects):
+def expected_combined_release(prior_pointer, prior_body, *, anchor, day, operations, objects):
     old = verify_baseline(prior_pointer, prior_body, **anchor)
     if not isinstance(operations,dict) or set(operations)-set(GATES):
         raise ValueError("unknown combined operation")
@@ -89,9 +89,16 @@ def compose(prior_pointer, prior_body, *, anchor, day, operations, objects):
     expected["tombstones"].extend(tombs)
     expected.update(release_sequence=anchor["expected_sequence"]+1,
                     generated_at=day+"T00:00:00Z")
-    body = encode(expected)
-    validate_candidate(prior_pointer,prior_body,body,
-        expected_candidate_sha=digest(body),day=day,**anchor)
+    return encode(expected)
+
+
+def compose(prior_pointer, prior_body, *, anchor, day, operations, objects):
+    body = expected_combined_release(prior_pointer, prior_body, anchor=anchor,
+                                     day=day, operations=operations, objects=objects)
+    if body is not None:
+        validate_candidate(prior_pointer,prior_body,body,
+            expected_candidate_sha=digest(body),day=day,
+            combined_evidence=dict(operations=operations,objects=objects),**anchor)
     return body
 
 
@@ -112,4 +119,5 @@ def publish_combined(store,signer,prior_pointer,prior_body,candidate,*,
         raise ValueError("combined validated digest mismatch")
     return publish(store,signer,prior_pointer,prior_body,candidate,
         expected_sha=expected_sha,expected_sequence=expected_sequence,
-        expected_candidate_sha=verified,day=day,objects=objects,checkpoint=checkpoint)
+        expected_candidate_sha=verified,day=day,objects=objects,checkpoint=checkpoint,
+        combined_evidence=dict(operations=operations,objects=objects) if candidate is not None else None)

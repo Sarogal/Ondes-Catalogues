@@ -17,12 +17,13 @@ from test_radio_daily_repair_plan import DAY, DAY1, SID
 
 
 class IndependentMergeGateTests(unittest.TestCase):
-    def fixture(self, change=None, single_day=False):
+    def fixture(self, change=None, single_day=False, approved=True):
         self.signer = EphemeralLabSigner()
         doc, _ = setup(change)
         for row in doc["stations"]:
             row["logo"] = None
-            row["editorial"].update(admission_state="approved", reviewed_at=DAY+"T00:00:00Z")
+            if approved:
+                row["editorial"].update(admission_state="approved", reviewed_at=DAY+"T00:00:00Z")
         self.pointer, self.raw = signed(doc, self.signer._key, self.signer.key_id)
         sha = digest(self.raw)
         self.anchor = dict(expected_sha=sha, expected_sequence=8,
@@ -135,6 +136,42 @@ class IndependentMergeGateTests(unittest.TestCase):
                 expected_candidate_sha=digest(self.candidate),**args)
         self.assertEqual(result["sequence"],9)
         verify_visible(store,store.current(),sha=digest(self.candidate),sequence=9,signer=self.signer)
+
+    def test_legacy_merge_signs_and_preserves_survivor_and_alias(self):
+        self.fixture(approved=False)
+        store=MemoryStore(self.pointer,self.raw)
+        result=publish_merge_release(store,self.signer,self.pointer,self.raw,self.candidate,
+            expected_sha=self.anchor["expected_sha"],expected_sequence=8,
+            expected_candidate_sha=digest(self.candidate),day=DAY,**self.evidence)
+        self.assertEqual(result["sequence"],9)
+        actual=verify_visible(store,store.current(),sha=digest(self.candidate),sequence=9,signer=self.signer)
+        old=json.loads(self.raw)
+        self.assertEqual(actual["stations"],old["stations"][:1])
+        self.assertEqual(actual["tombstones"][0]["legacy_aliases"],old["stations"][1]["legacy_aliases"])
+        self.assertEqual(actual["tombstones"][0]["redirect_to"],SID)
+
+    def test_legacy_merge_without_evidence_refused(self):
+        self.fixture(approved=False)
+        with self.assertRaisesRegex(ValueError,"new redirect requires merge evidence"):
+            self.signer.sign_candidate(self.pointer,self.raw,self.candidate,
+                expected_sha=self.anchor["expected_sha"],expected_sequence=8,
+                expected_candidate_sha=digest(self.candidate),day=DAY)
+
+    def test_legacy_radio_bob_remains_protected(self):
+        def change(doc):
+            for row in doc["stations"]:
+                row["display_name"]="Radio BOB! Metal"
+        self.fixture(change,approved=False)
+        self.assertIsNone(self.candidate)
+        with self.assertRaisesRegex(ValueError,"no qualified duplicate merge"):
+            self.verify(self.forced_merge())
+
+    def test_legacy_merge_cannot_modify_survivor(self):
+        self.fixture(approved=False)
+        doc=json.loads(self.candidate)
+        doc["stations"][0]["editorial"].update(admission_state="approved",reviewed_at=DAY+"T00:00:00Z")
+        with self.assertRaisesRegex(ValueError,"unauthorized catalogue delta"):
+            self.verify(encode(doc))
 
 
 if __name__=="__main__":

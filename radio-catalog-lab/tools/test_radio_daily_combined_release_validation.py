@@ -21,10 +21,14 @@ OTHER="go-station-000002"
 
 class CombinedGateTests(unittest.TestCase):
     def setUp(self):
+        self.prepare()
+
+    def prepare(self, approved=True):
         raw,*_=reports()
         doc=json.loads(raw)
         first=doc["stations"][0]
-        first["editorial"].update(admission_state="approved",reviewed_at=DAY+"T00:00:00Z")
+        if approved:
+            first["editorial"].update(admission_state="approved",reviewed_at=DAY+"T00:00:00Z")
         second=copy.deepcopy(first)
         second.update(go_station_id=OTHER,display_name="Other Radio",homepage=None,
             radio_browser_uuids=[],legacy_aliases=[])
@@ -115,6 +119,28 @@ class CombinedGateTests(unittest.TestCase):
         result=publish_combined(store,self.signer,self.pointer,self.raw,body,**args)
         self.assertTrue(result["resumed"])
         verify_visible(store,store.current(),sha=sha,sequence=9,signer=self.signer)
+
+    def test_legacy_logo_and_status_one_signed_release(self):
+        self.prepare(approved=False)
+        body=compose(self.pointer,self.raw,**self.args)
+        store=MemoryStore(self.pointer,self.raw)
+        result=publish_combined(store,self.signer,self.pointer,self.raw,body,
+            expected_sha=self.anchor["expected_sha"],expected_sequence=8,
+            expected_candidate_sha=digest(body),day=DAY,operations=self.operations,objects=self.objects)
+        self.assertEqual(result["sequence"],9)
+        doc=verify_visible(store,store.current(),sha=digest(body),sequence=9,signer=self.signer)
+        self.assertEqual([r["editorial"]["admission_state"] for r in doc["stations"]],
+                         ["legacy_preserved","legacy_preserved"])
+        self.assertEqual(doc["stations"][0]["logo"]["sha256"],digest(DATA))
+        self.assertEqual(doc["stations"][1]["status"]["state"],"quarantined")
+
+    def test_legacy_combined_without_evidence_refused(self):
+        self.prepare(approved=False)
+        body=compose(self.pointer,self.raw,**self.args)
+        with self.assertRaisesRegex(ValueError,"publication guard"):
+            self.signer.sign_candidate(self.pointer,self.raw,body,
+                expected_sha=self.anchor["expected_sha"],expected_sequence=8,
+                expected_candidate_sha=digest(body),day=DAY)
 
 
 if __name__=="__main__":

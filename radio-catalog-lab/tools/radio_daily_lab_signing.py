@@ -10,7 +10,7 @@ from radio_stream_recheck_ledger import parse_day
 
 def validate_candidate(prior_pointer, prior_body, candidate, *, expected_sha,
                        expected_sequence, expected_candidate_sha, public_key, key_id, day,
-                       logo_evidence=None, repair_evidence=None, status_evidence=None):
+                       logo_evidence=None, repair_evidence=None, status_evidence=None, merge_evidence=None, combined_evidence=None):
     """Revalidate exact bytes independently of the staging generator's assertions."""
     day = parse_day(day)
     old = verify_baseline(prior_pointer, prior_body, expected_sha=expected_sha,
@@ -34,8 +34,12 @@ def validate_candidate(prior_pointer, prior_body, candidate, *, expected_sha,
     # This gate permits an exact logo-only successor; not a caller-supplied
     # list of authorized rows or a generic waiver. All other fields survive.
     reference = old
-    if sum(x is not None for x in (logo_evidence, repair_evidence, status_evidence)) > 1:
+    if sum(x is not None for x in (logo_evidence, repair_evidence, status_evidence,
+                                   merge_evidence, combined_evidence)) > 1:
         raise ValueError("conflicting specialized evidence")
+    if (new["tombstones"] != old["tombstones"] and merge_evidence is None
+            and combined_evidence is None):
+        raise ValueError("new redirect requires merge evidence")
     if logo_evidence is not None:
         from radio_daily_logo_release_validation import expected_logo_release
         if not isinstance(logo_evidence, dict) or set(logo_evidence) != {
@@ -72,6 +76,27 @@ def validate_candidate(prior_pointer, prior_body, candidate, *, expected_sha,
         if candidate != rebuilt:
             raise ValueError("unauthorized catalogue delta")
         reference = strict_json(rebuilt)
+    if merge_evidence is not None:
+        from radio_daily_merge_release_validation import expected_merge_release
+        if not isinstance(merge_evidence, dict) or set(merge_evidence) != {
+                "maintenance", "repair", "confirmation"}:
+            raise ValueError("invalid merge evidence contract")
+        rebuilt = expected_merge_release(prior_body, expected_sha=expected_sha,
+            expected_sequence=expected_sequence, day=day, **merge_evidence)
+        if candidate != rebuilt:
+            raise ValueError("unauthorized catalogue delta")
+        reference = strict_json(rebuilt)
+    if combined_evidence is not None:
+        from radio_daily_combined_release_validation import expected_combined_release
+        if not isinstance(combined_evidence, dict) or set(combined_evidence) != {
+                "operations", "objects"}:
+            raise ValueError("invalid combined evidence contract")
+        rebuilt = expected_combined_release(prior_pointer, prior_body,
+            anchor=dict(expected_sha=expected_sha, expected_sequence=expected_sequence,
+                        public_key=public_key, key_id=key_id), day=day, **combined_evidence)
+        if candidate != rebuilt:
+            raise ValueError("unauthorized combined catalogue delta")
+        reference = strict_json(rebuilt)
     # The original authenticated predecessor remains the reference for alias
     # preservation and mass-removal checks, even after evidence verification.
     issues = validate_catalog(new, mode="publish", previous=old, authenticated_legacy=True,
@@ -93,12 +118,13 @@ class EphemeralLabSigner:
         self.key_id = "radio-lab-" + digest(raw)[:24]
 
     def sign_candidate(self, prior_pointer, prior_body, candidate, *, expected_sha,
-                       expected_sequence, expected_candidate_sha, day, logo_evidence=None, repair_evidence=None, status_evidence=None):
+                       expected_sequence, expected_candidate_sha, day, logo_evidence=None, repair_evidence=None, status_evidence=None, merge_evidence=None, combined_evidence=None):
         new = validate_candidate(prior_pointer, prior_body, candidate,
                                  expected_sha=expected_sha, expected_sequence=expected_sequence,
                                  expected_candidate_sha=expected_candidate_sha,
                                  public_key=self.public_key, key_id=self.key_id, day=day,
-                                 logo_evidence=logo_evidence, repair_evidence=repair_evidence, status_evidence=status_evidence)
+                                 logo_evidence=logo_evidence, repair_evidence=repair_evidence, status_evidence=status_evidence,
+                                 merge_evidence=merge_evidence, combined_evidence=combined_evidence)
         pointer = dict(schema_version=1, catalog_id="grosses-ondes-radio",
                        release_sequence=new["release_sequence"], published_at=day+"T00:00:00Z",
                        content_sha256=expected_candidate_sha, content_length=len(candidate),
