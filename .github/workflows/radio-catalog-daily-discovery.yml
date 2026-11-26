@@ -67,6 +67,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_state_snapshot.py"
       - "radio-catalog-lab/tools/radio_daily_lab_signing.py"
       - "radio-catalog-lab/tools/test_radio_daily_lab_signing.py"
+      - "radio-catalog-lab/tools/radio_daily_publication_simulator.py"
+      - "radio-catalog-lab/tools/test_radio_daily_publication_simulator.py"
       - "radio-catalog-lab/tools/radio_daily_baseline_selection.py"
       - "radio-catalog-lab/tools/test_radio_daily_baseline_selection.py"
       - "radio-catalog-lab/tools/radio_daily_baseline_verify.py"
