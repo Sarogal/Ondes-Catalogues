@@ -32,6 +32,10 @@ class FestivalHandoffTrustTests(unittest.TestCase):
         item = trusted_payload()
         item["workflow_run"]["event"] = "workflow_dispatch"
         self.assertTrue(source.trusted(item))
+        item["workflow_run"]["event"] = "push"
+        self.assertTrue(source.trusted(item))
+        item["workflow_run"]["head_branch"] = "feature/untrusted"
+        self.assertFalse(source.trusted(item))
 
     def test_rejects_untrusted_origin_and_untrusted_events(self):
         changes = [
@@ -45,7 +49,7 @@ class FestivalHandoffTrustTests(unittest.TestCase):
                 self.assertFalse(source.trusted(payload))
         for name, invalids in {
             "name": ["Other workflow", "", None],
-            "event": ["pull_request", "push", "workflow_run", "pull_request_target", None],
+            "event": ["pull_request", "workflow_run", "pull_request_target", None],
             "status": ["queued", "in_progress", None],
             "conclusion": ["failure", "cancelled", "skipped", None],
             "head_branch": ["feature/evil", "pull/123/merge", None],
@@ -71,6 +75,7 @@ class FestivalHandoffTrustTests(unittest.TestCase):
         self.assertIn("github.event.workflow_run.status == 'completed'", content)
         self.assertIn("github.event.workflow_run.conclusion == 'success'", content)
         self.assertIn("github.event.workflow_run.event == 'workflow_dispatch'", content)
+        self.assertIn("github.event.workflow_run.event == 'push'", content)
         self.assertIn("github.event.workflow_run.head_branch == 'main'", content)
         self.assertIn("github.event.workflow_run.head_repository.full_name == github.repository", content)
         self.assertIn("github.event_name != 'pull_request'", content)
