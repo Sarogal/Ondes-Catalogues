@@ -342,6 +342,19 @@ def _named_guest(name):
     return name
 
 
+def observed_bill_matches(observed, names):
+    """Correlate discovery with an independently verified bill, never sign it."""
+    if not isinstance(observed, str) or not names:
+        return False
+    lead = observed.split(" + ")[0]
+    known = [normalized(n) for n in names]
+    if normalized(lead) in known:
+        return True
+    parts = re.split(r"\s+\|\s+", lead)
+    # A composite discovery lead may stand for the exact ordered bill only.
+    return len(parts) > 1 and [normalized(p) for p in parts] == known
+
+
 def _export_bill(title, record):
     """Disambiguate a spaced pipe only from independent visible bill text.
 
