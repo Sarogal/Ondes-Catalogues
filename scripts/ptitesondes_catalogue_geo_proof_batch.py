@@ -39,6 +39,9 @@ from ptitesondes_shared_venue_location_evidence import _coordinates
 from ptitesondes_dynamic_municipal_source_links import _safe_url
 from ptitesondes_generic_venue_ign_corroboration import POSTCODE
 
+COMMUNE_API = "https://geo.api.gouv.fr/communes"
+INSEE_CODE = re.compile(r"(?:[0-9]{5}|2[AB][0-9]{3})")
+MAX_COMMUNE_BYTES = 100_000
 MAX_GROUPS = 3
 MAX_PAGES = 4
 MAX_EXTERNAL_PAGES = 2
@@ -101,11 +104,58 @@ def _commune_code(group, directory):
     if len(codes) != 1:
         return None
     code = next(iter(codes))
-    return code if re.fullmatch(r"[0-9]{5}", code) else None
+    return code if INSEE_CODE.fullmatch(code) else None
+
+
+def _department_code(group):
+    value = group.get("department")
+    if not isinstance(value, str):
+        return None
+    m = re.search(r"\(([0-9]{2}|97[1-6]|2[AB])\)$", value)
+    return m.group(1) if m else None
+
+
+def fetch_commune(group):
+    """Fixed national administrative API, not a municipality-site trust grant."""
+    city, dep = group.get("city"), _department_code(group)
+    if (not isinstance(city, str) or not 2 <= len(city) <= 120
+            or not norm(city) or any(ord(c) < 32 for c in city) or dep is None):
+        return []
+    url = COMMUNE_API + "?" + urlencode({
+        "nom": city, "codeDepartement": dep, "fields": "nom,code,codeDepartement"})
+    req = Request(url, headers={"Accept": "application/json",
+                               "User-Agent": "PtitesOndesAdministrativeGeo/1.0"})
+    with build_opener(NoRedirect()).open(req, timeout=15) as response:
+        if response.status != 200 or response.geturl() != url:
+            raise ValueError("invalid_administrative_geo_response")
+        raw = response.read(MAX_COMMUNE_BYTES + 1)
+    if not raw or len(raw) > MAX_COMMUNE_BYTES:
+        raise ValueError("oversized_administrative_geo_response")
+    return json.loads(raw)
+
+
+def administrative_commune_code(group, response):
+    """Match exact name and department; ambiguous or incomplete results fail."""
+    dep = _department_code(group)
+    if dep is None or not isinstance(response, list) or len(response) > 100:
+        return None
+    matches = []
+    for row in response:
+        if not isinstance(row, dict):
+            return None
+        if not isinstance(row.get("nom"), str) or norm(row["nom"]) != norm(group["city"]):
+            continue
+        if row.get("codeDepartement") != dep:
+            continue
+        code = row.get("code")
+        if not isinstance(code, str) or not INSEE_CODE.fullmatch(code) or not code.startswith(dep):
+            return None
+        matches.append(code)
+    return matches[0] if len(matches) == 1 else None
 
 
 def named_osm_query(code, venue):
-    if (not isinstance(code, str) or not re.fullmatch(r"[0-9]{5}", code)
+    if (not isinstance(code, str) or not INSEE_CODE.fullmatch(code)
             or not isinstance(venue, str) or not 2 <= len(venue) <= 180
             or not norm(venue) or any(ord(c) < 32 for c in venue)):
         raise ValueError("invalid_named_search")
@@ -135,7 +185,7 @@ def fetch_named_osm(code, venue):
     raise ValueError("named_provider_unavailable")
 
 
-def _discover_named_location(group, directory, named_osm_get, html_get, ign_get):
+def _discover_named_location(group, directory, named_osm_get, html_get, ign_get, commune_get):
     """Independently find a named place and its website in the commune.
 
     The OSM coordinate is only a discovery hint. A second live website
@@ -144,6 +194,8 @@ def _discover_named_location(group, directory, named_osm_get, html_get, ign_get)
     The result is private research only, never a publication proof.
     """
     code = _commune_code(group, directory)
+    if code is None:
+        code = administrative_commune_code(group, commune_get(group))
     if code is None:
         return None
     response = named_osm_get(code, group["venue"])
@@ -205,7 +257,8 @@ def _discover_named_location(group, directory, named_osm_get, html_get, ign_get)
 
 def research_group(group, today, *, directory_get=fetch_dila,
                    html_get=read_unknown_https, ign_get=fetch_ign,
-                   osm_get=fetch_overpass, named_osm_get=fetch_named_osm):
+                   osm_get=fetch_overpass, named_osm_get=fetch_named_osm,
+                   commune_get=fetch_commune):
     result = dict(city=group["city"], venue=group["venue"],
                   active_ids=group["active_ids"], missing_ids=group["missing_ids"],
                   status="venue_proof_not_found", publication_ready=False)
@@ -279,7 +332,7 @@ def research_group(group, today, *, directory_get=fetch_dila,
     result["external_pages_examined"] = external_examined
     if not locations:
         try:
-            loc = _discover_named_location(group, directory, named_osm_get, html_get, ign_get)
+            loc = _discover_named_location(group, directory, named_osm_get, html_get, ign_get, commune_get)
             if loc is not None:
                 locations.append(loc)
         except ERRORS:
