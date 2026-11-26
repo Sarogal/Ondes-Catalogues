@@ -153,7 +153,8 @@ def _choose_ocr_pass(original, alternative):
         years = set(re.findall(r"(?<!\d)20[2-4]\d(?!\d)", text))
         ranges = {(a, b) for year in years
                   for _, _, a, b in explicit_ranges(text, int(year))}
-        return years, bool(CANCEL.search(text)), ranges
+        day_numbers = set(re.findall(r"(?<!\d)[0-3]?\d(?!\d)", text))
+        return years, bool(CANCEL.search(text)), ranges, day_numbers
     if signals(original) != signals(alternative):
         return original
     return alternative if _ocr_score(alternative) > _ocr_score(original) else original
