@@ -60,6 +60,41 @@ class ContinuityTests(unittest.TestCase):
         self.assertEqual(calls,[URL+"1",URL+"0"])
         self.assertEqual(len(second["records"]),2)
 
+    def test_reserve_distinct_day_confirmation_for_bound_programme(self):
+        d,r,a,e=inputs()
+        evidence=lambda u:{"verdict":"continuous_icy_frame_indication","windowCount":3}
+        e["records"]=[{"stationuuid":B,"declaredStreamLinked":True,
+                       "programmeScopeEvidence":True,"streamSha256":a["records"][1]["streamSha256"]}]
+        first=collect(d,r,a,e,limit=1,observe=evidence)
+        next_day="2026-11-26"
+        for report in (d,r,e):
+            report["scanDate"]=next_day
+        a["observationDate"]=next_day
+        calls=[]
+        def observe(url):
+            calls.append(url)
+            return evidence(url)
+        second=collect(d,r,a,e,limit=1,previous=first,observe=observe)
+        self.assertEqual(calls,[URL+"1"])
+        self.assertEqual(second["records"][0]["positiveObservationDates"],[DAY,next_day])
+        self.assertFalse(second["records"][0]["technicalQualified"])
+        third=collect(d,r,a,e,limit=1,previous=second,observe=observe)
+        self.assertEqual(calls,[URL+"1",URL+"0"])
+
+    def test_unbound_programme_does_not_displace_new_candidates(self):
+        d,r,a,e=inputs()
+        evidence=lambda u:{"verdict":"continuous_icy_frame_indication","windowCount":3}
+        e["records"]=[{"stationuuid":B,"declaredStreamLinked":True,
+                       "programmeScopeEvidence":False,"streamSha256":a["records"][1]["streamSha256"]}]
+        first=collect(d,r,a,e,limit=1,observe=evidence)
+        for report in (d,r,e):
+            report["scanDate"]="2026-11-26"
+        a["observationDate"]="2026-11-26"
+        calls=[]
+        second=collect(d,r,a,e,limit=1,previous=first,observe=lambda u:(calls.append(u) or evidence(u)))
+        self.assertEqual(calls,[URL+"0"])
+        self.assertEqual(len(second["records"]),2)
+
     def test_changed_stream_invalidates_old_evidence(self):
         d,r,a,e=inputs()
         first=collect(d,r,a,e,limit=1,observe=lambda u:{"verdict":"finite_response_review"})

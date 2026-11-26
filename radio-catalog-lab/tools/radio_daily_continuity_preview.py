@@ -8,6 +8,7 @@ that a programme is live (an endless recording can emulate that behaviour).
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import hashlib
 import http.client
 import json
@@ -248,6 +249,7 @@ def collect(discovery, reconciliation, audio, editorial, *, previous=None, limit
                 raise ValueError("invalid prior continuity row")
     retained = {uid: dict(row, observedInScan=False) for uid,row in old.items() if uid not in candidates}
     queue = []
+    confirmations = []
     for uid, row in sorted(candidates.items()):
         url = row.get("streamUrl")
         digest = safe_digest(url)
@@ -271,10 +273,24 @@ def collect(discovery, reconciliation, audio, editorial, *, previous=None, limit
             continue
         rank = (bool(e.get(uid, {}).get("declaredStreamLinked")) and e[uid].get("streamSha256") == digest,
                 bool(a[uid].get("liveFrameEvidenceDates")))
-        queue.append((uid in retained, not rank[0], not rank[1], uid, url, digest))
-    selected = sorted(queue)[:limit]
+        last = retained.get(uid, {}).get("observedDate") or ""
+        entry = (uid in retained, not rank[0], not rank[1], last, uid, url, digest)
+        queue.append(entry)
+        # One reserved slot for an almost-qualified candidate. A second
+        # distinct day may unlock the strict gate, while the remaining slots
+        # keep discovery rotating. The same-day skip above is unchanged.
+        previous_row = retained.get(uid, {})
+        editorial_row = e.get(uid, {})
+        days = positive_dates(previous_row, day, digest, None, "continuous_icy_frame_indication")
+        recent = [d for d in days if 0 < (dt.date.fromisoformat(day)-dt.date.fromisoformat(d)).days <= 7]
+        if (rank[0] and editorial_row.get("programmeScopeEvidence") is True
+                and previous_row.get("verdict") == "continuous_icy_frame_indication"
+                and len(recent)==1):
+            confirmations.append(entry)
+    reserved = sorted(confirmations)[:1] if limit else []
+    selected = reserved + [entry for entry in sorted(queue) if entry not in reserved][:limit-len(reserved)]
     def check(entry):
-        _, _, _, uid, url, digest = entry
+        _, _, _, _, uid, url, digest = entry
         try:
             evidence = observe(url)
         except (OSError, ValueError, http.client.HTTPException, ssl.SSLError):
