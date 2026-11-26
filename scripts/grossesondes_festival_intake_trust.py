@@ -15,7 +15,7 @@ import re
 
 REPO = "Sarogal/Ondes-Catalogues"
 SOURCE_NAME = "Grosses Ondes — moteur Festivals public, état privé protégé"
-SOURCE_EVENTS = frozenset({"schedule", "workflow_dispatch"})
+SOURCE_EVENTS = frozenset({"schedule", "workflow_dispatch", "push"})
 SHA = re.compile(r"[0-9a-f]{40}\Z")
 
 
