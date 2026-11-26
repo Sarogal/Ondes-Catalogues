@@ -81,7 +81,7 @@ jobs:
           r = json.load(open(sys.argv[1]))
           assert r["publication_ready"] is False and r["public_writes"] == 0
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
-              for k in ("group_count", "examined", "never_examined", "venue_points_found"):
+              for k in ("group_count", "examined", "never_examined", "venue_points_found", "accelerated_hints"):
                   assert type(r[k]) is int and r[k] >= 0
                   f.write(f"- {k}: {r[k]}\n")
           PY
