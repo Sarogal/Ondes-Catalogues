@@ -80,3 +80,50 @@ class LiveCombinedPreviewTests(unittest.TestCase):
         result = self.run_preview(self.f.operations)
         self.assertFalse(result["simulatedPublication"])
         self.assertEqual(result["outcome"], "experimental_publication_held")
+
+    def predecessor_state(self):
+        f = self.f
+        evidence = f.operations["status"]["evidence"]
+        logo = f.operations["logo"]["evidence"]
+        return dict(evidence, logo=logo["logo_maintenance"], missing=logo["missing_logo"])
+
+    def test_published_successor_migrates_all_state_and_reselects(self):
+        f = self.f
+        result = combine_and_rehearse(f.pointer, f.raw, anchor=f.anchor, day=DAY,
+                         operations=f.operations, state=self.predecessor_state())
+        self.assertEqual(result["outcome"], "experimental_cycle_verified")
+        self.assertTrue(result["migrationVerified"])
+        self.assertTrue(result["nextSelectionVerified"])
+        self.assertEqual(len(result["migratedFiles"]), 7)
+        self.assertEqual(len(result["qualificationReportsToRebuild"]), 3)
+        self.assertEqual(result["migration"]["oldBaselineSha256"], f.anchor["expected_sha"])
+        self.assertEqual(result["migration"]["newBaselineSha256"], result["candidateSha256"])
+        self.assertEqual(result["migration"]["streamHistoriesRetained"], 2)
+
+    def test_incomplete_state_blocks_successor_migration(self):
+        f = self.f
+        state = self.predecessor_state()
+        del state["repair"]
+        result = combine_and_rehearse(f.pointer, f.raw, anchor=f.anchor, day=DAY,
+                         operations=f.operations, state=state)
+        self.assertTrue(result["simulatedPublication"])
+        self.assertFalse(result["migrationVerified"])
+        self.assertEqual(result["outcome"], "experimental_migration_held")
+
+    def test_mixed_baseline_state_blocks_migration(self):
+        f = self.f
+        state = self.predecessor_state()
+        state["logo"] = dict(state["logo"], catalogBaselineSha256="a"*64)
+        result = combine_and_rehearse(f.pointer, f.raw, anchor=f.anchor, day=DAY,
+                         operations=f.operations, state=state)
+        self.assertFalse(result["migrationVerified"])
+        self.assertEqual(result["outcome"], "experimental_migration_held")
+
+    @patch("radio_daily_live_combined_preview.migrate_visible")
+    def test_no_change_does_not_migrate(self, migrate):
+        f = self.f
+        result = combine_and_rehearse(f.pointer, f.raw, anchor=f.anchor, day=DAY,
+                         operations={}, state=self.predecessor_state())
+        self.assertEqual(result["outcome"], "no_change")
+        self.assertFalse(result["migrationVerified"])
+        migrate.assert_not_called()

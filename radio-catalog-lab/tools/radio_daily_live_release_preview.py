@@ -64,7 +64,9 @@ def run(pointer, raw, *, anchor, day, discovery, dossiers, maintenance, repair, 
             results[kind] = dict(outcome="strict_gate_held", candidateSha256=None)
     return dict(schemaVersion=1, scanDate=day, catalogBaselineSha256=sha,
                 publicationAllowed=False, signed=False, operations=results,
-                combined=combine_and_rehearse(pointer, raw, anchor=anchor, day=day, operations=operations))
+                combined=combine_and_rehearse(pointer, raw, anchor=anchor, day=day, operations=operations,
+                    state=dict(maintenance=maintenance, logo=logo_maintenance, missing=missing_logo,
+                               status=status, repair=repair, confirmation=confirmation)))
 
 
 def main():

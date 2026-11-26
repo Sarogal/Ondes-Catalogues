@@ -9,6 +9,7 @@ from radio_daily_lab_signing import EphemeralLabSigner
 from radio_daily_v9_generator import digest
 from radio_daily_publication_simulator import MemoryStore, verify_visible
 from radio_daily_live_inherited_artwork import recover_inherited, ArtworkUnavailable
+from radio_daily_live_state_migration import migrate_visible
 
 # Prefer recovery/repair of existing radios to additions or destructive merges.
 ORDER = ("repair", "status", "logo", "admission", "merge")
@@ -18,7 +19,7 @@ def inventory(operations):
     return operations.get("logo", {}).get("evidence", {}).get("objects", {})
 
 
-def combine_and_rehearse(pointer, raw, *, anchor, day, operations):
+def combine_and_rehearse(pointer, raw, *, anchor, day, operations, state=None):
     old = verify_baseline(pointer, raw, **anchor)
     if set(operations) - set(ORDER):
         raise ValueError("unknown live combined operation")
@@ -38,7 +39,8 @@ def combine_and_rehearse(pointer, raw, *, anchor, day, operations):
         selected = trial
         body = candidate
     report = dict(publicationAllowed=False, signed=False, simulatedPublication=False,
-                  experimentalSignatureVerified=False, candidateSha256=None,
+                  experimentalSignatureVerified=False, migrationVerified=False, nextSelectionVerified=False,
+                  candidateSha256=None,
                   candidateSequence=None, selectedOperations=list(selected),
                   deferredOperations=deferred,
                   outcome="no_change" if not operations else "combined_gate_held")
@@ -102,4 +104,12 @@ def combine_and_rehearse(pointer, raw, *, anchor, day, operations):
     report.update(outcome="experimental_publication_verified", simulatedPublication=True,
                   visibleSequence=result["sequence"], retryVerified=True,
                   verifiedInheritedArtworkCount=len(inherited))
+    if state is not None:
+        try:
+            migrated = migrate_visible(store, lab_pointer, raw, anchor=lab_anchor,
+                                       day=day, state=state, candidate_sha=sha)
+        except (ValueError, KeyError):
+            report["outcome"] = "experimental_migration_held"
+            return report
+        report.update(migrated, outcome="experimental_cycle_verified")
     return report
