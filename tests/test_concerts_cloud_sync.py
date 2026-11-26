@@ -1311,6 +1311,31 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             protect_reference(BASE,bad)
 
+
+    def test_public_geo_snapshot_does_not_grant_private_publish_authority(self):
+        from scripts import concert_existing_venue_geo_contract as geo
+        live=copy.deepcopy(BASE)
+        original=next(v for v in BASE["venues"] if geo.evidence.eligible(v)
+                      and v["id"]=="le-rocher-de-palmer-cenon")
+        venue=next(v for v in live["venues"] if v["id"]==original["id"])
+        venue.update(address="1 rue Aristide Briand", postalCode="33150",
+                     latitude=44.862268659259264, longitude=-0.5243637666666666,
+                     geoSource="https://www.openstreetmap.org/way/177290860",
+                     geoPrecision="named-site-area")
+        protect_public_snapshot(BASE,live)
+        with self.assertRaises(ValueError):
+            protect_reference(BASE,live)
+        with self.assertRaises(ValueError):
+            merge(BASE,live,{"schema":"grossesondes.concert.approvals.v1","approvals":[]},NOW)
+        for key,value in (("city","Wrong city"),("latitude",float("nan")),
+                          ("geoSource","https://example.org/fake"),
+                          ("geoPrecision","named-site-point")):
+            with self.subTest(key=key):
+                bad=copy.deepcopy(live)
+                next(v for v in bad["venues"] if v["id"]==original["id"])[key]=value
+                with self.assertRaises(ValueError):
+                    protect_public_snapshot(BASE,bad)
+
     def test_current_live_catalogue_retains_every_initial_event(self):
         live=json.loads((ROOT/"docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
         protect_public_snapshot(BASE,live)
