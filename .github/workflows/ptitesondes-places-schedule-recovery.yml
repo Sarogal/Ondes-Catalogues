@@ -1,0 +1,55 @@
+name: P'tites Ondes — rattrapage indépendant des lieux permanents
+
+on:
+  pull_request:
+    paths:
+      - 'monitoring/ptitesondes_places_schedule_recovery.py'
+      - 'monitoring/test_ptitesondes_places_schedule_recovery.py'
+      - '.github/workflows/ptitesondes-places-schedule-recovery.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/ptitesondes_open_world_permanent_place_*.py'
+      - 'monitoring/ptitesondes_places_schedule_recovery.py'
+      - '.github/workflows/ptitesondes-places-schedule-recovery.yml'
+  schedule:
+    - cron: '37 5,11,15 * * *'
+    - cron: '17 23 * * *'
+
+permissions:
+  contents: read
+concurrency:
+  group: ptitesondes-places-schedule-recovery
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s monitoring -p 'test_ptitesondes_places_schedule_recovery.py' -v
+  recover:
+    needs: tests
+    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event_name == 'push') && vars.PTITESONDES_PUBLIC_INTAKE != 'paused'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier les écritures réelles des lieux et relancer uniquement si nécessaire
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PTITESONDES_PUBLIC_INTAKE: ${{ vars.PTITESONDES_PUBLIC_INTAKE }}
+        run: python monitoring/ptitesondes_places_schedule_recovery.py --execute
