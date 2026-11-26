@@ -4,14 +4,14 @@
   "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
   "catalogChanged": false,
   "counts": {
-    "awaiting_check": 21,
+    "awaiting_check": 11,
     "changed_image_review": 1,
     "missing_logo": 32,
     "query_source_held": 10,
     "source_unavailable_review": 1,
-    "unchanged": 231
+    "unchanged": 241
   },
-  "observedSourceCount": 160,
+  "observedSourceCount": 168,
   "publicationAllowed": false,
   "records": [
     {
@@ -523,11 +523,11 @@
       "changedDates": [],
       "expectedImageSha256": "c17784a27ff5972c60ea10c716f2921f8a60b4af9e9d2015d13da5952389a31f",
       "goStationId": "go-station-000046",
-      "lastObservationDate": null,
+      "lastObservationDate": "2026-11-26",
       "logoApproved": false,
-      "observedImageSha256": null,
+      "observedImageSha256": "c17784a27ff5972c60ea10c716f2921f8a60b4af9e9d2015d13da5952389a31f",
       "publicationAllowed": false,
-      "reviewStatus": "awaiting_check",
+      "reviewStatus": "unchanged",
       "sourceSha256": "e68a300a9e7dd5a8b846a95631512cd9407cfc03d8cd15656d04619351db0eaa"
     },
     {
@@ -619,11 +619,11 @@
       "changedDates": [],
       "expectedImageSha256": "775dcc0bc753233ae93be80fbb3134978ee2606fd79aaa56dc62aada99a8d878",
       "goStationId": "go-station-000054",
-      "lastObservationDate": null,
+      "lastObservationDate": "2026-11-26",
       "logoApproved": false,
-      "observedImageSha256": null,
+      "observedImageSha256": "775dcc0bc753233ae93be80fbb3134978ee2606fd79aaa56dc62aada99a8d878",
       "publicationAllowed": false,
-      "reviewStatus": "awaiting_check",
+      "reviewStatus": "unchanged",
       "sourceSha256": "f2b2760bef9cfacf390e1b80145e0509769b7e2008af58d50baf9eeab3b19e6f"
     },
     {
@@ -847,11 +847,11 @@
       "changedDates": [],
       "expectedImageSha256": "05790a94c1cd0a83acf69d1c0fa176998caf1008ff8fd7860f65a1e15edb6d47",
       "goStationId": "go-station-000076",
-      "lastObservationDate": null,
+      "lastObservationDate": "2026-11-26",
       "logoApproved": false,
-      "observedImageSha256": null,
+      "observedImageSha256": "05790a94c1cd0a83acf69d1c0fa176998caf1008ff8fd7860f65a1e15edb6d47",
       "publicationAllowed": false,
-      "reviewStatus": "awaiting_check",
+      "reviewStatus": "unchanged",
       "sourceSha256": "e37500a3495f9b81a440cdf166b674f6537305dc2a8dd5beafebadd16b4ea160"
     },
     {
@@ -1303,11 +1303,11 @@
       "changedDates": [],
       "expectedImageSha256": "775dcc0bc753233ae93be80fbb3134978ee2606fd79aaa56dc62aada99a8d878",
       "goStationId": "go-station-000118",
-      "lastObservationDate": null,
+      "lastObservationDate": "2026-11-26",
       "logoApproved": false,
-      "observedImageSha256": null,
+      "observedImageSha256": "775dcc0bc753233ae93be80fbb3134978ee2606fd79aaa56dc62aada99a8d878",
       "publicationAllowed": false,
-      "reviewStatus": "awaiting_check",
+      "reviewStatus": "unchanged",
       "sourceSha256": "f2b2760bef9cfacf390e1b80145e0509769b7e2008af58d50baf9eeab3b19e6f"
     },
     {
@@ -1639,11 +1639,11 @@
       "changedDates": [],
       "expectedImageSha256": "61e27949a4424336d052e394fb93a2d5f82132217235d7be48294e0dbd1c8f1f",
       "goStationId": "go-station-000153",
-      "lastObservationDate": null,
+      "lastObservationDate": "2026-11-26",
       "logoApproved": false,
-      "observedImageSha256": null,
+      "observedImageSha256": "61e27949a4424336d052e394fb93a2d5f82132217235d7be48294e0dbd1c8f1f",
       "publicationAllowed": false,
-      "reviewStatus": "awaiting_check",
+      "reviewStatus": "unchanged",
       "sourceSha256": "ee677f5b00138fc588d019acd59b5f557ec6f89f60a90c28559c05f80e75c59e"
     },
     {
@@ -1915,11 +1915,11 @@
       "changedDates": [],
       "expectedImageSha256": "775dcc0bc753233ae93be80fbb3134978ee2606fd79aaa56dc62aada99a8d878",
       "goStationId": "go-station-000177",
-      "lastObservationDate": null,
+      "lastObservationDate": "2026-11-26",
       "logoApproved": false,
-      "observedImageSha256": null,
+      "observedImageSha256": "775dcc0bc753233ae93be80fbb3134978ee2606fd79aaa56dc62aada99a8d878",
       "publicationAllowed": false,
-      "reviewStatus": "awaiting_check",
+      "reviewStatus": "unchanged",
       "sourceSha256": "f2b2760bef9cfacf390e1b80145e0509769b7e2008af58d50baf9eeab3b19e6f"
     },
     {
@@ -2493,11 +2493,11 @@
       "changedDates": [],
       "expectedImageSha256": "336410f5471d938a35a3b8627914bf527498ef7e2938b172664bae0267ef54ec",
       "goStationId": "go-station-000226",
-      "lastObservationDate": null,
+      "lastObservationDate": "2026-11-26",
       "logoApproved": false,
-      "observedImageSha256": null,
+      "observedImageSha256": "336410f5471d938a35a3b8627914bf527498ef7e2938b172664bae0267ef54ec",
       "publicationAllowed": false,
-      "reviewStatus": "awaiting_check",
+      "reviewStatus": "unchanged",
       "sourceSha256": "f1fd47f1471eb597518557f14ae419f19c45cf7e7ed942a43346b6d0b15b12c1"
     },
     {
@@ -2745,11 +2745,11 @@
       "changedDates": [],
       "expectedImageSha256": "16d699e32cf376064184818d641fb2bda11ff223f8ce473e727cca59e90d04f5",
       "goStationId": "go-station-000250",
-      "lastObservationDate": null,
+      "lastObservationDate": "2026-11-26",
       "logoApproved": false,
-      "observedImageSha256": null,
+      "observedImageSha256": "16d699e32cf376064184818d641fb2bda11ff223f8ce473e727cca59e90d04f5",
       "publicationAllowed": false,
-      "reviewStatus": "awaiting_check",
+      "reviewStatus": "unchanged",
       "sourceSha256": "e4a4a5b1cea976fec640681025a5b61e31af977ee7dcf93b1b368dba265d163a"
     },
     {
@@ -2781,11 +2781,11 @@
       "changedDates": [],
       "expectedImageSha256": "030a30f5396b4f216ccefbb148284ebb9f923a8bc9f2ea6cdb3b27b3a2c53744",
       "goStationId": "go-station-000254",
-      "lastObservationDate": null,
+      "lastObservationDate": "2026-11-26",
       "logoApproved": false,
-      "observedImageSha256": null,
+      "observedImageSha256": "030a30f5396b4f216ccefbb148284ebb9f923a8bc9f2ea6cdb3b27b3a2c53744",
       "publicationAllowed": false,
-      "reviewStatus": "awaiting_check",
+      "reviewStatus": "unchanged",
       "sourceSha256": "e909b8c9976286a23e026dcd2773f294c61a2cad230d7995b8c562fe7c3314ce"
     },
     {
@@ -3441,11 +3441,11 @@
       "changedDates": [],
       "expectedImageSha256": "22f76eca8c8a8a5c4b37870a432ce7f3dd110d2b58378829662f27104d36576d",
       "goStationId": "go-station-000311",
-      "lastObservationDate": null,
+      "lastObservationDate": "2026-11-26",
       "logoApproved": false,
-      "observedImageSha256": null,
+      "observedImageSha256": "22f76eca8c8a8a5c4b37870a432ce7f3dd110d2b58378829662f27104d36576d",
       "publicationAllowed": false,
-      "reviewStatus": "awaiting_check",
+      "reviewStatus": "unchanged",
       "sourceSha256": "e630f379d1f2aa949e9635f5616cda3e7b88f6d369f53e92efdb905b01021528"
     },
     {
@@ -6332,42 +6332,138 @@
       "sourceSha256": "e1ba0c0465e24fce1ddb4162c33b7dd01a3d2b0cc30a29c63f39bb11cf6ac390"
     },
     {
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 117868,
+            "height": 512,
+            "imageSha256": "05790a94c1cd0a83acf69d1c0fa176998caf1008ff8fd7860f65a1e15edb6d47",
+            "mime": "image/png",
+            "width": 512
+          },
+          "retrieval": "decoded"
+        }
+      ],
       "publicationAllowed": false,
       "sourceSha256": "e37500a3495f9b81a440cdf166b674f6537305dc2a8dd5beafebadd16b4ea160"
     },
     {
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 17790,
+            "height": 360,
+            "imageSha256": "16d699e32cf376064184818d641fb2bda11ff223f8ce473e727cca59e90d04f5",
+            "mime": "image/webp",
+            "width": 360
+          },
+          "retrieval": "decoded"
+        }
+      ],
       "publicationAllowed": false,
       "sourceSha256": "e4a4a5b1cea976fec640681025a5b61e31af977ee7dcf93b1b368dba265d163a"
     },
     {
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 70660,
+            "height": 700,
+            "imageSha256": "22f76eca8c8a8a5c4b37870a432ce7f3dd110d2b58378829662f27104d36576d",
+            "mime": "image/webp",
+            "width": 700
+          },
+          "retrieval": "decoded"
+        }
+      ],
       "publicationAllowed": false,
       "sourceSha256": "e630f379d1f2aa949e9635f5616cda3e7b88f6d369f53e92efdb905b01021528"
     },
     {
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 95546,
+            "height": 300,
+            "imageSha256": "c17784a27ff5972c60ea10c716f2921f8a60b4af9e9d2015d13da5952389a31f",
+            "mime": "image/jpeg",
+            "width": 500
+          },
+          "retrieval": "decoded"
+        }
+      ],
       "publicationAllowed": false,
       "sourceSha256": "e68a300a9e7dd5a8b846a95631512cd9407cfc03d8cd15656d04619351db0eaa"
     },
     {
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 17451,
+            "height": 110,
+            "imageSha256": "030a30f5396b4f216ccefbb148284ebb9f923a8bc9f2ea6cdb3b27b3a2c53744",
+            "mime": "image/png",
+            "width": 380
+          },
+          "retrieval": "decoded"
+        }
+      ],
       "publicationAllowed": false,
       "sourceSha256": "e909b8c9976286a23e026dcd2773f294c61a2cad230d7995b8c562fe7c3314ce"
     },
     {
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 1847,
+            "height": 64,
+            "imageSha256": "61e27949a4424336d052e394fb93a2d5f82132217235d7be48294e0dbd1c8f1f",
+            "mime": "image/png",
+            "width": 64
+          },
+          "retrieval": "decoded"
+        }
+      ],
       "publicationAllowed": false,
       "sourceSha256": "ee677f5b00138fc588d019acd59b5f557ec6f89f60a90c28559c05f80e75c59e"
     },
     {
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 2927,
+            "height": 72,
+            "imageSha256": "336410f5471d938a35a3b8627914bf527498ef7e2938b172664bae0267ef54ec",
+            "mime": "image/png",
+            "width": 72
+          },
+          "retrieval": "decoded"
+        }
+      ],
       "publicationAllowed": false,
       "sourceSha256": "f1fd47f1471eb597518557f14ae419f19c45cf7e7ed942a43346b6d0b15b12c1"
     },
     {
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 2043,
+            "height": 120,
+            "imageSha256": "775dcc0bc753233ae93be80fbb3134978ee2606fd79aaa56dc62aada99a8d878",
+            "mime": "image/png",
+            "width": 120
+          },
+          "retrieval": "decoded"
+        }
+      ],
       "publicationAllowed": false,
       "sourceSha256": "f2b2760bef9cfacf390e1b80145e0509769b7e2008af58d50baf9eeab3b19e6f"
     },
