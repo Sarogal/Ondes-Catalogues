@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from radio_daily_continuity_preview import observe_url
+from radio_daily_hls_preview import observe as observe_hls_url
 from radio_daily_alternative_metadata import observe_alternative, ALTERNATIVE_METHODS
 from radio_daily_qualification_dossiers import index, safe_digest
 from radio_stream_recheck_ledger import parse_day, SHA256_RE
@@ -65,7 +66,9 @@ def select_queue(queue, retained, limit):
                 used.add(item[2])
     return selected
 
-def collect(discovery, reconciliation, continuity, decisions, *, previous=None, limit=0, observe=None, transient_titles=None, alternative=None):
+def collect(discovery, reconciliation, continuity, decisions, *, previous=None, limit=0, observe=None, transient_titles=None, alternative=None, hls=None, observe_hls=None):
+    if observe_hls is None:
+        observe_hls=lambda url: observe_hls_url(url, metadata=True)
     if observe is None and alternative is None:
         alternative=observe_alternative
     if observe is None:
@@ -80,6 +83,12 @@ def collect(discovery, reconciliation, continuity, decisions, *, previous=None, 
             or reconciliation.get("automaticAdmissionAllowed") is not False or reconciliation.get("catalogChanged") is not False
             or continuity.get("technicallyQualifiedCount")!=0 or decisions.get("approvedCount")!=0):
         raise ValueError("untrusted input")
+    hls_rows={}
+    if hls is not None:
+        if (hls.get("schemaVersion")!=1 or hls.get("publicationAllowed") is not False
+                or hls.get("scanDate")!=day or hls.get("technicallyQualifiedCount")!=0):
+            raise ValueError("untrusted HLS input")
+        hls_rows=index(hls,"records")
     current,rec=index(discovery,"candidates"),index(reconciliation,"candidates")
     cont,dec=index(continuity,"records"),index(decisions,"records")
     if set(current)!=set(rec):
@@ -99,6 +108,7 @@ def collect(discovery, reconciliation, continuity, decisions, *, previous=None, 
                 raise ValueError("prior metadata row")
     retained={uid:dict(row,observedInScan=False) for uid,row in old.items() if uid not in current}
     queue=[]
+    hls_ids=set()
     for uid,source in sorted(current.items()):
         url=source.get("streamUrl")
         sha=safe_digest(url)
@@ -112,9 +122,13 @@ def collect(discovery, reconciliation, continuity, decisions, *, previous=None, 
                     and prior.get("alternativeVersion", 0) != ALTERNATIVE_VERSION):
                 continue
         c,d=cont.get(uid,{}),dec.get(uid,{})
-        if (c.get("streamSha256")!=sha or c.get("verdict")!="continuous_icy_frame_indication"
-                or c.get("technicalQualified") is not False or c.get("publicationAllowed") is not False
-                or d.get("streamSha256")!=sha or d.get("approved") is not False
+        h=hls_rows.get(uid,{})
+        icy_ok=(c.get("streamSha256")==sha and c.get("verdict")=="continuous_icy_frame_indication"
+                and c.get("technicalQualified") is False and c.get("publicationAllowed") is False)
+        hls_ok=(h.get("streamSha256")==sha and h.get("verdict") in
+                ("advancing_hls_audio_frame_indication","advancing_hls_manifest_only")
+                and h.get("technicalQualified") is False and h.get("publicationAllowed") is False)
+        if (not (icy_ok or hls_ok) or d.get("streamSha256")!=sha or d.get("approved") is not False
                 or d.get("publicationAllowed") is not False or d.get("decision") not in
                 ("advanced_candidate","editorial_review","technical_review","ready_for_staging_review")):
             continue
@@ -122,12 +136,18 @@ def collect(discovery, reconciliation, continuity, decisions, *, previous=None, 
             validate_endpoint(url)
         except ValueError:
             continue
+        if hls_ok and not icy_ok:
+            hls_ids.add(uid)
         queue.append((d["decision"]!="advanced_candidate",uid in retained,uid,url,sha))
-    selected=select_queue(queue, retained, limit)
+    # Reserve one slot for eligible HLS streams, without increasing total budget.
+    hls_queue=[x for x in queue if x[2] in hls_ids]
+    selected=select_queue(hls_queue, retained, 1) if limit else []
+    used={x[2] for x in selected}
+    selected+=select_queue([x for x in queue if x[2] not in used], retained, limit-len(selected))
     def check(item):
         _,_,uid,url,sha=item
         try:
-            evidence=observe(url)
+            evidence=observe_hls(url) if uid in hls_ids else observe(url)
         except Exception:
             evidence={"verdict":"metadata_connection_review","titleHints":[]}
         attempted_alternative = alternative is not None and not any(valid_hint(h) for h in evidence.get("titleHints",[]))
@@ -155,7 +175,7 @@ def collect(discovery, reconciliation, continuity, decisions, *, previous=None, 
                     hints.append(observation)
         hints=sorted(hints,key=lambda x:(x["date"],x["artistHint"],x["titleSha256"]))[-MAX_HINTS:]
         verdict=evidence.get("verdict")
-        if verdict not in {"icy_artist_title_hint","alternative_artist_title_hint","metadata_not_advertised","metadata_interval_out_of_budget",
+        if verdict not in {"icy_artist_title_hint","alternative_artist_title_hint","hls_id3_artist_title_hint","hls_no_parseable_id3","metadata_not_advertised","metadata_interval_out_of_budget",
                            "metadata_no_parseable_title","metadata_non_live_response","metadata_connection_review",
                            "playlist_requires_separate_validation"}:
             verdict="metadata_connection_review"
@@ -178,6 +198,8 @@ def collect(discovery, reconciliation, continuity, decisions, *, previous=None, 
     return {"schemaVersion":1,"scanDate":day,"publicationAllowed":False,"approvedCount":0,
             "attemptedCount":len(selected),"stationsWithArtistHints":sum(bool(r["observations"]) for r in records),
             "distinctArtistHints":len({h["artistHint"].casefold() for r in records for h in r["observations"]}),
+            "attemptedHlsCount":sum(x[2] in hls_ids for x in selected),
+            "stationsWithHlsId3Hints":sum(any(h.get("method")=="hls_packed_id3" for h in r["observations"]) for r in records),
             "stationsWithHistoryHints":sum(any(h.get("method")=="station_history_json" for h in r["observations"]) for r in records),
             "stationsWithAlternativeHints":sum(any(h.get("method") in ALTERNATIVE_METHODS for h in r["observations"]) for r in records),
             "records":records}
@@ -187,6 +209,7 @@ def main():
     for k in ("discovery","reconciliation","continuity","decisions","output"):
         p.add_argument("--"+k,type=Path,required=True)
     p.add_argument("--previous",type=Path)
+    p.add_argument("--hls",type=Path)
     p.add_argument("--transient-titles",type=Path)
     p.add_argument("--limit",type=int,default=0)
     p.add_argument("--allow-network",action="store_true")
@@ -199,7 +222,8 @@ def main():
         return json.loads(path.read_text())
     transient=[] if a.transient_titles else None
     report=collect(*(load(getattr(a,k)) for k in ("discovery","reconciliation","continuity","decisions")),
-                   previous=load(a.previous) if a.previous else None,limit=a.limit,transient_titles=transient)
+                   previous=load(a.previous) if a.previous else None,limit=a.limit,transient_titles=transient,
+                   hls=load(a.hls) if a.hls else None)
     payload=json.dumps(report,ensure_ascii=False,indent=2)+"\n"
     if len(payload.encode())>MAX_INPUT:
         raise ValueError("oversized metadata report")
