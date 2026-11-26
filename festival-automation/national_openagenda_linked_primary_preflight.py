@@ -158,13 +158,23 @@ def examine(state, queue, catalogue, today, *, event_fetch=None,
         except (TypeError, ValueError):
             return date.min
 
+    def sequence(s):
+        value = old(s).get("lastCheckedSequence")
+        return value if type(value) is int and 0 <= value <= 1_000_000 else 0
+
     fresh = [s for s in sources if last_checked(s) != current]
     repeated = [s for s in sources if last_checked(s) == current]
+    serial = max((sequence(s) for s in repeated), default=0)
+    # Bounded rollover preserves relative ordering even for malformed state.
+    if serial > 999_990:
+        for index, s in enumerate(sorted(repeated, key=lambda s: (sequence(s), priority(s))), 1):
+            observed[s["url"]]["lastCheckedSequence"] = index
+        serial = len(repeated)
     # Never recheck a dossier today while another eligible one is unchecked.
     # Oldest-first guarantees that future-year and long-running candidates
     # advance too, even when today's queue contains new urgent candidates.
     selected = (sorted(fresh, key=lambda s: (last_checked(s), priority(s)))
-                + sorted(repeated, key=priority))[:limit]
+                + sorted(repeated, key=lambda s: (sequence(s), priority(s))))[:limit]
     read_event = event_fetch or fetch_public_html
     read_site = organizer_fetch or fetch_public_html
     output = []
@@ -242,6 +252,15 @@ def examine(state, queue, catalogue, today, *, event_fetch=None,
                     source["year"], today, fetch=read_site)
         if url not in observed:
             observed[url] = {"lastChecked": today}
+        serial += 1
+        observed[url]["lastCheckedSequence"] = serial
+        observed[url]["lastResultStatus"] = row["status"]
+        detail = row.get("professional_official_detail_review_only")
+        if isinstance(detail, dict):
+            observed[url]["lastProfessionalDetailStatus"] = detail.get("status")
+        professional = row.get("professional_research_review_only")
+        if isinstance(professional, dict):
+            observed[url]["lastProfessionalStatus"] = professional.get("status")
         output.append(row)
     return {
         "schema": SCHEMA, "as_of": today,
