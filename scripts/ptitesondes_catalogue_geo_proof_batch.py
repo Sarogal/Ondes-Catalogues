@@ -22,7 +22,7 @@ from ptitesondes_shared_venue_location_evidence import (
     mint_private_location_proof, location_from_proof,
 )
 from ptitesondes_generic_venue_ign_corroboration import fetch_ign
-from ptitesondes_generic_venue_osm_preflight import fetch_overpass
+from ptitesondes_generic_venue_osm_preflight import fetch_overpass, fetch_osm_query
 from ptitesondes_unnumbered_official_geo_proof import (
     _exact_official_point, mint_private_unnumbered_location_proof,
     _visible_unnumbered_official_address,
@@ -206,22 +206,8 @@ def named_osm_query(code, venue):
 
 
 def fetch_named_osm(code, venue):
-    query = named_osm_query(code, venue)
-    for endpoint in ENDPOINTS:
-        try:
-            url = endpoint + "?" + urlencode({"data": query})
-            req = Request(url, headers={"Accept": "application/json",
-                "User-Agent": "PtitesOndesPrivateNamedVenue/1.0 (read-only)"})
-            with build_opener(NoRedirect()).open(req, timeout=26) as response:
-                if response.status != 200 or response.geturl() != url:
-                    raise ValueError("bad_named_provider_response")
-                raw = response.read(MAX_BYTES + 1)
-            if not raw or len(raw) > MAX_BYTES:
-                raise ValueError("oversized_named_provider_response")
-            return json.loads(raw)
-        except (OSError, UnicodeError, ValueError):
-            continue
-    raise ValueError("named_provider_unavailable")
+    return fetch_osm_query(named_osm_query(code, venue), pathway="named",
+                           unavailable="named_provider_unavailable")
 
 
 def _discover_named_location(group, directory, named_osm_get, html_get, ign_get, commune_get):
