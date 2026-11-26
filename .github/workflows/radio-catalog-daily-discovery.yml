@@ -54,6 +54,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_repair_material.py"
       - "radio-catalog-lab/tools/radio_daily_logo_material.py"
       - "radio-catalog-lab/tools/test_radio_daily_logo_material.py"
+      - "radio-catalog-lab/tools/radio_daily_state_migration.py"
+      - "radio-catalog-lab/tools/test_radio_daily_state_migration.py"
       - "radio-catalog-lab/tools/radio_daily_unified_generator.py"
       - "radio-catalog-lab/tools/test_radio_daily_unified_generator.py"
       - "radio-catalog-lab/tools/radio_daily_v9_generator.py"
