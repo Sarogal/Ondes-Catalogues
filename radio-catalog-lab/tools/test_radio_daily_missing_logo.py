@@ -1,7 +1,7 @@
 import hashlib
 import json
 import unittest
-from radio_daily_missing_logo import build, candidates
+from radio_daily_missing_logo import build, candidates, discover_page, ANALYZER_VERSION
 from radio_daily_v9_generator import encode
 from test_radio_daily_repair_plan import fixture,PAGE
 
@@ -125,6 +125,38 @@ class MissingLogoTests(unittest.TestCase):
         station,body=self.html_logo(extra='<img alt="Iron Radio logo" src="/other.png">')
         self.assertEqual(len(candidates(station,PAGE,body)),2)
         self.assertEqual(run(body,fetch_image=lambda u,h:self.fail("ambiguous"))["counts"],{"ambiguous_images":1})
+
+    def test_failed_legacy_record_reexamined_once_same_day(self):
+        prior=run(b"<title>Iron Radio</title>")
+        prior["records"][0].pop("analyzerVersion")
+        current=run(typed(),prior=prior)
+        self.assertEqual(current["attemptedStationCount"],1)
+        self.assertEqual(current["records"][0]["analyzerVersion"],ANALYZER_VERSION)
+        self.assertEqual(current["records"][0]["logoEvidenceDates"],[DAY])
+        self.assertEqual(run(typed(),prior=current)["attemptedStationCount"],0)
+
+    def test_named_same_host_link_with_exact_player(self):
+        station,body=self.html_logo()
+        child="https://radio.example.org/station/iron"
+        root=b'<a href="/station/iron">Iron Radio</a>'
+        final,content,found=discover_page(station,lambda u:(u,body if u==child else root))
+        self.assertEqual(final,child)
+        self.assertEqual(found,{"https://radio.example.org/logo.png":"named_player_html_logo"})
+
+    def test_alternate_typed_logo_needs_registered_player(self):
+        station,_=self.html_logo()
+        child="https://radio.example.org/station/iron"
+        self.assertEqual(candidates(station,child,typed()),{})
+        player=('<audio src="'+station["streams"][0]["url"]+'"></audio>').encode()
+        self.assertEqual(candidates(station,child,typed()+player),{URL:"typed_station_logo"})
+
+    def test_external_link_not_followed(self):
+        station,_=self.html_logo()
+        root=b'<a href="https://other.example.org/station/iron">Iron Radio</a>'
+        def fetch(u):
+            self.assertEqual(u,PAGE)
+            return u,root
+        self.assertEqual(discover_page(station,fetch)[2],{})
 
     def test_html_logo_ignored_template(self):
         station,body=self.html_logo(alt="generic",extra='<template><img alt="Iron Radio logo" src="/hidden.png"></template>')

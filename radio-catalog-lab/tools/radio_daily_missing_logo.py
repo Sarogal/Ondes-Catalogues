@@ -24,6 +24,8 @@ from radio_stream_recheck_ledger import parse_day,SHA256_RE
 
 MAX_STATIONS=4
 MAX_IMAGES=2
+ANALYZER_VERSION=2
+MAX_ALTERNATIVES=2
 LOGO_KINDS={"typed_station_logo","named_player_html_logo"}
 KINDS=LOGO_KINDS|{"typed_station_image","named_page_og_image"}
 STATUSES={"page_held","no_bound_image","ambiguous_images","image_held","decoded_review"}
@@ -85,6 +87,15 @@ def candidates(station,final,body):
     name=name_key(station["display_name"])
     if len(name)<4 or name in GENERIC:
         return {}
+    # Alternative paths need an exact registered player even for typed logos.
+    # Same-host alone is not sufficient on a multi-station broadcaster.
+    home=homepage_url(station.get("homepage"))
+    alternate=bool(home and page_key(final)!=page_key(home))
+    if alternate:
+        players={urljoin(final,u) for u in p.audio_urls}
+        known={v["url"] for v in station.get("streams",[])}
+        if not (len(players)==1 and players<=known):
+            return {}
     nodes=list(station_nodes(p.structured))
     matched=[n for n in nodes if name_key(n.get("name"))==name]
     typed={}
@@ -114,11 +125,58 @@ def candidates(station,final,body):
             # Named HTML is kept same-host; CDN support requires typed proof.
             if found and all(related_host(u,final) for u in found):
                 return found
-    if (not nodes and p.og_titles and all(name_key(t)==name for t in p.og_titles)
+    if (not alternate and not nodes and p.og_titles and all(name_key(t)==name for t in p.og_titles)
             and any(name_key(t)==name for t in p.visible_identity)):
         # No favicon fallback; OG image is a lower-confidence hypothesis.
         return {urljoin(final,v):"named_page_og_image" for v in p.og_images if v}
     return {}
+
+def bound_page(station, requested, final, body):
+    home=homepage_url(station.get("homepage"))
+    if (not home or homepage_url(final)!=final or not related_host(final,home)
+            or not related_host(requested,home)
+            or not isinstance(body,bytes) or not 0<len(body)<=256*1024):
+        raise ValueError("unbound page")
+    return candidates(station,final,body)
+
+
+def discover_page(station, fetch_page):
+    """Follow at most two explicitly named station links from its declared site."""
+    home=homepage_url(station.get("homepage"))
+    if not home:
+        raise ValueError("no homepage")
+    final,body=fetch_page(home)
+    found=bound_page(station,home,final,body)
+    if found:
+        return final,body,found
+    p=ArtworkPage()
+    p.feed(body.decode("utf-8",errors="replace"))
+    name=name_key(station["display_name"])
+    links=set()
+    for href,label in p.links:
+        try:
+            url=urljoin(final,href)
+            if (len(name)>=5 and name_key(label)==name and homepage_url(url)==url
+                    and related_host(url,home) and page_key(url)!=page_key(final)):
+                links.add(url)
+        except (ValueError,TypeError):
+            continue
+    matches=[]
+    for url in sorted(links)[:MAX_ALTERNATIVES]:
+        try:
+            child,content=fetch_page(url)
+            choices=bound_page(station,url,child,content)
+            if choices:
+                matches.append((child,content,choices))
+        except (OSError,ValueError,http.client.HTTPException,TypeError,AttributeError):
+            continue
+    if not matches:
+        return final,body,{}
+    # Conflicting page declarations are not resolved by arbitrary link order.
+    if any(x[2]!=matches[0][2] for x in matches[1:]):
+        raise ValueError("conflicting station artwork pages")
+    return matches[0]
+
 
 def confirmation_status(row,dates):
     if row.get("reviewStatus")!="decoded_review":
@@ -149,6 +207,8 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch_page=fetch_html,
             if (sid not in missing or sid in old or row.get("logoApproved") is not False
                     or row.get("publicationAllowed") is not False or status not in STATUSES|{"awaiting_search","synthetic_held"}):
                 raise ValueError("invalid prior artwork row")
+            if "analyzerVersion" in row and (type(row["analyzerVersion"]) is not int or not 1<=row["analyzerVersion"]<=ANALYZER_VERSION):
+                raise ValueError("invalid artwork analyzer version")
             date=row.get("observedDate")
             if date is not None and parse_day(date)>day:
                 raise ValueError("future artwork observation")
@@ -173,6 +233,8 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch_page=fetch_html,
         previous=old.get(sid,{})
         return (previous.get("observedDate") or "",eligible[sid]["status"]["state"]!="active",sid)
     queue=sorted((sid for sid in eligible if not old.get(sid,{}).get("observedDate")
+                  or (old[sid].get("reviewStatus") in {"page_held","no_bound_image","ambiguous_images","image_held"}
+                      and old[sid].get("analyzerVersion",1)<ANALYZER_VERSION)
                   or age(day,old[sid]["observedDate"]) >= (7 if old[sid].get("confirmationStatus")=="stable_typed_logo_review" else 1)),key=order)
     rows={}
     for sid in missing:
@@ -185,6 +247,8 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch_page=fetch_html,
             for k in ("reviewStatus","observedDate","sourceKind","sourceSha256","pageSha256","image"):
                 rows[sid][k]=old[sid].get(k)
             previous=old[sid]
+            if "analyzerVersion" in previous:
+                rows[sid]["analyzerVersion"]=previous["analyzerVersion"]
             dates=previous.get("logoEvidenceDates",[])
             if "logoEvidenceDates" not in previous and previous.get("sourceKind") in LOGO_KINDS:
                 dates=[previous["observedDate"]]
@@ -196,17 +260,13 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch_page=fetch_html,
     for sid in selected:
         s=eligible[sid]
         row=rows[sid]
-        row.update(observedDate=day,reviewStatus="page_held",sourceKind=None,sourceSha256=None,pageSha256=None,image=None,
+        row.update(observedDate=day,analyzerVersion=ANALYZER_VERSION,reviewStatus="page_held",sourceKind=None,sourceSha256=None,pageSha256=None,image=None,
                    logoEvidenceDates=[],confirmationStatus="no_current_image")
         page=homepage_url(s.get("homepage"))
         if not page:
             continue
         try:
-            final,body=fetch_page(page)
-            if (not related_host(final,page) or homepage_url(final)!=final or page_key(final)!=page_key(page)
-                    or not isinstance(body,bytes) or not 0<len(body)<=256*1024):
-                raise ValueError("unbound page")
-            found=candidates(s,final,body)
+            final,body,found=discover_page(s,fetch_page)
         except (OSError,ValueError,http.client.HTTPException,TypeError,AttributeError):
             continue
         if not found:
@@ -229,9 +289,13 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch_page=fetch_html,
                 if sid in old:
                     for k in ("reviewStatus","observedDate","sourceKind","sourceSha256","pageSha256","image"):
                         row[k]=old[sid].get(k)
+                    row.pop("analyzerVersion",None)
+                    if "analyzerVersion" in old[sid]:
+                        row["analyzerVersion"]=old[sid]["analyzerVersion"]
                     row["logoEvidenceDates"]=old[sid].get("logoEvidenceDates",[])
                     row["confirmationStatus"]=confirmation_status(row,row["logoEvidenceDates"])
                 else:
+                    row.pop("analyzerVersion",None)
                     row.update(observedDate=None,reviewStatus="awaiting_search")
                 continue
             image_attempts+=1
