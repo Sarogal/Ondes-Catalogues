@@ -60,9 +60,9 @@ class StageReconcileTest(unittest.TestCase):
         self.assertEqual(r.build(self.d,date(2026,11,21))["matches"],[])
 
     def test_arbitrary_larger_lineup_not_bounded_by_four(self):
-        names=[f"Band {i}" for i in range(1,26)]
+        names=[f"Band {i}" for i in range(1,101)]
         self.a["candidate"]["artistNamesFromFestivalOnly"]=names
-        self.b["candidate"]["name"]="Bill: Band 1 + Band 7"
+        self.b["candidate"]["name"]="Bill: Band 1 + Band 97"
         self.b["candidate"]["leadArtist"]="Band 1"
         out=r.build(self.d,date(2026,11,21))
         self.assertIn("venue", [x["candidateId"] for x in out["matches"][0]["possibleSameShowLeads"]])
