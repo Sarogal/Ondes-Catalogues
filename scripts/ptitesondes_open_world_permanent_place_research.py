@@ -43,8 +43,45 @@ def named_query(city, venue):
             'out center tags %d;' % (name, town, MAX_ELEMENTS))
 
 
+def _typographic_pattern(value):
+    """Anchored, bounded regex derived solely from normalized ASCII tokens.
+
+    The regex is a search expansion, never evidence or a fuzzy identity match.
+    Accent classes and punctuation variants cover common French OSM names.
+    """
+    groups = {
+        "a": "[aàâäáãå]", "c": "[cç]", "e": "[eéèêë]",
+        "i": "[iîïíì]", "o": "[oôöóòõ]", "u": "[uùûüú]",
+        "y": "[yÿý]", "n": "[nñ]",
+    }
+    value = norm_text(value)
+    if not isinstance(value, str) or not re.fullmatch(r"[a-z0-9 ]{2,180}", value):
+        return None
+    tokens = value.split()
+    if not tokens:
+        return None
+    parts = ["".join(groups.get(c, c) for c in token) for token in tokens]
+    pattern = "^" + "[[:space:][:punct:]’–—]+".join(parts) + "$"
+    return pattern if len(pattern) <= 2000 else None
+
+
+def typographic_query(city, venue):
+    _identity({"city": city, "venue": venue})
+    a, b = _typographic_pattern(venue), _typographic_pattern(city)
+    if not a or not b:
+        return None
+    # JSON encoding provides the Overpass string escaping; no input-supplied
+    # regex metacharacters are copied to the generated pattern.
+    return ('[out:json][timeout:20];nwr["name"~%s,i]["addr:city"~%s,i];'
+            'out center tags %d;' % (json.dumps(a, ensure_ascii=False),
+                                    json.dumps(b, ensure_ascii=False), MAX_ELEMENTS))
+
+
 def fetch_named(city, venue):
-    return fetch_osm_query(named_query(city, venue), pathway="named",
+    # Use the normalized search as the primary query when supported so a
+    # literal match cannot hide a second typographically equivalent object.
+    query = typographic_query(city, venue) or named_query(city, venue)
+    return fetch_osm_query(query, pathway="named",
                            unavailable="independent_place_map_unavailable")
 
 
