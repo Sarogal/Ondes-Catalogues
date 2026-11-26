@@ -88,3 +88,25 @@ class RotationTests(unittest.TestCase):
         self.assertEqual(report["edition_matches"], 0)
         self.assertEqual(report["rows"][0]["images"][0]["claim_types"], [])
         self.assertFalse(report["publication_authorized"])
+
+
+    def test_typed_evidence_counts_are_diagnostic_only(self):
+        words = []
+        for y, line in enumerate(("FESTIVAL EXEMPLE", "13 au 15 août 2027",
+                                   "Artistes : Alpha, New Artist", "Pass 3J : 75 €")):
+            x = 20
+            for token in line.split():
+                width = len(token) * 10
+                words.append({"text": token, "confidence": 98,
+                              "box": [x, y * 40, width, 25], "review_only": True})
+                x += width + 8
+        reading = {"status": "review_only", "review_only": True, "words": words}
+        html = '<main><h1>Festival Exemple 2027</h1><img src="/exemple-2027.jpg"></main>'
+        report = scan(CAT, "2026-11-26", tick=0, fetch=lambda _: html,
+                      reader=Mock(return_value=reading))
+        self.assertEqual(report["structured_artist_count"], 2)
+        self.assertEqual(report["structured_pass_count"], 1)
+        self.assertEqual(report["rows"][0]["images"][0]["structured_artist_count"], 2)
+        self.assertNotIn("New Artist", str(report))
+        self.assertFalse(report["publication_authorized"])
+        self.assertEqual(ROW["lineup"], [])
