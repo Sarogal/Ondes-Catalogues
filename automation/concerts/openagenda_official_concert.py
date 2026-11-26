@@ -81,13 +81,23 @@ def _described_official_genres(record):
     content = descriptions.get("fr") or descriptions.get("en")
     if not isinstance(content, str) or not 4 <= len(content) <= 12000:
         return []
-    parsed = _VisibleOfficialGenreText()
+    parsed = _LongDescriptionText()
     try:
         parsed.feed(content)
         parsed.close()
-    except (ValueError, TypeError):
+    except (ValueError, TypeError, RecursionError):
         return []
     visible = normalized(" ".join(parsed.parts))
+    # The venue's verified physical identity is not musical evidence.
+    # Mask the whole name as a boundary-delimited phrase before searching
+    # for genres (e.g. a jazz concert at a room named "Punk Paradise").
+    # A separate, explicit genre elsewhere remains eligible.
+    place = record.get("location")
+    if isinstance(place, dict):
+        name = normalized(place.get("name"))
+        if name:
+            visible = re.sub(r"(?<!\w)" + re.escape(name) + r"(?!\w)",
+                             " lieu ", visible)
     if not visible or len(visible) > 12000:
         return []
     labels = []
