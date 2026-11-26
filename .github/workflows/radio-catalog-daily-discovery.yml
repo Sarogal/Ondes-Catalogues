@@ -215,6 +215,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/go-radio-discovery"
+          git -C go-radio-state-checkout rev-parse HEAD > "$RUNNER_TEMP/go-radio-discovery/state-parent.txt"
           # On branch pushes, only a tiny real-network sample is used.
           # Scheduled/manual runs explore many music tags and rotated pages.
           if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
@@ -250,6 +251,20 @@ jobs:
           curl --fail --silent --show-error --max-time 45 --max-filesize 16384 \
             "https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/feature/go-radio-test-v2-isolated-20261123/grossesondes/radio-test-v2/current.json" \
             --output "$pointer"
+          # A persisted signed anchor must authenticate against the pinned bootstrap.
+          # A missing anchor is allowed only during this explicit v8 bootstrap rollout.
+          anchor=go-radio-state-checkout/radio-discovery-state/release-anchor.json
+          if [[ -e "$anchor" ]]; then
+            PYTHONPATH=radio-catalog-lab/tools python - "$anchor" <<'PY'
+          import sys
+          from pathlib import Path
+          from radio_daily_baseline_verify import verify_pointer
+          path=Path(sys.argv[1])
+          if not path.is_file() or path.stat().st_size > 16384:
+              raise ValueError("invalid durable release anchor")
+          verify_pointer(path.read_bytes())
+          PY
+          fi
           python radio-catalog-lab/tools/radio_daily_release_context.py \
             --pointer "$pointer" --baseline "$baseline" \
             --previous-dir "$RUNNER_TEMP/go-radio-previous" \
@@ -267,6 +282,8 @@ jobs:
           with open(os.environ["GITHUB_ENV"],"a") as f:
               f.write(f"BASELINE_SHA256={sha}\nBASELINE_SEQUENCE={seq}\n")
           PY
+          # The verified pointer is public material, not a signing key.
+          cp "$pointer" "$RUNNER_TEMP/go-radio-discovery/release-anchor.json"
           # Digest is pinned to the previously signed TEST v8. This is a
           # classification-only report, not authority to admit or sign.
           python radio-catalog-lab/tools/radio_catalog_daily_candidate_reconcile.py \
@@ -635,7 +652,24 @@ jobs:
           python - <<'PY'
           import json, os
           from pathlib import Path
+          import re, subprocess
           src = Path(os.environ["RUNNER_TEMP"]) / "go-radio-state-input"
+          # Compare-and-swap: never replace observations collected from a different
+          # state checkout. A later concurrent push is also rejected by git push.
+          parent = (src / "state-parent.txt").read_text().strip()
+          if not re.fullmatch("[0-9a-f]{40}", parent) or parent != subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip():
+              raise ValueError("durable state changed since discovery; rerun required")
+          anchor = src / "release-anchor.json"
+          if not 0 < anchor.stat().st_size <= 16384:
+              raise ValueError("invalid release anchor size")
+          pointer = json.loads(anchor.read_bytes())
+          context = json.loads((src / "release-context.json").read_bytes())
+          if (context.get("signatureVerified") is not True or context.get("publicationAllowed") is not False
+                  or context.get("advanced") is not False or pointer.get("release_sequence") != 8
+                  or pointer.get("content_sha256") != "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40"
+                  or pointer.get("release_sequence") != context.get("selectedSequence")
+                  or pointer.get("content_sha256") != context.get("selectedSha256")):
+              raise ValueError("release anchor does not match verified context")
           dst = Path("radio-discovery-state")
           dst.mkdir(exist_ok=True)
           for name in ("ledger.json", "genre-hints.json", "stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json", "decision-preview.json", "metadata-preview.json", "artist-research-preview.json", "programme-preview.json", "recording-preview.json", "wikidata-preview.json", "qualification-v3-preview.json", "maintenance-preview.json", "repair-preview.json", "repair-confirmation-preview.json", "repair-plan-preview.json", "status-transition-preview.json", "logo-maintenance-preview.json", "missing-logo-preview.json"):
@@ -712,6 +746,8 @@ jobs:
                   assert data.get("approvedCount") == 0
                   assert all(r.get("approved") is False and r.get("publicationAllowed") is False for r in data["records"])
               (dst / name).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+          # Persist the public signed reference with the evidence in one Git commit.
+          (dst / "release-anchor.json").write_bytes(anchor.read_bytes())
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
