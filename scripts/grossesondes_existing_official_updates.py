@@ -731,13 +731,24 @@ def current_official_poster_candidates(html, site, row):
                         url = urljoin(site, raw)
                         parts = urlsplit(url)
                         words = fold(parts.path.rsplit("/", 1)[-1])
-                        years = set(re.findall(r"\b20[2-4]\d\b", words))
+                        label = fold(" ".join((attr.get(k) or "")[:500]
+                                              for k in ("alt", "title")))
+                        years = set(re.findall(r"\b20[2-4]\d\b", words + " " + label))
+                        role = r"\b(?:affiche|poster|lineup|line up|programmation)\b"
+                        filename_match = (years == {str(year)}
+                            and (all(t in words.split() for t in tokens)
+                                 or re.search(role, words)))
+                        # A neutral filename can identify a poster by its own
+                        # editorial metadata on the independently verified page.
+                        # No year in either source requires both brand and role.
+                        label_match = (years in (set(), {str(year)})
+                            and re.search(role, label)
+                            and (years == {str(year)}
+                                 or all(t in label.split() for t in tokens)))
                         if (parts.hostname == host and safe_public_url(url) == url
                                 and not parts.query and not parts.fragment
                                 and re.search(r"\.(?:jpe?g|png|webp)$", parts.path, re.I)
-                                and years == {str(year)}
-                                and (all(t in words.split() for t in tokens)
-                                     or re.search(r"\b(?:affiche|poster|lineup)\b", words))):
+                                and (filename_match or label_match)):
                             self.urls.add(url)
                 super().handle_starttag(tag, attrs)
         parser = Images()

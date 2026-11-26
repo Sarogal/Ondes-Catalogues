@@ -91,6 +91,21 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(row["lineup"], [])
         self.assertIsNone(row["lat"])
 
+    def test_poster_neutral_filename_can_use_own_editorial_metadata(self):
+        from grossesondes_existing_official_updates import current_official_poster_candidates
+        site = "https://festival-exemple.fr/"
+        row = festival("festival-123", site)
+        row["name"] = "Festival 123 2027"
+        html = ('<main><img src="/a.jpg" alt="Affiche 2027">'
+                '<img src="/b.png" title="Affiche Festival 123">'
+                '<img src="/c.jpg" alt="Affiche 2026">'
+                '<img src="/2026.jpg" alt="Affiche 2027">'
+                '<img src="/d.jpg" alt="Logo Festival 123">'
+                '<img src="/e.jpg" alt="Affiche">'
+                '<img hidden src="/f.jpg" alt="Affiche 2027"></main>')
+        self.assertEqual(current_official_poster_candidates(html, site, row),
+                         [site + "a.jpg", site + "b.png"])
+
     def test_multivenue_homonym_uses_only_current_named_venue_address(self):
         from grossesondes_openagenda_linked_edition import PROFESSIONAL_PUBLIC_CONFIDENCE
         from grossesondes_existing_official_updates import multivenue_department_from_access
