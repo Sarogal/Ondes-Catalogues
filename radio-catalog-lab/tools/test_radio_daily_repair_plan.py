@@ -16,7 +16,7 @@ OLD="https://radio.example.org/old"
 NEW="https://radio.example.org/new"
 PAGE="https://radio.example.org/metal"
 
-def fixture(new=NEW,quarantine=False,strong=True):
+def fixture(new=NEW,quarantine=False,strong=True,approved=False):
     station={"go_station_id":SID,"display_name":"Iron Radio","country_code":"FR","genres":["Metal"],
              "homepage":PAGE,"radio_browser_uuids":[{"uuid":UID,"state":"current"}],"legacy_aliases":[UID],
              "status":{"state":"quarantined" if quarantine else "active","reason_code":"legacy","changed_at":"2026-11-23T00:00:00Z"},
@@ -25,6 +25,9 @@ def fixture(new=NEW,quarantine=False,strong=True):
              "logo":{"asset_id":"sha256:"+"f"*64,"sha256":"f"*64,"revision":1,
                      "url":"https://radio.example.org/logo.png","byte_size":123,"width":32,"height":32,"mime_type":"image/png"},
              "editorial":{"admission_state":"legacy_preserved","reviewed_at":None,"evidence_refs":[]}}
+    if approved:
+        station["logo"]=None
+        station["editorial"].update(admission_state="approved",reviewed_at=DAY+"T00:00:00Z")
     doc={"schema_version":1,"catalog_id":"grosses-ondes-radio","release_sequence":8,
          "generated_at":"2026-11-23T00:00:00Z","stations":[station],"tombstones":[]}
     raw=encode(doc)

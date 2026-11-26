@@ -110,7 +110,7 @@ class IndependentMergeGateTests(unittest.TestCase):
     def test_existing_redirect_preserved(self):
         def change(doc):
             doc["tombstones"].append(dict(go_station_id="go-station-999999",
-                legacy_aliases=["old-favorite"], retired_at=DAY1+"T00:00:00Z",
+                legacy_aliases=["cccccccc-cccc-4ccc-8ccc-cccccccccccc"], retired_at=DAY1+"T00:00:00Z",
                 reason_code="merged_into_station", redirect_to=OTHER))
         self.fixture(change)
         self.assertEqual(self.verify(),digest(self.candidate))
