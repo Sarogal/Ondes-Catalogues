@@ -3,7 +3,7 @@
   "observationDate": "2026-11-26",
   "publicationAllowed": false,
   "technicallyQualifiedCount": 0,
-  "repeatAudioCandidateCount": 122,
+  "repeatAudioCandidateCount": 121,
   "repeatLiveFrameEvidenceCount": 75,
   "notObservedTodayCount": 3,
   "records": [
@@ -1061,15 +1061,14 @@
     },
     {
       "stationuuid": "5c885f44-2c9e-4485-a8bb-b858f06eaff6",
-      "streamSha256": "52b2ecc80a713761cb4c08d305c66023ffa19fb192990fbfdb7245a18439e1d8",
+      "streamSha256": "135aca8b77412ae5755e57263fe733099f35912d5c89a3bf1713d9c2176e5e8e",
       "audioEvidenceDates": [
-        "2026-11-25",
         "2026-11-26"
       ],
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
