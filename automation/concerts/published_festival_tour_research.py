@@ -187,62 +187,107 @@ def correction_research(corrections, today):
     return list(selected.values())
 
 
+def _tour_title(source):
+    # Only remove an exact terminal city label, not arbitrary title words.
+    title = triage.words(source["row"]["name"])
+    city = source["cityKey"]
+    if city and title.endswith(" " + city):
+        title = title[:-(len(city) + 1)]
+    return title
+
+
+def _different_stages(a, b):
+    return a["day"] != b["day"] and a["cityKey"] != b["cityKey"]
+
+
+def _tour_sources(sources):
+    """Nominate exact recurring bills or explicitly named variable tours.
+
+    A variable bill needs a same-origin, same-title, different-date/city
+    witness sharing at least two exact artist names. Never merge rosters or
+    propagate a match transitively to a third unrelated stage.
+    """
+    exact, titled = defaultdict(list), defaultdict(list)
+    for i, source in enumerate(sources):
+        exact[(source["site"], source["lineup"])].append(i)
+        title = _tour_title(source)
+        if len(title.split()) >= 2:
+            titled[(source["site"], title)].append(i)
+    selected = set()
+    for members in exact.values():
+        if (len({sources[i]["cityKey"] for i in members}) >= MIN_DISTINCT_CITIES
+                and len({sources[i]["day"] for i in members}) >= MIN_DISTINCT_DATES):
+            selected.update(members)
+    for members in titled.values():
+        # Index only the named artists on this exact organizer/title cohort.
+        by_artist = defaultdict(list)
+        for i in members:
+            for artist in sources[i]["lineup"]:
+                by_artist[artist].append(i)
+        for i in members:
+            if i in selected:
+                continue
+            overlap = defaultdict(int)
+            for artist in sources[i]["lineup"]:
+                for j in by_artist[artist]:
+                    if j == i or not _different_stages(sources[i], sources[j]):
+                        continue
+                    overlap[j] += 1
+                    if overlap[j] == 2:
+                        selected.add(i)
+                        selected.add(j)
+                if i in selected:
+                    break
+    return [source for i, source in enumerate(sources) if i in selected]
+
+
 def find_research(catalogue, today, concert_catalogue=None, corrections=None):
     if (not isinstance(catalogue, dict) or catalogue.get("schema") != 1
             or not isinstance(catalogue.get("festivals"), list)
             or not isinstance(today, date)):
         raise ValueError("Unsafe signed public festival catalogue")
-    groups = defaultdict(list)
-    for row in catalogue["festivals"]:
-        source = _qualifies_row(row, today)
-        if source is not None:
-            groups[(source["site"], source["lineup"])].append(source)
+    sources = [source for row in catalogue["festivals"]
+               if (source := _qualifies_row(row, today)) is not None]
     selected = []
-    for (site, lineup), sources in groups.items():
-        if (len({source["cityKey"] for source in sources}) <
-                    MIN_DISTINCT_CITIES
-                or len({source["day"] for source in sources}) <
-                    MIN_DISTINCT_DATES):
-            # A single-town festival must not be relabelled as a concert.
-            continue
-        for source in sources:
-            r = source["row"]
-            stable_id = sha256(json.dumps({
-                "slug": r["slug"], "date": source["day"], "site": site,
-                "city": source["cityKey"],
-            }, sort_keys=True).encode("utf-8")).hexdigest()[:24]
-            # The festival catalogue is nomination evidence ONLY. It neither
-            # establishes an approved concert source nor a verified concert
-            # artist, place, date or genre. Preserve exact visible hints
-            # while explicitly requiring fresh independent concert proof.
-            row = {
-                "candidateId": "concert-from-festival-" + stable_id,
-                "source": SOURCE,
-                "sourceUrl": site, "sourcePage": site,
-                # Signed catalogue is nomination provenance, NOT the official
-                # source host. Separate the two so the independent source
-                # admission queue can research the real organizer domain.
-                "festivalCatalogueSource": (
-                    "https://sarogal.github.io/Ondes-Catalogues/"
-                    "grossesondes/festivals.json"),
-                "date": source["day"], "name": r["name"],
-                "leadArtist": r["lineup"][0], "venue": r["venue"],
-                "city": r["city"], "department": r["department"],
-                "venueCatalogueId": None,
-                "artistNamesFromFestivalOnly": list(r["lineup"]),
-                "festivalReferenceSlug": r["slug"],
-                "classification": [],
-                "genreToConfirm": True,
-                "officialDetailFound": False,
-                "publishedFestivalTourFlag": True,
-                "requiresArtistAndVenueReproof": True,
-                "festivalCatalogueHintsOnly": True,
-                "publicationAllowed": False, "reviewRequired": True,
-            }
-            classified = triage.triage(row)
-            if classified["reviewBucket"] != "tour_source_research":
-                raise ValueError("Tour review cannot enter publisher source")
-            selected.append(classified)
+    for source in _tour_sources(sources):
+        site = source["site"]
+        r = source["row"]
+        stable_id = sha256(json.dumps({
+            "slug": r["slug"], "date": source["day"], "site": site,
+            "city": source["cityKey"],
+        }, sort_keys=True).encode("utf-8")).hexdigest()[:24]
+        # The festival catalogue is nomination evidence ONLY. It neither
+        # establishes an approved concert source nor a verified concert
+        # artist, place, date or genre. Preserve exact visible hints
+        # while explicitly requiring fresh independent concert proof.
+        row = {
+            "candidateId": "concert-from-festival-" + stable_id,
+            "source": SOURCE,
+            "sourceUrl": site, "sourcePage": site,
+            # Signed catalogue is nomination provenance, NOT the official
+            # source host. Separate the two so the independent source
+            # admission queue can research the real organizer domain.
+            "festivalCatalogueSource": (
+                "https://sarogal.github.io/Ondes-Catalogues/"
+                "grossesondes/festivals.json"),
+            "date": source["day"], "name": r["name"],
+            "leadArtist": r["lineup"][0], "venue": r["venue"],
+            "city": r["city"], "department": r["department"],
+            "venueCatalogueId": None,
+            "artistNamesFromFestivalOnly": list(r["lineup"]),
+            "festivalReferenceSlug": r["slug"],
+            "classification": [],
+            "genreToConfirm": True,
+            "officialDetailFound": False,
+            "publishedFestivalTourFlag": True,
+            "requiresArtistAndVenueReproof": True,
+            "festivalCatalogueHintsOnly": True,
+            "publicationAllowed": False, "reviewRequired": True,
+        }
+        classified = triage.triage(row)
+        if classified["reviewBucket"] != "tour_source_research":
+            raise ValueError("Tour review cannot enter publisher source")
+        selected.append(classified)
     # This offline nomination pass archives every eligible lead. Network
     # verification budgets and fair rotation belong to the downstream review.
     by_id = {row["candidateId"]: row for row in selected}
