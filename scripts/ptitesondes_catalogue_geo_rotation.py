@@ -135,4 +135,6 @@ if __name__ == "__main__":
     state, summary = rotate(catalogue, a.day, previous,
         researcher=hinted_researcher(hints), priority_keys=priority_keys)
     write_state(a.state, state)
+    from ptitesondes_generic_venue_osm_preflight import osm_transport_diagnostics
+    summary["osm_transport_diagnostics"] = osm_transport_diagnostics()
     print(json.dumps(summary))
