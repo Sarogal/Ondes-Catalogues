@@ -148,6 +148,28 @@ class MissingLogoTests(unittest.TestCase):
             station,body=self.html_logo(**kwargs)
             self.assertEqual(candidates(station,PAGE,body),{})
 
+    def test_responsive_logo_uses_explicit_fallback(self):
+        station,body=self.html_logo()
+        body=body.replace(b'src="/logo.png"',b'src="/logo.png" srcset="/logo-2x.png 2x"')
+        self.assertEqual(candidates(station,PAGE,body),
+                         {"https://radio.example.org/logo.png":"named_player_html_logo"})
+
+    def test_lazy_logo_requires_single_unambiguous_source(self):
+        station,body=self.html_logo()
+        expected={"https://radio.example.org/logo.png":"named_player_html_logo"}
+        for attrs in (b'data-src="/logo.png"',b'src="/logo.png" data-src="/logo.png"'):
+            self.assertEqual(candidates(station,PAGE,body.replace(b'src="/logo.png"',attrs)),expected)
+        for attrs in (b'src="/placeholder.png" data-src="/logo.png"',
+                      b'srcset="/logo.png 1x"',b'data-src="/logo.png" hidden',
+                      b'data-src="/logo.png" aria-hidden="true"',
+                      b'data-src="https://cdn.example.org/logo.png"'):
+            self.assertEqual(candidates(station,PAGE,body.replace(b'src="/logo.png"',attrs)),{})
+
+    def test_lazy_logo_still_requires_exact_player_and_named_alt(self):
+        for kwargs in ({"alt":"logo"},{"player":"https://other.example.org/live"}):
+            station,body=self.html_logo(**kwargs)
+            self.assertEqual(candidates(station,PAGE,body.replace(b'src="/logo.png"',b'data-src="/logo.png"')),{})
+
     def test_html_logo_ambiguous_multiple_images(self):
         station,body=self.html_logo(extra='<img alt="Iron Radio logo" src="/other.png">')
         self.assertEqual(len(candidates(station,PAGE,body)),2)

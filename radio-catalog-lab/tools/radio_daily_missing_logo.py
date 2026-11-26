@@ -26,7 +26,7 @@ from radio_stream_recheck_ledger import parse_day,SHA256_RE
 
 MAX_STATIONS=8
 MAX_IMAGES=2
-ANALYZER_VERSION=6
+ANALYZER_VERSION=7
 MAX_ALTERNATIVES=2
 # Navigation labels only locate pages; they never establish station identity.
 NAVIGATION_LABELS={"listen","listen live","radio stations","our stations","stations","radios",
@@ -57,9 +57,17 @@ class ArtworkPage(Page):
         if tag=="img" and not self.ignored and len(self.logo_images)<32:
             a=dict(attrs)
             src=a.get("src") or ""
+            lazy=a.get("data-src") or ""
             alt=a.get("alt") or ""
-            # Explicit named logo, not an arbitrary image, favicon or banner.
-            if src and alt and not any(k in a for k in ("hidden","aria-hidden","srcset","data-src")):
+            # The explicit fallback src of responsive images is usable;
+            # never infer identity from srcset or select a size arbitrarily.
+            # Lazy images can supply a single URL, but disagreeing actual
+            # sources are ambiguous, even if one looks like a placeholder.
+            if src and lazy and src!=lazy:
+                src=""
+            else:
+                src=src or lazy
+            if src and alt and not any(k in a for k in ("hidden","aria-hidden")):
                 self.logo_images.append((src,alt))
         if tag in ("title","h1") and not self.ignored:
             self.identity_tag=tag
