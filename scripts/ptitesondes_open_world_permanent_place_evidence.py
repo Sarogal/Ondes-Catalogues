@@ -11,6 +11,24 @@ from ptitesondes_delegated_source_authority import _url_host, _same_host
 from ptitesondes_independent_venue_site_proof import _osm_website_host
 
 MAX_HTML = 450000
+
+
+def mapped_place_kind(tags):
+    """Generic OSM feature classification, not a family admission decision."""
+    if not isinstance(tags, dict):
+        return None
+    kinds = set()
+    amenity = tags.get("amenity")
+    if amenity in ("library", "toy_library"):
+        kinds.add(amenity)
+    if amenity in ("theatre", "arts_centre"):
+        kinds.add(amenity)
+    if tags.get("tourism") == "museum":
+        kinds.add("museum")
+    if len(kinds) != 1:
+        return None
+    return kinds.pop()
+
 PUBLIC_ACCESS = re.compile(r"\b(?:ouvert(?:e)? a tous|ouvert(?:e)? au public|"
                            r"acces libre|entree libre|consultation sur place libre)\b")
 CHILDREN = re.compile(r"\b(?:enfants|jeune public|jeunesse|tout petits|ludotheque)\b")
@@ -51,8 +69,8 @@ class VenuePage(_Visibility):
 def corroborate_place(city, venue, postcode, official_url, html, osm):
     """Return a conservative private evidence record or None.
 
-    Start with exact OSM nodes for libraries and toy libraries. Other
-    categories, ways, relations and unresolved identities remain pending.
+    Exact named OSM nodes for libraries, toy libraries, museums, theatres
+    and arts centres. Other geometry and unresolved identities stay pending.
     A numberless address may be corroborated by the exact named node and
     independently visible street, postcode and city; no street centroid.
     """
@@ -87,7 +105,7 @@ def corroborate_place(city, venue, postcode, official_url, html, osm):
         street = norm_text(tags.get("addr:street"))
         number = tags.get("addr:housenumber")
         if (obj.get("type") != "node" or type(oid) is not int or oid <= 0
-                or tags.get("amenity") not in ("library", "toy_library")
+                or mapped_place_kind(tags) is None
                 or norm_text(tags.get("addr:city")) != city_n
                 or tags.get("addr:postcode") != postcode or not street
                 or tags.get("access") in ("private", "no", "customers")
