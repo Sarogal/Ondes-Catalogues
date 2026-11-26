@@ -874,6 +874,22 @@ jobs:
           PY
           else
             echo "::warning::Recherche générique des lieux indisponible ; état privé précédent conservé."
+            python - "$LOG/lieux-open-world-research.log" <<'PY'
+          import json, os, sys
+          stage = "unknown"
+          try:
+              with open(sys.argv[1], encoding="utf-8") as inp:
+                  report = json.loads(inp.read(8192))
+              value = report.get("error_stage")
+              if value in ("read_qualification", "read_previous", "research_cycle", "persist_result"):
+                  stage = value
+          except (ValueError, OSError, AttributeError, TypeError):
+              pass
+          line = "Recherche générique des lieux : étape en échec = " + stage
+          print(line)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+              out.write(line + "\n")
+          PY
           fi
           if ! python src/automation/place_ministry_current_audit.py --date "$DAY" --backlog "$OUT/lieux-backlog.json" --output "$OUT/lieux-current-municipal-audit.json" --summary "$OUT/lieux-current-municipal-summary.json" > "$LOG/lieux-ministry.log" 2>&1; then
             echo "::error::Audit municipal échoué."
