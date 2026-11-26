@@ -7,6 +7,7 @@ untrusted day-bound research dossiers. The Publisher re-reads everything.
 No named agenda, city, venue, organiser or category allowlist is used.
 """
 import argparse
+from copy import deepcopy
 from datetime import date, datetime, timedelta, timezone
 import json
 import os
@@ -403,6 +404,27 @@ def reclaim_editorial_queue(queue, clues, published, today, now, key,
     return [item for item in queue if id(item) in keep], cached, len(confirmed), checked
 
 
+def cycle_cached_reader(reader, counters, label):
+    """Reuse only successful reads within this invocation, not across runs.
+
+    Each date still passes exact live UID, session and editorial checks.
+    The independent Publisher receives no cached authority or proof.
+    """
+    cache = {}
+
+    def read(*args):
+        if args in cache:
+            counters[label + "_reused"] += 1
+            return deepcopy(cache[args])
+        counters[label + "_requests"] += 1
+        value = reader(*args)
+        if type(value) is dict:
+            cache[args] = deepcopy(value)
+        return value
+
+    return read
+
+
 def build_backlog_dossiers(backlog, patch, published, today, key, *,
                            batch_index=0, agenda_reader=read_agenda_by_slug,
                            event_reader=read_direct_v2, refusal_memory=None,
@@ -413,6 +435,10 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
             or type(published) is not dict or type(published.get("events")) is not list
             or not _valid_public_read_key(key)):
         raise ValueError("invalid_backlog_first_party_inputs")
+    network = {"agenda_requests": 0, "agenda_reused": 0,
+               "event_requests": 0, "event_reused": 0}
+    agenda_reader = cycle_cached_reader(agenda_reader, network, "agenda")
+    event_reader = cycle_cached_reader(event_reader, network, "event")
     already = {x.get("id") for x in published["events"] if type(x) is dict}
     # Old private research may refer to occurrences now published by another
     # successful cloud cycle. Prune these BEFORE measuring queue capacity;
@@ -572,6 +598,7 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
         "editorial_cached_backlog_deferred": deferred_clues,
         "editorial_new_live_refusals": new_refusals,
         "held_for_publisher_or_network": holds, "public_writes": 0,
+        **network,
     }
 
 
