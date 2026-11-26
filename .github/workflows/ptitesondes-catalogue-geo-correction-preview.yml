@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'scripts/ptitesondes_catalogue_geo_correction_preview.py'
+      - 'scripts/ptitesondes_historical_visible_event.py'
+      - 'tests/test_ptitesondes_historical_visible_event.py'
       - 'tests/test_ptitesondes_catalogue_geo_correction_preview.py'
       - '.github/workflows/ptitesondes-catalogue-geo-correction-preview.yml'
   push:
@@ -32,7 +34,7 @@ jobs:
       - name: Test correction boundaries and unchanged catalogue
         env:
           PYTHONPATH: scripts:tests
-        run: python -m unittest -v test_ptitesondes_catalogue_geo_correction_preview
+        run: python -m unittest -v test_ptitesondes_catalogue_geo_correction_preview test_ptitesondes_historical_visible_event
   observe:
     needs: offline
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues'
