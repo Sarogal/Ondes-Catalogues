@@ -91,6 +91,20 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(row["lineup"], [])
         self.assertIsNone(row["lat"])
 
+    def test_poster_hero_and_lazy_images_but_not_logo_or_hidden_navigation(self):
+        from grossesondes_existing_official_updates import current_official_poster_candidates
+        site = "https://festival-exemple.fr/"
+        row = festival("festival-123", site)
+        row["name"] = "Festival 123 2027"
+        html = ('<header><img src="/logo-123-2027.jpg">'
+                '<img src="/placeholder.png" data-src="/images/123-2027.jpg">'
+                '<nav><img src="/poster-2027.jpg"></nav></header>'
+                '<main><img data-original="/affiche-2027.png">'
+                '<img hidden data-src="/hidden-123-2027.jpg">'
+                '<img data-lazy-src="https://outside.example/123-2027.jpg"></main>')
+        self.assertEqual(current_official_poster_candidates(html, site, row),
+                         [site + "affiche-2027.png", site + "images/123-2027.jpg"])
+
     def test_poster_neutral_filename_can_use_own_editorial_metadata(self):
         from grossesondes_existing_official_updates import current_official_poster_candidates
         site = "https://festival-exemple.fr/"
