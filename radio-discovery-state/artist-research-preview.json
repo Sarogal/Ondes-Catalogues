@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 47,
+  "dueNameCount": 46,
   "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "latter day exploits",
+  "retryAfterKey": "michael schulte",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -581,6 +581,26 @@
       "artistName": "Marc Freak",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "megadeth": {
+      "status": "name_hypothesis",
+      "mbid": "a9044915-8be3-4c7e-b11f-9e2d2ea0a91e",
+      "genres": [
+        "hard rock",
+        "heavy metal",
+        "metal",
+        "rock",
+        "speed metal",
+        "thrash metal"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/a9044915-8be3-4c7e-b11f-9e2d2ea0a91e",
+      "artistName": "Megadeth",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },
