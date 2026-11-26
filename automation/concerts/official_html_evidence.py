@@ -150,6 +150,17 @@ class ArtistCreditLines(VisibleBlocks):
     def handle_endtag(self, tag):
         if tag in {"strong", "b"}:
             self._mark(self.END)
+        if tag == "p" and not self.ignored:
+            # The normal text extractor truncates blocks to 1000 characters.
+            # A truncated line is not a complete credit; retain the full
+            # paragraph within the already bounded input document instead.
+            for i in range(len(self.frames) - 1, -1, -1):
+                if self.frames[i][0] == "p":
+                    frame = self.frames.pop(i)
+                    value = " ".join(" ".join(frame[1]).split())
+                    if value:
+                        self.blocks.append(("p", value))
+                    return
         super().handle_endtag(tag)
 
     def handle_data(self, data):
