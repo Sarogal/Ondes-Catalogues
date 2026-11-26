@@ -11,7 +11,7 @@ from pathlib import Path
 import sys
 from urllib.parse import urljoin, urlsplit
 
-from dns_pinned_https import fetch_public_html, safe_public_url
+from dns_pinned_https import fetch_public_html, safe_public_url, OfficialHTTPStatusError
 from national_openagenda_research import _valid_professional_hints
 from source_qualification import Anchors, normalized, classify, visible_text
 SCRIPTS = str(Path(__file__).resolve().parents[1] / 'scripts')
@@ -73,15 +73,24 @@ def _url(base, raw):
         return None
 
 
-def _event_profiles(html, url, title, year):
+def _event_profiles(html, url, title, year, diagnostic=None):
+    if diagnostic is None:
+        diagnostic = {}
+    if not isinstance(html, str) or not 0 < len(html) <= 650_000:
+        diagnostic['outcome'] = 'HTML_UNAVAILABLE_OR_SIZE_REJECTED'
+        return None
     headings, anchors = _parse(html)
     expected = {normalized(title), normalized(re.sub(r"\s+20[2-4][0-9]$", "", title))}
     if len(headings) != 1 or headings[0] not in expected:
+        diagnostic['outcome'] = 'EVENT_HEADING_MISMATCH'
+        diagnostic['heading_count'] = min(len(headings), 100)
         return None
     try:
         if str(year) not in visible_text(html).split():
+            diagnostic['outcome'] = 'EVENT_YEAR_NOT_VISIBLE'
             return None
     except ValueError:
+        diagnostic['outcome'] = 'VISIBLE_TEXT_REJECTED'
         return None
     found = []
     for raw, label, _prefix in anchors:
@@ -96,22 +105,33 @@ def _event_profiles(html, url, title, year):
         found.append((link, label))
         if len(found) >= MAX_PROFILES:
             break
+    diagnostic['outcome'] = 'PROFILES_FOUND' if found else 'NO_VISIBLE_PROFILES'
+    diagnostic['profile_count'] = len(found)
     return found
 
 
-def _profile_websites(html, profile, label, ticket):
+def _profile_websites(html, profile, label, ticket, diagnostic=None):
+    if diagnostic is None:
+        diagnostic = {}
+    if not isinstance(html, str) or not 0 < len(html) <= 650_000:
+        diagnostic['outcome'] = 'HTML_UNAVAILABLE_OR_SIZE_REJECTED'
+        return []
     headings, anchors = _parse(html)
     if len(headings) != 1:
+        diagnostic['outcome'] = 'PROFILE_HEADING_COUNT_MISMATCH'
+        diagnostic['heading_count'] = min(len(headings), 100)
         return []
     identity = headings[0]
     # A card can append follower/event counts to the displayed profile name.
     if not identity or not (label == identity or re.fullmatch(
             re.escape(identity) + r" \d[0-9 ]*(?:followers|abonnes)(?: \d[0-9 ]*(?:events|evenements))?", label)):
+        diagnostic['outcome'] = 'PROFILE_IDENTITY_MISMATCH'
         return []
     event_identity = _path_identity(ticket)
     links = [(_url(profile, raw), normalized(text)) for raw, text, _ in anchors]
     # Do not accept a profile with a different edition or an unrelated artist.
     if not any(_path_identity(link) == event_identity for link, _ in links if link):
+        diagnostic['outcome'] = 'EXACT_EVENT_BACKLINK_ABSENT'
         return []
     found = []
     for link, text in links:
@@ -128,42 +148,55 @@ def _profile_websites(html, profile, label, ticket):
         found.append(link)
         if len(found) >= 2:
             break
+    diagnostic['outcome'] = 'WEBSITES_FOUND' if found else 'NO_EXPLICIT_SAFE_WEBSITE'
+    diagnostic['website_count'] = len(found)
     return found
 
 
 def discover(hints, title, year, *, fetch=fetch_public_html):
     """Return only private research paths. No external website is fetched here."""
     result = {"status": "NO_PROFESSIONAL_PATH", "requests": 0, "websites": [],
-              "review_only": True, "safe_to_publish": False, "publication_authorized": False}
+              "review_only": True, "safe_to_publish": False, "publication_authorized": False,
+              "diagnostics": []}
     if (not _valid_professional_hints(hints) or not isinstance(title, str)
             or not 7 <= len(title) <= 160 or type(year) is not int or not 2020 <= year <= 2049):
         return result
     visited = set()
 
-    def read(url):
+    def read(url, stage):
         if result["requests"] >= MAX_REQUESTS or url in visited:
-            return None
+            return None, None
         visited.add(url)
         result["requests"] += 1
+        diagnostic = {'stage': stage, 'outcome': 'FETCH_FAILED'}
+        result['diagnostics'].append(diagnostic)
         try:
-            return fetch(url)
+            return fetch(url), diagnostic
+        except OfficialHTTPStatusError as exc:
+            diagnostic['outcome'] = 'HTTP_STATUS_REJECTED'
+            diagnostic['http_status'] = exc.status_code
         except (OSError, ValueError, TypeError, UnicodeError, KeyError):
-            return None
+            pass
+        return None, diagnostic
 
     for link in hints["links"]:
         if link["field"] not in ("registration", "links"):
             continue
         for ticket in ticket_variants(link["url"]):
-            page = read(ticket)
-            profiles = _event_profiles(page, ticket, title, year)
+            page, diagnostic = read(ticket, 'TICKET_' + _path_identity(ticket)[1].upper())
+            if page is None:
+                continue
+            profiles = _event_profiles(page, ticket, title, year, diagnostic)
             if profiles is None:
                 continue
             result["status"] = "TICKET_IDENTITY_REVIEW_ONLY"
             if not profiles:
                 continue
             for profile, label in profiles:
-                profile_html = read(profile)
-                for site in _profile_websites(profile_html, profile, label, ticket):
+                profile_html, diagnostic = read(profile, 'PROFILE')
+                if profile_html is None:
+                    continue
+                for site in _profile_websites(profile_html, profile, label, ticket, diagnostic):
                     if any(site == item["website_url"] for item in result["websites"]):
                         continue
                     result["websites"].append({"ticket_url": ticket, "profile_url": profile,
