@@ -244,6 +244,29 @@ class OpenWorldArtistGenreTests(unittest.TestCase):
                              fetch=lambda *a: self.fail("ambiguous"))
         self.assertEqual(out["ambiguousArtistSourcesHeld"], 1)
 
+    def test_explicit_same_origin_homepage_resolves_navigation_not_identity(self):
+        home = "https://newact.example.org/"
+        hints = [{"name": NAME, "url": URL}, {"name": NAME, "url": home},
+                 {"name": NAME, "url": home + "tour"}]
+        seen = []
+        def fetch(url, cache):
+            seen.append(url)
+            return PROFILE
+        result = research.build(registry(hints), DAY, fetch=fetch)
+        self.assertEqual(seen, [home])
+        self.assertEqual(result["ambiguousArtistSourcesHeld"], 0)
+        self.assertEqual(result["profilesRefreshed"], 1)
+        self.assertEqual(result["officialDomainsAuthenticated"], 0)
+        self.assertFalse(result["publicationAllowed"])
+        for competing in (
+            hints + [{"name": NAME, "url": "https://clone.example.org/"}],
+            [hints[0], hints[2]],
+            hints + [{"name": NAME, "url": "https://other.newact.example.org/"}],
+        ):
+            out = research.build(registry(competing), DAY,
+                                 fetch=lambda *a: self.fail("ambiguous"))
+            self.assertEqual(out["ambiguousArtistSourcesHeld"], 1)
+
     def test_memory_survives_missing_next_day_without_converting_to_authority(self):
         first = research.build(registry(), DAY,
                                fetch=lambda u, cache: PROFILE)

@@ -14,6 +14,7 @@ import hashlib
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
+from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 import artist_genre_knowledge as knowledge
@@ -113,11 +114,21 @@ def candidate_sources(registry, today, *, musicbrainz=None, wikidata=None):
     for name_key, values in sorted(hints.items()):
         urls = {u for _, u in values}
         # Multiple unrelated addresses for one text name may be homonyms.
-        # Do not silently merge them or choose a first URL.
+        # Only a supplied, unambiguous homepage on the exact same HTTPS
+        # origin can disambiguate navigation paths. Never invent a homepage,
+        # merge subdomains, or treat the origin as authenticated identity.
         if len(urls) != 1:
-            ambiguous += 1
-            continue
-        display_name, url = sorted(values)[0]
+            origins = {urlsplit(u).netloc.casefold() for u in urls}
+            homepages = {u for u in urls if urlsplit(u).path in ("", "/")
+                         and not urlsplit(u).query and not urlsplit(u).fragment}
+            if len(origins) != 1 or not homepages:
+                ambiguous += 1
+                continue
+            if len({u.rstrip("/") for u in homepages}) != 1:
+                ambiguous += 1
+                continue
+            values = {(n, u) for n, u in values if u in homepages}
+        display_name, url = sorted(values, key=lambda v: (not v[1].endswith("/"), v))[0]
         selected.append({
             "name": display_name,
             "identityKey": frontier.identity("artist", display_name),
