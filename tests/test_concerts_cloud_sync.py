@@ -13,6 +13,45 @@ BASE=json.loads((ROOT/"docs/grossesondes/concerts-reference.json").read_text(enc
 NOW=__import__("datetime").date(2026,11,1)
 
 
+
+def protect_public_snapshot(reference, current):
+    """Offline public CI checks structure, NOT private approval authority.
+
+    The real Publisher merge() still requires exact persistent signed
+    geography rows and checks the original historical state. Public PR CI
+    has no private ledger; do not fabricate signatures or broaden its
+    production protection. Normalize only the six possible geographic
+    fields of structurally valid generic corrections on coarse venues.
+    """
+    import math
+    import re
+    from scripts import concert_existing_venue_geo_contract as geo
+    checked = copy.deepcopy(current)
+    for original, actual in zip(reference["venues"], checked["venues"]):
+        if actual == original or not geo.evidence.eligible(original):
+            continue
+        if actual.get("geoPrecision") not in {"named-site-point", "named-site-area"}:
+            continue  # legacy exact corrections remain subject to the old guard
+        if not (set(actual) == set(original)
+                and geo.PATCH <= set(original)
+                and all(actual[k] == original[k] for k in original if k not in geo.PATCH)
+                and isinstance(actual.get("address"), str)
+                and 6 <= len(actual["address"]) <= 160
+                and isinstance(actual.get("postalCode"), str)
+                and re.fullmatch(r"\d{5}", actual["postalCode"])
+                and isinstance(actual.get("geoSource"), str)
+                and re.fullmatch(r"https://www\.openstreetmap\.org/(node|way)/[1-9]\d*", actual["geoSource"])
+                and actual["geoPrecision"] == ("named-site-point" if "/node/" in actual["geoSource"] else "named-site-area")
+                and all(type(actual.get(k)) in (int, float) and math.isfinite(actual[k])
+                        for k in ("latitude", "longitude"))
+                and -56 <= actual["latitude"] <= 52
+                and -180 <= actual["longitude"] <= 180
+                and geo.evidence.address_source.eligible_address(actual)):
+            raise ValueError("Invalid public generic geographic correction structure")
+        actual.update({k: original[k] for k in geo.PATCH})
+    protect_reference(reference, checked)
+
+
 def approval(event_id="go-c-20270201-nantes-groupe-essai"):
     return {
         "reviewDecision":"approved",
@@ -1274,7 +1313,7 @@ class ConcertsCloudSyncTests(unittest.TestCase):
 
     def test_current_live_catalogue_retains_every_initial_event(self):
         live=json.loads((ROOT/"docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
-        protect_reference(BASE,live)
+        protect_public_snapshot(BASE,live)
         validate_catalogue(live)
         self.assertGreaterEqual(len(live["events"]),127)
         from concerts_cloud_sync import (
