@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 31,
-  "attemptedCount": 2,
+  "dueNameCount": 30,
+  "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "epica",
+  "retryAfterKey": "foreigner",
   "entries": {
     "2000 fm": {
       "status": "not_found",
