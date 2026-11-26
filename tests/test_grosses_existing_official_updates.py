@@ -120,6 +120,40 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertIn(access, updated["auditSources"])
         self.assertTrue(_verified_official_update_delta(row, updated))
 
+    def test_multivenue_named_contact_on_signed_event_page(self):
+        from grossesondes_openagenda_linked_edition import PROFESSIONAL_PUBLIC_CONFIDENCE
+        from grossesondes_existing_official_updates import multivenue_department_from_access
+        site = "https://salle-exemple.fr/festival/"
+        row = festival("festival-exemple-2027", site, dates=("2027-02-06","2027-02-07"))
+        row.update(name="Festival Exemple : Une célébration 2027",
+                   source=site, sourceConfidence=PROFESSIONAL_PUBLIC_CONFIDENCE,
+                   city=None, department=None, venue=None)
+        event = ("<main><h1>Festival Exemple : Une célébration</h1>"
+                 "<p>Les 6 et 7 février 2027, le Festival Exemple investit 4 salles "
+                 "de la ville de Colonne pour un festival post-punk. "
+                 "Les artistes sont répartis entre les scènes de Salle des Rives, "
+                 "du Bal du Port et du Théâtre.</p></main>")
+        contact = ("<footer><h4>SALLE DES RIVES</h4>"
+                   "<p>21 RUE DES ARTS<br>39000 COLONNE</p>"
+                   "<h4>Newsletter</h4></footer>")
+        def no_fetch(_):
+            self.fail("The signed event page is already available")
+        self.assertEqual(multivenue_department_from_access(
+            event + contact, row, "Colonne", no_fetch), ("39", site))
+        for bad in (contact.replace("SALLE DES RIVES", "BUREAU ADMINISTRATIF"),
+                    contact.replace("<p>21", "<p hidden>21"),
+                    contact.replace("COLONNE", "AUTREVILLE"),
+                    contact.replace("39000", "20000"),
+                    contact.replace("<h4>SALLE DES RIVES</h4>",
+                                    "<h4>SALLE DES RIVES</h4><h4>Autre lieu</h4>")):
+            self.assertIsNone(multivenue_department_from_access(
+                event + bad, row, "Colonne", no_fetch))
+        conflict = ('<main><h2>Salle des Rives</h2>'
+                    '<p>21 rue des Arts<br>93000 Colonne</p></main>')
+        linked = event + "<a href='/infos-pratiques/'>Infos pratiques</a>" + contact
+        self.assertIsNone(multivenue_department_from_access(
+            linked, row, "Colonne", lambda _: conflict))
+
     def test_counted_inline_roster_and_stale_municipal_note(self):
         from grossesondes_openagenda_linked_edition import MUNICIPAL_PUBLIC_CONFIDENCE
         site = "https://agenda.example.org/evenement/festival-brume/"
