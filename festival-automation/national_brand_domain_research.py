@@ -5,11 +5,16 @@ DNS-pinned transport and must pass first-party identity/edition checks.
 This research neither publishes nor promotes a domain to an approved list.
 """
 from datetime import date
+from pathlib import Path
 import re
+import sys
 
 from dns_pinned_https import safe_public_url, fetch_public_html
 from national_openagenda_research import pass_edition_title
 from source_qualification import normalized
+SCRIPTS = str(Path(__file__).resolve().parents[1] / "scripts")
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
 from grossesondes_first_party_direct_edition import (
     GENERIC_WORDS, verify_first_party_claims,
 )
@@ -19,7 +24,10 @@ def brand_domain_candidate(name, year):
     title = pass_edition_title(name, year)
     if title is None:
         return None
-    tokens = normalized(title.rsplit(" ", 1)[0]).split()
+    core = title.rsplit(" ", 1)[0]
+    if re.fullmatch(r"[\wÀ-ÿ '-]+", core) is None:
+        return None
+    tokens = normalized(core).split()
     if (not 1 <= len(tokens) <= 5
             or any(re.fullmatch(r"[a-z0-9]+", token) is None for token in tokens)
             or not any(len(token) >= 5 and token not in GENERIC_WORDS
