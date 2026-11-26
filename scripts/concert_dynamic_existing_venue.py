@@ -789,10 +789,17 @@ def _missing_address_from_own_visible_event(raw, event, venue, html):
             candidate = re.sub(r"^parvis\s+[^–—]{1,100}?\s+[-–—]\s+",
                                "", candidate, flags=re.I)
             candidate = re.sub(r"\s+[-–—]\s+(?=\d{5}\s)", " ", candidate)
-            address = geo_evidence._postal_line(candidate, venue["city"])
-            if address is None:
+            # This replay compares an already verified catalogue address;
+            # unlike discovery, it must also accept complete compound street
+            # labels (e.g. street + business park separated by a comma).
+            # Never infer a street from this text or match a mere substring.
+            postal_codes = re.findall(r"\b\d{5}\b", candidate)
+            expected = normal(" ".join(venue[k] for k in ("address", "postalCode", "city")))
+            actual = normal(candidate)
+            if (postal_codes != [venue["postalCode"]]
+                    or actual not in {expected, expected + " france"}):
                 return False
-            observed.add((normal(address[0]), address[1]))
+            observed.add((normal(venue["address"]), venue["postalCode"]))
     return observed == {(normal(venue["address"]), venue["postalCode"])}
 
 
