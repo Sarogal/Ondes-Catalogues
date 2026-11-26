@@ -121,6 +121,68 @@ class UnlistedExistingVenueTests(unittest.TestCase):
         self.addCleanup(lambda: publisher.NEW_REFERENCE_GEO_SOURCES.__setitem__(
             VENUE_ID, original))
 
+    def test_inline_bold_credits_inside_paragraph_replayed_by_publisher(self):
+        from automation.concerts import dynamic_first_party_venue_proposals as proposals
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        title = " + ".join(NAMES)
+        credits = "<br/>".join("<strong>" + n + "</strong> - Angleterre - Black Metal"
+                               for n in NAMES)
+        body = page(EVENT, music=False, genres=False)
+        body = body.replace(json.dumps(
+            [{"@type": "MusicGroup", "name": n} for n in NAMES]), "[]")
+        body = body.replace("<h1>Nouvel événement</h1>",
+                            "<h1>" + title + "</h1><p><strong>Le Bikini - Grande salle</strong>"
+                            "<br/>Prix : 15 euros<br/><br/>" + credits + "</p>")
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+        fetch = fake_fetch({"primary": body})
+        self.assertEqual(proposals._individual_event(
+            body, EVENT, signed["event"]["date"], venue,
+            accept_generic=True, fetch=fetch, cache={}), (NAMES, ["Black Metal"]))
+        self.assertTrue(dynamic.validate(signed, venues, artists, TODAY, fetch=fetch))
+        with mock.patch.object(dynamic, "safe_fetch", side_effect=fetch):
+            published, counts = publisher.merge(
+                BASE, BASE, {"schema": publisher.SCHEMA, "approvals": [signed]}, TODAY)
+        self.assertEqual(counts["newEvents"], 1)
+        event = next(e for e in published["events"] if e["id"] == signed["event"]["id"])
+        self.assertEqual(event["artistIds"], IDS)
+        for bad in (
+                body.replace("<strong>" + NAMES[0] + "</strong>", NAMES[0]),
+                body.replace("</strong> - Angleterre", "</strong><br/> - Angleterre"),
+                body.replace("Black Metal", "Hardcore Techno"),
+                body.replace("Black Metal", "Influenced by Black Metal"),
+                body.replace("Angleterre", "not"),
+                body.replace(credits, credits + "<br/><strong>Other Band</strong> - Punk"),
+                body.replace(credits, credits + "<br/><strong>" + NAMES[0] + "</strong> - Punk"),
+                body.replace("<h1>" + title, "<h1>Other Show"),
+                body.replace("<p><strong>Le Bikini", "<h2>Autres concerts</h2><p><strong>Le Bikini"),
+                body.replace(credits, "<span hidden>" + credits + "</span>"),
+                body.replace(credits, "Concert annulé<br/>" + credits),
+                body.replace('"performer": []', '"performer": [{"@type": "MusicGroup", "name": "Other Band"}]'),
+        ):
+            with self.subTest(snippet=bad[:180]), self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY,
+                                 fetch=fake_fetch({"primary": bad}))
+
+    def test_inline_credit_uses_literal_style_not_event_genre(self):
+        from automation.concerts import official_html_evidence as visible
+        title = "Example Solo + Example Band"
+        html = ("<h1>" + title + "</h1><p><strong>Example Solo</strong> - Jazz"
+                "<br/><b>Example Band</b> – Angleterre – Post-punk</p>")
+        people = visible.inline_artist_credits(html, title)
+        self.assertEqual([p["name"] for p in people], ["Example Solo", "Example Band"])
+        self.assertEqual([p["genre"] for p in people], ["Jazz", "Post Punk"])
+        self.assertIsNone(visible.inline_artist_credits(
+            html.replace("Example Solo</strong>", "Example Solo</strong><br/>"), title))
+        self.assertIsNone(visible.inline_artist_credits(
+            html.replace("Post-punk", "Post-punk influenced by Jazz"), title))
+        self.assertIsNone(visible.inline_artist_credits(
+            html.replace("<b>", "&#57344;").replace("</b>", "&#57345;"), title))
+
     def test_structured_event_admission_reports_fixed_rejection_codes(self):
         from automation.concerts import dynamic_first_party_venue_proposals as proposals
         venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
