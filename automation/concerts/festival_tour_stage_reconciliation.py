@@ -20,6 +20,8 @@ import re
 import unicodedata
 from urllib.parse import urlsplit
 
+from published_festival_tour_research import valid_artist_names
+
 SCHEMA = "grossesondes.concert.festival-tour-stage-reconciliation.v1"
 REGISTRY_SCHEMA = "grossesondes.concert.intake.v1"
 MAX_ROWS = 30000
@@ -113,9 +115,7 @@ def build(registry, today):
                 and c.get("festivalCatalogueHintsOnly") is True
                 and c.get("requiresArtistAndVenueReproof") is True
                 and c.get("reviewBucket") == "tour_source_research"
-                and isinstance(c.get("artistNamesFromFestivalOnly"), list)
-                and 1 <= len(c["artistNamesFromFestivalOnly"]) <= 35
-                and all(normalized(a) for a in c["artistNamesFromFestivalOnly"])
+                and valid_artist_names(c.get("artistNamesFromFestivalOnly"), minimum=1)
                 and normalized(c.get("city")) and exact_venue_identity(c.get("venue"))):
             refs.append((key, rec, c))
         elif (c.get("reviewBucket") == "festival_overlap_review"
