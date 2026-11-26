@@ -4,8 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 30,
-  "distinctArtistHints": 39,
+  "stationsWithArtistHints": 31,
+  "distinctArtistHints": 41,
+  "attemptedHlsCount": 0,
+  "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
   "stationsWithAlternativeHints": 0,
   "records": [
@@ -202,6 +204,48 @@
       ],
       "alternativeVersion": 0,
       "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "158a3876-cbad-406c-b69e-edac38ae71d6",
+      "streamSha256": "a6ca0ecea5a93b5af1c7810c9768a173e36814192b234e449f4719dcdb535c27",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
+    },
+    {
+      "stationuuid": "16166094-b6d7-4382-bcb4-8a61f63a8427",
+      "streamSha256": "1ebde3c9ba1ec407c86afda30c05ee5ffcb2e49af186a39e596ad9f25bd7b758",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "VERTICAL67",
+          "titleSha256": "c5ea12e39c58a2bba07041a0f224d2f611a8569141eb5f45c6a03d86ebc18e90"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "1628187c-e965-4593-8f36-719c3dd9ad9b",
+      "streamSha256": "82f293eacbefd38fedcc6ecf22cf301aa75392588e9f4bd1a537039c2c40a128",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "25de583d-8165-4a5f-8ba5-39861a77f943",
@@ -456,27 +500,31 @@
     {
       "stationuuid": "4e3c3bc3-7d48-4a20-84cc-509d3e2cea14",
       "streamSha256": "1ee03af57fb0d058d32da8cb728f75a31ad23d3949c5411a96357bcf26d4d954",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
       "verdict": "metadata_no_parseable_title",
-      "observations": []
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "4f30ac19-4a41-40cb-8999-2ca19b34711e",
       "streamSha256": "50c1bc9192fae23a3878c2e33c81eabbbda08dc5eed8b7c7e4b041cf915ff2c8",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
       "verdict": "metadata_no_parseable_title",
-      "observations": []
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "4f420bd6-f547-4d84-acb1-0526f5263151",
       "streamSha256": "6ec2c0634265a964950f24250053be6a85e29e7f4268c894dde223da65c88d17",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -486,8 +534,15 @@
           "date": "2026-11-25",
           "artistHint": "Megadeth",
           "titleSha256": "39378ff293c0f9c812ce19917f22a7bc64cf93d5993e9ef94d1c28c0c9d7c82d"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "Black Sabbath",
+          "titleSha256": "eb7eeaaf64486bb0bb292931ecaddf97db0155ffba7e61ef52ada62a1eb8912f"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "517b189e-46eb-4156-bf93-905f7934c838",

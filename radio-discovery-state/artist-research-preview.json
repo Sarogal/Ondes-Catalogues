@@ -3,11 +3,11 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 39,
-  "dueNameCount": 25,
+  "observedNameCount": 41,
+  "dueNameCount": 27,
   "attemptedCount": 1,
-  "serviceFailure": "http_503",
-  "retryAfterKey": "howard jones",
+  "serviceFailure": "timeout",
+  "retryAfterKey": "iced earth",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
