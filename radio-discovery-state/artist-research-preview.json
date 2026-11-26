@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 27,
-  "attemptedCount": 2,
+  "dueNameCount": 26,
+  "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "minor threat",
+  "retryAfterKey": "queens of the stone age",
   "entries": {
     "2000 fm": {
       "status": "not_found",
