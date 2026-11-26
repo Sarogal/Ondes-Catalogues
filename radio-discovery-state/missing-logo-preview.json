@@ -8,8 +8,8 @@
     "no_current_image": 32
   },
   "counts": {
-    "no_bound_image": 14,
-    "page_held": 16,
+    "no_bound_image": 15,
+    "page_held": 15,
     "synthetic_held": 2
   },
   "eligibleCount": 30,
@@ -299,6 +299,7 @@
       "sourceSha256": null
     },
     {
+      "analyzerVersion": 4,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000202",
@@ -313,6 +314,7 @@
       "sourceSha256": null
     },
     {
+      "analyzerVersion": 4,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000216",
@@ -327,6 +329,7 @@
       "sourceSha256": null
     },
     {
+      "analyzerVersion": 4,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000241",
@@ -341,6 +344,7 @@
       "sourceSha256": null
     },
     {
+      "analyzerVersion": 4,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000248",
@@ -350,11 +354,12 @@
       "observedDate": "2026-11-26",
       "pageSha256": null,
       "publicationAllowed": false,
-      "reviewStatus": "page_held",
+      "reviewStatus": "no_bound_image",
       "sourceKind": null,
       "sourceSha256": null
     },
     {
+      "analyzerVersion": 4,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000259",
@@ -369,6 +374,7 @@
       "sourceSha256": null
     },
     {
+      "analyzerVersion": 4,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000268",
@@ -383,6 +389,7 @@
       "sourceSha256": null
     },
     {
+      "analyzerVersion": 4,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000275",
@@ -397,6 +404,7 @@
       "sourceSha256": null
     },
     {
+      "analyzerVersion": 4,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000280",
