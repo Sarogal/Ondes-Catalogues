@@ -23,6 +23,8 @@ from ptitesondes_open_world_permanent_place_research import (
 )
 from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
 
+from ptitesondes_open_world_permanent_place_draft import build_draft, fetch_admin
+
 MAX_BYTES = 900000
 MAX_RECHECK = 6
 
@@ -49,10 +51,10 @@ def read_private(token):
 
 
 def review(private, today, *, osm_fetch=fetch_named, page_read=read_unknown_https,
-           directory_fetch=fetch_dila):
+           directory_fetch=fetch_dila, admin_fetch=fetch_admin):
     counts = Counter()
     summary = {"private_candidates": 0, "rechecked": 0,
-               "independently_corroborated": 0, "counts": {},
+               "independently_corroborated": 0, "complete_draft_records": 0, "counts": {},
                "publication_ready": False, "public_writes": 0}
     if private is None:
         summary["counts"] = {"private_research_not_yet_available": 1}
@@ -92,14 +94,32 @@ def review(private, today, *, osm_fetch=fetch_named, page_read=read_unknown_http
             if city not in cache:
                 cache[city] = directory_fetch(city)
             directory = cache[city]
+            pages = {}
+            maps = []
+            def mapped(city, venue):
+                value = osm_fetch(city, venue)
+                maps.append(value)
+                return value
             def official_read(url):
                 if not approved_municipal_page_host(url, city, directory):
                     raise ValueError("municipal_authority_not_confirmed")
-                return page_read(url)
-            status, proof = _inspect(lead, osm_fetch, official_read)
+                pages[url] = page_read(url)
+                return pages[url]
+            status, proof = _inspect(lead, mapped, official_read)
             if proof is not None:
                 counts["fresh_municipal_place_evidence"] += 1
                 summary["independently_corroborated"] += 1
+                try:
+                    admin = admin_fetch(proof["lat"], proof["lng"])
+                    draft = build_draft(city, lead["venue"], proof["postal_code"],
+                                        proof["official_url"], pages[proof["official_url"]],
+                                        maps[0], admin, today)
+                    if draft is not None:
+                        summary["complete_draft_records"] += 1
+                    else:
+                        counts["draft_facts_not_complete"] += 1
+                except (ValueError, OSError, TypeError, KeyError, UnicodeError):
+                    counts["draft_admin_unavailable"] += 1
             else:
                 counts[status] += 1
         except (ValueError, OSError, TypeError, KeyError, UnicodeError):
@@ -120,7 +140,7 @@ def main():
     if os.getenv("GITHUB_STEP_SUMMARY"):
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
             f.write("### Lieux inconnus : contre-preuve indépendante (lecture seule)\n")
-            for key in ("private_candidates", "rechecked", "independently_corroborated"):
+            for key in ("private_candidates", "rechecked", "independently_corroborated", "complete_draft_records"):
                 f.write(f"- {key}: {summary.get(key, 0)}\n")
             for key, n in sorted(summary["counts"].items()):
                 f.write(f"- {key}: {n}\n")

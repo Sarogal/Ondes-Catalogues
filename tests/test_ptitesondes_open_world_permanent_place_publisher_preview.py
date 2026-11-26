@@ -4,6 +4,7 @@ from unittest.mock import patch
 import unittest
 from test_ptitesondes_open_world_permanent_place_evidence import CITY, VENUE, HTML, OSM, URL
 from ptitesondes_open_world_permanent_place_research import STATE_SCHEMA
+from test_ptitesondes_open_world_permanent_place_draft import ADMIN
 from ptitesondes_open_world_permanent_place_publisher_preview import review
 
 DAY = date(2026, 11, 26)
@@ -27,9 +28,11 @@ class OpenWorldPlacePublisherPreviewTests(unittest.TestCase):
                    return_value="venue.example"):
             result = review(s, DAY, osm_fetch=lambda *_: OSM,
                             directory_fetch=lambda _: {},
-                            page_read=lambda url: visited.append(url) or HTML)
+                            page_read=lambda url: visited.append(url) or HTML,
+                            admin_fetch=lambda *_: ADMIN)
         self.assertEqual(visited, [URL])
         self.assertEqual(result["independently_corroborated"], 1)
+        self.assertEqual(result["complete_draft_records"], 1)
         self.assertFalse(result["publication_ready"])
         self.assertEqual(result["public_writes"], 0)
         self.assertNotIn(VENUE, str(result))
