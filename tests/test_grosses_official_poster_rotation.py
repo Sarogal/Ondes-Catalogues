@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import Mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from grossesondes_official_poster_rotation import scan
+from grossesondes_official_poster_rotation import scan, contextual_poster_match
 
 SITE = "https://festival-exemple.fr/"
 ROW = {"slug": "festival-exemple-2027", "name": "Festival Exemple 2027",
@@ -39,3 +39,52 @@ class RotationTests(unittest.TestCase):
         fetch.assert_not_called()
         scan(CAT, "2026-11-26", slug=ROW["slug"], fetch=fetch, reader=reader)
         reader.assert_not_called()
+
+    def test_rendered_fallback_uses_only_same_signed_origin(self):
+        browser = Mock(return_value=HTML)
+        reader = Mock(return_value={"status": "review_only", "review_only": True, "words": []})
+        report = scan(CAT, "2026-11-26", tick=0, fetch=lambda _: "<main>Loading</main>",
+                      reader=reader, browser_fetch=browser)
+        browser.assert_called_once_with(SITE)
+        self.assertEqual(report["browser_hosts"], 1)
+        self.assertEqual(report["images_read"], 2)
+        self.assertEqual(report["rows"][0]["raw_candidates"], 0)
+        self.assertEqual(report["rows"][0]["rendered_candidates"], 3)
+
+    def test_no_browser_after_http_failure_or_when_raw_has_candidates(self):
+        from dns_pinned_https import OfficialHTTPStatusError
+        browser = Mock()
+        reader = Mock(return_value={"status": "rate_limited"})
+        scan(CAT, "2026-11-26", tick=0, fetch=Mock(side_effect=OfficialHTTPStatusError(429)),
+             reader=reader, browser_fetch=browser)
+        browser.assert_not_called()
+        reader.assert_not_called()
+        scan(CAT, "2026-11-26", tick=0, fetch=lambda _: HTML,
+             reader=reader, browser_fetch=browser)
+        browser.assert_not_called()
+
+    def test_contextual_association_is_not_publication_or_image_date_proof(self):
+        reading = {"status": "review_only", "review_only": True, "words": [
+            {"text": "2027", "confidence": 98, "box": [0, 0, 60, 20], "review_only": True}
+        ]}
+        result = {"status": "edition_identity_or_dates_unproven", "diagnostics": {
+            "year_matches": True, "contradictory_dates": False, "cancellation_detected": False}}
+        url = SITE + "exemple-2027.jpg"
+        self.assertTrue(contextual_poster_match(SITE, url, ROW, True, reading, result))
+        for bad_url in (SITE + "poster-2027.jpg", SITE + "exemple-2026.jpg",
+                        SITE + "autre-2027.jpg", "https://external.fr/exemple-2027.jpg"):
+            self.assertFalse(contextual_poster_match(SITE, bad_url, ROW, True, reading, result))
+        self.assertFalse(contextual_poster_match(SITE, url, ROW, False, reading, result))
+        for flag in ("contradictory_dates", "cancellation_detected"):
+            conflict = dict(result, diagnostics=dict(result["diagnostics"], **{flag: True}))
+            self.assertFalse(contextual_poster_match(SITE, url, ROW, True, reading, conflict))
+        weak = dict(reading, words=[dict(reading["words"][0], confidence=40)])
+        self.assertFalse(contextual_poster_match(SITE, url, ROW, True, weak, result))
+        html = '<main><h1>Festival Exemple 2027</h1><p>Festival Exemple du 13 au 15 août 2027</p><img src="/exemple-2027.jpg"></main>'
+        report = scan(CAT, "2026-11-26", tick=0, fetch=lambda _: html,
+                      reader=Mock(return_value=reading))
+        self.assertTrue(report["rows"][0]["exact_visible_page_dates"])
+        self.assertEqual(report["contextual_edition_matches"], 1)
+        self.assertEqual(report["edition_matches"], 0)
+        self.assertEqual(report["rows"][0]["images"][0]["claim_types"], [])
+        self.assertFalse(report["publication_authorized"])

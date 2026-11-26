@@ -32,7 +32,7 @@ MAX_WORDS = 1500
 MAX_CACHE = 64
 MAX_CACHE_BYTES = 8 * 1024 * 1024
 MIN_REVIEW_CONFIDENCE = 85
-OCR_PROFILE = "tesseract-fra-eng-psm11-v1"
+OCR_PROFILE = "tesseract-fra-eng-psm11-contrast-v2"
 MIME_FORMAT = {"image/jpeg": "JPEG", "image/png": "PNG", "image/webp": "WEBP"}
 
 
@@ -137,17 +137,64 @@ def parse_tsv(raw):
     return words
 
 
+def _ocr_score(words):
+    """Prefer confident alphanumeric tokens, without merging geometries."""
+    return (sum(w["confidence"] >= MIN_REVIEW_CONFIDENCE
+                and bool(re.search(r"[^\W_]", w["text"])) for w in words),
+            sum(w["confidence"] >= 60
+                and bool(re.search(r"[^\W_]", w["text"])) for w in words))
+
+
+def _choose_ocr_pass(original, alternative):
+    """An alternative must not change detected edition or cancellation signals."""
+    from grossesondes_official_html_edition import explicit_ranges, fold, CANCEL
+    def signals(words):
+        text = fold(" ".join(w["text"] for w in words))
+        years = set(re.findall(r"(?<!\d)20[2-4]\d(?!\d)", text))
+        ranges = {(a, b) for year in years
+                  for _, _, a, b in explicit_ranges(text, int(year))}
+        day_numbers = set(re.findall(r"(?<!\d)[0-3]?\d(?!\d)", text))
+        return years, bool(CANCEL.search(text)), ranges, day_numbers
+    if signals(original) != signals(alternative):
+        return original
+    return alternative if _ocr_score(alternative) > _ocr_score(original) else original
+
+
 def recognize_poster(mime, body):
-    """Local Tesseract; bounded image, no shell, no network, no paid service."""
+    """Two bounded local OCR passes; preserve one complete word geometry."""
+    from PIL import Image, ImageOps
     with tempfile.TemporaryDirectory(prefix="go-poster-") as directory:
         path = Path(directory) / "poster.png"
         normalized_image(mime, body, path)
-        completed = subprocess.run(
-            ["tesseract", str(path), "stdout", "-l", "fra+eng", "--psm", "11", "tsv"],
-            shell=False, capture_output=True, timeout=25, check=True)
-        if len(completed.stdout) > MAX_TSV:
-            raise ValueError("OCR output exceeds budget")
-        return parse_tsv(completed.stdout.decode("utf-8", errors="strict"))
+        deadline = monotonic() + 25
+
+        def run(image_path):
+            remaining = deadline - monotonic()
+            if remaining <= 0:
+                raise TimeoutError("OCR time budget")
+            completed = subprocess.run(
+                ["tesseract", str(image_path), "stdout", "-l", "fra+eng", "--psm", "11", "tsv"],
+                shell=False, capture_output=True, timeout=remaining, check=True)
+            if len(completed.stdout) > MAX_TSV:
+                raise ValueError("OCR output exceeds budget")
+            return parse_tsv(completed.stdout.decode("utf-8", errors="strict"))
+
+        original = run(path)
+        if monotonic() >= deadline - 2:
+            return original
+        # Improve contrast on illustrated posters, preserving image dimensions.
+        try:
+            alternate_path = Path(directory) / "contrast.png"
+            with Image.open(path) as image:
+                adjusted = ImageOps.autocontrast(image, cutoff=1)
+                histogram = adjusted.histogram()
+                if sum(histogram[:128]) > sum(histogram[128:]):
+                    adjusted = ImageOps.invert(adjusted)
+                adjusted.save(alternate_path, format="PNG")
+            alternative = run(alternate_path)
+            return _choose_ocr_pass(original, alternative)
+        except (OSError, ValueError, TypeError, UnicodeError, subprocess.SubprocessError):
+            return original
 
 
 def _valid_cached_words(words):
@@ -255,32 +302,8 @@ def read_official_poster(site, url, *, cache, fetch=None, recognize=None):
     return out
 
 
-def poster_review_claims(row, reading):
-    """Edition-bound diagnostic claims; no publication authority.
-
-    Reuse only exact signed dates and name. Preserve line geometry and reject
-    ambiguous rows rather than concatenating text from separate poster blocks.
-    Unlabelled logos are not artist proof. No new date or coordinate is emitted.
-    """
-    from grossesondes_official_html_edition import explicit_ranges, fold, CANCEL
-    out = {"status": "edition_unproven", "review_only": True,
-           "publication_authorized": False, "claims": {}}
-    if not isinstance(row, dict) or not isinstance(reading, dict):
-        return out
-    words = reading.get("words")
-    if (reading.get("status") != "review_only" or reading.get("review_only") is not True
-            or not _valid_cached_words(words) or not words):
-        return out
-    try:
-        start, end = date.fromisoformat(row["startDate"]), date.fromisoformat(row["endDate"])
-        brand = re.sub(r"\b20[2-4]\d\b", "", fold(row["name"]))
-    except (KeyError, TypeError, ValueError):
-        return out
-    def tokens(value):
-        return re.findall(r"[a-z0-9]+", fold(value))
-    brand_words = [w for w in tokens(brand) if w not in ("festival", "fest")]
-    if not brand_words or len("".join(brand_words)) < 3 or start.year != end.year:
-        return out
+def poster_word_lines(words):
+    """Return separated geometric lines, or None for ambiguous overlap."""
     lines = []
     # Group vertically overlapping words conservatively, without merging
     # across unusually large horizontal gaps (e.g. sponsor columns).
@@ -296,7 +319,7 @@ def poster_review_claims(row, reading):
         elif not choices:
             lines.append({"center": center, "height": height, "words": [word]})
         else:
-            return out
+            return None
     texts = []
     for line in lines:
         ordered = sorted(line["words"], key=lambda w: w["box"][0])
@@ -314,8 +337,82 @@ def poster_review_claims(row, reading):
             previous = word
         if current:
             texts.append(current)
+    return texts
+
+
+def poster_known_artist_candidates(reading, artist_names):
+    """Exact known-name hints, not lineup claims or a whitelist.
+
+    A whole high-confidence geometric segment must match a known name.
+    A sponsor can still match: never grant field or publication authority.
+    Unknown names remain eligible for future independent identification.
+    """
+    from grossesondes_official_html_edition import fold
+    words = reading.get("words")
+    if (reading.get("status") != "review_only" or reading.get("review_only") is not True
+            or not _valid_cached_words(words)):
+        return []
+    lines = poster_word_lines(words)
+    if lines is None:
+        return []
+    def key(value):
+        return " ".join(re.findall(r"[a-z0-9]+", fold(value)))
+    known = {}
+    for name in artist_names:
+        if not isinstance(name, str) or len(name) > 110:
+            continue
+        normalized = key(name)
+        if len(normalized.replace(" ", "")) >= 4 and re.search(r"[a-z]", normalized):
+            known.setdefault(normalized, set()).add(name)
+    matches = set()
+    for line in lines:
+        if not all(w["confidence"] >= MIN_REVIEW_CONFIDENCE for w in line):
+            continue
+        normalized = key(" ".join(w["text"] for w in line))
+        if re.search(r"\b(?:sponsors?|partenaires?|presented|presente|billetterie|tickets?)\b", normalized):
+            continue
+        names = known.get(normalized, set())
+        if len(names) == 1:
+            matches.update(names)
+    return sorted(matches)
+
+
+def poster_review_claims(row, reading):
+    """Edition-bound diagnostic claims; no publication authority.
+
+    Reuse only exact signed dates and name. Preserve line geometry and reject
+    ambiguous rows rather than concatenating text from separate poster blocks.
+    Unlabelled logos are not artist proof. No new date or coordinate is emitted.
+    """
+    from grossesondes_official_html_edition import explicit_ranges, fold, CANCEL
+    out = {"status": "edition_unproven", "review_only": True,
+           "publication_authorized": False, "claims": {}, "diagnostics": {}}
+    if not isinstance(row, dict) or not isinstance(reading, dict):
+        return out
+    words = reading.get("words")
+    if (reading.get("status") != "review_only" or reading.get("review_only") is not True
+            or not _valid_cached_words(words) or not words):
+        return out
+    try:
+        start, end = date.fromisoformat(row["startDate"]), date.fromisoformat(row["endDate"])
+        brand = re.sub(r"\b20[2-4]\d\b", "", fold(row["name"]))
+    except (KeyError, TypeError, ValueError):
+        return out
+    def tokens(value):
+        return re.findall(r"[a-z0-9]+", fold(value))
+    brand_words = [w for w in tokens(brand) if w not in ("festival", "fest")]
+    if not brand_words or len("".join(brand_words)) < 3 or start.year != end.year:
+        return out
+    out["diagnostics"]["word_count"] = len(words)
+    out["diagnostics"]["strong_word_count"] = sum(w["confidence"] >= MIN_REVIEW_CONFIDENCE for w in words)
+    texts = poster_word_lines(words)
+    if texts is None:
+        out["diagnostics"]["ambiguous_line_geometry"] = True
+        return out
     all_text = " ".join(w["text"] for w in words)
     years = set(re.findall(r"(?<!\d)20[2-4]\d(?!\d)", all_text))
+    out["diagnostics"].update(year_matches=years == {str(start.year)},
+                              cancellation_detected=bool(CANCEL.search(fold(all_text))))
     if years != {str(start.year)} or CANCEL.search(fold(all_text)):
         out["status"] = "edition_conflict_or_year_missing"
         return out
@@ -326,6 +423,13 @@ def poster_review_claims(row, reading):
     ranges = {(a,b) for line in strong for _,_,a,b in explicit_ranges(fold(line), start.year)}
     all_ranges = {(a,b) for line in texts for _,_,a,b in
                   explicit_ranges(fold(" ".join(w["text"] for w in line)), start.year)}
+    out["diagnostics"].update(
+        brand_matches=brand_ok,
+        strong_date_range_count=len(ranges),
+        all_date_range_count=len(all_ranges),
+        strong_exact_dates=(start, end) in ranges,
+        contradictory_dates=bool(all_ranges - {(start, end)}),
+    )
     if not brand_ok or ranges != {(start,end)} or all_ranges != {(start,end)}:
         out["status"] = "edition_identity_or_dates_unproven"
         return out

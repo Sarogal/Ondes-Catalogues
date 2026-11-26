@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "festival-automatio
 from grossesondes_official_poster_ocr import (
     MAX_BYTES, qualified_url, parse_tsv, read_official_poster,
     load_ocr_cache, save_ocr_cache, recognize_poster, poster_review_claims,
+    _choose_ocr_pass, poster_known_artist_candidates,
 )
 from dns_pinned_https import OfficialHTTPStatusError
 
@@ -130,6 +131,9 @@ class PosterOCRTests(unittest.TestCase):
                  "Ville : Exempleville", "Pass : 45 €", "Sponsor Gamma"]
         result = poster_review_claims(row, reading(lines))
         self.assertEqual(result["status"], "edition_matches_review_only")
+        self.assertTrue(result["diagnostics"]["brand_matches"])
+        self.assertTrue(result["diagnostics"]["strong_exact_dates"])
+        self.assertFalse(result["diagnostics"]["contradictory_dates"])
         self.assertEqual(result["claims"]["artist_labels"], ["Artistes : Alpha, Beta"])
         self.assertEqual(result["claims"]["location_labels"], ["Ville : Exempleville"])
         self.assertEqual(result["claims"]["price_labels"], ["Pass : 45 €"])
@@ -142,6 +146,46 @@ class PosterOCRTests(unittest.TestCase):
         self.assertEqual(poster_review_claims(row, reading(lines, confidence=40))["claims"], {})
         result = poster_review_claims(row, reading(lines[:2] + ["ALPHA BETA", "45 €"]))
         self.assertEqual(set(result["claims"]), {"dates"})
+
+    def test_contrast_pass_prefers_complete_stronger_geometry_without_mixing(self):
+        def words(*tokens):
+            return [{"text": token, "confidence": confidence,
+                     "box": [i * 60, 0, 50, 20], "review_only": True}
+                    for i, (token, confidence) in enumerate(tokens)]
+        original = words(("2027", 96), ("Exemple", 35))
+        better = words(("2027", 98), ("Exemple", 97), ("Alpha", 95))
+        self.assertIs(_choose_ocr_pass(original, better), better)
+        self.assertIs(_choose_ocr_pass(better, original), better)
+        for unsafe in (words(("2026", 99), ("Exemple", 99), ("Alpha", 99)),
+                       words(("2027", 99), ("Annulé", 99), ("Alpha", 99)),
+                       words(("Exemple", 99), ("Alpha", 99), ("Beta", 99))):
+            self.assertIs(_choose_ocr_pass(original, unsafe), original)
+        dates = words(("2027", 96), ("13", 96), ("au", 96),
+                      ("15", 96), ("août", 96))
+        different = words(("2027", 99), ("13", 99), ("au", 99),
+                          ("16", 99), ("août", 99), ("Alpha", 99))
+        self.assertIs(_choose_ocr_pass(dates, different), dates)
+
+    def test_artist_hints_require_complete_confident_geometric_segments(self):
+        words = []
+        def line(tokens, y, confidence=98):
+            x = 20
+            for token in tokens.split():
+                width = len(token) * 10
+                words.append({"text": token, "confidence": confidence,
+                              "box": [x, y, width, 20], "review_only": True})
+                x += width + 5
+        line("ALPHA BETA", 0)
+        line("Sponsor Gamma", 40)
+        line("Delta", 80, 40)
+        line("Omega Records", 120)
+        line("New Artist", 160)
+        line("Rival", 200)
+        reading = {"status": "review_only", "review_only": True, "words": words}
+        known = ["Alpha Beta", "Alpha", "Gamma", "Sponsor Gamma", "Delta",
+                 "Omega", "Rival", "RIVAL"]
+        self.assertEqual(poster_known_artist_candidates(reading, known), ["Alpha Beta"])
+        self.assertEqual(poster_known_artist_candidates(dict(reading, review_only=False), known), [])
 
     def test_failed_recognition_not_cached(self):
         cache = {}

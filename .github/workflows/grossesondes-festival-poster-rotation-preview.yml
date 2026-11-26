@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - scripts/grossesondes_official_poster_rotation.py
+      - scripts/grossesondes_official_poster_ocr.py
+      - tests/test_grosses_official_poster_ocr.py
       - tests/test_grosses_official_poster_rotation.py
       - .github/workflows/grossesondes-festival-poster-rotation-preview.yml
   workflow_dispatch:
@@ -18,7 +20,7 @@ permissions:
 jobs:
   preview:
     runs-on: ubuntu-24.04
-    timeout-minutes: 9
+    timeout-minutes: 15
     env:
       OMP_THREAD_LIMIT: '2'
       FESTIVAL_SLUG: ${{ inputs.slug }}
@@ -32,12 +34,47 @@ jobs:
           sudo apt-get install -y tesseract-ocr tesseract-ocr-fra tesseract-ocr-eng python3-pil
       - name: Offline rotation tests
         run: /usr/bin/python3 -m unittest discover -s tests -p test_grosses_official_poster_rotation.py -v
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Installer Pillow pour Python du navigateur
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Installer Chromium isolé sans secrets
+        run: |
+          python -m pip install --disable-pip-version-check 'playwright==1.56.0'
+          python -m playwright install --with-deps chromium
+      - name: Autoriser uniquement le binaire Chromium à utiliser son sandbox AppArmor
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Never disable AppArmor globally. Apply one exact executable profile
+          # before running any untrusted website scripts.
+          CHROME_BIN="$(find "$HOME/.cache/ms-playwright" -type f -path '*/chromium_headless_shell-*/chrome-linux/headless_shell' -print -quit)"
+          test -n "$CHROME_BIN" && test -x "$CHROME_BIN"
+          printf 'abi <abi/4.0>,\ninclude <tunables/global>\nprofile grossesondes-chromium %s flags=(unconfined) {\n  userns,\n}\n' "$CHROME_BIN" > "$RUNNER_TEMP/grossesondes-chromium.apparmor"
+          sudo install -m 0644 "$RUNNER_TEMP/grossesondes-chromium.apparmor" /etc/apparmor.d/grossesondes-chromium
+          sudo apparmor_parser -r /etc/apparmor.d/grossesondes-chromium
+      - name: Vérifier localement le sandbox Chromium avant toute page externe
+        run: |
+          python - <<'PY'
+          from playwright.sync_api import sync_playwright
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, chromium_sandbox=True)
+              try:
+                  context = browser.new_context(
+                      accept_downloads=False, service_workers='block')
+                  page = context.new_page()
+                  page.set_content('<main>Grosses Ondes browser smoke</main>')
+                  assert 'Grosses Ondes browser smoke' in page.content()
+              finally:
+                  browser.close()
+          PY
       - name: Read-only real poster regression (public catalogue)
         if: github.event_name == 'pull_request'
-        run: /usr/bin/python3 scripts/grossesondes_official_poster_rotation.py --catalogue docs/grossesondes/festivals.json --slug festival-666-2027
+        run: python scripts/grossesondes_official_poster_rotation.py --catalogue docs/grossesondes/festivals.json --slug festival-666-2027 --browser
       - name: Read-only public catalogue rotation
         if: github.event_name != 'pull_request'
         run: |
           args=(--catalogue docs/grossesondes/festivals.json)
           if [[ -n "$FESTIVAL_SLUG" ]]; then args+=(--slug "$FESTIVAL_SLUG"); fi
-          /usr/bin/python3 scripts/grossesondes_official_poster_rotation.py "${args[@]}"
+          python scripts/grossesondes_official_poster_rotation.py "${args[@]}" --browser
