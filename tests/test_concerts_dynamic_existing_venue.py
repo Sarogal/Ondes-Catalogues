@@ -672,11 +672,60 @@ class UnlistedExistingVenueTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 dynamic.validate(signed, venues, artists, TODAY, fetch=wrong)
         for changed in (source, primary.replace(profile_url, "https://127.0.0.1/"),
-                        primary.replace('"MusicEvent"', '"Event"'),
                         primary.replace("2027-03-05", "2027-03-06")):
             with self.assertRaises(ValueError):
                 dynamic.validate(signed, venues, artists, TODAY,
                                  fetch=fake_fetch({"primary": changed}))
+
+    def test_canonical_generic_event_named_profile_replayed_by_real_publisher(self):
+        from automation.concerts import dynamic_first_party_venue_proposals as proposals
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        target = "https://unknown-musician.example.org/bio"
+        node = next(dynamic.discover.read_ld(page(EVENT, music=False, genres=False)))
+        node["performer"][-1]["url"] = target
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+
+        def body(value):
+            return '<script type="application/ld+json">' + json.dumps(value) + '</script>'
+
+        def run_fetch(value, name=NAMES[-1], genre="Black Metal", kind="MusicGroup"):
+            def fetch(url, cache):
+                if url == target:
+                    return body({"@type": kind, "name": name, "genre": genre})
+                return fake_fetch({"primary": body(value)})(url, cache)
+            return fetch
+
+        fetch = run_fetch(node)
+        self.assertEqual(proposals._individual_event(
+            body(node), EVENT, signed["event"]["date"], venue,
+            accept_generic=True, fetch=fetch, cache={}), (NAMES, ["Black Metal"]))
+        self.assertTrue(dynamic.validate(signed, venues, artists, TODAY, fetch=fetch))
+        with mock.patch.object(dynamic, "safe_fetch", side_effect=fetch):
+            result, counts = publisher.merge(BASE, BASE,
+                {"schema": publisher.SCHEMA, "approvals": [signed]}, TODAY)
+            self.assertEqual(counts["newEvents"], 1)
+        for bad in (
+            {**node, "url": None}, {**node, "url": WITNESS},
+            {**node, "startDate": "2027-03-06"},
+            {**node, "eventStatus": "EventCancelled"},
+            {**node, "location": {"@type": "Place", "name": "Other Room"}},
+        ):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY, fetch=run_fetch(bad))
+        for options in ({"name": "Other Artist"}, {"genre": "Jazz"},
+                        {"kind": "MusicEvent"}, {"genre": "Hardcore Techno"}):
+            with self.subTest(options=options), self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY,
+                                 fetch=run_fetch(node, **options))
+        wrong = copy.deepcopy(node)
+        wrong["performer"][-1]["@type"] = "Organization"
+        with self.assertRaises(ValueError):
+            dynamic.validate(signed, venues, artists, TODAY, fetch=run_fetch(wrong))
 
     def test_venue_hosted_named_artist_profile_replayed_by_publisher(self):
         from automation.concerts import dynamic_first_party_venue_proposals as proposals
