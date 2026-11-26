@@ -126,5 +126,24 @@ class MetadataTests(unittest.TestCase):
         self.assertEqual(later,[])
         self.assertEqual(second["approvedCount"],0)
 
+
+    def test_hls_eligible_without_icy_and_exact_stream_binding(self):
+        d,r,c,q=reports()
+        c["records"]=[]
+        h={"schemaVersion":1,"scanDate":DAY,"publicationAllowed":False,"technicallyQualifiedCount":0,
+           "records":[{"stationuuid":UID,"streamSha256":safe_digest(URL),
+                       "verdict":"advancing_hls_manifest_only","technicalQualified":False,"publicationAllowed":False}]}
+        def probe(u):
+            self.assertEqual(u,URL)
+            return {"verdict":"hls_id3_artist_title_hint","titleHints":[{"artistHint":"Band","titleHint":"Song",
+                "titleSha256":safe_digest("Song"),"method":"hls_packed_id3","sourceSha256":safe_digest("segment")}]}
+        result=collect(d,r,c,q,limit=1,hls=h,observe=lambda u:self.fail("not ICY"),observe_hls=probe)
+        self.assertEqual(result["attemptedHlsCount"],1)
+        self.assertEqual(result["stationsWithHlsId3Hints"],1)
+        self.assertEqual(result["approvedCount"],0)
+        h["records"][0]["streamSha256"]=safe_digest("another stream")
+        result=collect(d,r,c,q,limit=1,hls=h,observe_hls=lambda u:self.fail("wrong stream"))
+        self.assertEqual(result["attemptedCount"],0)
+
 if __name__=="__main__":
     unittest.main()
