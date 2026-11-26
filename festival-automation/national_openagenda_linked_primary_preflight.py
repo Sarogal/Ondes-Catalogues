@@ -178,6 +178,7 @@ def examine(state, queue, catalogue, today, *, event_fetch=None,
     read_event = event_fetch or fetch_public_html
     read_site = organizer_fetch or fetch_public_html
     output = []
+    rate_limited_hosts = set()
     current_hints = {lead['source_url']: lead.get('professional_source_hints_review_only')
                      for lead in validated_openagenda_leads(state, today)}
     for source in selected:
@@ -245,7 +246,8 @@ def examine(state, queue, catalogue, today, *, event_fetch=None,
         # research. No discovered website enters the existing proposal gate.
         if dates is None and current_hints.get(url) is not None:
             row["professional_research_review_only"] = discover_professional_profiles(
-                current_hints[url], source["title"], source["year"], fetch=read_site)
+                current_hints[url], source["title"], source["year"], fetch=read_site,
+                rate_limited_hosts=rate_limited_hosts)
             if site is None:
                 row["professional_official_detail_review_only"] = examine_professional_details(
                     row["professional_research_review_only"], source["title"],
