@@ -1050,7 +1050,8 @@ jobs:
         run: |
           set -euo pipefail
           REPORT=confidential/automation/concerts/intake/existing-venue-geo-preflight.json
-          rm -f "$REPORT"
+          # Retain the prior private report for fair scheduling. The preflight
+          # independently rechecks current evidence and atomically replaces it.
           UTC_HOUR=$(date -u +%H)
           SCAN_SLOT=$((10#$UTC_HOUR / 8))
           OPTIONS=()
