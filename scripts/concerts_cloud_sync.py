@@ -7895,6 +7895,12 @@ def merge(reference, current, approvals, today):
             isinstance(approvals.get("approvals"), list),
             "Approbations privées non conformes")
     from scripts import concert_existing_venue_geo_contract as geo_contract
+    from scripts import concert_editorial_exclusion_contract as editorial_contract
+    from scripts import concert_published_lineup_contract as lineup_contract
+    # Restore excluded signed events only for historical venue/event checks.
+    # Their IDs remain occupied during admission; remove them only at the end.
+    current, editorial_plans = editorial_contract.prepare(
+        reference, current, approvals, today, fetch=lineup_contract.network_fetch)
     # Restore only exact signed old/new states before the original historical
     # guards, including the original approval for post-reference venues.
     current, geo_plans = geo_contract.prepare(current, approvals, today, defer_unavailable=True)
@@ -7914,7 +7920,6 @@ def merge(reference, current, approvals, today):
         a.get("event", {}).get("id"): a
         for a in approvals["approvals"] if a.get("reviewDecision") == "approved"
     }
-    from scripts import concert_published_lineup_contract as lineup_contract
     lineup_rows = approvals.get("lineupCorrections", [])
     require(isinstance(lineup_rows, list),
             "Correctifs de programmation privée non conformes")
@@ -7927,6 +7932,8 @@ def merge(reference, current, approvals, today):
             and not set(lineup_by_id).intersection(
                 {e["id"] for e in reference["events"]}),
             "Correctif absent, dupliqué ou ciblant une référence immuable")
+    require(not set(lineup_by_id).intersection(editorial_plans),
+            "Corrections éditoriales et de programmation incompatibles")
     gwendoline_approval = None
     for existing in current["events"][len(reference["events"]):]:
         approval = approved_ids.get(existing["id"])
@@ -8175,6 +8182,8 @@ def merge(reference, current, approvals, today):
                 counts["deferredUnprocessed"] += 1
                 continue
             evt, new_artists = validate_approval(entry, venues, artists, today)
+            require(not editorial_contract.matches_excluded(entry, editorial_plans),
+                    "Source/date déjà écartée par correction éditoriale")
             # Aucune collision non déclarée sur le même lieu, jour et artiste.
             clash = next((other["id"] for other in result["events"]
                           if other["date"] == evt["date"] and
@@ -8232,7 +8241,11 @@ def merge(reference, current, approvals, today):
             "Trop de nouveaux concerts en une seule synchronisation")
     require(counts["newVenues"] <= MAX_NEW_VENUES_PER_SYNC,
             "Trop de nouvelles salles en une seule synchronisation")
-    if (counts["newEvents"] or counts["newVenues"] or counts["correctedEvents"] or counts["correctedVenues"]):
+    result, editorial_changes = editorial_contract.apply(result, editorial_plans)
+    if editorial_plans:
+        counts["editorialExclusions"] = editorial_changes
+        counts["deferredEditorialCorrections"] = sum(bool(p.get("deferred")) for p in editorial_plans.values())
+    if (counts["newEvents"] or counts["newVenues"] or counts["correctedEvents"] or counts["correctedVenues"] or editorial_changes):
         result["updatedAt"] = today.isoformat()
         result["edition"] = "v0.6+cloud — vérifications officielles"
     protect_reference(reference, geo_contract.restore_originals(result, geo_plans))
@@ -8264,7 +8277,7 @@ def main():
         json.dumps(stats, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (out / "concerts-candidat.json").write_text(
         json.dumps(candidate, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    if args.mode == "publish" and (stats["newEvents"] or stats["newVenues"] or stats["correctedEvents"] or stats["correctedVenues"]):
+    if args.mode == "publish" and (stats["newEvents"] or stats["newVenues"] or stats["correctedEvents"] or stats["correctedVenues"] or stats.get("editorialExclusions", 0)):
         require(bool(token), "Interdiction de publier sans accès aux validations privées")
         CATALOGUE.write_text(
             json.dumps(candidate, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
