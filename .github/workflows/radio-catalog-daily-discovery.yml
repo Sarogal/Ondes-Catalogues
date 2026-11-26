@@ -169,6 +169,8 @@ jobs:
     needs: discovery-tests
     runs-on: ubuntu-latest
     timeout-minutes: 18
+    outputs:
+      report-name: ${{ steps.report-identity.outputs.name }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -725,10 +727,14 @@ jobs:
               "suggestedGenreTags": hints,
           }, ensure_ascii=False, indent=2) + "\n")
           PY
+      - name: Identify this collection attempt
+        id: report-identity
+        shell: bash
+        run: echo "name=go-radio-discovery-${GITHUB_RUN_ID}-attempt-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
       - name: Upload review-only candidate report
         uses: actions/upload-artifact@v4
         with:
-          name: go-radio-discovery-${{ github.run_id }}
+          name: ${{ steps.report-identity.outputs.name }}
           path: ${{ runner.temp }}/go-radio-discovery/
           if-no-files-found: error
           retention-days: 14
@@ -746,9 +752,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: state/go-radio-discovery-preview
+      - name: Require exact collection artifact identity
+        shell: bash
+        env:
+          REPORT_NAME: ${{ needs.discovery-preview.outputs.report-name }}
+        run: |
+          set -euo pipefail
+          [[ "$REPORT_NAME" =~ ^go-radio-discovery-${GITHUB_RUN_ID}-attempt-[1-9][0-9]*$ ]]
       - uses: actions/download-artifact@v4
         with:
-          name: go-radio-discovery-${{ github.run_id }}
+          name: ${{ needs.discovery-preview.outputs.report-name }}
           path: ${{ runner.temp }}/go-radio-state-input
       - name: Validate and persist only evidence files
         shell: bash
