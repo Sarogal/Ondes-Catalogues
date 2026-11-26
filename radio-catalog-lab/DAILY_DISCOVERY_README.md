@@ -2,6 +2,33 @@
 
 **Ce laboratoire ne publie aucune radio.** Il prépare le catalogue radio centralisé de la **mise à jour 1**, indépendamment de l'intégration ultérieure des cartes Concerts/Festivals et des fiches artistes (mise à jour 2).
 
+## État de référence — 26 novembre 2026
+
+Cette section prévaut sur les descriptions historiques des pilotes ci-dessous. Le laboratoire est toujours isolé et ne publie aucun catalogue utilisable en production.
+
+- PR #474 : branche `feature/radio-daily-discovery-lab-20261120`, fusion soumise à autorisation explicite.
+- [Workflow 232](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/45891170407) : 677 tests hors réseau et trois jobs réussis ; état durable `9226a8d`, sur `state/go-radio-discovery-preview`.
+- Sur push, la découverte est limitée à douze requêtes Radio Browser ; les collecteurs techniques, éditoriaux et de maintenance peuvent effectuer des sondages réseau bornés. Les budgets, délais et protections sont imposés par le workflow et les modules. Sur dispatch, `run_stream_probes=false` permet d'écarter les étapes de sondage ; la collecte élargie utilise les requêtes tournantes. Le cron 04:17 UTC est dormant hors branche par défaut.
+- Le job de persistance seul reçoit `contents: write`, et uniquement sur la branche expérimentale prévue par sa condition. Il sauvegarde les preuves non publiantes et le cache immuable des objets hérités, jamais un catalogue successeur. Les artefacts sont nommés par run et tentative ; le job consomme le nom exact transmis par la collecte. La vérification du parent Git protège les observations des écritures obsolètes ou concurrentes.
+- Référence TEST v8 : 296 stations, 285 actives, 358 flux, 320 identifiants historiques, 24 redirections. Les 188 objets graphiques hérités sont disponibles dans le cache durable ; aucun téléchargement de ces objets n'est nécessaire. L'absence d'un logo ne bloque pas à elle seule une admission.
+- L'analyseur V7 peut traiter les sources HTML explicites responsives et différées, sans relâcher l'association station/flux. À cette date, aucun nouveau logo n'a été confirmé parmi les 30 stations réelles sans visuel. Les deux stations synthétiques restent exclues de la recherche.
+- La qualification V2 est la politique de décision effective du laboratoire ; V3 n'est qu'une comparaison. Les observations positives de continuité doivent provenir de dates UTC distinctes. Les candidats proches de l'admission bénéficient d'un contrôle prioritaire, sans liste nominative.
+
+### Jalons bloquants avant activation
+
+1. Obtenir une admission ou une autre modification admissible sur des preuves réelles, sans fabriquer d'observation. Vérifier les motifs d'éventuel refus indépendant.
+2. Contrôler dans `strict-live-release-preview.json` le digest du successeur, la signature Ed25519 avec clé éphémère, la publication atomique simulée, la migration des rapports de maintenance et la resélection du successeur. Une absence de changement n'est pas une preuve de réussite de ces jalons.
+3. Préparer séparément le mécanisme de persistance réelle du successeur, le choix de la clé et du pointeur durables, le contrôle de l'inventaire des logos, la reconstruction des rapports de qualification après migration et les tests de reprise/rollback. Actuellement le CLI et les validations de persistance sont verrouillés sur la référence v8 ; le signataire éphémère et le MemoryStore ne sont pas un publisher réel.
+4. Préparer le déclenchement quotidien sur branche par défaut et adapter la condition de persistance à l'environnement autorisé. La fusion de #474, la persistance d'un successeur signé et l'activation de publication nécessitent une autorisation explicite. Ne pas modifier TEST v8, l'application, le Play Store ni les autres moteurs pendant cette recette.
+
+**Ne pas confondre tests synthétiques, simulations à partir de preuves réelles, et publication effective.**
+
+---
+
+## Historique des pilotes (20 novembre et états antérieurs)
+
+Les descriptions qui suivent sont conservées pour retracer l'évolution du laboratoire ; les anciens budgets et permissions ne constituent plus le contrat opérationnel actuel.
+
 ## Découverte ouverte, pas de catalogue figé
 
 Le fichier `tools/radio_daily_discovery.py` lance des recherches **mondiales** sur Radio Browser, par tags et noms (metal, heavy metal, hard rock, punk, stoner, grunge, rock, etc.). Il ne contient aucun identifiant de station autorisé ou nombre maximum de radios. Les critères de recherche sont ajustables. Une page des résultats récents est interrogée systématiquement, tandis que les pages plus anciennes tournent suivant le jour de la semaine. Les recherches sont bornées pour ménager le fournisseur.
