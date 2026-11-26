@@ -19,6 +19,7 @@ from ptitesondes_catalogue_geo_proof_batch import research_group
 from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
 from ptitesondes_dynamic_municipal_source_links import _safe_url
 from ptitesondes_shared_venue_location_evidence import _coordinates
+from ptitesondes_historical_visible_event import visible_historical_identity
 
 MAX_GROUPS = 3
 MAX_EVENTS = 12
@@ -192,7 +193,12 @@ def preview(catalogue, today, checkpoint, *, progress=None, researcher=research_
             source_reads += 1
             try:
                 url = event.get("source_url")
-                if not _safe_url(url) or not structured_event_identity(event, source_reader(url)):
+                if not _safe_url(url):
+                    reasons["event_identity_unconfirmed"] += 1
+                    continue
+                html = source_reader(url)
+                if not (structured_event_identity(event, html) or
+                        visible_historical_identity(event, html, fresh[1])):
                     reasons["event_identity_unconfirmed"] += 1
                     continue
             except ERRORS:
