@@ -40,12 +40,13 @@ def check_catalog(doc, previous=None):
     if issues:
         raise ValueError("catalogue guard refused: " + "; ".join(issues[:8]))
 
-def build(baseline_bytes, discovery, dossiers, decisions, *, expected_sha=BASELINE):
+def build(baseline_bytes, discovery, dossiers, decisions, *, expected_sha=BASELINE, expected_sequence=8):
     if digest(baseline_bytes) != expected_sha:
         raise ValueError("baseline digest mismatch")
     baseline = json.loads(baseline_bytes)
-    if baseline.get("release_sequence") != 8:
-        raise ValueError("expected exact v8 predecessor")
+    if (type(expected_sequence) is not int or expected_sequence < 8
+            or baseline.get("release_sequence") != expected_sequence):
+        raise ValueError(f"expected exact v{expected_sequence} predecessor")
     check_catalog(baseline)
     recomputed = decide(discovery, dossiers, expected_sha)
     if decisions != recomputed:
@@ -112,18 +113,18 @@ def build(baseline_bytes, discovery, dossiers, decisions, *, expected_sha=BASELI
         urls.add(stream)
         added.append({"stationuuid": uid, "go_station_id": goid, "logo": "deferred_unverified"})
     report = {"schemaVersion": 1, "publicationAllowed": False, "signed": False,
-              "baselineSha256": expected_sha, "baselineSequence": 8,
+              "baselineSha256": expected_sha, "baselineSequence": expected_sequence,
               "decisionSha256": digest(encode(decisions)), "scanDate": day,
               "stagingReviewCount": recomputed["stagingReviewCount"],
               "added": added, "deferred": deferred, "modified": [], "removed": [],
               "decisionCounts": recomputed["counts"],
               "existingStationsPreserved": len(baseline["stations"]),
               "tombstonesPreserved": len(baseline["tombstones"]),
-              "candidateSequence": 9 if added else None,
+              "candidateSequence": expected_sequence + 1 if added else None,
               "candidateSha256": None, "changed": bool(added)}
     if not added:
         return None, report
-    output["release_sequence"] = 9
+    output["release_sequence"] = expected_sequence + 1
     output["generated_at"] = timestamp
     if (output["stations"][:len(baseline["stations"])] != baseline["stations"]
             or output["tombstones"] != baseline["tombstones"]):

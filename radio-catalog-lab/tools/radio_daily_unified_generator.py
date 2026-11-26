@@ -24,17 +24,19 @@ def stream_urls(station):
 
 def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation,
           repair_report, status_report=None, logo_maintenance=None, missing_logo=None, *,
-          urls=None, artwork=None, object_output=None, expected=BASELINE):
+          urls=None, artwork=None, object_output=None, expected=BASELINE, expected_sequence=8):
     if object_output is not None and object_output:
         raise ValueError("fresh object output required")
     old = strict_json(raw)
     validate_shape(old)
     if digest(raw) != expected:
         raise ValueError("unified baseline mismatch")
+    if type(expected_sequence) is not int or old["release_sequence"] != expected_sequence:
+        raise ValueError("unified predecessor sequence mismatch")
     day = decisions["scanDate"]
     if any(x.get("scanDate") != day for x in (discovery, dossiers, maintenance, repair, confirmation, repair_report)):
         raise ValueError("unified evidence date mismatch")
-    additions, admission = add_build(raw, discovery, dossiers, decisions, expected_sha=expected)
+    additions, admission = add_build(raw, discovery, dossiers, decisions, expected_sha=expected, expected_sequence=expected_sequence)
     checked = repair_plan(raw, maintenance, repair, confirmation, expected=expected)
     if checked != repair_report:
         raise ValueError("unified repair plan mismatch")
@@ -222,7 +224,7 @@ def main():
                     raise ValueError("object output digest mismatch")
                 with (target/name).open("xb") as f:
                     f.write(data)
-        (a.output_dir / "unsigned-candidate-v9.json").write_bytes(payload)
+        (a.output_dir / f"unsigned-candidate-v{report['candidateSequence']}.json").write_bytes(payload)
     (a.output_dir / "generation-report.json").write_bytes(encode(report))
     print("UNIFIED_UNSIGNED_CATALOG_PREVIEW", encode(report).decode())
 

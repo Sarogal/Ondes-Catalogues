@@ -63,6 +63,32 @@ def status_inputs(quarantined=False, redirect=False, count=1, synthetic=False):
     return raw,d,e,decide(d,e,sha),m,r,c,rp,p
 
 class UnifiedTests(unittest.TestCase):
+    def test_next_release_from_explicit_v9_anchor(self):
+        raw,d,e,*_=addition_inputs()
+        doc=json.loads(raw)
+        doc["release_sequence"]=9
+        raw=encode(doc)
+        sha=digest(raw)
+        e["catalogBaselineSha256"]=sha
+        day=d["scanDate"]
+        m=maintenance(raw,day,expected=sha)
+        r=repair(raw,m,d,expected=sha)
+        c=confirm(raw,r,expected=sha)
+        args=(raw,d,e,decide(d,e,sha),m,r,c,plan(raw,m,r,c,expected=sha))
+        with self.assertRaisesRegex(ValueError,"sequence mismatch"):
+            run(args)
+        payload,report=run(args,expected_sequence=9)
+        self.assertEqual(report["baselineSequence"],9)
+        self.assertEqual(report["candidateSequence"],10)
+        self.assertEqual(json.loads(payload)["release_sequence"],10)
+        self.assertEqual(json.loads(payload)["stations"][:-1],doc["stations"])
+        # New evidence must bind to the new digest; no change means no version.
+        e["records"][0]["continuityEvidence"]["positiveObservationDates"]=[day]
+        args=(raw,d,e,decide(d,e,sha),m,r,c,plan(raw,m,r,c,expected=sha))
+        payload,report=run(args,expected_sequence=9)
+        self.assertIsNone(payload)
+        self.assertIsNone(report["candidateSequence"])
+
     def test_quarantine_preserves_all_other_fields(self):
         args=status_inputs()
         payload,report=run(args)

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Verify only the pinned public TEST v8 predecessor; no signing capability."""
+"""Verify signed catalogue predecessors; default to the pinned public TEST v8."""
 import argparse
 import base64
 import hashlib
 import json
+import re
 from pathlib import Path
 
 from radio_daily_v9_generator import BASELINE
@@ -24,22 +25,25 @@ def strict_json(raw):
         return result
     return json.loads(raw, object_pairs_hook=pairs)
 
-def verify_pointer(raw):
+def verify_pointer(raw, *, expected_sha=BASELINE, expected_sequence=8, public_key=PUBLIC_KEY, key_id=KEY_ID):
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
     if not 0 < len(raw) <= 16384:
         raise ValueError("pointer size")
+    if (type(expected_sequence) is not int or expected_sequence < 8
+            or not isinstance(expected_sha,str) or not re.fullmatch(r"[a-f0-9]{64}",expected_sha)):
+        raise ValueError("invalid trusted predecessor anchor")
     p = strict_json(raw)
     if (set(p) != set(FIELDS) | {"signature"} or p["schema_version"] != 1
-            or p["catalog_id"] != "grosses-ondes-radio" or p["release_sequence"] != 8
-            or p["content_sha256"] != BASELINE or p["content_path"] != f"releases/{BASELINE}.json"
+            or p["catalog_id"] != "grosses-ondes-radio" or type(p["release_sequence"]) is not int or p["release_sequence"] != expected_sequence
+            or p["content_sha256"] != expected_sha or p["content_path"] != f"releases/{expected_sha}.json"
             or type(p["content_length"]) is not int or not 0 < p["content_length"] <= 10485760):
         raise ValueError("unexpected pinned predecessor")
     sig = p["signature"]
-    if set(sig) != {"algorithm", "key_id", "signature_base64"} or sig["algorithm"] != "Ed25519" or sig["key_id"] != KEY_ID:
+    if set(sig) != {"algorithm", "key_id", "signature_base64"} or sig["algorithm"] != "Ed25519" or sig["key_id"] != key_id:
         raise ValueError("unexpected signature identity")
     message = ("GO-RADIO-CATALOG-POINTER-V1\n" +
-               "".join(str(p[k]) + "\n" for k in FIELDS) + KEY_ID + "\n").encode()
-    Ed25519PublicKey.from_public_bytes(base64.b64decode(PUBLIC_KEY, validate=True)).verify(
+               "".join(str(p[k]) + "\n" for k in FIELDS) + key_id + "\n").encode()
+    Ed25519PublicKey.from_public_bytes(base64.b64decode(public_key, validate=True)).verify(
         base64.b64decode(sig["signature_base64"], validate=True), message)
     return p
 
@@ -68,12 +72,12 @@ def validate_shape(doc):
             if logos.setdefault(key, metadata) != metadata:
                 raise ValueError("inconsistent logo digest metadata")
 
-def verify_baseline(pointer, body):
-    p = verify_pointer(pointer)
-    if len(body) != p["content_length"] or hashlib.sha256(body).hexdigest() != BASELINE:
+def verify_baseline(pointer, body, *, expected_sha=BASELINE, expected_sequence=8, public_key=PUBLIC_KEY, key_id=KEY_ID):
+    p = verify_pointer(pointer, expected_sha=expected_sha, expected_sequence=expected_sequence, public_key=public_key, key_id=key_id)
+    if len(body) != p["content_length"] or hashlib.sha256(body).hexdigest() != expected_sha:
         raise ValueError("catalog bytes mismatch")
     doc = strict_json(body)
-    if doc["release_sequence"] != 8:
+    if doc["release_sequence"] != expected_sequence:
         raise ValueError("catalog sequence mismatch")
     validate_shape(doc)
     return doc

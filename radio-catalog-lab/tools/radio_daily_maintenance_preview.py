@@ -45,7 +45,9 @@ def catalogue_rows(raw,expected):
     if hashlib.sha256(raw).hexdigest()!=expected:
         raise ValueError("maintenance baseline mismatch")
     doc=json.loads(raw)
-    if doc.get("release_sequence")!=8 or not isinstance(doc.get("stations"),list):
+    sequence=doc.get("release_sequence")
+    if (type(sequence) is not int or sequence<8 or (expected==BASELINE and sequence!=8)
+            or not isinstance(doc.get("stations"),list)):
         raise ValueError("unexpected baseline")
     stations={}
     streams={}
