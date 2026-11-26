@@ -629,10 +629,19 @@ def event_genres(raw, official_url, *, fetch=None, cache=None, html=None,
             continue  # External profile navigation retains its original scope.
         target = person.get("url")
         host = intake.valid_https(target)
-        if not host or host == intake.valid_https(official_url):
+        if not host:
             continue
         try:
             probe.checked_uri(target, host)
+            same_origin = host == intake.valid_https(official_url)
+            if same_origin:
+                # A venue can host its own individually attributed artist
+                # profile. A link back to the event, homepage or query-only
+                # variant is not a separate named profile.
+                path = urlsplit(target).path.rstrip("/")
+                if (not path or path == urlsplit(official_url).path.rstrip("/")
+                        or urlsplit(target).query or urlsplit(target).fragment):
+                    continue
         except (ValueError, TypeError):
             continue
         linked.append((name.strip(), target))
@@ -654,6 +663,11 @@ def event_genres(raw, official_url, *, fetch=None, cache=None, html=None,
             try:
                 labels = profiles.profile_genres(html, name)
             except profiles.MissingStructuredArtistGenre:
+                if intake.valid_https(target) == intake.valid_https(official_url):
+                    # A same-venue page must independently identify the exact
+                    # musician in structured data. Do not infer an artist genre
+                    # from the venue's own About page or general prose.
+                    continue
                 # Only a biography explicitly linked from the venue-attributed
                 # performer page, on that same HTTPS host. At most one extra
                 # fetch per linked performer. Never search by name or trust

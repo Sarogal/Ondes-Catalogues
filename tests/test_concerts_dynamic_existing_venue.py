@@ -643,6 +643,57 @@ class UnlistedExistingVenueTests(unittest.TestCase):
                 dynamic.validate(signed, venues, artists, TODAY,
                                  fetch=fake_fetch({"primary": changed}))
 
+    def test_venue_hosted_named_artist_profile_replayed_by_publisher(self):
+        from automation.concerts import dynamic_first_party_venue_proposals as proposals
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        profile_url = "https://nouveau-domaine-independant.fr/artistes/groupe-libre-8/"
+        node = next(dynamic.discover.read_ld(page(EVENT, genres=False)))
+        node["performer"][-1]["url"] = profile_url
+        def primary():
+            return '<script type="application/ld+json">' + json.dumps(node) + '</script>'
+        def profile(name=NAMES[-1], kind="MusicGroup", genre="Black Metal"):
+            return ('<script type="application/ld+json">' +
+                    json.dumps({"@type": kind, "name": name, "genre": genre}) +
+                    '</script>')
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+        reads = []
+        def fetch_with(content):
+            def fetch(url, cache):
+                reads.append(url)
+                if url == profile_url:
+                    return content
+                return fake_fetch({"primary": primary()})(url, cache)
+            return fetch
+        self.assertEqual(proposals._individual_event(
+            primary(), EVENT, signed["event"]["date"], venue,
+            accept_generic=True, fetch=fetch_with(profile()), cache={}),
+            (NAMES, ["Black Metal"]))
+        self.assertTrue(dynamic.validate(signed, venues, artists, TODAY,
+                                        fetch=fetch_with(profile())))
+        self.assertEqual(reads.count(profile_url), 2)
+        with mock.patch.object(dynamic, "safe_fetch", side_effect=fetch_with(profile())):
+            result, counts = publisher.merge(BASE, BASE,
+                {"schema": publisher.SCHEMA, "approvals": [signed]}, TODAY)
+            self.assertEqual(counts["newEvents"], 1)
+        for wrong in (profile(name="Another Artist"), profile(kind="MusicEvent"),
+                      profile(genre="Jazz"), "<h1>Black Metal venue</h1>"):
+            with self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY, fetch=fetch_with(wrong))
+        for wrong in (EVENT, EVENT + "?artist=8",
+                      "https://nouveau-domaine-independant.fr/"):
+            node["performer"][-1]["url"] = wrong
+            reads.clear()
+            with self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY, fetch=fetch_with(profile()))
+            self.assertNotIn(profile_url, reads)
+            if wrong != EVENT:
+                self.assertNotIn(wrong, reads)
+
     def test_later_linked_artist_window_replays_on_signed_review_day(self):
         from automation.concerts import dynamic_first_party_venue_proposals as proposals
         signed = signed_approval()
