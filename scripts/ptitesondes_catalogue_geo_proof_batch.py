@@ -14,6 +14,7 @@ from proof import meters, norm
 from ptitesondes_catalogue_geo_research import research_queue
 from ptitesondes_dila_municipal_domains import (
     fetch_dila, municipal_site_hosts, approved_municipal_page_host,
+    DILA_RECORDS, MAX_RECORDS, MAX_BYTES as MAX_DILA_BYTES,
 )
 from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
 from ptitesondes_municipal_venue_link_discovery import exact_named_venue_page
@@ -293,10 +294,66 @@ def _discover_named_location(group, directory, named_osm_get, html_get, ign_get,
     return dict(lat=point[0], lng=point[1], official=url, geo_source=method)
 
 
+def fetch_dila_by_code(code):
+    """One exact-code official directory query, bounded and read-only."""
+    if not isinstance(code, str) or not INSEE_CODE.fullmatch(code):
+        raise ValueError("invalid_dila_code")
+    url = DILA_RECORDS + "?" + urlencode({
+        "where": 'code_insee_commune = "' + code + '" AND nom like "Mairie%"',
+        "limit": MAX_RECORDS,
+        "select": ("nom,pivot,code_insee_commune,adresse,categorie,"
+                   "statut_de_diffusion,version_type,site_internet,url_service_public,copyright"),
+    })
+    req = Request(url, headers={"Accept": "application/json",
+                               "User-Agent": "PtitesOndesAdministrativeGeo/1.0"})
+    with build_opener(NoRedirect()).open(req, timeout=18) as response:
+        if response.status != 200 or response.geturl() != url:
+            raise ValueError("invalid_dila_code_response")
+        raw = response.read(MAX_DILA_BYTES + 1)
+    if not raw or len(raw) > MAX_DILA_BYTES:
+        raise ValueError("oversized_dila_code_response")
+    return json.loads(raw)
+
+
+def directory_for_verified_code(group, code, response):
+    """Adapt only a unique exact-INSEE mairie to the existing strict verifier.
+
+    All existing checks (pivot, public status, city address, official source,
+    safe unlabelled homepage) remain mandatory. No arbitrary municipal alias.
+    """
+    empty = {"total_count": 0, "results": []}
+    if (not isinstance(code, str) or not INSEE_CODE.fullmatch(code)
+            or not isinstance(response, dict) or type(response.get("total_count")) is not int
+            or not isinstance(response.get("results"), list)
+            or not 1 <= response["total_count"] == len(response["results"]) <= MAX_RECORDS):
+        return empty
+    city = group["city"]
+    prefix = "Mairie - " + city
+    rows = []
+    for row in response["results"]:
+        if not isinstance(row, dict) or row.get("code_insee_commune") != code:
+            continue
+        name = row.get("nom")
+        if not isinstance(name, str) or not (norm(name) == norm(prefix)
+                or norm(name).startswith(norm(prefix) + " ") and " - " in name[len(prefix):]):
+            continue
+        # The selected code has already been independently verified against
+        # the exact city and department. Normalize only the display label.
+        adapted = dict(row, nom=prefix)
+        candidate = {"total_count": 1, "results": [adapted]}
+        if municipal_site_hosts(city, candidate):
+            rows.append(adapted)
+    return {"total_count": 1, "results": rows} if len(rows) == 1 else empty
+
+
 def research_group(group, today, *, directory_get=fetch_dila,
                    html_get=read_unknown_https, ign_get=fetch_ign,
                    osm_get=fetch_overpass, named_osm_get=fetch_named_osm,
-                   commune_get=fetch_commune):
+                   commune_get=fetch_commune, directory_code_get=None):
+    # Production uses the independent INSEE fallback. Injected test readers
+    # never silently introduce a new live network dependency.
+    if directory_code_get is None and directory_get is fetch_dila:
+        directory_code_get = fetch_dila_by_code
     result = dict(city=group["city"], venue=group["venue"],
                   active_ids=group["active_ids"], missing_ids=group["missing_ids"],
                   status="venue_proof_not_found", publication_ready=False)
@@ -306,6 +363,17 @@ def research_group(group, today, *, directory_get=fetch_dila,
         directory = {}
         result["status"] = "directory_unavailable"
     hosts = municipal_site_hosts(group["city"], directory)
+    if not hosts and directory_code_get is not None:
+        try:
+            code = administrative_commune_code(group, commune_get(group))
+            if code is not None:
+                fallback = directory_for_verified_code(group, code, directory_code_get(code))
+                if municipal_site_hosts(group["city"], fallback):
+                    directory = fallback
+                    hosts = municipal_site_hosts(group["city"], directory)
+                    result["status"] = "venue_proof_not_found"
+        except ERRORS:
+            pass
     if not hosts:
         if result["status"] != "directory_unavailable":
             result["status"] = "municipality_not_independently_identified"
