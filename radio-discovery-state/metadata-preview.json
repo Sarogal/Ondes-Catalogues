@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 67,
-  "distinctArtistHints": 85,
+  "stationsWithArtistHints": 73,
+  "distinctArtistHints": 91,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -1521,6 +1521,114 @@
           "date": "2026-11-26",
           "artistHint": "The Rolling Stones",
           "titleSha256": "548ab0b248bd11f36381755faceff7674a9eb65c7d3cf6cd2e13f82ed525a4e7"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "a2d00de3-cd16-46c8-ac30-9e79e294cf47",
+      "streamSha256": "1defbb4eae2761c2f2a362187998d4d326a8480245dc7ba13cd89a4e985ea588",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Foreigner",
+          "titleSha256": "c489b0b5619745358e07f83af1d745f9e1679465cbf496f3ae29fe255347e1f3"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "a6464432-710b-4f8a-948e-b9c1278dff77",
+      "streamSha256": "172cfb13cf412fe34e22eb2c6fff3f90d25de223bdc19bac6342c0e49ec89ec6",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Hanson Brothers",
+          "titleSha256": "adcbad87934ff7c4596033457d4d8fc4d3477c40294939f3ea350d70b3a88a55"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "a6a99730-3118-49ab-ad52-f15d596ef359",
+      "streamSha256": "c578c574dc41a0bf8619f7c47b6cdc508eaca722673179680be98cd7e76e2ffe",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "T3nors",
+          "titleSha256": "ceb5898835026310666afbb2d678cafa29f92802481857229c33941ab8616732"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "ab55d4aa-01db-46c6-9934-288828374ea1",
+      "streamSha256": "e4c5eec897eb2f0a19c4e10ba7f0aab556509d0125d5131447b5678428cac1b8",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "ROCK ANTENNE",
+          "titleSha256": "ad4bc6f8c15085da153d3f76201ccac33fd20936331199b44bf849d617ab4802"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "ad0f6199-f729-4fb1-b19c-e2c6fd545ff9",
+      "streamSha256": "b97b706ff8bb39419c7a726e4e3752d0877348106f3a35d5170cd5ce4f6d669d",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "R.E.M.",
+          "titleSha256": "89dacb077d0160cf2ee0ec13aaf5bf22766c12a943abaa5027991426147487ba"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "aeb82637-ba20-4cee-9072-50cab4f9e723",
+      "streamSha256": "a362fc88c8632cbaef2fe9fc7a62d3ea3c96fb318ebde33aa5e1d44c4920b666",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Vixen",
+          "titleSha256": "195912b7c4f36c388f2ebc92c4ab8e7f2f458106a63dcc33516c3ffc671f045b"
         }
       ],
       "alternativeVersion": 0,

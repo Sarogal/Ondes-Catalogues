@@ -4,14 +4,14 @@
   "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
   "approvedCount": 0,
   "publicationAllowed": false,
-  "eligibleStationCount": 26,
+  "eligibleStationCount": 30,
   "dueStationCount": 22,
   "attemptedCount": 4,
   "serviceFailureCount": 0,
-  "stationsWithFreshHints": 1,
+  "stationsWithFreshHints": 2,
   "counts": {
-    "candidates_observed": 1,
-    "no_candidate_observed": 7
+    "candidates_observed": 2,
+    "no_candidate_observed": 10
   },
   "records": [
     {
@@ -103,6 +103,60 @@
     },
     {
       "goStationId": "go-station-000027",
+      "lastAttemptDate": "2026-11-26",
+      "searchStatus": "no_candidate_observed",
+      "hintsObservedDate": "2026-11-26",
+      "hints": [],
+      "approved": false,
+      "publicationAllowed": false,
+      "maintenanceEligible": true,
+      "hintsFresh": true
+    },
+    {
+      "goStationId": "go-station-000030",
+      "lastAttemptDate": "2026-11-26",
+      "searchStatus": "no_candidate_observed",
+      "hintsObservedDate": "2026-11-26",
+      "hints": [],
+      "approved": false,
+      "publicationAllowed": false,
+      "maintenanceEligible": true,
+      "hintsFresh": true
+    },
+    {
+      "goStationId": "go-station-000031",
+      "lastAttemptDate": "2026-11-26",
+      "searchStatus": "no_candidate_observed",
+      "hintsObservedDate": "2026-11-26",
+      "hints": [],
+      "approved": false,
+      "publicationAllowed": false,
+      "maintenanceEligible": true,
+      "hintsFresh": true
+    },
+    {
+      "goStationId": "go-station-000034",
+      "lastAttemptDate": "2026-11-26",
+      "searchStatus": "candidates_observed",
+      "hintsObservedDate": "2026-11-26",
+      "hints": [
+        {
+          "stationuuid": "558c4adf-b1ab-4c2e-99ab-ae2755f2a538",
+          "streamSha256": "fd8bf257cf563d6709895a38eeda27bc64e7f8da0d60136c8d5c81e454e1a4b7",
+          "identityHint": "new_uuid_exact_identity",
+          "directoryReachableHint": true,
+          "broadcasterVerified": false,
+          "technicalVerified": false,
+          "publicationAllowed": false
+        }
+      ],
+      "approved": false,
+      "publicationAllowed": false,
+      "maintenanceEligible": true,
+      "hintsFresh": true
+    },
+    {
+      "goStationId": "go-station-000036",
       "lastAttemptDate": "2026-11-26",
       "searchStatus": "no_candidate_observed",
       "hintsObservedDate": "2026-11-26",
