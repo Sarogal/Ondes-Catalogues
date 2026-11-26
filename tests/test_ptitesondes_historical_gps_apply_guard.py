@@ -67,6 +67,7 @@ class HistoricalGPSApplicationTests(unittest.TestCase):
         bad = dict(audit, after_sha256="0" * 64)
         with self.assertRaisesRegex(ValueError, "invalid_audit"):
             validate_transition(doc, doc, corrected, bad, DAY)
+        corrected = deepcopy(corrected)
         corrected["events"][1]["lat"] += 1
         audit["after_sha256"] = digest(corrected)
         with self.assertRaisesRegex(ValueError, "proposal_diff_mismatch"):
