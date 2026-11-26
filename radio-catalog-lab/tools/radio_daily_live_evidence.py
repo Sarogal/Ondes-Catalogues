@@ -77,6 +77,12 @@ class LiveEvidence:
         return self._invoke("probe", url,
                             lambda u: probe_url(u, PinnedHttpTransport().request))
 
+    def unavailable(self, url):
+        # Only an explicit missing/gone response at the registered endpoint
+        # confirms absence. Timeouts, DNS, TLS, redirects and 5xx are held.
+        return self._invoke("unavailable", url,
+            lambda u: PinnedHttpTransport().request(u).status in (404, 410))
+
     def continuity(self, url):
         return self._invoke("icy", url, observe_url)
 
