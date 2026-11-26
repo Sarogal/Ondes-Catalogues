@@ -6,14 +6,14 @@ append-only fallback can be promoted. No key, CLI or network default.
 """
 import copy
 from urllib.parse import urlsplit
-from radio_daily_baseline_verify import strict_json, verify_baseline
+from radio_daily_baseline_verify import verify_baseline
 from radio_daily_lab_signing import validate_candidate
 from radio_daily_repair_plan import plan
 from radio_daily_repair_material import recover
 from radio_daily_v9_generator import digest, encode
 
 
-def qualify_repair(prior_pointer, prior_body, *, anchor, day, maintenance,
+def expected_repair_release(prior_pointer, prior_body, *, anchor, day, maintenance,
                    repair, confirmation, search, fetch, probe, continuity, hls):
     old = verify_baseline(prior_pointer, prior_body, **anchor)
     sha = anchor["expected_sha"]
@@ -34,7 +34,7 @@ def qualify_repair(prior_pointer, prior_body, *, anchor, day, maintenance,
     for p in report["proposals"]:
         sid, fingerprint = p["goStationId"], p["streamSha256"]
         row = rows[sid]
-        if (row["editorial"]["admission_state"] != "approved"
+        if (row["editorial"]["admission_state"] not in ("approved", "legacy_preserved")
                 or row["status"].get("reason_code") == "synthetic_diagnostic_not_for_playback"
                 or digest(encode(row)) != p["stationSha256"]):
             raise ValueError("station not eligible for strict repair")
@@ -63,14 +63,28 @@ def qualify_repair(prior_pointer, prior_body, *, anchor, day, maintenance,
             previous_urls=[]))
     expected.update(release_sequence=anchor["expected_sequence"]+1,
                     generated_at=day+"T00:00:00Z")
-    body = encode(expected)
+    return encode(expected)
+
+
+def qualify_repair(prior_pointer, prior_body, *, anchor, day, **evidence):
+    body = expected_repair_release(prior_pointer, prior_body, anchor=anchor,
+                                   day=day, **evidence)
     validate_candidate(prior_pointer, prior_body, body,
-                       expected_candidate_sha=digest(body), day=day, **anchor)
+        expected_candidate_sha=digest(body), day=day, repair_evidence=evidence, **anchor)
     return body
 
 
-def validate_repair_release(prior_pointer, prior_body, candidate, **kwargs):
-    expected = qualify_repair(prior_pointer, prior_body, **kwargs)
-    if candidate != expected:
-        raise ValueError("unauthorized repair delta")
+def validate_repair_release(prior_pointer, prior_body, candidate, *, anchor, day, **evidence):
+    validate_candidate(prior_pointer, prior_body, candidate,
+        expected_candidate_sha=digest(candidate), day=day, repair_evidence=evidence, **anchor)
     return digest(candidate)
+
+
+def publish_repair_release(store, signer, prior_pointer, prior_body, candidate, *,
+                           expected_sha, expected_sequence, expected_candidate_sha,
+                           day, checkpoint=None, **evidence):
+    from radio_daily_publication_simulator import publish
+    return publish(store, signer, prior_pointer, prior_body, candidate,
+        expected_sha=expected_sha, expected_sequence=expected_sequence,
+        expected_candidate_sha=expected_candidate_sha, day=day,
+        checkpoint=checkpoint, repair_evidence=evidence)

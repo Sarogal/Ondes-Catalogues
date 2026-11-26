@@ -83,7 +83,7 @@ def verify_visible(store, pointer, *, sha, sequence, signer):
 
 def publish(store, signer, prior_pointer, prior_body, candidate, *, expected_sha,
             expected_sequence, expected_candidate_sha, day, objects=None, checkpoint=None,
-            logo_evidence=None):
+            logo_evidence=None, repair_evidence=None):
     """Simulate exact ordered publication; retry reuses immutable resources.
 
     No candidate means no version change. Checkpoint is an injected laboratory
@@ -95,13 +95,13 @@ def publish(store, signer, prior_pointer, prior_body, candidate, *, expected_sha
     old=verify_baseline(prior_pointer,prior_body,expected_sha=expected_sha,
         expected_sequence=expected_sequence,public_key=signer.public_key,key_id=signer.key_id)
     if candidate is None:
-        if expected_candidate_sha is not None or objects or logo_evidence is not None:
+        if expected_candidate_sha is not None or objects or logo_evidence is not None or repair_evidence is not None:
             raise ValueError("unexpected material for unchanged cycle")
         verify_visible(store,prior_pointer,sha=expected_sha,sequence=expected_sequence,signer=signer)
         return {"changed":False,"sequence":expected_sequence,"publicationAllowed":False}
     new=validate_candidate(prior_pointer,prior_body,candidate,expected_sha=expected_sha,
         expected_sequence=expected_sequence,expected_candidate_sha=expected_candidate_sha,
-        public_key=signer.public_key,key_id=signer.key_id,day=day,logo_evidence=logo_evidence)
+        public_key=signer.public_key,key_id=signer.key_id,day=day,logo_evidence=logo_evidence, repair_evidence=repair_evidence)
     current=store.current()
     if current!=prior_pointer:
         # Retry after an interruption following the pointer swap. Never
@@ -133,7 +133,7 @@ def publish(store, signer, prior_pointer, prior_body, candidate, *, expected_sha
     checkpoint("catalogue_visible")
     pointer=signer.sign_candidate(prior_pointer,prior_body,candidate,expected_sha=expected_sha,
         expected_sequence=expected_sequence,expected_candidate_sha=expected_candidate_sha,day=day,
-        logo_evidence=logo_evidence)
+        logo_evidence=logo_evidence, repair_evidence=repair_evidence)
     checkpoint("before_pointer_swap")
     # Re-read candidate and all resources just before the atomic operation.
     if store.get(path)!=candidate:

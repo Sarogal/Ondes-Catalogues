@@ -1,6 +1,6 @@
 import json
 import unittest
-from radio_daily_repair_release_validation import qualify_repair, validate_repair_release
+from radio_daily_repair_release_validation import qualify_repair, validate_repair_release, publish_repair_release
 from radio_daily_lab_signing import EphemeralLabSigner
 from radio_daily_publication_simulator import MemoryStore, publish, verify_visible
 from radio_daily_v9_generator import digest, encode
@@ -10,7 +10,10 @@ from test_radio_daily_repair_plan import fixture, DAY, SID, UID, NEW, PAGE
 
 class StrictRepairGateTests(unittest.TestCase):
     def setUp(self):
-        raw, _, self.m, self.r, self.c = fixture(approved=True)
+        self.prepare()
+
+    def prepare(self, approved=True, quarantine=False):
+        raw, _, self.m, self.r, self.c = fixture(approved=approved, quarantine=quarantine, no_logo=True)
         self.signer = EphemeralLabSigner()
         self.pointer, self.raw = signed(json.loads(raw), self.signer._key, self.signer.key_id)
         self.anchor = dict(expected_sha=digest(self.raw), expected_sequence=8,
@@ -86,6 +89,59 @@ class StrictRepairGateTests(unittest.TestCase):
                        expected_candidate_sha=sha,day=DAY)
         self.assertEqual(result["sequence"],9)
         verify_visible(store,store.current(),sha=sha,sequence=9,signer=self.signer)
+
+    def publish_current(self, body):
+        store=MemoryStore(self.pointer,self.raw)
+        args={k:v for k,v in self.args.items() if k not in ("anchor","day")}
+        result=publish_repair_release(store,self.signer,self.pointer,self.raw,body,
+            expected_sha=self.anchor["expected_sha"],expected_sequence=8,
+            expected_candidate_sha=digest(body),day=DAY,**args)
+        self.assertEqual(result["sequence"],9)
+        return verify_visible(store,store.current(),sha=digest(body),sequence=9,signer=self.signer)
+
+    def test_legacy_repair_preserves_editorial_and_original_streams(self):
+        self.prepare(approved=False)
+        row=self.publish_current(self.qualify())["stations"][0]
+        old=json.loads(self.raw)["stations"][0]
+        self.assertEqual(row["editorial"],old["editorial"])
+        self.assertEqual(row["status"],old["status"])
+        self.assertEqual(row["streams"][:-1],old["streams"])
+        self.assertEqual(row["streams"][-1]["state"],"verified")
+
+    def test_legacy_quarantine_not_implicitly_restored(self):
+        self.prepare(approved=False,quarantine=True)
+        row=self.publish_current(self.qualify())["stations"][0]
+        self.assertEqual(row["status"]["state"],"quarantined")
+        self.assertEqual(row["editorial"]["admission_state"],"legacy_preserved")
+
+    def test_legacy_repair_without_evidence_refused(self):
+        self.prepare(approved=False)
+        body=self.qualify()
+        with self.assertRaisesRegex(ValueError,"publication guard"):
+            self.signer.sign_candidate(self.pointer,self.raw,body,
+                expected_sha=self.anchor["expected_sha"],expected_sequence=8,
+                expected_candidate_sha=digest(body),day=DAY)
+
+    def test_legacy_repair_cannot_remove_old_stream(self):
+        self.prepare(approved=False)
+        doc=json.loads(self.qualify())
+        doc["stations"][0]["streams"].pop(0)
+        with self.assertRaisesRegex(ValueError,"unauthorized repair delta"):
+            validate_repair_release(self.pointer,self.raw,encode(doc),**self.args)
+
+    def test_legacy_repair_cannot_upgrade_editorial(self):
+        self.prepare(approved=False)
+        doc=json.loads(self.qualify())
+        doc["stations"][0]["editorial"].update(admission_state="approved",reviewed_at=DAY+"T00:00:00Z")
+        with self.assertRaisesRegex(ValueError,"unauthorized repair delta"):
+            validate_repair_release(self.pointer,self.raw,encode(doc),**self.args)
+
+    def test_legacy_repair_evidence_rechecked_at_signing(self):
+        self.prepare(approved=False)
+        body=self.qualify()
+        self.args["continuity"]=lambda u:dict(verdict="finite_response_review",frameCodec="mp3")
+        with self.assertRaisesRegex(ValueError,"fresh direct continuity"):
+            self.publish_current(body)
 
 
 if __name__=="__main__":
