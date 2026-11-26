@@ -46,7 +46,7 @@ PRIVATE_CONFIDENCE = "Annuaire public (site lié) + preuve primaire en attente"
 PUBLISHED_CONFIDENCE = "Annuaire public (lien vérifié) + site officiel (dates)"
 GENRE = re.compile(r"\b(?:metal|hard rock|punk|rock|hardcore|stoner|doom|"
                    r"sludge|grindcore|deathcore|metalcore|black metal|"
-                   r"thrash metal|heavy metal)\b")
+                   r"thrash metal|heavy metal|cold ?wave|dark ?wave)\b")
 CANCELLED = re.compile(
     r"\b(?:edition|festival)\s+20[2-4][0-9]\s+"
     r"(?:annulee?|reporte[e]?|cancelled|postponed)\b"
@@ -61,7 +61,7 @@ ELECTRONIC_GENRES = re.compile(
     r"dubstep|hard dance|electronic music|musiques electroniques)\b")
 ROCK_METAL_PUNK_GENRES = re.compile(
     r"\b(?:metal|rock|punk|grindcore|deathcore|metalcore|"
-    r"stoner|doom|sludge|thrash|heavy metal|black metal)\b")
+    r"stoner|doom|sludge|thrash|heavy metal|black metal|cold ?wave|dark ?wave)\b")
 
 
 

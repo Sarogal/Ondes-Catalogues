@@ -22,7 +22,7 @@ from regional_festival_discovery import APPROVED
 from source_qualification import normalized
 
 SCHEMA = "grossesondes.national-openagenda-research-private.v1"
-RESEARCH_RULESET = "event-title-and-published-edition-dedup.v6"
+RESEARCH_RULESET = "event-title-and-published-edition-dedup.v7"
 STATE_KEY = "national_openagenda_research_private"
 SOURCE = "https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/evenements-publics-openagenda/records"
 HOST = "public.opendatasoft.com"
@@ -50,6 +50,11 @@ QUERIES = (
     'search(description_fr,"stoner rock")',
     'search(description_fr,"hard rock")',
     'search(description_fr,"punk rock")',
+    'search(description_fr,"post punk")',
+    'search(description_fr,"coldwave")',
+    'search(description_fr,"cold wave")',
+    'search(description_fr,"darkwave")',
+    'search(description_fr,"dark wave")',
 )
 MAX_BYTES = 450_000
 PER_PAGE = 25
@@ -71,7 +76,7 @@ STYLE = re.compile(r"\b(?:metal|hard rock|hardcore|punk|post punk|post hardcore|
                    r"sludge|thrash|black metal|death metal|heavy metal|"
                    r"folk metal|pagan metal|nu metal|power metal|speed metal|"
                    r"progressive metal|symphonic metal|industrial metal|"
-                   r"viking metal|crust punk)\b")
+                   r"viking metal|crust punk|cold ?wave|dark ?wave)\b")
 FORBIDDEN = re.compile(r"[<>{}\x00-\x1f]")
 INDIVIDUAL_EVENT = re.compile(
     r"^(?:concerts?|spectacles?|soirees?|ateliers?|expositions?|"
