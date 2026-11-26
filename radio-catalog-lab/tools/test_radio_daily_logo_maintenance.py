@@ -100,5 +100,79 @@ class LogoMaintenanceTests(unittest.TestCase):
         r=run(raw,hashlib.sha256(raw).hexdigest())
         self.assertEqual(r["counts"]["descriptor_mismatch_review"],2)
 
+class OfficialSourceTests(unittest.TestCase):
+    def candidate(self):
+        from radio_daily_unified_generator import build as generate
+        from radio_daily_decision_preview import decide
+        from radio_daily_repair_plan import plan
+        from radio_daily_maintenance_preview import build as maintenance
+        from radio_daily_repair_preview import build as repair
+        from radio_daily_repair_confirmation import build as confirm
+        from test_radio_daily_logo_plan import reports,material,DATA
+        raw,sha,l,n=reports()
+        d=dict(schemaVersion=1,scanDate=DAY,publicationAllowed=False,candidates=[])
+        e=dict(schemaVersion=1,scanDate=DAY,publicationAllowed=False,
+               approvedCount=0,catalogBaselineSha256=sha,records=[])
+        m=maintenance(raw,DAY,expected=sha)
+        r=repair(raw,m,d,expected=sha)
+        c=confirm(raw,r,expected=sha)
+        objects={}
+        body,report=generate(raw,d,e,decide(d,e,sha),m,r,c,plan(raw,m,r,c,expected=sha),
+            logo_maintenance=l,missing_logo=n,artwork={"go-station-000001":material()},
+            object_output=objects,expected=sha)
+        self.assertEqual(len(report["logoChanges"]),1)
+        self.assertEqual(list(objects.values()),[DATA])
+        return body
+
+    def test_generator_binds_official_source_and_future_scan_uses_it(self):
+        from radio_daily_logo_maintenance import official_source
+        from radio_daily_logo_plan import PREVIEW_BASE
+        from test_radio_daily_logo_plan import DATA,OLD
+        raw=self.candidate()
+        station=json.loads(raw)["stations"][0]
+        self.assertTrue(station["logo"]["url"].startswith(PREVIEW_BASE))
+        self.assertEqual(official_source(station),URL)
+        calls=[]
+        def fetch(u,h):
+            calls.append(u)
+            return OLD,"image/png"
+        sha=hashlib.sha256(raw).hexdigest()
+        r=build(raw,DAY,expected=sha,limit=8,fetch=fetch)
+        r=build(raw,"2026-11-27",expected=sha,prior=r,limit=8,fetch=fetch)
+        self.assertEqual(calls,[URL,URL])
+        self.assertEqual(r["counts"],{"repeated_changed_image_review":1})
+        self.assertNotIn(URL,json.dumps(r))
+
+    def test_missing_provenance_never_probes_own_storage(self):
+        raw=self.candidate()
+        doc=json.loads(raw)
+        doc["stations"][0]["editorial"]["evidence_refs"]=[]
+        raw=encode(doc)
+        result=build(raw,DAY,expected=hashlib.sha256(raw).hexdigest(),limit=8,
+            fetch=lambda u,h:self.fail("must not fetch storage URL"))
+        self.assertEqual(result["counts"],{"official_source_missing_review":1})
+        self.assertEqual(result["attemptedCount"],0)
+
+    def test_bad_digest_or_ambiguous_source_rejected(self):
+        from radio_daily_logo_maintenance import official_source,SOURCE_PREFIX
+        station=json.loads(self.candidate())["stations"][0]
+        refs=station["editorial"]["evidence_refs"]
+        original=refs[-1]
+        refs[-1]=SOURCE_PREFIX+"0"*64+":"+URL
+        with self.assertRaisesRegex(ValueError,"digest mismatch"):
+            official_source(station)
+        refs[-1]=original
+        refs.append(original)
+        with self.assertRaisesRegex(ValueError,"ambiguous"):
+            official_source(station)
+
+    def test_query_and_storage_source_refused(self):
+        from radio_daily_logo_maintenance import source_reference
+        station=json.loads(self.candidate())["stations"][0]
+        for url in (URL+"?token=secret",station["logo"]["url"]):
+            with self.assertRaises(ValueError):
+                source_reference(station["logo"],url)
+
+
 if __name__=="__main__":
     unittest.main()
