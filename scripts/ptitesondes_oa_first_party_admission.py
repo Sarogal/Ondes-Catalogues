@@ -115,11 +115,18 @@ def explicit_programme_category(title, description):
         return None
     for pattern, category, label in (
         (r"^(?:un |une )?eveil musical\b", "eveil-musical", "Éveil musical"),
+        (r"^(?:(?:un |une )?seance d |(?:un |une )?atelier d )?eveil corporel en musique\b",
+         "eveil-musical", "Éveil musical"),
+        (r"^(?:un |une )?eveil et decouverte musicale\b",
+         "eveil-musical", "Éveil musical"),
+        (r"^lectures? d albums (?:et )?comptines?\b",
+         "lecture-jeunesse", "Lecture jeunesse"),
         (r"^(?:un |une )?spectacle musical\b", "spectacle-musical", "Spectacle musical"),
         (r"^(?:lectures?|histoires?) (?:et )?comptines?\b",
          "lecture-jeunesse", "Lecture jeunesse"),
     ):
-        if re.search(pattern, body):
+        if re.search(pattern, body) or (category == "eveil-musical"
+                                        and re.search(pattern, name)):
             return category, label
     # An explicitly advertised participatory musical experience combines
     # its central music theme, vocal practice and sound/instrument exploration.
