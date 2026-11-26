@@ -559,7 +559,7 @@ def _geo_retry_memory(prior, selected, fingerprints, exact):
 
 
 def _prioritize_extraction_retries(window, selected, failures, revision, limit,
-                                   geo_stale=()):
+                                   geo_stale=(), recency=None):
     """Use at most one quarter of the budget on changed-code retries.
 
     Replace only rows from the SAME non-OpenAgenda lane; preserve its
@@ -577,8 +577,13 @@ def _prioritize_extraction_retries(window, selected, failures, revision, limit,
     picked = {_review_key(row) for row in window}
     window = list(window)
     prioritized = set()
-    # Newly repaired venues get first use of the same shared retry quota.
-    for row in sorted(selected, key=lambda row: _review_key(row) not in geo_stale):
+    # Newly repaired venues get first use of the shared retry quota.
+    # Within each priority, least recently examined wins. Successive code
+    # revisions must not keep favoring the first rows of a static registry.
+    recency = {} if recency is None else recency
+    for row in sorted(selected, key=lambda row: (
+            _review_key(row) not in geo_stale,
+            recency.get(_review_key(row), -1))):
         key = _review_key(row)
         if len(prioritized) >= budget:
             break
@@ -716,7 +721,8 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
     geo_stale = {key for key, previous in geo_memory.items()
                  if key in exact_geo and fingerprints[key] != previous}
     window, prioritized, pending_retries = _prioritize_extraction_retries(
-        window, selected, retry_memory, revision, limit, geo_stale=geo_stale)
+        window, selected, retry_memory, revision, limit,
+        geo_stale=geo_stale, recency=recency)
     geo_prioritized = prioritized & geo_stale
     output = copy.deepcopy(before)
     working = copy.deepcopy(catalogue)

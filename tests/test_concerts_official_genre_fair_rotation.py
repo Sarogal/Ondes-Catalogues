@@ -288,6 +288,40 @@ class FairGenreReviewSlots(unittest.TestCase):
             self.assertLessEqual(next_report["changedExtractorPriorityChecks"], 8)
             self.assertFalse(next_report["publicationAllowed"])
 
+    def test_frequent_extractor_revisions_rotate_priority_instead_of_first_rows(self):
+        queue = [row("unknown", i) for i in range(48)]
+        ordinary = queue[32:48]
+        stale = queue[:32]
+        keys = [pipeline._review_key(r) for r in stale]
+        # Simulate a new revision between every review cycle. Even though
+        # all failures become stale again, every old retry must get a turn.
+        memory = list(reversed(keys))
+        seen = set()
+        for cycle in range(8):
+            revision = f"{cycle+2:064x}"
+            failures = {key: f"{cycle+1:064x}" for key in keys}
+            window, picked, pending = pipeline._prioritize_extraction_retries(
+                ordinary, queue, failures, revision, 16,
+                recency={k: i for i, k in enumerate(memory)})
+            self.assertEqual(pending, 32)
+            self.assertEqual(len(picked), 4)
+            self.assertEqual(len(window), 16)
+            self.assertFalse(seen & picked)
+            self.assertEqual(len({pipeline._review_key(r) for r in window}), 16)
+            seen.update(picked)
+            ordered = [pipeline._review_key(r) for r in window
+                       if pipeline._review_key(r) in picked]
+            memory = [k for k in memory if k not in picked] + ordered
+        self.assertEqual(seen, set(keys))
+        # A newly geocorrected candidate keeps precedence over the oldest
+        # extraction failure, without increasing the total retry budget.
+        recent = keys[0]
+        _, picked, _ = pipeline._prioritize_extraction_retries(
+            ordinary, queue, {k: "a"*64 for k in keys}, "b"*64, 16,
+            geo_stale={recent}, recency={k: i for i, k in enumerate(memory)})
+        self.assertIn(recent, picked)
+        self.assertEqual(len(picked), 4)
+
     def test_legacy_extraction_retry_migration_and_untrusted_state(self):
         queue = [row("unknown", i) for i in range(60)]
         reason = next(iter(pipeline._EXTRACTION_REASONS))
