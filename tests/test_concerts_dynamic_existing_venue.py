@@ -703,6 +703,8 @@ class UnlistedExistingVenueTests(unittest.TestCase):
         self.assertEqual(event["title"], " + ".join(NAMES))
         for bad in (
                 body.replace("le groupe " + NAMES[0], "le groupe Other Artist"),
+                body.replace("Au programme,", "Au programme, discussion avec"),
+                body.replace("Au programme,", "Biographie :"),
                 body.replace("black metal mélodique", "jazz influencé par le black metal"),
                 body.replace("black metal mélodique", "hardcore techno"),
                 body.replace("le black metal", "pas le black metal"),
@@ -727,6 +729,10 @@ class UnlistedExistingVenueTests(unittest.TestCase):
         self.assertNotIn("genre", people[0])
         self.assertNotIn("genre", people[1])
         self.assertEqual(people[2]["genre"], ["Post Punk"])
+        literal = "Example A / Example B"
+        single = "<h1>" + literal + "</h1><h3>" + literal + "</h3><p>Post-punk</p>"
+        single_bill = dynamic.visible_named_bill(single, literal)
+        self.assertEqual([p["name"] for p in single_bill], [literal])
         self.assertEqual(dynamic.visible_named_bill(
             html + "<p>" + description + "</p>", title), people)
         self.assertIsNone(dynamic.visible_named_bill(
