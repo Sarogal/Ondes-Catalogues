@@ -322,6 +322,114 @@ def linked_practical_address(html, event, venue, fetch, cache):
     return site
 
 
+class NamedFooterBlocks(AddressBlocks):
+    """Read address blocks only from a real, visible footer."""
+    def __init__(self):
+        super().__init__()
+        self.in_footer = False
+        self.outer_hidden = 0
+
+    def handle_starttag(self, tag, attrs):
+        flags = dict(attrs)
+        if self.outer_hidden:
+            if tag not in visible.VOID:
+                self.outer_hidden += 1
+            return
+        if not self.in_footer:
+            if tag in {"script", "style", "template", "noscript", "svg", "form"} or (
+                    "hidden" in flags or (flags.get("aria-hidden") or "").lower() == "true"
+                    or re.search(r"display\s*:\s*none|visibility\s*:\s*hidden",
+                                 flags.get("style") or "", re.I)):
+                if tag not in visible.VOID:
+                    self.outer_hidden = 1
+                return
+            if tag == "footer":
+                self.in_footer = True
+            return
+        super().handle_starttag(tag, attrs)
+
+    def handle_data(self, data):
+        if self.in_footer and not self.outer_hidden:
+            super().handle_data(data)
+
+    def handle_endtag(self, tag):
+        if self.outer_hidden:
+            if tag not in visible.VOID:
+                self.outer_hidden -= 1
+            return
+        if self.in_footer:
+            if tag == "footer" and not self.ignored:
+                self.in_footer = False
+                self.frames.clear()
+            else:
+                super().handle_endtag(tag)
+
+
+def _named_footer_address(html, venue):
+    """A complete named footer address is a location hint, not an event proof."""
+    parser = NamedFooterBlocks()
+    parser.feed(html)
+    parser.close()
+    addresses = set()
+    for _, text in parser.blocks:
+        # Keep the name, street, postcode and municipality within ONE block.
+        # Optional phone metadata is not part of the address.
+        if NONVENUE.search(triage.words(text)):
+            continue
+        match = re.fullmatch(r"(.{2,140}?)[,:\u241e]\s*(.+)", text)
+        if not match or not _named_location(match[1], venue):
+            continue
+        rest = re.sub(r"\s*/\s*t[ée]l\.?\s*:\s*[+0-9 .()\-]+$", "",
+                      match[2], flags=re.I)
+        # Postal separators are not part of the street name.
+        rest = re.sub(r"\s+[–—-]\s+(?=\d{5}\s)", " ", rest)
+        address = _postal_line(rest, venue["city"])
+        require(address is not None, "named footer postal address unconfirmed")
+        addresses.add(address)
+    require(len(addresses) == 1, "one named visible footer address required")
+    street, postcode = next(iter(addresses))
+    site = dict(venue, address=street, postalCode=postcode)
+    require(address_source.eligible_address(site), "non-geocodable footer address")
+    return site
+
+
+def _footer_after_exact_event(html, event, venue):
+    """Require the published event's own visible title, date and named place.
+
+    Only used on a known official venue origin after missing body address.
+    A generic site footer, even on a venue domain, cannot identify the room
+    of a show which does not itself explicitly identify that room.
+    """
+    require(official.official_origin(venue, event["officialUrl"]) is not None,
+            "footer address requires independently bound event domain")
+    parsed = AddressBlocks()
+    parsed.feed(html)
+    parsed.close()
+    headings = [(i, t) for i, (tag, t) in enumerate(parsed.blocks) if tag == "h1"]
+    require(len(headings) == 1 and triage.words(headings[0][1]) == triage.words(event.get("title")),
+            "footer event title unconfirmed")
+    i = headings[0][0]
+    detail = []
+    for tag, text in parsed.blocks[i+1:]:
+        if triage.words(text) in STOP | {"vous devriez aimer", "nous vous recommandons egalement",
+                                         "we also recommend"}:
+            break
+        detail.append((tag, text))
+    dates = {visible._date_in(text) for _, text in detail if visible._date_in(text)}
+    # Full numeric dates shown as weekday, day month year are a common
+    # visible format. Require all such date fields to agree.
+    for _, text in detail:
+        hit = re.fullmatch(r"(?:(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+)?"
+                           r"(\d{1,2})\s+(\d{1,2})\s+(20\d{2})(?:\s+\d{1,2}:\d{2})?",
+                           text.strip(), re.I)
+        if hit:
+            dates.add(dt.date(int(hit[3]), int(hit[2]), int(hit[1])).isoformat())
+    require(dates == {event["date"]}, "footer event date unconfirmed")
+    require(any(_named_location(t, venue) for _, t in detail),
+            "footer event venue unconfirmed")
+    return _named_footer_address(html, venue)
+
+
 def extract_address(html, event, venue):
     """Only an unambiguous, exact, dated event and its own physical Place."""
     url = event.get("officialUrl")
@@ -390,7 +498,13 @@ def verify(event, venue, *, fetch=probe.safe_fetch, cache=None):
         try:
             site = linked_practical_address(html, event, venue, fetch, cache)
         except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
-            raise EvidenceHeld("linked_practical_address_unconfirmed") from exc
+            # Try the footer only with independently verified origin AND
+            # exact visible individual show identity. Never borrow an address
+            # from a recommendation or override a conflicting body address.
+            try:
+                site = _footer_after_exact_event(html, event, venue)
+            except (ValueError, TypeError, KeyError, OSError, TimeoutError):
+                raise EvidenceHeld("linked_practical_address_unconfirmed") from exc
     except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
         raise EvidenceHeld("event_identity_or_address_unconfirmed") from exc
 
