@@ -212,10 +212,31 @@ class PublishedToursTests(unittest.TestCase):
         for data in (
             {"schema": "unknown", "festivals": []},
             {"schema": 1, "festivals": None},
-            {"schema": 1, "festivals": [{}] * 601},
         ):
             with self.assertRaises(ValueError):
                 bridge.find_research(data, TODAY)
+
+    def test_large_catalogue_archives_every_eligible_tour_cohort(self):
+        rows = []
+        for i in range(205):
+            site = f"https://tour-{i}.example.fr/"
+            rows.extend([
+                festival("Montpellier", "2027-02-04", f"tour-{i}-montpellier",
+                         officialSite=site),
+                festival("Toulouse", "2027-02-11", f"tour-{i}-toulouse",
+                         officialSite=site),
+            ])
+        rows.extend([{}] * 250)
+        report = bridge.find_research(signed(rows), TODAY,
+                                      corrections=[{}] * 601)
+        self.assertEqual(len(report["candidates"]), 410)
+        self.assertEqual(report["triageCounts"]["tour_source_research"], 410)
+        self.assertFalse(report["publicationAllowed"])
+        self.assertEqual(len({c["candidateId"] for c in report["candidates"]}), 410)
+        registry, stats = intake_archive.merge(
+            None, report, "2026-11-21T04:22:00+00:00")
+        self.assertEqual(stats["added"], 410)
+        self.assertEqual(registry["total"], 410)
 
     def test_unflagged_fest_sounding_events_follow_normal_overlap_review(self):
         candidate = {
