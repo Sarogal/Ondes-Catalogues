@@ -1,7 +1,7 @@
 {
   "approvedLogoCount": 0,
   "attemptedImageCount": 0,
-  "attemptedStationCount": 2,
+  "attemptedStationCount": 0,
   "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
   "catalogChanged": false,
   "confirmationCounts": {

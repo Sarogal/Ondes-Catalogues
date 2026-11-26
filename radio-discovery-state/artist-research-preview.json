@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 84,
-  "attemptedCount": 3,
+  "dueNameCount": 82,
+  "attemptedCount": 4,
   "serviceFailure": "http_503",
-  "retryAfterKey": "saxon",
+  "retryAfterKey": "sodom",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -540,6 +540,49 @@
       "artistName": "Shadow La Sombra",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "shopify.com": {
+      "status": "not_found",
+      "artistName": "shopify.com",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "silbermond": {
+      "status": "name_hypothesis",
+      "mbid": "34d42823-6b56-4861-a675-1565bf40d557",
+      "genres": [
+        "pop",
+        "pop rock",
+        "rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/34d42823-6b56-4861-a675-1565bf40d557",
+      "artistName": "Silbermond",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "skip the use": {
+      "status": "name_hypothesis",
+      "mbid": "1c346a43-0fba-4702-bc1b-c198f07e3da4",
+      "genres": [
+        "dance-punk",
+        "indie rock",
+        "new rave"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/1c346a43-0fba-4702-bc1b-c198f07e3da4",
+      "artistName": "Skip the Use",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },
