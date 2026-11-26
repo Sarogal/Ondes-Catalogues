@@ -31,6 +31,30 @@ def check(raw):
 
 
 class OpenAgendaDescriptionGenreTests(unittest.TestCase):
+
+    def test_named_guest_label_is_not_part_of_artist_identity(self):
+        names, genres = check(official_record(
+            description="Black metal et death metal.",
+            keywords={"fr": ["black metal", "death metal"]},
+            title={"fr": "PANZERFAUST + guests : NEXION"}))
+        self.assertEqual(names, ["PANZERFAUST", "NEXION"])
+        self.assertEqual(oa._bill({"@type": "MusicEvent",
+            "name": "Example Band + Guest House"}), ["Example Band", "Guest House"])
+
+    def test_pipe_title_requires_separate_visible_artist_evidence(self):
+        raw = official_record(description="Concert punk.",
+            keywords={"fr": ["punk"]},
+            title={"fr": "GAGNER DE L'ARGENT | WTAZZZ"},
+            longDescription={"fr": "<h2>GAGNER DE L'ARGENT</h2><p>Collectif punk.</p><h2>WTAZZZ</h2><p>Un autre groupe.</p>"})
+        self.assertEqual(check(raw)[0], ["GAGNER DE L'ARGENT", "WTAZZZ"])
+        for body in ("<p>GAGNER DE L'ARGENT | WTAZZZ</p>",
+                     "<p>GAGNER DE L'ARGENT</p><span hidden>WTAZZZ</span>"):
+            raw = official_record(description="Concert punk.",
+                keywords={"fr": ["punk"]},
+                title={"fr": "GAGNER DE L'ARGENT | WTAZZZ"},
+                longDescription={"fr": body})
+            self.assertEqual(check(raw)[0], ["GAGNER DE L'ARGENT | WTAZZZ"])
+
     def test_original_visible_description_accepts_punk_and_metalcore_without_keywords(self):
         names, genres = check(official_record(
             description="<p>Deux groupes de metalcore et punk sur scène.</p>",
@@ -136,6 +160,39 @@ class OpenAgendaDescriptionGenreTests(unittest.TestCase):
             with self.subTest(fragment=fragment):
                 with self.assertRaisesRegex(ValueError, "genre evidence missing"):
                     check(official_record(description=fragment + "<p>Soirée jazz.</p>"))
+
+
+    def test_non_nominative_support_never_becomes_an_artist(self):
+        for label in ("GUESTS", "Special Guest", "TBA",
+                      "Première partie à confirmer", "Invité surprise",
+                      "Spezialgast", "Invitados"):
+            with self.subTest(label=label):
+                raw = official_record(description="Concert post punk.",
+                    keywords={"fr": ["post punk"]},
+                    title={"fr": "Example Band + " + label})
+                names, genres = check(raw)
+                self.assertEqual(names, ["Example Band"])
+                self.assertEqual(genres, ["post punk"])
+
+    def test_named_performers_and_order_preserved(self):
+        names = oa._bill({"@type": "MusicEvent",
+            "name": "Example Band + GUESTS + Guest House + Other Band",
+            "performer": [{"@type": "MusicGroup", "name": "Example Band"},
+                          {"@type": "MusicGroup", "name": "GUESTS"},
+                          {"@type": "MusicGroup", "name": "Guest House"}]})
+        self.assertEqual(names, ["Example Band", "Guest House", "Other Band"])
+
+    def test_placeholder_only_and_contradictory_named_bill_rejected(self):
+        for title, performers in (
+            ("GUESTS + TBA", []),
+            ("GUESTS", []),
+            ("Example Band + GUESTS",
+             [{"@type": "MusicGroup", "name": "Different Band"}]),
+        ):
+            with self.subTest(title=title):
+                with self.assertRaises(ValueError):
+                    oa._bill({"@type": "MusicEvent", "name": title,
+                              "performer": performers})
 
     def test_keyword_genre_still_takes_precedence_over_description(self):
         _, genres = check(official_record(

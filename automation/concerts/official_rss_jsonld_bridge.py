@@ -19,6 +19,12 @@ _UNANNOUNCED = frozenset({
     "premiere partie", "première partie", "a confirmer", "à confirmer",
     "various artists", "invite surprise", "invité surprise",
     "artiste surprise", "guest surprise", "première partie surprise",
+    "special guests", "support tba", "support to be announced",
+    "première partie à confirmer", "premiere partie a confirmer",
+    "première partie à annoncer", "premiere partie a annoncer",
+    "invité spécial", "invite special", "invités", "invites",
+    "invitado especial", "invitados", "special guest tba",
+    "überraschungsgast", "spezialgast",
 })
 _BLOCKED_PATH = re.compile(
     r"(?i)(?:^|/)(?:feed|comments?|category|tag|wp-json)(?:/|$)|"
@@ -112,6 +118,11 @@ def _event_types(value):
     return set()
 
 
+def is_unnamed_performer(name):
+    """Exact label only: never remove a real name containing guest or TBA."""
+    return isinstance(name, str) and " ".join(name.split()).casefold() in _UNANNOUNCED
+
+
 def official_named_bill(value):
     """Return named performers and optional trailing non-nominative guest.
 
@@ -132,7 +143,7 @@ def official_named_bill(value):
             return None
         name = " ".join(name.split())
         normalized = name.casefold()
-        if normalized in _UNANNOUNCED:
+        if is_unnamed_performer(name):
             if not names or index != len(performers) - 1 or unnamed is not None:
                 return None
             unnamed = name
