@@ -83,6 +83,35 @@ class HistoricalCorrectionPreviewTests(unittest.TestCase):
         self.assertEqual(corrected, doc)
         self.assertEqual(audit["reasons"]["event_identity_unconfirmed"], 1)
 
+    def test_persistent_fairness_groups_and_sessions_after_failures(self):
+        doc, state, proof = fixture()
+        doc["events"] = [dict(EVENT, id="a-%02d" % i) for i in range(15)]
+        doc["events"] += [dict(EVENT, id="other-%d" % i, venue="Salle %d" % i)
+                          for i in range(1, 5)]
+        groups = research_queue(doc, DAY)["research_groups"]
+        proofs = {g["venue"]: dict(proof, venue=g["venue"]) for g in groups}
+        state["latest"] = {identity(g): dict(day=DAY.isoformat(), result=proofs[g["venue"]])
+                           for g in groups}
+        seen_groups = []
+        def researcher(g, _):
+            seen_groups.append(g["venue"])
+            return proofs[g["venue"]]
+        progress = None
+        seen = set()
+        for _ in range(8):
+            _, audit = preview(doc, DAY, state, progress=progress, researcher=researcher,
+                               source_reader=lambda _: "<html>unavailable</html>")
+            self.assertLessEqual(audit["source_reads"], 12)
+            self.assertLessEqual(audit["examined_groups"], 3)
+            progress = audit["progress"]
+            key = identity(groups[0])
+            seen.add(progress["events"][key][0])
+            self.assertEqual(audit["proposed_count"], 0)
+        self.assertEqual(set(seen_groups), set(proofs))
+        self.assertGreaterEqual(len(seen), 4)
+        self.assertEqual(set(progress["events"][identity(groups[0])]),
+                         set(groups[0]["missing_ids"]))
+
     def test_repeated_preview_does_not_repair_existing_valid_point(self):
         doc, state, proof = fixture()
         corrected, _ = preview(doc, DAY, state, researcher=lambda *_: proof, source_reader=lambda _: page())

@@ -9,11 +9,12 @@ import argparse
 from datetime import date
 from hashlib import sha256
 import json
+import re
 from pathlib import Path
 
 from proof import LD, walk, norm, meters
 from ptitesondes_catalogue_geo_research import research_queue, point
-from ptitesondes_catalogue_geo_rotation import identity, SCHEMA
+from ptitesondes_catalogue_geo_rotation import identity, SCHEMA, write_state
 from ptitesondes_catalogue_geo_proof_batch import research_group
 from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
 from ptitesondes_dynamic_municipal_source_links import _safe_url
@@ -21,6 +22,8 @@ from ptitesondes_shared_venue_location_evidence import _coordinates
 
 MAX_GROUPS = 3
 MAX_EVENTS = 12
+MAX_EVENTS_PER_GROUP = 4
+PROGRESS_SCHEMA = "ptitesondes.historical_gps_correction_progress.v1"
 MAX_HTML = 350000
 MAX_AGE = 7
 GEO_FIELDS = frozenset(("lat", "lng", "geo_precision", "geo_verified_at"))
@@ -111,7 +114,36 @@ def _witness(result, group):
     return p, v["official"], v["geo_source"]
 
 
-def preview(catalogue, today, checkpoint, *, researcher=research_group,
+def _fifo(previous, current):
+    current = list(current)
+    allowed = set(current)
+    retained = [key for key in previous if key in allowed]
+    present = set(retained)
+    return retained + [key for key in current if key not in present]
+
+
+def _progress(progress):
+    if progress is None:
+        return dict(schema=PROGRESS_SCHEMA, pending=[], events={})
+    if (not isinstance(progress, dict) or progress.get("schema") != PROGRESS_SCHEMA
+            or not isinstance(progress.get("pending"), list)
+            or not isinstance(progress.get("events"), dict)):
+        raise ValueError("invalid_correction_progress")
+    def unique_strings(values):
+        return (isinstance(values, list)
+                and all(isinstance(x, str) and 1 <= len(x) <= 500 for x in values)
+                and len(set(values)) == len(values))
+    def key_ok(key):
+        return isinstance(key, str) and re.fullmatch(r"[a-f0-9]{64}", key)
+    if (not unique_strings(progress["pending"])
+            or not all(key_ok(k) for k in progress["pending"])
+            or not all(key_ok(k) and unique_strings(v)
+                       for k, v in progress["events"].items())):
+        raise ValueError("invalid_correction_progress_identity")
+    return progress
+
+
+def preview(catalogue, today, checkpoint, *, progress=None, researcher=research_group,
             source_reader=read_unknown_https):
     """Return a counterfactual catalogue and audit, never change input."""
     if (not isinstance(checkpoint, dict) or checkpoint.get("schema") != SCHEMA
@@ -119,7 +151,8 @@ def preview(catalogue, today, checkpoint, *, researcher=research_group,
         raise ValueError("invalid_research_checkpoint")
     groups = research_queue(catalogue, today)["research_groups"]
     byid = {e["id"]: e for e in catalogue["events"]}
-    candidates = []
+    previous = _progress(progress)
+    candidates = {}
     for g in groups:
         entry = checkpoint["latest"].get(identity(g))
         if not isinstance(entry, dict) or not g["missing_ids"]:
@@ -130,12 +163,15 @@ def preview(catalogue, today, checkpoint, *, researcher=research_group,
         except ERRORS:
             continue
         if 0 <= age <= MAX_AGE and old is not None:
-            candidates.append((g, old))
+            candidates[identity(g)] = (g, old)
     changes, examined, source_reads = {}, 0, 0
     reasons = {"fresh_proof_missing_or_changed": 0, "event_identity_unconfirmed": 0}
-    for g, old in candidates[:MAX_GROUPS]:
-        if source_reads >= MAX_EVENTS:
-            break
+    order = _fifo(previous["pending"], candidates)
+    event_queues = {key: _fifo(previous["events"].get(key, []), g["missing_ids"])
+                    for key, (g, _) in candidates.items()}
+    selected = order[:MAX_GROUPS]
+    for key in selected:
+        g, old = candidates[key]
         examined += 1
         try:
             fresh = _witness(researcher(g, today), g)
@@ -145,9 +181,11 @@ def preview(catalogue, today, checkpoint, *, researcher=research_group,
         except ERRORS:
             reasons["fresh_proof_missing_or_changed"] += 1
             continue
-        for eid in g["missing_ids"]:
-            if source_reads >= MAX_EVENTS:
-                break
+        queue = event_queues[key]
+        attempted = queue[:MAX_EVENTS_PER_GROUP]
+        event_queues[key] = queue[len(attempted):] + attempted
+        for eid in attempted:
+            assert source_reads < MAX_EVENTS
             event = byid[eid]
             if point(event) is not None:
                 continue
@@ -179,6 +217,9 @@ def preview(catalogue, today, checkpoint, *, researcher=research_group,
                         proposed_count=len(changes), reasons=reasons,
                         before_sha256=digest(catalogue), after_sha256=digest(result),
                         proposals=[v[1] for v in changes.values()],
+                        progress=dict(schema=PROGRESS_SCHEMA,
+                                      pending=order[len(selected):] + selected,
+                                      events=event_queues),
                         publication_ready=False, public_writes=0)
 
 
@@ -186,6 +227,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--catalogue", type=Path, required=True)
     p.add_argument("--state", type=Path, required=True)
+    p.add_argument("--progress", type=Path, required=True)
     p.add_argument("--day", type=date.fromisoformat, required=True)
     p.add_argument("--live", action="store_true")
     args = p.parse_args()
@@ -193,7 +235,11 @@ if __name__ == "__main__":
         p.error("Explicit --live required")
     catalogue = json.loads(args.catalogue.read_text(encoding="utf-8"))
     checkpoint = json.loads(args.state.read_text(encoding="utf-8"))
-    _, report = preview(catalogue, args.day, checkpoint)
+    if args.progress.is_symlink():
+        raise ValueError("unsafe_progress_path")
+    previous = json.loads(args.progress.read_text(encoding="utf-8")) if args.progress.exists() else None
+    _, report = preview(catalogue, args.day, checkpoint, progress=previous)
+    write_state(args.progress, report["progress"])
     # Do not export private research details to the public runner log.
     print(json.dumps({k: report[k] for k in (
         "candidate_groups", "examined_groups", "source_reads", "proposed_count",
