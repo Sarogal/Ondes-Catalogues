@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 65,
-  "attemptedCount": 3,
+  "dueNameCount": 63,
+  "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "76% uncertain",
+  "retryAfterKey": "aerosmith",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -64,6 +64,15 @@
       "artistName": "AC/DC",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "acdc": {
+      "status": "not_found",
+      "artistName": "ACDC",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },
