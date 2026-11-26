@@ -261,3 +261,53 @@ class CatalogueGeoProofTests(unittest.TestCase):
         })
         self.assertNotIn("private URL", str(result))
         self.assertFalse(result["publication_ready"])
+
+
+class DelegatedBanResearchTests(unittest.TestCase):
+    def check(self, reference=None, citycode="12345", page=None, duplicate=False):
+        external = "https://independent-theatre.example/programme"
+        g = group()
+        g["source_urls"] = [URL, external]
+        if reference is None:
+            reference = ("<html><main><article><h2>Maison des enfants</h2>"
+                         "<p>Site du lieu : independent-theatre.example</p>"
+                         "</article></main></html>")
+        response = ban()
+        response["features"][0]["properties"].update(
+            street="Rue des Chênes", citycode=citycode)
+        if duplicate:
+            response["features"].append(response["features"][0].copy())
+        def reader(url):
+            if url == external:
+                return html() if page is None else page
+            if url == URL:
+                return reference
+            return "<html><body>Municipal homepage</body></html>"
+        osm = Mock(side_effect=OSError("unavailable"))
+        result = research_group(
+            g, DAY, directory_get=lambda _: directory(),
+            html_get=reader, ign_get=lambda _: response, osm_get=osm)
+        return result, osm
+
+    def test_attested_nonmunicipal_site_and_exact_ban_without_osm(self):
+        result, osm = self.check()
+        self.assertEqual(result["status"], "independent_venue_point_found")
+        self.assertIn("DILA delegated", result["venue_point"]["geo_source"])
+        self.assertTrue(result["event_identity_recheck_required"])
+        self.assertFalse(result["publication_ready"])
+        osm.assert_not_called()
+
+    def test_wrong_citycode_or_ambiguous_ban_rejected(self):
+        for kwargs in ({"citycode": "99999"}, {"duplicate": True}):
+            with self.subTest(kwargs=kwargs):
+                result, _ = self.check(**kwargs)
+                self.assertNotIn("venue_point", result)
+
+    def test_unattested_or_wrong_venue_refused(self):
+        for kwargs in (
+            {"reference": "<html><article>Maison des enfants other.example</article></html>"},
+            {"page": html("Autre lieu")},
+        ):
+            with self.subTest(kwargs=kwargs):
+                result, _ = self.check(**kwargs)
+                self.assertNotIn("venue_point", result)
