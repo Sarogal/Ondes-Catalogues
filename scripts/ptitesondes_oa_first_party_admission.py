@@ -9,7 +9,7 @@ import re
 from merge_policy import valid, PUBLISHABLE_CHILD_ARTS
 from official_organizer_proof import canonical_event_title
 from proof import norm
-from ptitesondes_primary_editorial import primary_out_of_scope
+from ptitesondes_primary_editorial import primary_out_of_scope, audience_text
 from ptitesondes_oa_evergreen_on_demand import ambiguous_on_demand_studio_series
 from ptitesondes_candidate_promotion import category_for
 from ptitesondes_family_activity_classification import propose_family_activity
@@ -259,7 +259,7 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published,
     # lecture or concert within a school programme/forum is not enough.
     if primary_out_of_scope(title, source_text):
         return fail("oa_direct_primary_activity_outside_scope")
-    audience = _norm(title + " " + source_text)
+    audience = audience_text(title, source_text)
     if EXCLUSIVELY_ADULT.search(audience) or NOT_PUBLIC_ACCESS.search(audience):
         return fail("oa_direct_restricted_access")
     child_age = isinstance(age, dict) and type(age.get("max")) is int and age["max"] <= 17
