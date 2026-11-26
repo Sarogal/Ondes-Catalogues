@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 46,
-  "attemptedCount": 2,
+  "dueNameCount": 45,
+  "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "michael schulte",
+  "retryAfterKey": "minor threat",
   "entries": {
     "2000 fm": {
       "status": "not_found",
