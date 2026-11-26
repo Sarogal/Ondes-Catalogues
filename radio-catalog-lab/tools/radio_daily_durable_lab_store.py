@@ -32,7 +32,12 @@ class DurableLabStore:
         self.public_key = public_key
         self.key_id = key_id
         with self._connect() as db:
-            self._verified(db, self._current(db))
+            pointer = self._current(db)
+            p = self._verified(db, pointer)
+            row = db.execute("SELECT data FROM history WHERE sequence=?", (p["release_sequence"],)).fetchone()
+            latest = db.execute("SELECT MAX(sequence) FROM history").fetchone()[0]
+            if row is None or row[0] != pointer or latest != p["release_sequence"]:
+                raise ValueError("current pointer history mismatch")
 
     @contextmanager
     def _connect(self, *, create=False, write=False):
@@ -72,6 +77,7 @@ class DurableLabStore:
             db.execute("CREATE TABLE objects (path TEXT PRIMARY KEY, data BLOB NOT NULL)")
             db.execute("CREATE TABLE legacy (url TEXT PRIMARY KEY, path TEXT NOT NULL)")
             db.execute("CREATE TABLE pointer (id INTEGER PRIMARY KEY CHECK(id=1), data BLOB NOT NULL)")
+            db.execute("CREATE TABLE history (sequence INTEGER PRIMARY KEY, data BLOB NOT NULL)")
             obj._put(db, p["content_path"], body)
             for logo, name in inventory(doc):
                 url = logo["url"]
@@ -86,6 +92,7 @@ class DurableLabStore:
                 obj._put(db, "objects/sha256/" + name, data)
             db.execute("INSERT INTO pointer VALUES (1,?)", (pointer,))
             obj._verified(db, pointer)
+            db.execute("INSERT INTO history VALUES (?,?)", (p["release_sequence"], pointer))
         return cls(path, public_key=public_key, key_id=key_id)
 
     @staticmethod
@@ -156,6 +163,20 @@ class DurableLabStore:
         with self._connect(write=True) as db:
             self._put(db, path, data)
 
+    def historical(self, sequence):
+        """Return a previously activated and reverified signed release."""
+        if type(sequence) is not int or sequence < 8:
+            raise ValueError("invalid historical sequence")
+        with self._connect() as db:
+            row = db.execute("SELECT data FROM history WHERE sequence=?", (sequence,)).fetchone()
+            if row is None:
+                raise KeyError(sequence)
+            pointer = row[0]
+            p = self._verified(db, pointer)
+            if p["release_sequence"] != sequence:
+                raise ValueError("historical sequence mismatch")
+            return pointer, self._get(db, p["content_path"])
+
     def compare_and_swap(self, expected, replacement):
         with self._connect(write=True) as db:
             if self._current(db) != expected:
@@ -164,4 +185,8 @@ class DurableLabStore:
             new = self._verified(db, replacement)
             if new["release_sequence"] != old["release_sequence"] + 1:
                 raise ValueError("non-successor laboratory pointer")
+            row = db.execute("SELECT data FROM history WHERE sequence=?", (old["release_sequence"],)).fetchone()
+            if row is None or row[0] != expected:
+                raise ValueError("current pointer history mismatch")
+            db.execute("INSERT INTO history VALUES (?,?)", (new["release_sequence"], replacement))
             db.execute("UPDATE pointer SET data=? WHERE id=1", (replacement,))
