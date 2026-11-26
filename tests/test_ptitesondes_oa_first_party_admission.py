@@ -65,6 +65,12 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
         # Synthetic records: no real event IDs or organiser-specific rules.
         for title, description, expected in (
             ("Petits sons", "Éveil musical.", "eveil-musical"),
+            ("Jeune public - Une cuisine magique",
+             "Marionnettes, mime et magie de la compagnie. À partir de 2 ans.",
+             "spectacle-jeunesse"),
+            ("Les animaux de la forêt",
+             "Un lion a perdu sa couronne. Petits et grands, prenez part à l'aventure musicale du lionceau !",
+             "spectacle-musical"),
             ("Chanter, bouger, danser", "Séance d'éveil corporel en musique.",
              "eveil-musical"),
             ("Les bibliothécaires racontent spécial Noël",
@@ -93,6 +99,10 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
     def test_explicit_programme_fallback_preserves_audience_and_primary_activity(self):
         for title, description, age, reason in (
             ("Voyage sonore", "Éveil musical.", None, "oa_direct_child_audience_missing"),
+            ("Exposition de photos", "Marionnettes, mime et magie de la compagnie.",
+             {"max": 6}, "oa_direct_out_of_editorial_scope"),
+            ("Visite guidée", "Petits et grands, prenez part à l'aventure musicale.",
+             {"max": 6}, "oa_direct_out_of_editorial_scope"),
             ("Exposition de photos", "Un spectacle musical.", {"max": 6},
              "oa_direct_out_of_editorial_scope"),
             ("Rencontre", "Un moment autour de la musique avec les enfants.",
