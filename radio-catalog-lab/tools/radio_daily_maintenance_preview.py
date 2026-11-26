@@ -7,6 +7,7 @@ hints only. No URL, audio, catalogue mutation or publication is emitted.
 import argparse
 import datetime as dt
 import hashlib
+import http.client
 import json
 import re
 from collections import Counter
@@ -17,9 +18,16 @@ from radio_daily_v9_generator import BASELINE
 from radio_daily_qualification_dossiers import MAX_BYTES
 from radio_stream_technical_probe import probe_url, PinnedHttpTransport
 from radio_stream_recheck_ledger import parse_day
+from radio_daily_hls_preview import observe as observe_hls
 
 MAX_PROBES=20
 MAX_WORKERS=4
+MAX_HLS=4
+ROUTES={"direct","hls","playlist_deferred"}
+HLS_VERDICTS={"advancing_hls_audio_frame_indication","advancing_hls_manifest_only",
+              "ordinary_playlist","unsupported_hls_features","finite_hls_review",
+              "long_target_duration_review","changed_or_finite_manifest_review",
+              "manifest_not_advanced","manifest_or_connection_review"}
 HISTORY_DAYS=30
 RECENT_DAYS=7
 FAILURE_DAYS=3
@@ -71,7 +79,7 @@ def outcome(sample,sha):
         return "unavailable_hint"
     return "inconclusive"
 
-def build(raw,day,*,expected=BASELINE,prior=None,limit=0,workers=1,probe=None):
+def build(raw,day,*,expected=BASELINE,prior=None,limit=0,workers=1,probe=None,hls_probe=None):
     day=parse_day(day)
     if type(limit) is not int or not 0<=limit<=MAX_PROBES or type(workers) is not int or not 1<=workers<=MAX_WORKERS:
         raise ValueError("invalid maintenance budget")
@@ -98,8 +106,19 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,workers=1,probe=None):
                 if h.get("outcome") not in OUTCOMES or date>day:
                     raise ValueError("invalid maintenance observation")
                 ds.append(date)
+                route=h.get("route","direct")
+                hv=h.get("hlsVerdict")
+                if (route not in ROUTES or (route=="hls" and hv not in HLS_VERDICTS)
+                        or (route!="hls" and hv is not None)
+                        or (route=="playlist_deferred" and h["outcome"]!="inconclusive")
+                        or (route=="hls" and h["outcome"]!=(
+                            "audio_hint" if hv=="advancing_hls_audio_frame_indication" else "inconclusive"))):
+                    raise ValueError("invalid maintenance route")
                 if age(day,date)<HISTORY_DAYS:
-                    history[k].append({"date":date,"outcome":h["outcome"]})
+                    observation={"date":date,"outcome":h["outcome"],"route":route}
+                    if hv is not None:
+                        observation["hlsVerdict"]=hv
+                    history[k].append(observation)
             if ds!=sorted(set(ds)):
                 raise ValueError("duplicate or unordered observation")
     eligible=[k for k,h in history.items() if not h or h[-1]["date"]!=day]
@@ -118,14 +137,38 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,workers=1,probe=None):
         raise ValueError("explicit probe required")
     def check(k):
         url,sha=streams[k]
-        return k,outcome(probe(url),sha)
+        sample=probe(url)
+        result=outcome(sample,sha)
+        pending=sample.get("verdict")=="playlist_pending"
+        return k,{"date":day,"outcome":result,
+                  "route":"playlist_deferred" if pending else "direct"}
     if workers==1:
-        checked=list(map(check,selected))
+        checked=dict(map(check,selected))
     else:
         with ThreadPoolExecutor(max_workers=workers) as pool:
-            checked=list(pool.map(check,selected))
-    for k,v in checked:
-        history[k].append({"date":day,"outcome":v})
+            checked=dict(pool.map(check,selected))
+    def hls_order(k):
+        dates=[h["date"] for h in history[k] if h.get("route")=="hls"]
+        return (dates[-1] if dates else "",k)
+    pending=sorted((k for k,v in checked.items() if v["route"]=="playlist_deferred"),key=hls_order)
+    hls_selected=pending[:MAX_HLS] if hls_probe is not None else []
+    def check_hls(k):
+        try:
+            result=hls_probe(streams[k][0])
+            verdict=result.get("verdict")
+            if verdict not in HLS_VERDICTS:
+                verdict="manifest_or_connection_review"
+            if verdict=="advancing_hls_audio_frame_indication" and not result.get("frameCodec"):
+                verdict="manifest_or_connection_review"
+        except (OSError,ValueError,http.client.HTTPException,UnicodeError):
+            verdict="manifest_or_connection_review"
+        return k,{"date":day,"route":"hls","hlsVerdict":verdict,
+                  "outcome":"audio_hint" if verdict=="advancing_hls_audio_frame_indication" else "inconclusive"}
+    if hls_selected:
+        with ThreadPoolExecutor(max_workers=min(2,workers)) as pool:
+            checked.update(pool.map(check_hls,hls_selected))
+    for k,v in checked.items():
+        history[k].append(v)
     rows=[]
     station_rows=[]
     for k,h in sorted(history.items()):
@@ -166,7 +209,9 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,workers=1,probe=None):
             "publicationAllowed":False,"approvedCount":0,"stationCount":len(stations),
             "streamCount":len(streams),"checkedCount":len(checked),
             "everObservedStreamCount":sum(bool(h) for h in history.values()),
-            "sampleCounts":dict(sorted(Counter(v for _,v in checked).items())),
+            "sampleCounts":dict(sorted(Counter(v["outcome"] for v in checked.values()).items())),
+            "hlsAttemptedCount":len(hls_selected),"hlsDeferredCount":len(pending)-len(hls_selected),
+            "hlsVerdictCounts":dict(sorted(Counter(v["hlsVerdict"] for v in checked.values() if v["route"]=="hls").items())),
             "reviewCounts":dict(sorted(Counter(r["reviewStatus"] for r in station_rows).items())),
             "streams":rows,"records":station_rows}
 
@@ -189,7 +234,8 @@ def main():
     probe=(lambda u:probe_url(u,transport.request)) if transport else None
     report=build(read(a.baseline),dt.datetime.now(dt.timezone.utc).date().isoformat(),
                  prior=json.loads(read(a.previous)) if a.previous else None,
-                 limit=a.limit,workers=a.workers,probe=probe)
+                 limit=a.limit,workers=a.workers,probe=probe,
+                 hls_probe=observe_hls if a.limit else None)
     payload=json.dumps(report,ensure_ascii=False,indent=2)+"\n"
     if len(payload.encode())>MAX_BYTES:
         raise ValueError("oversize maintenance report")

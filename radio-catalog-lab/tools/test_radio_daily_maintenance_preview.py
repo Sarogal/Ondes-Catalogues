@@ -22,9 +22,9 @@ def probe(url,good=False):
     return {"streamSha256":digest(url),"verdict":"audio_sample_ok" if good else "needs_review",
             "frameChain":"mp3" if good else "", "reason":"http_not_successful"}
 
-def run(day=DAY,prior=None,limit=3,fn=probe):
+def run(day=DAY,prior=None,limit=3,fn=probe,hls=None):
     raw,sha=fixture()
-    return build(raw,day,expected=sha,prior=prior,limit=limit,probe=fn)
+    return build(raw,day,expected=sha,prior=prior,limit=limit,probe=fn,hls_probe=hls)
 
 class MaintenanceTests(unittest.TestCase):
     def test_inventory_and_no_network_default(self):
@@ -67,6 +67,46 @@ class MaintenanceTests(unittest.TestCase):
         r=run(DAY,r,fn=lambda u:{"streamSha256":digest(u),"verdict":"playlist_pending"})
         self.assertNotIn("quarantine_review",r["reviewCounts"])
         self.assertEqual(r["sampleCounts"],{"inconclusive":3})
+
+    def test_hls_audio_and_manifest_only_are_distinct(self):
+        def playlist(u):return {"streamSha256":digest(u),"verdict":"playlist_pending"}
+        def hls(u):
+            return {"verdict":"advancing_hls_audio_frame_indication","frameCodec":"aac"} if u==ALT else {"verdict":"advancing_hls_manifest_only"}
+        r=run(fn=playlist,hls=hls)
+        self.assertEqual(r["hlsAttemptedCount"],3)
+        self.assertEqual(r["sampleCounts"],{"audio_hint":1,"inconclusive":2})
+        self.assertEqual(r["records"][0]["reviewStatus"],"audio_sample_observed")
+        self.assertEqual(r["records"][1]["reviewStatus"],"inconclusive")
+        self.assertEqual(run(prior=r,fn=lambda u:self.fail("same day"),hls=lambda u:self.fail("same day"))["checkedCount"],0)
+
+    def test_hls_errors_do_not_count_as_failures(self):
+        def playlist(u):return {"streamSha256":digest(u),"verdict":"playlist_pending"}
+        def fail(u):raise OSError("temporary")
+        r=run("2026-11-24",fn=playlist,hls=fail)
+        r=run("2026-11-25",r,fn=playlist,hls=fail)
+        r=run(DAY,r,fn=playlist,hls=fail)
+        self.assertEqual(r["sampleCounts"],{"inconclusive":3})
+        self.assertNotIn("quarantine_review",r["reviewCounts"])
+
+    def test_hls_budget_rotates_deferred(self):
+        raw=json.dumps({"release_sequence":8,"stations":[{"go_station_id":"go-station-1",
+            "status":{"state":"active"},"streams":[{"stream_id":str(i),"url":f"https://radio.example.org/{i}"} for i in range(6)]}]}).encode()
+        sha=hashlib.sha256(raw).hexdigest()
+        def playlist(u):return {"streamSha256":digest(u),"verdict":"playlist_pending"}
+        def hls(u):return {"verdict":"advancing_hls_manifest_only"}
+        r=build(raw,"2026-11-25",expected=sha,limit=6,probe=playlist,hls_probe=hls)
+        self.assertEqual(r["hlsAttemptedCount"],4)
+        self.assertEqual(r["hlsDeferredCount"],2)
+        r=build(raw,DAY,expected=sha,prior=r,limit=6,probe=playlist,hls_probe=hls)
+        self.assertTrue(all(any(h["route"]=="hls" for h in x["observations"]) for x in r["streams"]))
+
+    def test_invalid_hls_evidence_is_held(self):
+        def playlist(u):return {"streamSha256":digest(u),"verdict":"playlist_pending"}
+        r=run(fn=playlist,hls=lambda u:{"verdict":"advancing_hls_audio_frame_indication"})
+        self.assertEqual(r["sampleCounts"],{"inconclusive":3})
+        r["streams"][0]["observations"][0]["outcome"]="audio_hint"
+        with self.assertRaises(ValueError):
+            run(prior=r)
 
     def test_rotation_covers_unseen(self):
         r=run(limit=1)
