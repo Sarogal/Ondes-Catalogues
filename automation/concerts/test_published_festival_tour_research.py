@@ -188,6 +188,33 @@ class PublishedToursTests(unittest.TestCase):
         self.assertEqual(
             bridge.find_research(signed(fixture_rows), TODAY)["candidates"], [])
 
+    def test_variable_tour_bills_preserve_each_local_lineup(self):
+        rows = fixture()["festivals"]
+        rows[0]["lineup"] = ["Obscura", "Pestilence", "Local Montpellier"]
+        rows[1]["lineup"] = ["Pestilence", "Obscura", "Local Toulouse"]
+        rows[2]["lineup"] = ["Obscura", "Pestilence", "Local Limoges"]
+        out = bridge.find_research(signed(rows), TODAY)
+        self.assertEqual(len(out["candidates"]), 3)
+        by_city = {c["city"]: c for c in out["candidates"]}
+        for row in rows:
+            c = by_city[row["city"]]
+            self.assertEqual(c["artistNamesFromFestivalOnly"], row["lineup"])
+            self.assertFalse(c["publicationAllowed"])
+            self.assertTrue(c["requiresArtistAndVenueReproof"])
+
+    def test_variable_bills_require_direct_same_title_origin_and_distinct_stage(self):
+        rows = fixture()["festivals"][:2]
+        rows[0]["lineup"] = ["Obscura", "Pestilence", "Local A"]
+        rows[1]["lineup"] = ["Obscura", "Pestilence", "Local B"]
+        for change in (
+                {"name": "Another Tour 2027 — Toulouse"},
+                {"officialSite": "https://another-tour.example.fr/"},
+                {"city": "Montpellier"},
+                {"startDate": rows[0]["startDate"], "endDate": rows[0]["endDate"]},
+                {"lineup": ["Obscura", "Another Act", "Local B"]}):
+            altered = [rows[0], {**rows[1], **change}]
+            self.assertEqual(bridge.find_research(signed(altered), TODAY)["candidates"], [])
+
     def test_expired_or_unsafe_urls_cannot_nominate_a_concert(self):
         rows = fixture()["festivals"]
         rows[0]["startDate"] = rows[0]["endDate"] = "2026-11-01"
