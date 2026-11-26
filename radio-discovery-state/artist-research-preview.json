@@ -7,7 +7,7 @@
   "dueNameCount": 32,
   "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "76% uncertain",
+  "retryAfterKey": "aerosmith",
   "entries": {
     "2000 fm": {
       "status": "not_found",
