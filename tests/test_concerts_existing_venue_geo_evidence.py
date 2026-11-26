@@ -105,6 +105,38 @@ class ExistingVenueGeoEvidenceTests(unittest.TestCase):
             with self.subTest(html=html), self.assertRaises(ValueError):
                 evidence.extract_address(html, EVENT, VENUE)
 
+    def test_geo_accepts_only_exact_canonical_event_among_distinct_cards(self):
+        main = document()
+        other = document(url="https://unknown-room.fr/events/another",
+                         name="Another show", startDate="2027-03-10",
+                         location={"@type": "Place", "name": "Other Room"})
+        site = evidence.extract_address(other + main, EVENT, VENUE)
+        self.assertEqual(site["address"], "19 rue des Jardins")
+        for ambiguous in (
+                main, document(url=None, name="Another show"),
+                document(url=URL + "?other=1", name="Another show"),
+                document(url="https://other.fr/events/another", name="Another show"),
+                document(url="https://unknown-room.fr/events/another")):
+            with self.subTest(ambiguous=ambiguous), self.assertRaises(ValueError):
+                evidence.extract_address(main + ambiguous, EVENT, VENUE)
+
+    def test_geo_normalizes_explicit_french_postal_format_without_guessing(self):
+        place = {"@type": "Place", "name": "New Room",
+                 "address": {"@type": "PostalAddress",
+                             "streetAddress": "rue des Jardins",
+                             "postalCode": "68 000", "addressLocality": "Colmar",
+                             "addressCountry": {"@type": "Country", "name": "France"}}}
+        site = evidence.extract_address(document(location=place), EVENT, VENUE)
+        self.assertEqual(site["postalCode"], "68000")
+        self.assertEqual(site["address"], "rue des Jardins")
+        for key, value in (("postalCode", "68 00"), ("addressLocality", "Paris"),
+                           ("addressCountry", {"@type": "Country", "name": "Belgium"}),
+                           ("addressCountry", {"@type": "Place", "name": "France"})):
+            wrong = copy.deepcopy(place)
+            wrong["address"][key] = value
+            with self.subTest(key=key, value=value), self.assertRaises(ValueError):
+                evidence.extract_address(document(location=wrong), EVENT, VENUE)
+
     def test_rejects_other_room_or_address(self):
         for location in (
             {"@type": "Place", "name": "Other Room"},
