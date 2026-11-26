@@ -74,9 +74,11 @@ def attributed_site(event_html, title, url):
     except (ValueError, TypeError, UnicodeError):
         return None
     base = normalized(title.rsplit(" ", 1)[0])
-    exact = normalized(title)
+    from national_openagenda_research import provider_title_matches
+    edition_year = int(title.rsplit(" ", 1)[-1])
     if len(base) < 7 or sum(
-            x in (base, exact) for x in heading.headings) != 1:
+            provider_title_matches(x, title, edition_year)
+            for x in heading.headings) != 1:
         return None
     # Avoid attributing a site for a different edition via an old OA page.
     from grossesondes_official_html_edition import VisibleText, fold

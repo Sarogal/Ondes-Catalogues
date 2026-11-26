@@ -24,7 +24,8 @@ if SCRIPTS not in sys.path:
 
 from dns_pinned_https import fetch_public_html
 from national_openagenda_research import (SOURCE as OPENAGENDA_DATASET,
-                                          validated_leads as validated_openagenda_leads)
+                                          validated_leads as validated_openagenda_leads,
+                                          pass_edition_title)
 from national_professional_profile_discovery import discover as discover_professional_profiles
 from national_professional_official_detail import examine as examine_professional_details
 from national_cultural_venue_discovery import cultural_detail
@@ -70,7 +71,8 @@ def eligible(queue, catalogue, today):
                 or len(dossier["sources"]) > MAX_SOURCES_PER_DOSSIER):
             continue
         year = dossier.get("edition_year_hint")
-        title = _edition_name(dossier.get("name_hint"), year)
+        title = (pass_edition_title(dossier.get("name_hint"), year)
+                 or _edition_name(dossier.get("name_hint"), year))
         if (title is None or not current.year <= year <= current.year + 3
                 or _published(catalogue, title, year)):
             continue
