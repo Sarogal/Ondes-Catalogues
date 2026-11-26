@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 41,
+  "dueNameCount": 40,
   "attemptedCount": 2,
-  "serviceFailure": "http_503",
-  "retryAfterKey": "suicide machines",
+  "serviceFailure": "timeout",
+  "retryAfterKey": "tears for fears",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -964,6 +964,19 @@
       "genreSource": "musicbrainz-community",
       "sourceUrl": "https://musicbrainz.org/artist/3a787e76-2879-4306-bc04-66aa7373be72",
       "artistName": "Steamhammer",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "t3nors": {
+      "status": "name_hypothesis",
+      "mbid": "4e622511-68d1-4544-ab6b-ffdd843f1c2b",
+      "genres": [],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/4e622511-68d1-4544-ab6b-ffdd843f1c2b",
+      "artistName": "T3nors",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,
