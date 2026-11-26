@@ -99,6 +99,11 @@ class LiveCombinedPreviewTests(unittest.TestCase):
         self.assertEqual(result["migration"]["oldBaselineSha256"], f.anchor["expected_sha"])
         self.assertEqual(result["migration"]["newBaselineSha256"], result["candidateSha256"])
         self.assertEqual(result["migration"]["streamHistoriesRetained"], 2)
+        self.assertTrue(result["durableReplayVerified"])
+        self.assertTrue(result["gitTransferVerified"])
+        self.assertTrue(result["simulatedDeploymentVerified"])
+        self.assertTrue(result["durableMigrationVerified"])
+        self.assertTrue(result["temporaryOnly"])
 
     def test_incomplete_state_blocks_successor_migration(self):
         f = self.f
@@ -127,3 +132,12 @@ class LiveCombinedPreviewTests(unittest.TestCase):
         self.assertEqual(result["outcome"], "no_change")
         self.assertFalse(result["migrationVerified"])
         migrate.assert_not_called()
+
+    @patch("radio_daily_live_combined_preview.rehearse", side_effect=ValueError("blocked"))
+    def test_durable_replay_failure_visible_in_report(self, replay):
+        f = self.f
+        result = combine_and_rehearse(f.pointer, f.raw, anchor=f.anchor, day=DAY,
+                         operations=f.operations, state=self.predecessor_state())
+        self.assertEqual(result["outcome"], "experimental_durable_replay_held")
+        self.assertFalse(result["durableReplayVerified"])
+        self.assertFalse(result["publicationAllowed"])

@@ -11,6 +11,7 @@ from radio_daily_publication_simulator import MemoryStore, verify_visible
 from radio_daily_live_inherited_artwork import recover_inherited, ArtworkUnavailable
 from radio_daily_live_state_migration import migrate_visible
 from radio_daily_lab_cycle import publish_cycle
+from radio_daily_live_durable_replay import rehearse
 
 # Prefer recovery/repair of existing radios to additions or destructive merges.
 ORDER = ("repair", "status", "logo", "admission", "merge")
@@ -41,6 +42,8 @@ def combine_and_rehearse(pointer, raw, *, anchor, day, operations, state=None, c
         body = candidate
     report = dict(publicationAllowed=False, signed=False, simulatedPublication=False,
                   experimentalSignatureVerified=False, migrationVerified=False, nextSelectionVerified=False,
+                  durableReplayVerified=False, gitTransferVerified=False,
+                  simulatedDeploymentVerified=False, durableMigrationVerified=False,
                   candidateSha256=None,
                   candidateSequence=None, selectedOperations=list(selected),
                   deferredOperations=deferred,
@@ -103,4 +106,10 @@ def combine_and_rehearse(pointer, raw, *, anchor, day, operations, state=None, c
             report["outcome"] = "experimental_migration_held"
             return report
         report.update(migrated, outcome="experimental_cycle_verified")
+        try:
+            report.update(rehearse(store, signer, lab_pointer, raw, body,
+                anchor=lab_anchor, day=day, state=state, inherited=inherited, objects=objects))
+        except (ValueError, KeyError, OSError, RuntimeError):
+            report["outcome"] = "experimental_durable_replay_held"
+            return report
     return report
