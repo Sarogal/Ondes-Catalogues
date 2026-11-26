@@ -78,7 +78,12 @@ def lookup_credit_genres(mbid, request):
     return {"mbid": mbid, "genres": labels, "source": "musicbrainz-community",
             "sourceUrl": "https://musicbrainz.org/artist/" + mbid}
 
-def valid_credit_genres(entry):
+def valid_credit_genres(entry, day=None):
+    if "genreCheckedAt" in entry:
+        if (entry.get("creditGenreEvidence") is None
+                or parse_day(entry["genreCheckedAt"]) < parse_day(entry["checkedAt"])
+                or (day is not None and parse_day(entry["genreCheckedAt"]) > day)):
+            return False
     evidence = entry.get("creditGenreEvidence")
     if evidence is None:
         return True
@@ -110,8 +115,13 @@ def build(metadata,research,titles,*,prior=None,limit=0,request=None,artist_requ
                     or k!=safe_digest(e["artistHint"]+"\n"+e["titleSha256"])
                     or e.get("identityVerified") is not False or e.get("publicationAllowed") is not False
                     or parse_day(e["checkedAt"])>day or e.get("source")!="musicbrainz-recording-search"
-                    or not valid_credit_genres(e)):
+                    or not valid_credit_genres(e, day)):
                 raise ValueError("invalid recording cache entry")
+            if e.get("status")=="recording_credit_hypothesis":
+                for field, maximum in (("artistMbids",20),("recordingMbids",200)):
+                    ids=e.get(field)
+                    if not isinstance(ids,list) or not 1<=len(ids)<=maximum or any(not valid_id(x) for x in ids):
+                        raise ValueError("invalid recording cache identity")
             entries[k]=e
     tasks={}
     for t in titles:
@@ -131,28 +141,71 @@ def build(metadata,research,titles,*,prior=None,limit=0,request=None,artist_requ
             if age < (30 if old["status"]=="recording_credit_hypothesis" else 7):
                 continue
         tasks[k]=t
+    # Reuse a recent, observed artist/title digest to retry a missing genre.
+    # No raw title is required, and the recording-credit date is never reset.
+    today=dt.date.fromisoformat(day)
+    active_pairs=set()
+    for row in rows.values():
+        if (row.get("approved") is not False or row.get("publicationAllowed") is not False
+                or not SHA256_RE.fullmatch(row.get("streamSha256") or "")
+                or parse_day(row["observedDate"])>day or not isinstance(row.get("observations"),list)
+                or len(row["observations"])>90):
+            raise ValueError("untrusted metadata row")
+        for h in row["observations"]:
+            if not valid_hint(h) or parse_day(h["date"])>day:
+                raise ValueError("untrusted observation")
+            observed=parse_day(h.get("broadcastDate",h["date"]))
+            if observed>day:
+                raise ValueError("future broadcast")
+            if (today-dt.date.fromisoformat(observed)).days<30:
+                active_pairs.add(safe_digest(h["artistHint"]+"\n"+h["titleSha256"]))
+    retry_genres=[]
+    for k,e in entries.items():
+        if (k not in active_pairs or e.get("status")!="recording_credit_hypothesis"
+                or len(e["artistMbids"])!=1 or (today-dt.date.fromisoformat(e["checkedAt"])).days>=30):
+            continue
+        evidence=e.get("creditGenreEvidence")
+        if evidence is None or (not evidence["genres"] and
+                (today-dt.date.fromisoformat(e.get("genreCheckedAt",e["checkedAt"]))).days>=7):
+            retry_genres.append(k)
     attempted=0
     failure=None
     # Avoid hammering the same API after a failed artist research call.
     held=bool(research.get("serviceFailure"))
-    if limit and tasks and not held and request is None:
+    if limit and (tasks or retry_genres) and not held and request is None and artist_request is None:
         time.sleep(1.2)
         client=Client()
         request=client.recordings
         artist_request=client
     genre_attempts=0
-    for k,t in sorted(tasks.items())[:0 if held else limit]:
+    genre_retries=0
+    # Reserve at least half the genre budget for newly found credits when present.
+    retry_budget=(limit//2 if tasks else limit)
+    if not held and artist_request is not None:
+        for k in sorted(retry_genres)[:retry_budget]:
+            genre_attempts+=1
+            genre_retries+=1
+            old=entries[k]
+            try:
+                evidence=lookup_credit_genres(old["artistMbids"][0],artist_request)
+            except (ValueError,OSError,TypeError,KeyError,AttributeError) as exc:
+                failure="http_"+str(exc.code) if isinstance(exc,HTTPError) else "service_or_response_held"
+                break
+            entries[k]=dict(old,creditGenreEvidence=evidence,genreCheckedAt=day)
+    for k,t in sorted(tasks.items())[:0 if held or failure else limit]:
         attempted+=1
         try:
             result=resolve(t["artistHint"],t["titleHint"],request)
         except (ValueError,OSError,TypeError,KeyError) as exc:
             failure="http_"+str(exc.code) if isinstance(exc,HTTPError) else "service_or_response_held"
             break
-        if (artist_request is not None and result.get("status")=="recording_credit_hypothesis"
+        if (artist_request is not None and genre_attempts<limit
+                and result.get("status")=="recording_credit_hypothesis"
                 and len(result["artistMbids"])==1):
             genre_attempts+=1
             try:
                 result["creditGenreEvidence"]=lookup_credit_genres(result["artistMbids"][0],artist_request)
+                result["genreCheckedAt"]=day
             except (ValueError,OSError,TypeError,KeyError,AttributeError) as exc:
                 failure="http_"+str(exc.code) if isinstance(exc,HTTPError) else "service_or_response_held"
                 # A failed genre refresh must not erase the exact credit or a
@@ -168,6 +221,7 @@ def build(metadata,research,titles,*,prior=None,limit=0,request=None,artist_requ
             break
     return {"schemaVersion":1,"scanDate":day,"publicationAllowed":False,"approvedCount":0,
             "duePairCount":len(tasks),"attemptedCount":attempted,"genreLookupAttemptedCount":genre_attempts,
+            "dueGenreRetryCount":len(retry_genres),"genreRetryAttemptedCount":genre_retries,
             "creditGenreEvidenceCount":sum(e.get("creditGenreEvidence") is not None for e in entries.values()),
             "heldByArtistService":held,
             "serviceFailure":failure,"entries":dict(sorted(entries.items()))}

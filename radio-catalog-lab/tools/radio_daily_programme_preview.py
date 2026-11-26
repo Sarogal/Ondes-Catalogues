@@ -77,7 +77,7 @@ def build(metadata, research, decisions, *, wikidata=None, recordings=None):
                     or k != safe_digest(e["artistHint"]+"\n"+e["titleSha256"])
                     or e.get("identityVerified") is not False or e.get("publicationAllowed") is not False
                     or parse_day(e["checkedAt"]) > day or e.get("source") != "musicbrainz-recording-search"
-                    or not valid_credit_genres(e)):
+                    or not valid_credit_genres(e, day)):
                 raise ValueError("untrusted recording entry")
             if e.get("status") == "recording_credit_hypothesis":
                 for field, maximum in (("artistMbids",20),("recordingMbids",RECORDING_SEARCH_LIMIT * MAX_SEARCH_PAGES)):

@@ -81,6 +81,47 @@ class RecordingTests(unittest.TestCase):
         self.assertEqual(next(iter(out["entries"].values()))["artistMbids"],[MBID])
         self.assertIsNotNone(out["serviceFailure"])
 
+    def test_retry_missing_genres_without_raw_titles(self):
+        m,r,t=fixture()
+        prior=build(m,r,t,limit=1,request=request)
+        day="2026-11-26"
+        m["scanDate"]=r["scanDate"]=day
+        def artist(mid, params):
+            self.assertEqual(mid, MBID)
+            return {"id":mid,"name":"Iron Band","genres":[{"name":"heavy metal","count":1}]}
+        out=build(m,r,[],prior=prior,limit=1,request=lambda p:self.fail("no title search"),artist_request=artist)
+        e=next(iter(out["entries"].values()))
+        self.assertEqual(out["genreRetryAttemptedCount"],1)
+        self.assertEqual(e["checkedAt"],DAY)
+        self.assertEqual(e["genreCheckedAt"],day)
+        self.assertEqual(e["creditGenreEvidence"]["genres"],["heavy metal"])
+        self.assertEqual(out["attemptedCount"],0)
+        self.assertNotIn('"song"',json.dumps(out))
+
+    def test_retry_failure_keeps_credit_and_service_hold(self):
+        m,r,t=fixture()
+        prior=build(m,r,t,limit=1,request=request)
+        def fail(*a):
+            raise OSError("network")
+        out=build(m,r,[],prior=prior,limit=1,artist_request=fail)
+        self.assertEqual(out["entries"],prior["entries"])
+        self.assertIsNotNone(out["serviceFailure"])
+        r["serviceFailure"]="http_503"
+        out=build(m,r,[],prior=prior,limit=1,artist_request=lambda *a:self.fail("held"))
+        self.assertEqual(out["genreRetryAttemptedCount"],0)
+
+    def test_no_genre_retry_for_unobserved_or_stale_credit(self):
+        m,r,t=fixture()
+        prior=build(m,r,t,limit=1,request=request)
+        m["records"][0]["observations"]=[]
+        out=build(m,r,[],prior=prior,limit=1,artist_request=lambda *a:self.fail("unbound"))
+        self.assertEqual(out["dueGenreRetryCount"],0)
+        m,r,t=fixture()
+        m["scanDate"]=r["scanDate"]="2026-12-26"
+        m["records"][0]["observations"][0]["date"]="2026-12-26"
+        out=build(m,r,[],prior=prior,limit=1,artist_request=lambda *a:self.fail("stale credit"))
+        self.assertEqual(out["dueGenreRetryCount"],0)
+
     def test_no_title_persisted(self):
         m,r,t=fixture()
         out=build(m,r,t,limit=1,request=request)
