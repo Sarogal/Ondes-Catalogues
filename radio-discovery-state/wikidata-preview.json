@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 21,
-  "attemptedCount": 6,
-  "serviceFailure": null,
-  "retryAfterKey": null,
+  "dueNameCount": 15,
+  "attemptedCount": 1,
+  "serviceFailure": "service_or_response_held",
+  "retryAfterKey": "76% uncertain",
   "entries": {
     "2000 fm": {
       "status": "identity_held",

@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 87,
-  "attemptedCount": 2,
+  "dueNameCount": 86,
+  "attemptedCount": 3,
   "serviceFailure": "http_503",
-  "retryAfterKey": "pascow",
+  "retryAfterKey": "queens of the stone age",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -462,6 +462,28 @@
     "poison": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Poison",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "pulso roto": {
+      "status": "not_found",
+      "artistName": "PULSO ROTO",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "pööloy gläänz": {
+      "status": "name_hypothesis",
+      "mbid": "04f52a1e-5942-4665-90c8-acc03992b08f",
+      "genres": [],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/04f52a1e-5942-4665-90c8-acc03992b08f",
+      "artistName": "PööLoY GLääNZ",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,
