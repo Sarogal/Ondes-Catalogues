@@ -714,6 +714,36 @@ def _exact_location_description(location, venue):
         re.findall(r"(?<![0-9])[0-9]{5}(?![0-9])", value) == [postal])
 
 
+# Fixed replay stages in validation order; never retain exception text from
+# network content. The deepest completed identity check identifies the useful
+# next repair when unrelated recommendation nodes are also present.
+_REPLAY_REASONS = (
+    ("first-party music event schema required", "event_type"),
+    ("festival, cancelled or non-concert title is not a concert", "nonconcert_title"),
+    ("individual event canonical URL differs", "canonical_url_mismatch"),
+    ("official event date differs", "event_date_mismatch"),
+    ("official concert not confirmed", "event_not_confirmed"),
+    ("named official artists missing", "named_bill_missing_or_ambiguous"),
+    ("signed title differs from individual MusicEvent bill", "signed_title_mismatch"),
+    ("artist IDs or names differ from individual official MusicEvent", "signed_artist_identity_mismatch"),
+    ("first-party event names another venue", "venue_name_mismatch"),
+    ("physical venue address absent", "venue_address_missing"),
+    ("event takes place outside France", "venue_country_unconfirmed"),
+    ("first-party postal address differs from published venue", "venue_postal_identity_mismatch"),
+    ("official street conflicts with published venue", "venue_street_mismatch"),
+    ("no explicit metal/rock/punk event-or-artist genre", "relevant_genre_missing"),
+    ("signed genre differs from first-party MusicEvent", "signed_genre_mismatch"),
+)
+
+
+def _replay_reason(exc):
+    if isinstance(exc, ValueError):
+        for message, code in _REPLAY_REASONS:
+            if str(exc) == "Unlisted official source: " + message:
+                return code
+    return "invalid_event_node"
+
+
 def _event(raw, event, venue, artists, *, accept_generic=False,
            fetch=None, cache=None, html=None):
     """Verify one complete first-party concert event; never join evidence."""
@@ -926,6 +956,7 @@ def validate(approval, venues, artists, today, *, fetch=None):
             attested.append(raw)
         events = attested
     valid = []
+    rejected = set()
     if (not events or sparse_detail is not None) and (is_single_osm or is_address or is_official):
         from automation.concerts import open_world_visible_cards
         detail = sparse_detail
@@ -947,9 +978,15 @@ def validate(approval, venues, artists, today, *, fetch=None):
             valid.append(_event(raw, event, venue, resolved,
                                 accept_generic=(is_single_osm or is_address or is_official),
                                 fetch=fetch, cache=cache, html=html))
-        except (ValueError, KeyError, TypeError):
+        except (ValueError, KeyError, TypeError) as exc:
+            rejected.add(_replay_reason(exc))
             continue
-    require(len(valid) == 1, "no unique exact first-party MusicEvent")
+    if len(valid) != 1:
+        reason = ("multiple_matching_events" if len(valid) > 1 else
+                  next((code for _, code in reversed(_REPLAY_REASONS)
+                        if code in rejected),
+                       "invalid_event_node" if rejected else "no_matching_visible_or_structured_event"))
+        require(False, "no unique exact first-party MusicEvent: " + reason)
     names, genres = valid[0]
     require(names == proof["officialArtistNames"]
             and genres == proof["officialGenreLabels"],
