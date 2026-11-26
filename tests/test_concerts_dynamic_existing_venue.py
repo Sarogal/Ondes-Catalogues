@@ -308,6 +308,43 @@ class UnlistedExistingVenueTests(unittest.TestCase):
             dynamic.validate(signed, venues, artists, TODAY,
                 fetch=fake_fetch({"primary": body(), "osm": osm(website="https://autre.fr")}))
 
+    def test_missing_address_replay_ignores_only_distinct_canonical_recommendations(self):
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        node = next(dynamic.discover.read_ld(page(EVENT)))
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+        node["location"].pop("address")
+        other = copy.deepcopy(node)
+        other.update(url=EVENT.rstrip("/") + "/different-show",
+                     name="Distinct recommended event", startDate="2027-04-06")
+        def body(nodes, address):
+            return ("<html><main><header><h1>" + node["name"] + "</h1></header>"
+                    "<p>5 mars 2027</p><script type='application/ld+json'>"
+                    + json.dumps({"@context": "https://schema.org", "@graph": nodes})
+                    + "</script>"
+                    + "<p><strong>Informations sur les événements :</strong><br/>"
+                    + venue["name"] + "<br/>Centre culturel<br/>" + address
+                    + "<br/><strong>Informations billetterie et tarif</strong></p>"
+                    + "<h2>Nous vous recommandons également</h2></main></html>")
+        exact = ("Parvis des Arts - " + venue["address"] + " - 31 520 "
+                 + venue["city"])
+        self.assertTrue(dynamic.validate(signed, venues, artists, TODAY,
+            fetch=fake_fetch({"primary": body([node, other], exact)})))
+        for bad in (node, {**other, "url": None},
+                    {**other, "name": node["name"]},
+                    {**other, "url": EVENT + "?other=1"}):
+            with self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY,
+                    fetch=fake_fetch({"primary": body([node, bad], exact)}))
+        with self.assertRaises(ValueError):
+            dynamic.validate(signed, venues, artists, TODAY,
+                fetch=fake_fetch({"primary": body([node, other], "9 rue Autre 31520 "
+                                                  + venue["city"])}))
+
     def test_exact_place_description_replays_when_postal_address_is_empty(self):
         signed = signed_approval()
         proof = signed["officialEvidence"][0]

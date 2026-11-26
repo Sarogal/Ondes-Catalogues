@@ -724,6 +724,41 @@ def _exact_location_description(location, venue):
         re.findall(r"(?<![0-9])[0-9]{5}(?![0-9])", value) == [postal])
 
 
+def _unique_address_event(nodes, url):
+    """Allow visible address replay only for one canonical event on this page.
+
+    Other structured cards must have explicit different HTTPS paths and
+    distinct nonempty titles. Unidentified, conflicting or repeated current
+    event nodes remain ambiguous; never borrow another node's address.
+    """
+    if len(nodes) == 1:
+        return True
+    matches = [node for node in nodes if node.get("url") == url]
+    if len(matches) != 1:
+        return False
+    target = matches[0]
+    title = normal(target.get("name"))
+    if not title:
+        return False
+    try:
+        primary = urlsplit(url)
+        for node in nodes:
+            if node is target:
+                continue
+            other = node.get("url")
+            other_title = normal(node.get("name"))
+            if not isinstance(other, str) or not other_title or other_title == title:
+                return False
+            parsed = urlsplit(other)
+            if (parsed.scheme != "https" or parsed.netloc != primary.netloc
+                    or not parsed.path or parsed.query or parsed.fragment
+                    or parsed.path.rstrip("/") == primary.path.rstrip("/")):
+                return False
+    except (ValueError, TypeError):
+        return False
+    return True
+
+
 def _missing_address_from_own_visible_event(raw, event, venue, html):
     """Recover ONLY an absent structured address from the same exact page.
 
@@ -1082,7 +1117,7 @@ def validate(approval, venues, artists, today, *, fetch=None):
             valid.append(_event(raw, event, venue, resolved,
                                 accept_generic=(is_single_osm or is_address or is_official),
                                 fetch=fetch, cache=cache, html=html,
-                                allow_visible_address=len(events) == 1,
+                                allow_visible_address=_unique_address_event(events, event["officialUrl"]),
                                 profile_scan_day=checked))
         except (ValueError, KeyError, TypeError) as exc:
             rejected.add(_replay_reason(exc))
