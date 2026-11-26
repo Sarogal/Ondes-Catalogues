@@ -2,24 +2,31 @@
 
 **Ce laboratoire ne publie aucune radio.** Il prépare le catalogue radio centralisé de la **mise à jour 1**, indépendamment de l'intégration ultérieure des cartes Concerts/Festivals et des fiches artistes (mise à jour 2).
 
-## État de référence — 26 novembre 2026
+## État de référence — 26 novembre 2026, 22 h 40 CET
 
-Cette section prévaut sur les descriptions historiques des pilotes ci-dessous. Le laboratoire est toujours isolé et ne publie aucun catalogue utilisable en production.
+Cette section prévaut sur les descriptions historiques des pilotes ci-dessous. Le laboratoire est isolé et ne publie aucun catalogue utilisable en production.
 
 - PR #474 : branche `feature/radio-daily-discovery-lab-20261120`, fusion soumise à autorisation explicite.
-- [Workflow 232](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/45891170407) : 677 tests hors réseau et trois jobs réussis ; état durable `9226a8d`, sur `state/go-radio-discovery-preview`.
-- Sur push, la découverte est limitée à douze requêtes Radio Browser ; les collecteurs techniques, éditoriaux et de maintenance peuvent effectuer des sondages réseau bornés. Les budgets, délais et protections sont imposés par le workflow et les modules. Sur dispatch, `run_stream_probes=false` permet d'écarter les étapes de sondage ; la collecte élargie utilise les requêtes tournantes. Le cron 04:17 UTC est dormant hors branche par défaut.
-- Le job de persistance seul reçoit `contents: write`, et uniquement sur la branche expérimentale prévue par sa condition. Il sauvegarde les preuves non publiantes et le cache immuable des objets hérités, jamais un catalogue successeur. Les artefacts sont nommés par run et tentative ; le job consomme le nom exact transmis par la collecte. La vérification du parent Git protège les observations des écritures obsolètes ou concurrentes.
-- Référence TEST v8 : 296 stations, 285 actives, 358 flux, 320 identifiants historiques, 24 redirections. Les 188 objets graphiques hérités sont disponibles dans le cache durable ; aucun téléchargement de ces objets n'est nécessaire. L'absence d'un logo ne bloque pas à elle seule une admission.
-- L'analyseur V7 peut traiter les sources HTML explicites responsives et différées, sans relâcher l'association station/flux. À cette date, aucun nouveau logo n'a été confirmé parmi les 30 stations réelles sans visuel. Les deux stations synthétiques restent exclues de la recherche.
-- La qualification V2 est la politique de décision effective du laboratoire ; V3 n'est qu'une comparaison. Les observations positives de continuité doivent provenir de dates UTC distinctes. Les candidats proches de l'admission bénéficient d'un contrôle prioritaire, sans liste nominative.
+- [Workflow 244](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/45899354550) : 736 tests hors réseau et trois jobs réussis ; état durable `80d787b`, sur `state/go-radio-discovery-preview`.
+- Sur push, douze requêtes Radio Browser et sondages bornés. Sur dispatch, les recherches élargies et tournantes utilisent au plus trois pages par requête ; `run_stream_probes=true` active les contrôles techniques et éditoriaux. Le cron 04:17 UTC est dormant hors branche par défaut.
+- Seul le job de persistance reçoit `contents: write`. Il conserve les preuves non publiantes et les objets hérités sur la branche d'état ; aucun successeur signé. Identité exacte du run et de la tentative pour les artefacts, contrôle du parent Git pour les écritures.
+- TEST v8 : 296 stations, 285 actives, 358 flux, 320 identifiants historiques, 24 redirections. Cache : 188/188 objets graphiques disponibles. Audit V7 : 30 radios réelles sans logo, 2 synthétiques exclues ; aucun nouveau logo confirmé. L'absence de logo n'interdit pas une admission.
+- Dernier scan : 269 UUID observés, 275 dossiers conservés, 12 requêtes, aucune requête échouée. Décision V2 : 82 déjà connus, 154 en revue éditoriale, 29 en revue d'identité, 5 en recontrôle de source, 1 en revue technique et 4 avancés. Aucune proposition prête ; résultat `no_change`.
+- Rock Space Radio : preuve de continuité AAC ADTS le 26 novembre UTC, trois fenêtres cohérentes et distinctes, seul blocage V2 `repeat_continuity_on_distinct_days`. Les créneaux de suivi et de continuité sont réservés génériquement, sans liste nominative. Une nouvelle observation ne peut compter comme deuxième journée qu'à partir du 27 novembre UTC (01:00 CET), puis le contrôle strict doit encore réussir. Ne pas fabriquer ni anticiper la date. AIRWAVE, Fuzzy Radio et We Love the Eighties Radio restent bloquées par la programmation et le format mixte.
 
-### Jalons bloquants avant activation
+### Chaîne expérimentale validée
 
-1. Obtenir une admission ou une autre modification admissible sur des preuves réelles, sans fabriquer d'observation. Vérifier les motifs d'éventuel refus indépendant.
-2. Contrôler dans `strict-live-release-preview.json` le digest du successeur, la signature Ed25519 avec clé éphémère, la publication atomique simulée, la migration des rapports de maintenance et la resélection du successeur. Une absence de changement n'est pas une preuve de réussite de ces jalons.
-3. Préparer séparément le mécanisme de persistance réelle du successeur, le choix de la clé et du pointeur durables, le contrôle de l'inventaire des logos, la reconstruction des rapports de qualification après migration et les tests de reprise/rollback. Actuellement le CLI et les validations de persistance sont verrouillés sur la référence v8 ; le signataire éphémère et le MemoryStore ne sont pas un publisher réel.
-4. Préparer le déclenchement quotidien sur branche par défaut et adapter la condition de persistance à l'environnement autorisé. La fusion de #474, la persistance d'un successeur signé et l'activation de publication nécessitent une autorisation explicite. Ne pas modifier TEST v8, l'application, le Play Store ni les autres moteurs pendant cette recette.
+Les tests couvrent la signature durable chiffrée, SQLite, l'historique, le rollback signé des logos, le transport Git atomique local, la transmission avec lease entre dépôts locaux, la relecture du successeur et la vérification simulée après déploiement. La chaîne multiversion a été testée sur des changements de logos, ainsi que sur l'admission sans logo et la réparation de flux avec données synthétiques. Le rollback des flux n'est pas implémenté.
+
+Le workflow de collecte appelle maintenant `radio_daily_live_durable_replay.py` après une proposition stricte réussie et une migration en mémoire. Il réutilise la signature éphémère vérifiée, répète l'opération dans un stockage SQLite et deux dépôts Git locaux temporaires, vérifie les objets depuis le récepteur et revalide la migration. Seul un rapport non publiant est conservé. Cette nouvelle branche est testée synthétiquement, pas encore traversée par une proposition réelle. Le signataire durable chiffré est testé séparément ; aucun secret réel n'est provisionné.
+
+### Prochaine recette réelle
+
+1. À partir du 27 novembre UTC, déclencher sur la branche expérimentale le workflow `.github/workflows/radio-catalog-daily-discovery.yml` avec `run_stream_probes=true`. Les déclenchements élargis tournent les tags et pages ; les observations prioritaires suivent les UUID proches de l'admission.
+2. Vérifier que les dates de continuité sont distinctes et liées au même flux, puis examiner la décision V2 et le résultat indépendant de l'admission. Un échec de réseau ou une modification d'identité doit rester en attente.
+3. Pour un candidat admissible, contrôler `strict-live-release-preview.json` : digest, séquence, signature expérimentale, publication simulée, migration, resélection et quatre indicateurs `durableReplayVerified`, `gitTransferVerified`, `simulatedDeploymentVerified`, `durableMigrationVerified`. Vérifier le cache et le succès de la persistance des seules preuves. `no_change` ne prouve pas le passage de cette chaîne.
+4. Préparer la persistance du successeur réel, la clé et le pointeur approuvés, les permissions de publication et le déploiement réel avec relecture indépendante. Voir [PUBLISHER_ACTIVATION_CONTRACT.md](PUBLISHER_ACTIVATION_CONTRACT.md). Le CLI et la persistance restent verrouillés sur TEST v8. Le lecteur local et le transport local ne constituent pas un adaptateur GitHub Pages opérationnel.
+5. Avant toute activation sur branche par défaut, vérifier la destination, la confiance de l'application, les règles de protection, les secrets et les déclenchements. Fusion de #474, persistance d'un successeur signé et activation effective nécessitent une autorisation explicite. Ne modifier ni TEST v8, ni l'application, ni Play Store, ni les autres moteurs.
 
 **Ne pas confondre tests synthétiques, simulations à partir de preuves réelles, et publication effective.**
 
