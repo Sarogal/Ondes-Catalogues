@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch, Mock
 
 from national_brand_domain_research import (
-    brand_domain_candidate, research_brand_domain,
+    brand_domain_candidate, research_brand_domain, brand_private_proposal,
 )
 
 TODAY = "2026-11-26"
@@ -48,3 +48,57 @@ class BrandDomainResearchTests(unittest.TestCase):
         self.assertIsNone(report["site_review_only"])
         self.assertIsNone(report["dates_review_only"])
         verify.assert_called_once()
+
+    @patch("national_brand_domain_research.verify_first_party_claims")
+    def test_proposal_rederived_and_independently_rechecked(self, verify):
+        from grossesondes_first_party_direct_edition import independently_verify, PROOF_MODE
+        verify.return_value = (("2026-12-01", "2026-12-05"), None)
+        report = research_brand_domain(LEAD, TITLE, 2026, TODAY)
+        proposal = brand_private_proposal(LEAD, TITLE, 2026, TODAY, report)
+        self.assertIsNotNone(proposal)
+        self.assertEqual(proposal["proofMode"], PROOF_MODE)
+        self.assertEqual(proposal["startDate"], "2026-12-01")
+        self.assertEqual(proposal["endDate"], "2026-12-05")
+        self.assertIsNone(proposal["city"])
+        self.assertIsNone(brand_private_proposal(
+            LEAD, TITLE, 2026, TODAY, dict(report, site_review_only="https://another.fr/")))
+        self.assertIsNone(brand_private_proposal(
+            LEAD, TITLE, 2026, TODAY, dict(report, publication_authorized=True)))
+        with patch("grossesondes_first_party_direct_edition.verify_first_party_claims",
+                   return_value=None) as refetch:
+            self.assertIsNone(independently_verify(proposal, TODAY))
+            refetch.assert_called_once()
+        with patch("grossesondes_first_party_direct_edition.verify_first_party_claims",
+                   return_value=(("2026-12-02", "2026-12-05"), None)):
+            self.assertIsNone(independently_verify(proposal, TODAY))
+        with patch("grossesondes_first_party_direct_edition.verify_first_party_claims",
+                   return_value=verify.return_value):
+            self.assertIsNotNone(independently_verify(proposal, TODAY))
+
+    def test_national_preflight_routes_only_fresh_qualified_brand_proposal(self):
+        import national_openagenda_linked_primary_preflight as preflight
+        url = "https://openagenda.com/agenda/events/example"
+        source = {"dossier_id": "national-example1", "url": url,
+                  "title": TITLE, "year": 2026}
+        lead = dict(LEAD, source_url=url)
+        report = {"schema": preflight.SCHEMA, "as_of": TODAY,
+                  "review_only": True, "safe_to_publish": False,
+                  "publication_authorized": False, "publications": 0,
+                  "rows": [{"dossier_id": source["dossier_id"],
+                            "event_ref_review_only": url,
+                            "status": "OPENAGENDA_OFFICIAL_LINK_UNPROVEN",
+                            "publication_authorized": False,
+                            "brand_domain_research_review_only": {
+                                "status": "FIRST_PARTY_BRAND_EDITION_REVIEW_ONLY",
+                                "review_only": True, "publication_authorized": False,
+                                "safe_to_publish": False, "site_review_only": SITE,
+                                "dates_review_only": ["2026-12-01", "2026-12-05"],
+                                "city_review_only": None}}]}
+        with patch.object(preflight, "eligible", return_value=[source]), \
+             patch.object(preflight, "validated_openagenda_leads", return_value=[lead]):
+            result = preflight.stable_private_proposals({}, {}, {}, report, TODAY)
+            self.assertEqual(len(result), 1)
+            self.assertEqual(result[0]["officialSite"], SITE)
+        with patch.object(preflight, "eligible", return_value=[source]), \
+             patch.object(preflight, "validated_openagenda_leads", return_value=[]):
+            self.assertEqual(preflight.stable_private_proposals({}, {}, {}, report, TODAY), [])
