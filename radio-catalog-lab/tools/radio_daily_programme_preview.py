@@ -6,7 +6,8 @@ import json
 from collections import Counter
 from pathlib import Path
 
-from radio_daily_artist_research import key, safe_name, valid_id
+from radio_daily_artist_research import key, safe_name, valid_id, MAX_SEARCH_PAGES
+from radio_daily_recording_preview import SEARCH_LIMIT as RECORDING_SEARCH_LIMIT
 from radio_daily_wikidata_preview import validate_entry as validate_wikidata
 from radio_daily_qualification_dossiers import safe_digest
 from radio_daily_metadata_preview import valid_hint
@@ -78,7 +79,7 @@ def build(metadata, research, decisions, *, wikidata=None, recordings=None):
                     or parse_day(e["checkedAt"]) > day or e.get("source") != "musicbrainz-recording-search"):
                 raise ValueError("untrusted recording entry")
             if e.get("status") == "recording_credit_hypothesis":
-                for field, maximum in (("artistMbids",20),("recordingMbids",50)):
+                for field, maximum in (("artistMbids",20),("recordingMbids",RECORDING_SEARCH_LIMIT * MAX_SEARCH_PAGES)):
                     v=e.get(field)
                     if not isinstance(v,list) or not 1 <= len(v) <= maximum or any(not valid_id(x) for x in v):
                         raise ValueError("invalid recording identity")

@@ -46,6 +46,15 @@ class RecordingTests(unittest.TestCase):
         rows[0] = dict(recording(UID), id=str(uuid.UUID(int=1)))
         self.assertEqual(resolve("Iron Band", "Song", paged)["status"], "ambiguous_credit")
 
+    def test_many_recordings_same_exact_credit(self):
+        rows = [dict(recording(), id=str(uuid.UUID(int=i+1))) for i in range(51)]
+        def paged(params):
+            off = params.get("offset", 0)
+            return {"count": len(rows), "offset": off, "recordings": rows[off:off+50]}
+        result = resolve("Iron Band", "Song", paged)
+        self.assertEqual(result["artistMbids"], [MBID])
+        self.assertEqual(len(result["recordingMbids"]), 51)
+
     def test_no_title_persisted(self):
         m,r,t=fixture()
         out=build(m,r,t,limit=1,request=request)

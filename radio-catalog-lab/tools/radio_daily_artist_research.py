@@ -23,6 +23,7 @@ MAX_BYTES = 400_000
 MAX_STATE = 12 * 1024 * 1024
 SEARCH_LIMIT = 25
 MAX_SEARCH_PAGES = 4
+RESEARCH_VERSION = 2
 
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -182,7 +183,9 @@ def build(metadata, *, prior=None, limit=0, request=None):
         old = entries.get(k)
         age = (today - dt.date.fromisoformat(old["checkedAt"])).days if old else 999999
         ttl = 30 if old and old.get("status") == "name_hypothesis" and old.get("genres") else 7
-        if age >= ttl:
+        needs_upgrade = bool(old and old.get("researchVersion") != RESEARCH_VERSION
+                             and old.get("status") == "ambiguous_or_incomplete")
+        if needs_upgrade or age >= ttl:
             tasks.append((-age, k, next(iter(spellings))))
     tasks.sort()
     cursor = prior.get("retryAfterKey") if prior else None
@@ -213,6 +216,7 @@ def build(metadata, *, prior=None, limit=0, request=None):
             retry = k
             break
         entries[k] = dict(result, artistName=name, source=SOURCE, checkedAt=day,
+                          researchVersion=RESEARCH_VERSION,
                           identityVerified=False, publicationAllowed=False)
     return {"schemaVersion": 1, "scanDate": day, "publicationAllowed": False,
             "approvedCount": 0, "observedNameCount": len(names), "dueNameCount": len(tasks),

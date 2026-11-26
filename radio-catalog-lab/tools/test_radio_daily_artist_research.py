@@ -107,6 +107,19 @@ class ArtistResearchTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             build(bad)
 
+    def test_previous_incomplete_researched_after_upgrade(self):
+        prior = build(report(names=("38 Special",)), limit=1,
+                      request=lambda *a: {"count": 101, "artists": []})
+        del prior["entries"]["38 special"]["researchVersion"]
+        def service38(path, params):
+            if not path:
+                self.assertEqual(params["query"], 'artist:"38 Special"')
+                return {"count": 1, "artists": [{"id": MBID, "name": "38 Special"}]}
+            return {"id": MBID, "name": "38 Special", "genres": []}
+        upgraded = build(report(names=("38 Special",)), prior=prior, limit=1, request=service38)
+        self.assertEqual(upgraded["entries"]["38 special"]["mbid"], MBID)
+        self.assertEqual(upgraded["attemptedCount"], 1)
+
     def test_spelling_collision_held(self):
         result=build(report(names=("Iron Band","IRON BAND")),limit=1,
                      request=lambda *a:self.fail("ambiguous spelling"))
