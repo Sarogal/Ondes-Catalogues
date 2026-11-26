@@ -3,11 +3,11 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 61,
-  "dueNameCount": 37,
-  "attemptedCount": 1,
+  "observedNameCount": 62,
+  "dueNameCount": 38,
+  "attemptedCount": 4,
   "serviceFailure": "http_503",
-  "retryAfterKey": "athena",
+  "retryAfterKey": "brigadnyj podrjad",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -51,11 +51,60 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "billy squier": {
+      "status": "name_hypothesis",
+      "mbid": "3792dcb3-036e-45d6-8ee2-ff8d12c6c6c9",
+      "genres": [
+        "aor",
+        "hard rock",
+        "pop rock",
+        "rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/3792dcb3-036e-45d6-8ee2-ff8d12c6c6c9",
+      "artistName": "Billy Squier",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "black sabbath": {
+      "status": "name_hypothesis",
+      "mbid": "5182c1d9-c7d2-4dad-afa0-ccfeada921a8",
+      "genres": [
+        "blues rock",
+        "classic rock",
+        "doom metal",
+        "hard rock",
+        "heavy metal",
+        "metal",
+        "rock",
+        "traditional doom metal"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/5182c1d9-c7d2-4dad-afa0-ccfeada921a8",
+      "artistName": "Black Sabbath",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "blondinka ksju": {
       "status": "not_found",
       "artistName": "Blondinka Ksju",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "braindead": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "BrainDead",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },

@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 42,
-  "distinctArtistHints": 61,
+  "stationsWithArtistHints": 44,
+  "distinctArtistHints": 62,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -556,6 +556,42 @@
       "alternativeAttempted": true
     },
     {
+      "stationuuid": "36d2f90a-baf1-4abb-bf7b-55536d606f93",
+      "streamSha256": "420d073b675b5b2abd9c633d827a151abd58c8e5748017c7e493faf650b265e4",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Nazareth",
+          "titleSha256": "d27ff35fb9cb3c7e0e100abe0bee5fa302b0808ae7c68f05a2119b70cd739299"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "3a363c7c-0b66-4d78-9972-e62ab56ee61c",
+      "streamSha256": "b3f8d7a57a3afee2430b5bc053abde597dacf4b6e25d28b30fbee86ff1c8c633",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Good Charlotte",
+          "titleSha256": "be939131b935c9db3c5ef37e7eb9f179b32a22a910f8a9c62064086a237b53ff"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
       "stationuuid": "3a40f5fc-8ba3-4177-a145-b1f90dfb06d5",
       "streamSha256": "dd30406461d941b61cc5c3c9e0cdba561a7062b93da113034e70735e044481e4",
       "observedDate": "2026-11-26",
@@ -605,7 +641,9 @@
       "approved": false,
       "publicationAllowed": false,
       "verdict": "metadata_no_parseable_title",
-      "observations": []
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "418b964f-a3df-4b72-a2ff-173ec7e1c1ff",
@@ -844,6 +882,30 @@
       "alternativeAttempted": false
     },
     {
+      "stationuuid": "542c83b8-7465-46e9-a083-c2cc417d315d",
+      "streamSha256": "4477bed328d8490928df46a3ec2023cbe492cce000c9e3d9d31566172770020f",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
+    },
+    {
+      "stationuuid": "54645bcf-0356-4680-bbae-457a9906dcbe",
+      "streamSha256": "7a93a28815bab62002dca36586a81f9a3dfb217e2459fed63e833f514dd12697",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
+    },
+    {
       "stationuuid": "575c08a2-4325-4173-8373-b922c7438436",
       "streamSha256": "da95f8dfefcfb2cba1e77a27368b78c9ccc1b20a6055a347dcd23644e3ebadb9",
       "observedDate": "2026-11-25",
@@ -948,6 +1010,18 @@
     {
       "stationuuid": "652a2fa1-d3fe-4724-a3eb-3d6b7fb1e687",
       "streamSha256": "d7735960dc083e55ebbcf7c294be2faf0e517ed4355da8d8c7459963cdebd976",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
+    },
+    {
+      "stationuuid": "679e5c4f-740d-4c92-9d22-0d7948c5910d",
+      "streamSha256": "73ab626bf03ab3f1b73fee1a89930ef24bfd4bd30f673d9a042b2da2370de07d",
       "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,

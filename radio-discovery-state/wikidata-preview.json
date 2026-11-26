@@ -3,9 +3,9 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 61,
-  "dueNameCount": 3,
-  "attemptedCount": 3,
+  "observedNameCount": 62,
+  "dueNameCount": 1,
+  "attemptedCount": 1,
   "serviceFailure": null,
   "retryAfterKey": null,
   "entries": {
@@ -144,6 +144,15 @@
     "gojira": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Gojira",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "good charlotte": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Good Charlotte",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,

@@ -4,12 +4,12 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "freshnessDays": 30,
-  "stationCount": 60,
+  "stationCount": 65,
   "stationsWithWikidataHints": 6,
   "stationsWithSourceConflicts": 0,
   "stationsWithReportedHistory": 0,
   "stationsWithMultipleObservationDays": 19,
-  "stationsWithGenreHints": 9,
+  "stationsWithGenreHints": 10,
   "verifiedArtistCount": 0,
   "records": [
     {
@@ -37,6 +37,12 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 1
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
       },
       "sourceHintCounts": {
         "no_usable_source": 1
@@ -71,6 +77,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 1
       },
@@ -97,6 +109,12 @@
         "unclassified_hint": 0
       },
       "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
@@ -133,6 +151,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 1
       },
@@ -162,6 +186,12 @@
       },
       "artistTitleHintCounts": {
         "target_hint": 1,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 0
@@ -197,6 +227,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 0
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {},
       "verifiedArtistCount": 0,
       "approved": false,
@@ -221,6 +257,12 @@
         "unclassified_hint": 0
       },
       "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
@@ -257,6 +299,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 1
       },
@@ -289,6 +337,12 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 1
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
       },
       "sourceHintCounts": {
         "no_usable_source": 1
@@ -323,6 +377,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "wikidata_only": 1
       },
@@ -356,6 +416,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 1
       },
@@ -382,6 +448,12 @@
         "unclassified_hint": 0
       },
       "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
@@ -418,6 +490,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 1
       },
@@ -451,6 +529,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 1
       },
@@ -477,6 +561,12 @@
         "unclassified_hint": 0
       },
       "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
@@ -513,6 +603,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 1
       },
@@ -539,6 +635,12 @@
         "unclassified_hint": 0
       },
       "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
@@ -571,6 +673,12 @@
       },
       "artistTitleHintCounts": {
         "target_hint": 1,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 0
@@ -608,6 +716,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 1
       },
@@ -641,6 +755,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 1
       },
@@ -667,6 +787,12 @@
         "unclassified_hint": 0
       },
       "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
@@ -703,6 +829,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 1
       },
@@ -735,6 +867,12 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 1
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
       },
       "sourceHintCounts": {
         "no_usable_source": 1
@@ -769,6 +907,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 1
       },
@@ -802,8 +946,14 @@
         "mixed_hint": 0,
         "unclassified_hint": 0
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
-        "wikidata_only": 1
+        "linked_sources": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -828,6 +978,12 @@
         "unclassified_hint": 0
       },
       "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
@@ -865,6 +1021,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 2
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "musicbrainz_only": 1,
         "no_usable_source": 1
@@ -898,6 +1060,12 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 1
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
       },
       "sourceHintCounts": {
         "no_usable_source": 1
@@ -933,6 +1101,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "linked_sources": 1,
         "no_usable_source": 1
@@ -967,6 +1141,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 1
       },
@@ -999,6 +1179,12 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 1
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
       },
       "sourceHintCounts": {
         "no_usable_source": 1
@@ -1033,6 +1219,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 1
       },
@@ -1059,6 +1251,12 @@
         "unclassified_hint": 0
       },
       "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
@@ -1093,7 +1291,91 @@
         "mixed_hint": 0,
         "unclassified_hint": 0
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {},
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "36d2f90a-baf1-4abb-bf7b-55536d606f93",
+      "streamSha256": "420d073b675b5b2abd9c633d827a151abd58c8e5748017c7e493faf650b265e4",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 1,
+      "distinctArtistTitleHints": 1,
+      "distinctTitleHashes": 1,
+      "observationDates": [
+        "2026-11-26"
+      ],
+      "reportedBroadcastDates": [],
+      "distinctHistoricalArtistTitleHints": 0,
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "3a363c7c-0b66-4d78-9972-e62ab56ee61c",
+      "streamSha256": "b3f8d7a57a3afee2430b5bc053abde597dacf4b6e25d28b30fbee86ff1c8c633",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 1,
+      "distinctArtistTitleHints": 1,
+      "distinctTitleHashes": 1,
+      "observationDates": [
+        "2026-11-26"
+      ],
+      "reportedBroadcastDates": [],
+      "distinctHistoricalArtistTitleHints": 0,
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -1124,6 +1406,12 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 2
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
       },
       "sourceHintCounts": {
         "no_usable_source": 2
@@ -1159,6 +1447,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 2
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 2
       },
@@ -1185,6 +1479,12 @@
         "unclassified_hint": 0
       },
       "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
@@ -1222,6 +1522,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 2
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 1,
         "wikidata_only": 1
@@ -1257,6 +1563,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 2
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 2
       },
@@ -1290,6 +1602,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 1
       },
@@ -1316,6 +1634,12 @@
         "unclassified_hint": 0
       },
       "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
@@ -1353,6 +1677,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 2
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 2
       },
@@ -1387,6 +1717,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 2
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "musicbrainz_only": 1,
         "no_usable_source": 1
@@ -1414,6 +1750,12 @@
         "unclassified_hint": 0
       },
       "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
@@ -1448,6 +1790,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 0
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {},
       "verifiedArtistCount": 0,
       "approved": false,
@@ -1469,19 +1817,26 @@
       "distinctHistoricalArtistTitleHints": 0,
       "stalePairCount": 0,
       "artistHintCounts": {
-        "target_hint": 0,
+        "target_hint": 1,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 2
+        "unclassified_hint": 1
       },
       "artistTitleHintCounts": {
+        "target_hint": 1,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "collaborationMemberHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 2
+        "unclassified_hint": 0
       },
       "sourceHintCounts": {
-        "no_usable_source": 2
+        "musicbrainz_only": 1,
+        "no_usable_source": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -1513,6 +1868,12 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 1
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
       },
       "sourceHintCounts": {
         "wikidata_only": 2
@@ -1547,6 +1908,12 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 2
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
       },
       "sourceHintCounts": {
         "musicbrainz_only": 1,
@@ -1583,9 +1950,85 @@
         "mixed_hint": 0,
         "unclassified_hint": 2
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 2
       },
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "542c83b8-7465-46e9-a083-c2cc417d315d",
+      "streamSha256": "4477bed328d8490928df46a3ec2023cbe492cce000c9e3d9d31566172770020f",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 0,
+      "distinctArtistTitleHints": 0,
+      "distinctTitleHashes": 0,
+      "observationDates": [],
+      "reportedBroadcastDates": [],
+      "distinctHistoricalArtistTitleHints": 0,
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "sourceHintCounts": {},
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "54645bcf-0356-4680-bbae-457a9906dcbe",
+      "streamSha256": "7a93a28815bab62002dca36586a81f9a3dfb217e2459fed63e833f514dd12697",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 0,
+      "distinctArtistTitleHints": 0,
+      "distinctTitleHashes": 0,
+      "observationDates": [],
+      "reportedBroadcastDates": [],
+      "distinctHistoricalArtistTitleHints": 0,
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "sourceHintCounts": {},
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -1609,6 +2052,12 @@
         "unclassified_hint": 0
       },
       "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
@@ -1646,6 +2095,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 2
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 2
       },
@@ -1679,6 +2134,12 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 1
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
       },
       "sourceHintCounts": {
         "musicbrainz_only": 1,
@@ -1715,6 +2176,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "musicbrainz_only": 1,
         "no_usable_source": 1
@@ -1750,6 +2217,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "musicbrainz_only": 1,
         "no_usable_source": 1
@@ -1777,6 +2250,47 @@
         "unclassified_hint": 0
       },
       "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "sourceHintCounts": {},
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "679e5c4f-740d-4c92-9d22-0d7948c5910d",
+      "streamSha256": "73ab626bf03ab3f1b73fee1a89930ef24bfd4bd30f673d9a042b2da2370de07d",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 0,
+      "distinctArtistTitleHints": 0,
+      "distinctTitleHashes": 0,
+      "observationDates": [],
+      "reportedBroadcastDates": [],
+      "distinctHistoricalArtistTitleHints": 0,
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
@@ -1814,6 +2328,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 2
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "no_usable_source": 2
       },
@@ -1847,6 +2367,12 @@
         "other_hint": 0,
         "mixed_hint": 0,
         "unclassified_hint": 2
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
       },
       "sourceHintCounts": {
         "musicbrainz_only": 1,
@@ -1883,6 +2409,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 1
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {
         "musicbrainz_only": 1,
         "no_usable_source": 1
@@ -1915,6 +2447,12 @@
         "mixed_hint": 0,
         "unclassified_hint": 0
       },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
       "sourceHintCounts": {},
       "verifiedArtistCount": 0,
       "approved": false,
@@ -1939,6 +2477,12 @@
         "unclassified_hint": 0
       },
       "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
