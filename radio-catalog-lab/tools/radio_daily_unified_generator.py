@@ -13,6 +13,7 @@ from radio_daily_baseline_verify import strict_json, validate_shape, verify_base
 from radio_daily_repair_plan import plan as repair_plan, simulate as repair_simulate
 from radio_daily_status_preview import build as status_build, MAX_CHECKS
 from radio_daily_logo_plan import plan as logo_plan, stage as logo_stage
+from radio_daily_logo_maintenance import SOURCE_PREFIX, source_reference
 from radio_daily_merge_plan import plan as merge_plan, apply as merge_apply, undo as merge_undo
 from radio_daily_repair_material import live_recover
 from radio_daily_logo_material import recover as recover_artwork
@@ -126,9 +127,14 @@ def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation
                 raise ValueError("artwork digest collision")
             objects[path]=data
             previous=copy.deepcopy(current[sid]["logo"])
+            old_refs=copy.deepcopy(current[sid]["editorial"]["evidence_refs"])
+            refs=[ref for ref in old_refs if not ref.startswith(SOURCE_PREFIX)]
+            refs.append(source_reference(descriptor,materials[sid]["sourceUrl"]))
             current[sid]["logo"]=descriptor
+            current[sid]["editorial"]["evidence_refs"]=refs
             logo_changes.append({"goStationId":sid,"operation":p["operation"],"previousLogo":previous,
-                                 "proposedLogo":descriptor,"objectPath":path})
+                                 "proposedLogo":descriptor,"objectPath":path,"previousEvidenceRefs":old_refs,
+                                 "proposedEvidenceRefs":copy.deepcopy(refs)})
     elif materials:
         raise ValueError("artwork material without reports")
     else:
@@ -175,6 +181,9 @@ def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation
         if station["logo"]!=p["proposedLogo"]:
             raise ValueError("unexpected artwork delta")
         station["logo"]=p["previousLogo"]
+        if station["editorial"]["evidence_refs"]!=p["proposedEvidenceRefs"]:
+            raise ValueError("unexpected artwork provenance delta")
+        station["editorial"]["evidence_refs"]=p["previousEvidenceRefs"]
     for k in ("release_sequence", "generated_at"):
         restored[k] = old[k]
     if restored != old:
