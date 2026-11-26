@@ -1240,8 +1240,38 @@ class MunicipalVenueCityTests(unittest.TestCase):
     def test_named_municipal_venue_postal_city_and_fresh_origin(self):
         claim, calls = self.prove()
         self.assertEqual(claim, {"slug": self.row["slug"], "city": "Ville-Test",
-                                 "source": self.site, "venue_source": self.venue})
+                                 "source": self.site, "venue_source": self.venue,
+                                 "venue_name": "Salle des Musiques"})
         self.assertEqual(calls, [self.venue])
+
+    def test_signed_commune_gains_only_proved_venue_and_reconciles_note(self):
+        from unittest.mock import patch
+        from grossesondes_openagenda_linked_edition import MUNICIPAL_PUBLIC_NOTES
+        row = dict(self.row, venue=None, city="Ville-Test",
+                   geoPrecision="commune", showOnMap=True, lat=48.0, lon=2.0,
+                   geoVerification={"proofMode": "current-edition-commune-direct-official.v1",
+                                    "markerMeaning": "centre_indicatif_de_commune"},
+                   notes=MUNICIPAL_PUBLIC_NOTES)
+        signed = doc(row)
+        with patch("grossesondes_existing_official_updates._reprove_signed_municipal_origin",
+                   return_value=True):
+            output, report = apply_independently_verified_updates(
+                signed, signed, DAY,
+                fetch=lambda u: {self.site: self.html, self.venue: self.venue_html}[u],
+                limit=1, tick=0)
+        updated = output["festivals"][0]
+        self.assertEqual(updated["venue"], "Salle des Musiques")
+        self.assertEqual(updated["lat"], row["lat"])
+        self.assertEqual(updated["lon"], row["lon"])
+        self.assertIn("centre de la commune", updated["notes"])
+        self.assertIn(self.venue, updated["auditSources"])
+        self.assertTrue(_verified_official_update_delta(row, updated))
+        self.assertFalse(_verified_official_update_delta(
+            dict(row, venue="Existing venue"), updated))
+        self.assertFalse(_verified_official_update_delta(
+            row, dict(updated, notes="Unrelated claim")))
+        self.assertFalse(_verified_official_update_delta(
+            row, dict(updated, auditSources=[self.site])))
 
     def test_cms_repeats_identical_municipal_title_suffix(self):
         repeated = self.html.replace(

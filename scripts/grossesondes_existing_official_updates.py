@@ -46,7 +46,7 @@ DATE_FIELDS = frozenset((
     "startDate", "endDate", "days", "dateRangeIsContinuous",
     "status", "verificationStatus",
 ))
-CHANGEABLE = (frozenset(("lineup", "bands", "price", "notes", "lastVerified", "auditSources"))
+CHANGEABLE = (frozenset(("lineup", "bands", "price", "notes", "lastVerified", "auditSources", "venue"))
               | COMMUNE_FIELDS | DATE_FIELDS)
 ROLE = re.compile(r"\b(?:programmation|line up|lineup|groupes?|noms|artistes?|"
                   r"annonce|affiche|actualites?|news|billetterie|tarifs?|pass|"
@@ -185,6 +185,33 @@ def _reprove_signed_municipal_origin(city, site):
         return False
     root = verified_mairie_site(fetch_dila_records(mairie_records_url(code)), code, name)
     return root == "https://" + urlsplit(site).netloc + "/"
+
+
+def valid_municipal_venue_label(value):
+    return (isinstance(value, str) and 7 <= len(value) <= 100
+            and value == " ".join(value.split())
+            and not any(ord(ch) < 32 or ch in "<>{}" for ch in value))
+
+
+def municipal_venue_note(row):
+    """Reconcile only the exact legacy municipal note, not arbitrary prose."""
+    from grossesondes_openagenda_linked_edition import (
+        MUNICIPAL_PUBLIC_NOTES, MUNICIPAL_PUBLIC_CONFIDENCE,
+    )
+    if (row.get("sourceConfidence") != MUNICIPAL_PUBLIC_CONFIDENCE
+            or row.get("notes") != MUNICIPAL_PUBLIC_NOTES
+            or row.get("geoPrecision") != "commune"
+            or row.get("showOnMap") is not True
+            or not valid_municipal_venue_label(row.get("venue"))):
+        return row.get("notes")
+    geo = row.get("geoVerification")
+    if (not isinstance(geo, dict)
+            or geo.get("proofMode") != "current-edition-commune-direct-official.v1"
+            or geo.get("markerMeaning") != "centre_indicatif_de_commune"):
+        return row.get("notes")
+    return ("Dates et genre revérifiés sur une fiche municipale officielle ; "
+            "salle confirmée, artistes à confirmer ; "
+            "repère indicatif au centre de la commune.")
 
 
 def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
@@ -333,7 +360,10 @@ def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
             if not re.search(r"\b[0-9]{5}\s+" + re.escape(fold(city)) + r"\b",
                              nearby):
                 continue
-            proven.append(url)
+            display = " ".join(parsed.headings[names[0]].split())
+            if not valid_municipal_venue_label(display):
+                continue
+            proven.append((url, display))
         if len(proven) != 1:
             return None
         stage("fresh_geo_dila_origin_not_reproved")
@@ -344,7 +374,7 @@ def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
             return None
         stage("accepted")
         return {"slug": row["slug"], "city": city, "source": site,
-                "venue_source": proven[0]}
+                "venue_source": proven[0][0], "venue_name": proven[0][1]}
     except (OSError, TimeoutError, ValueError, TypeError, UnicodeError, KeyError):
         return None
 
@@ -1849,6 +1879,29 @@ def apply_independently_verified_updates(
                         new["notes"] = fresh_notes
                         fields.append("notes")
                         sources.extend(official_date_urls)
+            # Already-published indicative commune markers may gain a venue
+            # heading after fresh independent municipal origin/edition checks.
+            from grossesondes_openagenda_linked_edition import MUNICIPAL_PUBLIC_CONFIDENCE
+            geo = old.get("geoVerification")
+            if (old.get("sourceConfidence") == MUNICIPAL_PUBLIC_CONFIDENCE
+                    and old.get("venue") is None
+                    and old.get("geoPrecision") == "commune"
+                    and old.get("showOnMap") is True
+                    and isinstance(geo, dict)
+                    and geo.get("proofMode") == "current-edition-commune-direct-official.v1"
+                    and geo.get("markerMeaning") == "centre_indicatif_de_commune"):
+                claim = signed_municipal_venue_city(
+                    root_html, old, today, fetch, diagnostic=municipal_diagnostic)
+                if (claim and normal_city(old.get("city")) == normal_city(claim["city"])
+                        and valid_municipal_venue_label(claim.get("venue_name"))):
+                    new["venue"] = claim["venue_name"]
+                    fields.append("venue")
+                    sources.extend((site, claim["venue_source"]))
+                    note = municipal_venue_note(new)
+                    if note != new.get("notes"):
+                        new["notes"] = note
+                        if "notes" not in fields:
+                            fields.append("notes")
             # Reconcile old ticket-status prose only after the signed
             # current edition has been freshly checked on its own homepage.
             # This runs even when the canonical price is already correct.
