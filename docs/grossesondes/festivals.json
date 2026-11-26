@@ -6107,7 +6107,7 @@
     },
     {
       "lastVerified": "2026-11-26",
-      "price": null,
+      "price": "Tarifs annoncés — Pass 1 jour : 30 €, sur place 33 € ; Pass 2 jours : 50 €, sur place 55 € ; Moins de 12 ans : gratuit",
       "notes": "Édition annoncée sur une page du site officiel; dates visibles revérifiées. Lieu, séances, tarifs et coordonnées à confirmer.",
       "city": "Landresse",
       "dateRangeIsContinuous": false,
@@ -6397,7 +6397,7 @@
       "name": "Disorder Festival : A Dark Celebration 2027",
       "source": "https://lamarbrerie.fr/disorder-festival-a-dark-celebration-2/",
       "bands": 0,
-      "price": null,
+      "price": "Tarifs annoncés — Pass 2 jours : dès 81 € ; Pass samedi : 48 € ; Pass dimanche : 48 €",
       "verificationStatus": "Site et édition revérifiés indépendamment",
       "lastVerified": "2026-11-26",
       "lat": null,
@@ -6410,7 +6410,10 @@
       "status": "Annoncé",
       "showOnMap": false,
       "lon": null,
-      "region": null
+      "region": null,
+      "auditSources": [
+        "https://lamarbrerie.fr/disorder-festival-a-dark-celebration-2/"
+      ]
     }
   ]
 }
