@@ -915,6 +915,98 @@ def _signed_tourism_current_postal_city(html, row):
     return postcodes[0]
 
 
+def _city_from_adjacent_countdown_hero(html, row):
+    """Exact dated hero + separate locality + named current-edition countdown.
+
+    A CMS may split its announcement into two headings and a following
+    paragraph. Bind all three adjacent visible blocks, not distant footer
+    or historic venue text. The town may be printed in lowercase; the
+    independent national commune resolver establishes its canonical name.
+    """
+    start, end = iso_day(row.get("startDate")), iso_day(row.get("endDate"))
+    if start is None or end is None or start.year != end.year:
+        return None
+    words = re.findall(r"[a-z0-9]+", re.sub(
+        r"\b20[2-4]\d\b", "", fold(row.get("name", ""))))
+    if len("".join(words)) < 8:
+        return None
+    identity = re.compile(r"(?<![a-z0-9])" + r"[\W_]+".join(map(re.escape, words))
+                          + r"(?![a-z0-9])")
+
+    class MainParagraphs(VisibleParagraphs):
+        def handle_starttag(self, tag, attrs):
+            if tag in ("nav", "footer", "aside"):
+                attrs = list(attrs) + [("hidden", None)]
+            super().handle_starttag(tag, attrs)
+
+    parser = MainParagraphs()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (ValueError, TypeError, UnicodeError):
+        return None
+    blocks = [" ".join(raw.split()) for raw in
+              " ".join(parser.parts).split(VisibleParagraphs.SEP) if raw.strip()]
+    facts = {}
+    for i, raw in enumerate(blocks[:-1]):
+        if not 8 <= len(raw) <= 140:
+            continue
+        printed = fold(raw)
+        ranges = list(explicit_ranges(printed, start.year))
+        if len(ranges) != 1:
+            continue
+        a, b, first, last = ranges[0]
+        if (first, last) != (start, end) or (printed[:a] + printed[b:]).strip(" :;.,-"):
+            continue
+        # The next block must be only the place, not "à partir de",
+        # a ticket seller, a full address or multiple destinations.
+        place = re.fullmatch(r"à\s+([A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ'’\- ]{1,79})",
+                             blocks[i + 1], re.I)
+        if place is None:
+            continue
+        city = " ".join(place.group(1).split())
+        if re.search(r"\b(?:et|ou|partir|confirmer|venir|proximite|france|festival|"
+                     r"billetterie|programme|salle|site|definir)\b", fold(city)):
+            continue
+        # Nearby exact locality/date duplicates can veto a different
+        # place. Only the leading hero may affirm the named countdown.
+        facts.setdefault(_normal(city), city)
+        if i >= 8 or i + 2 >= len(blocks):
+            continue
+        next_block = fold(blocks[i + 2])
+        if (identity.search(next_block)
+                and re.search(r"\b(?:revient|commence|debute|demarre)\s+dans\s*[:!]?\s*$",
+                              next_block)
+                and not CANCEL.search(next_block)):
+            facts[_normal(city)] = city
+            # Explicitly announced different edition intervals in the
+            # same body remain conflicts; contained programme days don't.
+            visible = " ".join(fold(x) for x in blocks)
+            intervals = {(d1, d2) for _, _, d1, d2 in explicit_ranges(visible, start.year)}
+            if dominant_visible_range(intervals) != (start, end) or CANCEL.search(visible):
+                return None
+            # Keep looking for another printed locality, including duplicate hero.
+            break
+    else:
+        return None
+    # Recheck all repeated exact date/place pairs, not just the first hero.
+    for i, raw in enumerate(blocks[:-1]):
+        ranges = list(explicit_ranges(fold(raw), start.year))
+        if len(ranges) != 1 or ranges[0][2:] != (start, end):
+            continue
+        a, b, _, _ = ranges[0]
+        if (fold(raw)[:a] + fold(raw)[b:]).strip(" :;.,-"):
+            continue
+        match = re.fullmatch(r"à\s+([A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ'’\- ]{1,79})",
+                             blocks[i + 1], re.I)
+        if match is not None and _normal(match.group(1)) not in facts:
+            return None
+    if len(facts) != 1:
+        return None
+    city = next(iter(facts.values()))
+    return city[:1].upper() + city[1:]
+
+
 def exact_edition_city(html, row):
     """One city of one 2027 edition, or nothing. Never infer from old years."""
     if not isinstance(html, str) or not 0 < len(html) <= 650_000:
@@ -941,16 +1033,17 @@ def exact_edition_city(html, row):
     visible = _city_visible(html, row)
     title = _city_from_dated_title(html, row) if start is not None else None
     evergreen = _current_edition_evergreen_commune(html, row)
+    countdown_place = _city_from_adjacent_countdown_hero(html, row)
     title_place = _city_from_official_title_plus_named_current_dates(html, row)
     image_alt_place = _city_from_current_edition_image_alt(html, row)
     tourism_place = _signed_tourism_current_postal_city(html, row)
     description = current_edition_description(html, row)
     description_city = description['city'] if description else None
-    evidence = [c for c in (structured, visible, title, evergreen, title_place,
+    evidence = [c for c in (structured, visible, title, evergreen, countdown_place, title_place,
                             image_alt_place, tourism_place, description_city) if c is not None]
     if len({_normal(c) for c in evidence}) > 1:
         return None
-    city = (structured or visible or title or evergreen or title_place
+    city = (structured or visible or title or evergreen or countdown_place or title_place
             or image_alt_place or tourism_place or description_city)
     if not city or (row.get("city") and _normal(city) != _normal(row["city"])):
         return None

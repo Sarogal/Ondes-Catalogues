@@ -40,6 +40,31 @@ def catalogue(row=ROW):
 
 class FutureCityProofTests(unittest.TestCase):
 
+    def test_adjacent_current_date_city_and_named_countdown(self):
+        hero = ("<main><h2>2 et 3 juillet 2027</h2>"
+                "<h2>à colonne</h2><p>Festival Exemple revient dans :</p>"
+                "<h2>Programmation 2027</h2>"
+                "<p>Samedi 3 juillet 2027 : programme.</p></main>")
+        self.assertEqual(exact_edition_city(hero, ROW),
+                         {"slug": ROW["slug"], "city": "Colonne", "source": SITE})
+        for bad in (hero.replace("à colonne", "à partir de"),
+                    hero.replace("à colonne", "à confirmer"),
+                    hero.replace("à colonne", "à colonne et ailleurs"),
+                    hero.replace("à colonne", "à colonne").replace(
+                        "<h2>à colonne", "<h2 hidden>à colonne"),
+                    hero.replace("Festival Exemple revient", "Autre Festival revient"),
+                    hero.replace("revient dans", "était à"),
+                    hero.replace("2 et 3 juillet 2027", "2 et 3 juillet 2026"),
+                    hero.replace("</main>", "<h2>2 et 3 juillet 2027</h2>"
+                                 "<h2>à ailleurs</h2></main>"),
+                    hero.replace("</main>", "<p>10 et 11 juillet 2027</p></main>"),
+                    hero.replace("<main>", "<footer>").replace("</main>", "</footer>")):
+            self.assertIsNone(exact_edition_city(bad, ROW), bad)
+        # Repeated identical hero and harmless contained day remain valid.
+        same = hero.replace("</main>", "<h2>2 et 3 juillet 2027</h2>"
+                            "<h2>à colonne</h2></main>")
+        self.assertEqual(exact_edition_city(same, ROW)["city"], "Colonne")
+
     def test_transient_http_403_preserves_real_j1_but_never_counts_as_j2(self):
         from dns_pinned_https import OfficialHTTPStatusError
         def blocked(_):
