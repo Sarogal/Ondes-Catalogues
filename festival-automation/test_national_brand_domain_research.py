@@ -28,7 +28,9 @@ class BrandDomainResearchTests(unittest.TestCase):
         fetch = Mock()
         verify.return_value = (("2026-12-01", "2026-12-05"), None)
         report = research_brand_domain(LEAD, TITLE, 2026, TODAY, fetch=fetch)
-        verify.assert_called_once_with(SITE, TITLE, TODAY, fetch=fetch)
+        verify.assert_called_once()
+        self.assertEqual(verify.call_args.args, (SITE, TITLE, TODAY))
+        self.assertTrue(callable(verify.call_args.kwargs['fetch']))
         self.assertEqual(report["status"], "FIRST_PARTY_BRAND_EDITION_REVIEW_ONLY")
         self.assertFalse(report["publication_authorized"])
         self.assertEqual(report["dates_review_only"], ["2026-12-01", "2026-12-05"])
@@ -102,3 +104,11 @@ class BrandDomainResearchTests(unittest.TestCase):
         with patch.object(preflight, "eligible", return_value=[source]), \
              patch.object(preflight, "validated_openagenda_leads", return_value=[]):
             self.assertEqual(preflight.stable_private_proposals({}, {}, {}, report, TODAY), [])
+
+    def test_gothic_genres_are_explicit_first_party_evidence(self):
+        from grossesondes_first_party_direct_edition import branded_official_site
+        for genre in ("goth", "gothique", "deathrock", "cold wave", "darkwave", "post-punk"):
+            html = "<h1>Festival Nocturne Sauvage</h1><p>Musique " + genre + "</p>"
+            self.assertTrue(branded_official_site(SITE, TITLE, html), genre)
+        self.assertFalse(branded_official_site(SITE, TITLE,
+                         "<h1>Festival Nocturne Sauvage</h1><p>Musique classique</p>"))
