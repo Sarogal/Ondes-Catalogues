@@ -31,7 +31,10 @@ from ptitesondes_unnumbered_official_geo_proof import (
 from ptitesondes_municipal_event_venue_ban import mint_municipal_event_location_proof
 from ptitesondes_generic_venue_official_geocode import extract_official_address
 from ptitesondes_html_independent_venue_geo import _coordinates_from_ban
-from ptitesondes_delegated_source_authority import _url_host, _same_host
+from ptitesondes_delegated_source_authority import (
+    _url_host, _same_host, mint_delegated_venue_source_proof,
+    verified_delegated_source,
+)
 from ptitesondes_independent_venue_site_proof import _osm_website_host
 from ptitesondes_generic_venue_osm_preflight import (
     osm_hints, ENDPOINTS, NoRedirect, MAX_ELEMENTS, MAX_BYTES,
@@ -92,6 +95,52 @@ def _external_location(group, url, html, ign_get, osm_get):
         return None
     return dict(lat=hit["lat_unverified"], lng=hit["lng_unverified"],
                 official=url, geo_source="Exact venue address + IGN/BAN + named OSM website")
+
+
+def _delegated_ban_location(group, url, html, directory, references, ign_get, today):
+    """Independent DILA site delegates the venue host; exact BAN confirms its address.
+
+    Historical event URLs alone are never authority. This route needs an
+    independently fetched municipal reference that names the exact venue
+    and explicitly attests the external host. No OSM or old pin is needed.
+    """
+    code = _commune_code(group, directory)
+    if code is None or not _safe_url(url):
+        return None
+    if not any(verified_delegated_source(
+            mint_delegated_venue_source_proof(
+                group["city"], group["venue"], url, directory,
+                ref_url, ref_html, today),
+            group["city"], group["venue"], url, today)
+            for ref_url, ref_html in references):
+        return None
+    candidate = extract_official_address(group, html)
+    if candidate is None:
+        return None
+    response = ign_get(candidate)
+    if (not isinstance(response, dict) or response.get("type") != "FeatureCollection"
+            or not isinstance(response.get("features"), list)
+            or not 1 <= len(response["features"]) <= 20):
+        return None
+    # Match the independently authenticated INSEE municipality as well as
+    # the exact house number, street, postcode, city and full BAN label.
+    matches = [f for f in response["features"] if isinstance(f, dict)
+               and f.get("type") == "Feature"
+               and isinstance(f.get("properties"), dict)
+               and f["properties"].get("citycode") == code
+               and norm(f["properties"].get("label")) == norm(candidate["address_query"])
+               and f["properties"].get("type") == "housenumber"]
+    if len(matches) != 1:
+        return None
+    address = (candidate["housenumber"], candidate["street"],
+               candidate["postcode"], candidate["city"], ())
+    point = _coordinates_from_ban(
+        {"type": "FeatureCollection", "features": matches}, address)
+    if point is None or (candidate.get("official_coordinates_hint") is not None
+                         and meters(point, candidate["official_coordinates_hint"]) > 65):
+        return None
+    return dict(lat=point[0], lng=point[1], official=url,
+                geo_source="DILA delegated venue website + exact independent BAN")
 
 
 def _commune_code(group, directory):
@@ -395,6 +444,7 @@ def research_group(group, today, *, directory_get=fetch_dila,
     urls += ["https://" + h + "/" for h in sorted(hosts)]
     todo = list(dict.fromkeys(urls))
     seen, locations = set(), []
+    references = []
     osm_cache = {}
     while todo and len(seen) < MAX_PAGES:
         url = todo.pop(0)
@@ -403,6 +453,7 @@ def research_group(group, today, *, directory_get=fetch_dila,
         seen.add(url)
         try:
             html = html_get(url)
+            references.append((url, html))
             proof = mint_private_location_proof(
                 group, directory, url, html, ign_get, today)
             if proof is None:
@@ -442,7 +493,11 @@ def research_group(group, today, *, directory_get=fetch_dila,
     for url in external[:MAX_EXTERNAL_PAGES]:
         external_examined += 1
         try:
-            loc = _external_location(group, url, html_get(url), ign_get, osm_get)
+            html = html_get(url)
+            loc = _delegated_ban_location(group, url, html, directory,
+                                          references, ign_get, today)
+            if loc is None:
+                loc = _external_location(group, url, html, ign_get, osm_get)
             if loc is not None:
                 locations.append(loc)
         except ERRORS:
