@@ -31,6 +31,22 @@ def registry(hints=None, *, source="open_world_visible_card_research"):
 
 
 class OpenWorldArtistGenreTests(unittest.TestCase):
+    def test_last_artist_in_large_named_bill_has_own_profile_research(self):
+        names = [f"Unknown Act {i:03d}" for i in range(65)]
+        reg = registry([{"name": names[-1], "url": URL}])
+        reg["items"]["key"]["candidate"].update(
+            officialArtistNames=names, leadArtist=names[0])
+        sources, ambiguous = research.candidate_sources(reg, DAY)
+        self.assertEqual(ambiguous, 0)
+        self.assertEqual([s["name"] for s in sources], [names[-1]])
+        profile = PROFILE.replace(NAME, names[-1])
+        out = research.build(reg, DAY, fetch=lambda u, cache: profile)
+        self.assertEqual(out["profilesRefreshed"], 1)
+        fact = next(iter(out["facts"].values()))
+        self.assertEqual(fact["artistName"], names[-1])
+        self.assertFalse(fact["officialDomainVerified"])
+        self.assertFalse(out["publicationAllowed"])
+
     def test_unknown_artist_self_declared_musicgroup_is_retained_without_trust(self):
         seen = []
         original = registry()
