@@ -66,5 +66,55 @@ class MomoPagesReleaseGateTests(unittest.TestCase):
                 self.assertFalse(pages_pending_momo_only(git, candidate))
 
 
+class GPSPagesReleaseGateTests(unittest.TestCase):
+    def setUp(self):
+        from ptitesondes_catalogue_geo_correction_preview import digest
+        from ptitesondes_historical_gps_ledger import empty_ledger
+        from test_ptitesondes_catalogue_geo_correction_preview import DAY, fixture as geo_fixture
+        doc, _, _ = geo_fixture()
+        self.old = doc["events"][0]
+        doc["updated_at"] = "2026-11-26T08:00:00+01:00"
+        doc["events"] += [{"id": "other-" + str(i)} for i in range(100)]
+        self.pages = {"sorties.json": doc, "lieux.json": {"version": 1, "places": []}}
+        self.git = copy.deepcopy(self.pages)
+        self.geo = dict(lat=44.5, lng=2.25, geo_precision="venue", geo_verified_at=DAY.isoformat())
+        self.new = dict(self.old, **self.geo)
+        self.git["sorties.json"]["events"][0] = self.new
+        self.git["sorties.json"]["updated_at"] = "2026-11-26T09:00:00+01:00"
+        self.ledger = empty_ledger()
+        self.ledger["repairs"][self.old["id"]] = dict(
+            before_sha256=digest(self.old), after_sha256=digest(self.new), geo=self.geo)
+
+    def test_retry_exact_committed_gps_repair_only(self):
+        from ptitesondes_pages_release_gate import pages_pending_gps_only
+        self.assertTrue(pages_pending_gps_only(self.git, self.pages, self.ledger))
+        self.assertFalse(pages_pending_gps_only(self.git, self.git, self.ledger))
+        self.assertFalse(pages_pending_gps_only(self.pages, self.git, self.ledger))
+
+    def test_no_retry_when_ledger_or_other_fields_disagree(self):
+        from ptitesondes_pages_release_gate import pages_pending_gps_only
+        variants = []
+        for key, value in (("title", "Other"), ("lat", 45), ("geo_verified_at", "2026-11-25")):
+            git = copy.deepcopy(self.git)
+            git["sorties.json"]["events"][0][key] = value
+            variants.append(git)
+        git = copy.deepcopy(self.git)
+        git["sorties.json"]["events"].append({"id":"extra"})
+        variants.append(git)
+        git = copy.deepcopy(self.git)
+        git["lieux.json"]["version"] = 2
+        variants.append(git)
+        git = copy.deepcopy(self.git)
+        git["sorties.json"]["events"].reverse()
+        variants.append(git)
+        for variant in variants:
+            self.assertFalse(pages_pending_gps_only(variant, self.pages, self.ledger))
+        ledger = copy.deepcopy(self.ledger)
+        ledger["repairs"][self.old["id"]]["before_sha256"] = "0" * 64
+        self.assertFalse(pages_pending_gps_only(self.git, self.pages, ledger))
+        self.assertFalse(pages_pending_gps_only(self.git, self.pages,
+                         {"schema": self.ledger["schema"], "repairs": {}}))
+
+
 if __name__ == "__main__":
     unittest.main()
