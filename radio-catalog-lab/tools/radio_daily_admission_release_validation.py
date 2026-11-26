@@ -18,7 +18,7 @@ from radio_daily_repair_confirmation import confirm_page
 from radio_stream_technical_probe import validate_endpoint
 from radio_daily_v9_generator import GENRES, digest, encode
 
-from radio_daily_proposal_subset import select_proposals
+from radio_daily_proposal_subset import select_proposals, AdmissionGateHeld
 
 MAX_ADMISSIONS = 4
 DIRECTORY_LIMIT = 100
@@ -63,11 +63,11 @@ def qualify_admission(prior_pointer, prior_body, *, anchor, day, discovery, doss
                 or not isinstance(name,str) or not 0 < len(name.strip()) <= 180
                 or (normalize(name),country or "") in names
                 or homepage_url(page) != page):
-            raise ValueError("candidate identity or endpoint held")
+            raise AdmissionGateHeld("identity_or_endpoint", "candidate identity or endpoint held")
         directory = search(name)
         if (not isinstance(directory,list) or len(directory) >= DIRECTORY_LIMIT
                 or any(not isinstance(r,dict) for r in directory)):
-            raise ValueError("incomplete directory response")
+            raise AdmissionGateHeld("directory_incomplete", "incomplete directory response")
         rows = [directory_candidate(r,set()) for r in directory]
         matches = [r for r in rows if r and r["stationuuid"] == uid]
         if (len(matches) != 1 or matches[0]["name"] != name.strip()
@@ -78,11 +78,11 @@ def qualify_admission(prior_pointer, prior_body, *, anchor, day, discovery, doss
                 or any(r and r["stationuuid"] != uid and
                        (r["streamUrl"] == url or (normalize(r["name"]),r["countrycode"]) ==
                         (normalize(name),country or "")) for r in rows)):
-            raise ValueError("fresh directory identity mismatch or ambiguity")
+            raise AdmissionGateHeld("directory_identity", "fresh directory identity mismatch or ambiguity")
         final, data = fetch(page)
         if (homepage_url(final) != final or not related_host(final,page)
                 or not isinstance(data,bytes) or not 0 < len(data) <= MAX_BYTES):
-            raise ValueError("unsafe broadcaster response")
+            raise AdmissionGateHeld("broadcaster_response", "unsafe broadcaster response")
         children = []
         for link in followup_links(final,data):
             child, body = fetch(link)
@@ -93,35 +93,35 @@ def qualify_admission(prior_pointer, prior_body, *, anchor, day, discovery, doss
         if (not fresh["identityNameMatch"] or fresh["signal"] != "identity_and_target_indication"
                 or not fresh["declaredStreamLinked"] or not fresh["programmeScopeEvidence"]
                 or fresh["primaryElectronicTerms"] or fresh["otherFormatTerms"]):
-            raise ValueError("fresh station format or stream binding missing")
+            raise AdmissionGateHeld("station_format_binding", "fresh station format or stream binding missing")
         # A station-specific declaration is stronger than a generic audio tag.
         mode, _, _ = confirm_page({"display_name":name},page,url,fetch)
         if not mode:
-            raise ValueError("fresh station-specific stream declaration missing")
+            raise AdmissionGateHeld("station_stream_binding", "fresh station-specific stream declaration missing")
         genres = sorted({GENRES[t.lower()] for t in fresh["programmeScopeTerms"] if t.lower() in GENRES})
         old_genres = sorted({GENRES[t.lower()] for t in evidence["homepageEvidence"]["programmeScopeTerms"] if t.lower() in GENRES})
         if not genres or genres != old_genres:
-            raise ValueError("programme scope changed")
+            raise AdmissionGateHeld("programme_scope_changed", "programme scope changed")
         sample = probe(url)
         if sample.get("streamSha256") != digest(url.encode()):
-            raise ValueError("fresh probe fingerprint mismatch")
+            raise AdmissionGateHeld("probe_fingerprint", "fresh probe fingerprint mismatch")
         if sample.get("verdict") == "audio_sample_ok" and sample.get("frameChain"):
             observed = continuity(url)
             codec = observed.get("frameCodec")
             if observed.get("verdict") != "continuous_icy_frame_indication" or codec != sample["frameChain"]:
-                raise ValueError("fresh direct continuity required")
+                raise AdmissionGateHeld("direct_continuity", "fresh direct continuity required")
         elif sample.get("verdict") == "playlist_pending":
             observed = hls(url)
             codec = observed.get("frameCodec")
             if observed.get("verdict") != "advancing_hls_audio_frame_indication" or not codec:
-                raise ValueError("fresh advancing HLS audio required")
+                raise AdmissionGateHeld("hls_continuity", "fresh advancing HLS audio required")
         else:
-            raise ValueError("fresh audio sample required")
+            raise AdmissionGateHeld("audio_sample", "fresh audio sample required")
         if not isinstance(codec,str) or not 0 < len(codec) <= 40:
-            raise ValueError("invalid observed codec")
+            raise AdmissionGateHeld("codec_invalid", "invalid observed codec")
         goid = "go-station-"+str(10**14+int(digest(uid.encode())[:14],16)%(9*10**14))
         if goid in occupied:
-            raise ValueError("stable GO ID collision")
+            raise AdmissionGateHeld("identity_collision", "stable GO ID collision")
         appended.append(dict(go_station_id=goid, display_name=name.strip(),
             country_code=country, genres=genres, homepage=page,
             radio_browser_uuids=[dict(uuid=uid,state="current")], legacy_aliases=[uid],

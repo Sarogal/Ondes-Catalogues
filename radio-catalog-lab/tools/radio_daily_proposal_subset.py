@@ -1,4 +1,17 @@
 """Select only an exact subset of recomputed proposals; never filter source evidence."""
+class AdmissionGateHeld(ValueError):
+    """Stable public reason codes; never serialize a raw exception message."""
+    CODES = frozenset({"identity_or_endpoint", "directory_incomplete", "directory_identity",
+                       "broadcaster_response", "station_format_binding", "station_stream_binding",
+                       "programme_scope_changed", "probe_fingerprint", "direct_continuity",
+                       "hls_continuity", "audio_sample", "codec_invalid", "identity_collision"})
+    def __init__(self, code, message):
+        if code not in self.CODES:
+            raise ValueError("unknown admission gate code")
+        super().__init__(message)
+        self.code = code
+
+
 def select_proposals(rows, key, selected, maximum):
     if selected is None:
         if not 0 < len(rows) <= maximum:
@@ -39,6 +52,9 @@ def isolate(pointer, raw, *, anchor, day, proposed, key, qualify, validate, evid
                 raise ValueError("selected candidate digest mismatch")
         except EvidenceDeferred:
             deferred.append(dict(id=identifier, reason="live_evidence_deferred"))
+            continue
+        except AdmissionGateHeld as exc:
+            deferred.append(dict(id=identifier, reason="strict_gate_held", detail=exc.code))
             continue
         except ValueError:
             deferred.append(dict(id=identifier, reason="strict_gate_held"))

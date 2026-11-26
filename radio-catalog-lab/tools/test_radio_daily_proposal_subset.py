@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import Mock
-from radio_daily_proposal_subset import isolate, select_proposals
+from radio_daily_proposal_subset import isolate, select_proposals, AdmissionGateHeld
 from radio_daily_live_evidence import LiveEvidence, EvidenceDeferred
 from radio_daily_v9_generator import digest
 from test_radio_daily_decision_preview import A, DAY
@@ -55,6 +55,25 @@ class SubsetTests(unittest.TestCase):
         report,material=self.run_isolate("b",EvidenceDeferred)
         self.assertEqual(material["candidate"],b"a,c")
         self.assertEqual(report["deferred"],[dict(id="b",reason="live_evidence_deferred")])
+
+    def test_admission_gate_reports_fixed_code_without_exception_text(self):
+        report,material=self.run_isolate("b",lambda message: AdmissionGateHeld(
+            "directory_identity","private https://example.org/source"))
+        self.assertEqual(material["candidate"],b"a,c")
+        self.assertEqual(report["deferred"],[dict(id="b",reason="strict_gate_held",
+                                                  detail="directory_identity")])
+        self.assertNotIn("https://",str(report))
+
+    def test_actual_admission_refusal_has_stable_code(self):
+        f=admission.StrictAdmissionTests()
+        f.setUp()
+        with self.assertRaises(AdmissionGateHeld) as exc:
+            f.qualify(continuity=lambda u:dict(verdict="finite_response_review"))
+        self.assertEqual(exc.exception.code,"direct_continuity")
+
+    def test_unknown_gate_code_refused(self):
+        with self.assertRaisesRegex(ValueError,"unknown admission gate code"):
+            AdmissionGateHeld("https://example.org/private","message")
 
     def test_budget_is_bounded(self):
         report,material=self.run_isolate(None,maximum=1)
