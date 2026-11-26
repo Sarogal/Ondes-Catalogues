@@ -87,6 +87,49 @@ class OpenWorldArtistGenreTests(unittest.TestCase):
             DAY + dt.timedelta(days=1), prior=out)
         self.assertEqual(next_day["memoryFactCount"], 1)
 
+    def test_direct_named_artist_description_without_directory_or_bio_link(self):
+        for sentence, genre in (
+            ("New Act is a death metal band from France.", "Death Metal"),
+            ("New Act est un groupe de punk basé à Lyon.", "Punk"),
+        ):
+            html = f"<title>New Act | Official website</title><main><p>{sentence}</p></main>"
+            calls = []
+            def fetch(url, cache):
+                calls.append(url)
+                return html
+            out = research.build(registry(), DAY, fetch=fetch)
+            self.assertEqual(calls, [URL])
+            self.assertEqual(out["profilesRefreshed"], 1)
+            fact = next(iter(out["facts"].values()))
+            self.assertEqual(fact["genres"], [genre])
+            self.assertEqual(fact["genreEvidenceUrl"], URL)
+            self.assertEqual(fact["evidenceKind"],
+                             "unverified-origin-artist-visible-direct-description")
+            self.assertFalse(fact["officialDomainVerified"])
+            self.assertFalse(fact["publicationAllowed"])
+            self.assertEqual(out["approvalsProposed"], 0)
+            empty = {"schema": "grossesondes.concert.intake.v1", "items": {}}
+            retained = research.build(empty, DAY, prior=out)
+            self.assertEqual(retained["facts"], out["facts"])
+
+    def test_direct_description_rejects_event_influences_negation_other_identity(self):
+        for page in (
+            "<title>New Act</title><p>New Act plays with a death metal band.</p>",
+            "<title>New Act</title><p>New Act is not a death metal band.</p>",
+            "<title>New Act</title><p>Other Act is a death metal band.</p>",
+            "<title>Other Act</title><p>New Act is a death metal band.</p>",
+            "<title>New Act</title><footer><p>New Act is a death metal band.</p></footer>",
+            "<title>New Act</title><p>New Act is a hardcore techno group.</p>",
+            "<title>New Act</title><p>New Act is a metal band tribute act.</p>",
+            "<title>New Act</title><p>New Act est un groupe de metal symphonique électronique.</p>",
+            PROFILE.replace('"Death Metal"', '"Jazz"') +
+                "<title>New Act</title><p>New Act is a death metal band.</p>",
+        ):
+            with self.subTest(page=page):
+                result = research.build(registry(), DAY, fetch=lambda *a: page)
+                self.assertEqual(result["memoryFactCount"], 0)
+                self.assertEqual(result["approvalsProposed"], 0)
+
     def test_linked_bio_cross_domain_does_not_leak_or_qualify(self):
         page = '<a href="https://another.example.org/bio">Bio</a>'
         result = research.build(registry(), DAY,

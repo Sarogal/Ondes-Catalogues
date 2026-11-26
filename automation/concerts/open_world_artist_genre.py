@@ -186,6 +186,7 @@ def _memory(prior):
                 and v.get("evidenceKind") in {
                     "unverified-origin-artist-structured-profile",
                     "unverified-origin-artist-visible-linked-bio",
+                    "unverified-origin-artist-visible-direct-description",
                 }
                 and v.get("officialDomainVerified") is False
                 and v.get("publicationAllowed") is False)}
@@ -221,23 +222,26 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
                 # convincing first-person biography is untrusted research
                 # until domain ownership is independently authenticated.
                 link = bio.linked_official_biography(html, url, url)
-                if not link or sites.safe_page(link) != link:
-                    raise ValueError("No safe singular linked biography")
-                page = fetch(link, cache)
-                synthetic_source = {
-                    "artistId": identity_key, "sourceRole": "artist_official",
-                    "enabled": True, "url": url,
-                }
-                synthetic_names = {
-                    "artists": [{"id": identity_key, "name": source["name"],
-                                 "aliases": []}]
-                }
-                fact = bio.verify_official_biography(
-                    synthetic_source, synthetic_names, page,
-                    link, link, today)
-                genres = fact["genres"]
-                genre_url = link
-                evidence_kind = "unverified-origin-artist-visible-linked-bio"
+                if link and sites.safe_page(link) == link:
+                    page = fetch(link, cache)
+                    synthetic_source = {
+                        "artistId": identity_key, "sourceRole": "artist_official",
+                        "enabled": True, "url": url,
+                    }
+                    synthetic_names = {
+                        "artists": [{"id": identity_key, "name": source["name"],
+                                     "aliases": []}]
+                    }
+                    fact = bio.verify_official_biography(
+                        synthetic_source, synthetic_names, page,
+                        link, link, today)
+                    genres = fact["genres"]
+                    genre_url = link
+                    evidence_kind = "unverified-origin-artist-visible-linked-bio"
+                else:
+                    genres = bio.direct_artist_description(html, source["name"])
+                    genre_url = url
+                    evidence_kind = "unverified-origin-artist-visible-direct-description"
             fact_key = hashlib.sha256(
                 (identity_key + "|" + url).encode("utf-8")).hexdigest()[:24]
             previous = facts.get(fact_key, {})

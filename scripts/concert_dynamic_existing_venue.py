@@ -515,17 +515,21 @@ def event_genres(raw, official_url, *, fetch=None, cache=None, html=None):
                 # fetch per linked performer. Never search by name or trust
                 # cached directory hints here.
                 bio_url = biographies.linked_official_biography(html, target, target)
-                if not bio_url:
-                    continue
-                probe.checked_uri(bio_url, intake.valid_https(target))
-                bio_html = fetch(bio_url, shared)
-                source = {"artistId": "linked-performer", "sourceRole": "artist_official",
-                          "enabled": True, "url": target}
-                roster = {"artists": [{"id": "linked-performer", "name": name,
-                                       "aliases": []}]}
-                fact = biographies.verify_official_biography(
-                    source, roster, bio_html, bio_url, bio_url, dt.date.today())
-                labels = fact["genres"]
+                if bio_url:
+                    probe.checked_uri(bio_url, intake.valid_https(target))
+                    bio_html = fetch(bio_url, shared)
+                    source = {"artistId": "linked-performer", "sourceRole": "artist_official",
+                              "enabled": True, "url": target}
+                    roster = {"artists": [{"id": "linked-performer", "name": name,
+                                           "aliases": []}]}
+                    fact = biographies.verify_official_biography(
+                        source, roster, bio_html, bio_url, bio_url, dt.date.today())
+                    labels = fact["genres"]
+                else:
+                    # The venue's exact MusicEvent explicitly links this
+                    # performer. Re-fetch its named self-description directly,
+                    # without trusting directory or cached research claims.
+                    labels = biographies.direct_artist_description(html, name)
         except (ValueError, TypeError, KeyError, OSError, TimeoutError, RecursionError):
             continue
         if triage.genre_evidence({"classification": labels}):
