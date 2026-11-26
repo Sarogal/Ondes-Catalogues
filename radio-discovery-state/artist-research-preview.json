@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 86,
-  "attemptedCount": 3,
+  "dueNameCount": 84,
+  "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "queens of the stone age",
+  "retryAfterKey": "r.e.m.",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",

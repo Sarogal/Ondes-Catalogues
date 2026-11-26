@@ -12,9 +12,9 @@
   "counts": {
     "advanced_candidate": 2,
     "already_known": 82,
-    "editorial_review": 140,
+    "editorial_review": 139,
     "identity_review": 29,
-    "observed_music_candidate": 13,
+    "observed_music_candidate": 14,
     "programme_context_review": 4,
     "source_recheck": 2,
     "technical_review": 1
@@ -24,8 +24,8 @@
     "no_bound_programme_evidence": 135,
     "no_observed_music": 31,
     "other_genre_observed_hints": 4,
-    "target_observed_hints": 11,
-    "unclassified_observations": 90
+    "target_observed_hints": 12,
+    "unclassified_observations": 89
   },
   "records": [
     {
@@ -8421,7 +8421,7 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "no_usable_source": 1
+          "wikidata_only": 1
         },
         "independentObservationDays": [
           "2026-11-26"
@@ -9873,29 +9873,29 @@
       "stationuuid": "ec5f9687-4dc2-4358-ad16-bed7a17cc0a0",
       "streamSha256": "5d44c7eb3a5fc33710011ad88bd5cd1b2cc0ed71e1c0607865effefc39e38d34",
       "v2Decision": "editorial_review",
-      "shadowDecision": "editorial_review",
+      "shadowDecision": "observed_music_candidate",
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope"
       ],
       "nextActions": [
-        "collect_more_programme_observations"
+        "resolve_remaining_station_and_technical_gates"
       ],
-      "programmeEvidenceStatus": "unclassified_observations",
+      "programmeEvidenceStatus": "target_observed_hints",
       "programmeBound": true,
       "programmeEvidence": {
         "artistHints": {
-          "target_hint": 0,
+          "target_hint": 1,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 0
         },
         "pairHints": {
-          "target_hint": 0,
+          "target_hint": 1,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 0
         },
         "collaborationMemberHints": {
           "target_hint": 0,
@@ -9904,7 +9904,7 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "no_usable_source": 1
+          "wikidata_only": 1
         },
         "independentObservationDays": [
           "2026-11-26"

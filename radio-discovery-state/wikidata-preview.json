@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 124,
   "dueNameCount": 15,
-  "attemptedCount": 1,
-  "serviceFailure": "service_or_response_held",
-  "retryAfterKey": "76% uncertain",
+  "attemptedCount": 6,
+  "serviceFailure": null,
+  "retryAfterKey": null,
   "entries": {
     "2000 fm": {
       "status": "identity_held",
@@ -39,6 +39,15 @@
     "ac/dc": {
       "status": "ambiguous_or_incomplete",
       "artistName": "AC/DC",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "acdc": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "ACDC",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
@@ -279,6 +288,24 @@
     "epica": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Epica",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "eva under fire": {
+      "status": "name_hypothesis",
+      "qid": "Q116055724",
+      "genresById": {
+        "Q20378": "alternative metal",
+        "Q379671": "post-grunge",
+        "Q83270": "hard rock"
+      },
+      "musicbrainzIds": [],
+      "sourceUrl": "https://www.wikidata.org/wiki/Q116055724",
+      "genreSource": "wikidata-P136",
+      "artistName": "EVA UNDER FIRE",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
@@ -615,6 +642,24 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "metallica": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Metallica",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "michael schulte": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Michael Schulte",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "minor threat": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Minor Threat",
@@ -669,6 +714,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "nina hagen": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Nina Hagen",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "nine inch nails": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Nine Inch Nails",
@@ -699,6 +753,22 @@
     "panda bear, cindy lee": {
       "status": "not_found",
       "artistName": "Panda Bear, Cindy Lee",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "pascow": {
+      "status": "name_hypothesis",
+      "qid": "Q277346",
+      "genresById": {},
+      "musicbrainzIds": [
+        "79d4c52d-a904-4bc7-9e4d-17aa99da35d6"
+      ],
+      "sourceUrl": "https://www.wikidata.org/wiki/Q277346",
+      "genreSource": "wikidata-P136",
+      "artistName": "Pascow",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
