@@ -18,11 +18,13 @@ from grossesondes_official_poster_ocr import (
 
 MAX_HOSTS = 8
 MAX_IMAGES = 2
+MAX_BROWSER_HOSTS = 2
 MAX_RUN_SECONDS = 180
 
 
 def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
-         fetch=fetch_public_html, reader=read_official_poster, slug=None):
+         fetch=fetch_public_html, reader=read_official_poster, slug=None,
+         browser_fetch=None):
     """Use only URLs from the public catalogue and their freshly read DOM.
 
     No new URLs supplied by CLI, no edits, no publication authority.
@@ -49,7 +51,7 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
                     break
     report = {"review_only": True, "publication_authorized": False,
               "checked_hosts": 0, "images_read": 0, "edition_matches": 0,
-              "budget_exhausted": False, "rows": []}
+              "budget_exhausted": False, "browser_hosts": 0, "rows": []}
     deadline = monotonic() + MAX_RUN_SECONDS
     for site, rows in selected:
         if monotonic() >= deadline:
@@ -62,13 +64,40 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
         except (OSError, ValueError, TypeError, UnicodeError, KeyError):
             report["rows"].append({"slug": rows[0]["slug"], "status": "html_unavailable"})
             continue
+        rendered = None
+        browser_status = "not_needed"
+        active = [r for r in rows if not r.get("cancelled")
+                  and r.get("status") not in ("Annulé", "Reporté")]
+        if (active and browser_fetch is not None
+                and not any(current_official_poster_candidates(html, site, row)
+                            for row in active)
+                and report["browser_hosts"] < MAX_BROWSER_HOSTS
+                and monotonic() < deadline):
+            report["browser_hosts"] += 1
+            try:
+                rendered = browser_fetch(site)
+                if not isinstance(rendered, str) or not 0 < len(rendered) <= 1_400_000:
+                    raise ValueError("Invalid rendered DOM")
+                browser_status = "rendered"
+            except Exception:
+                # Browser exceptions may contain remote text; never log it.
+                rendered = None
+                browser_status = "unavailable"
         count = 0
         limited = False
         for row in rows:
             if row.get("cancelled") or row.get("status") in ("Annulé", "Reporté"):
                 continue
             candidates = current_official_poster_candidates(html, site, row)
+            raw_count = len(candidates)
+            if not candidates and rendered is not None:
+                candidates = current_official_poster_candidates(rendered, site, row)
             diagnostic = {"slug": row["slug"], "status": "no_candidate",
+                          "raw_html_chars": len(html),
+                          "raw_candidates": raw_count,
+                          "browser_status": browser_status,
+                          "rendered_html_chars": len(rendered) if rendered else 0,
+                          "rendered_candidates": len(candidates) if not raw_count else 0,
                           "html_edition_match": home_matches_edition(parsed, row, today),
                           "candidates": len(candidates), "images": []}
             report["rows"].append(diagnostic)
@@ -101,6 +130,7 @@ def main():
     parser.add_argument("--tick", type=int)
     parser.add_argument("--limit", type=int, default=MAX_HOSTS)
     parser.add_argument("--private-cache", type=Path)
+    parser.add_argument("--browser", action="store_true")
     args = parser.parse_args()
     if args.catalogue.stat().st_size > 10_000_000:
         raise ValueError("Catalogue exceeds budget")
@@ -108,7 +138,12 @@ def main():
     today = date.today().isoformat()
     tick = args.tick if args.tick is not None else int(datetime.now(timezone.utc).timestamp() // 14400)
     cache = load_ocr_cache(args.private_cache) if args.private_cache else {}
-    report = scan(catalogue, today, tick=tick, limit=args.limit, slug=args.slug, cache=cache)
+    browser_fetch = None
+    if args.browser:
+        from grossesondes_official_browser_probe import rendered_html
+        browser_fetch = rendered_html
+    report = scan(catalogue, today, tick=tick, limit=args.limit, slug=args.slug,
+                  cache=cache, browser_fetch=browser_fetch)
     if args.private_cache:
         save_ocr_cache(args.private_cache, cache)
     print(json.dumps(report, ensure_ascii=False, indent=2))

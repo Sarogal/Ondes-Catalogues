@@ -39,3 +39,26 @@ class RotationTests(unittest.TestCase):
         fetch.assert_not_called()
         scan(CAT, "2026-11-26", slug=ROW["slug"], fetch=fetch, reader=reader)
         reader.assert_not_called()
+
+    def test_rendered_fallback_uses_only_same_signed_origin(self):
+        browser = Mock(return_value=HTML)
+        reader = Mock(return_value={"status": "review_only", "review_only": True, "words": []})
+        report = scan(CAT, "2026-11-26", tick=0, fetch=lambda _: "<main>Loading</main>",
+                      reader=reader, browser_fetch=browser)
+        browser.assert_called_once_with(SITE)
+        self.assertEqual(report["browser_hosts"], 1)
+        self.assertEqual(report["images_read"], 2)
+        self.assertEqual(report["rows"][0]["raw_candidates"], 0)
+        self.assertEqual(report["rows"][0]["rendered_candidates"], 3)
+
+    def test_no_browser_after_http_failure_or_when_raw_has_candidates(self):
+        from dns_pinned_https import OfficialHTTPStatusError
+        browser = Mock()
+        reader = Mock(return_value={"status": "rate_limited"})
+        scan(CAT, "2026-11-26", tick=0, fetch=Mock(side_effect=OfficialHTTPStatusError(429)),
+             reader=reader, browser_fetch=browser)
+        browser.assert_not_called()
+        reader.assert_not_called()
+        scan(CAT, "2026-11-26", tick=0, fetch=lambda _: HTML,
+             reader=reader, browser_fetch=browser)
+        browser.assert_not_called()
