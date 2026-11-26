@@ -214,6 +214,25 @@ def municipal_venue_note(row):
             "repère indicatif au centre de la commune.")
 
 
+def municipal_lineup_note(row):
+    """Remove only the exact stale municipal roster caveat."""
+    from grossesondes_openagenda_linked_edition import MUNICIPAL_PUBLIC_CONFIDENCE
+    legacy = ("Dates et genre revérifiés sur une fiche municipale officielle ; "
+              "salle confirmée, artistes à confirmer ; "
+              "repère indicatif au centre de la commune.")
+    if (row.get("sourceConfidence") == MUNICIPAL_PUBLIC_CONFIDENCE
+            and row.get("notes") == legacy
+            and row.get("geoPrecision") == "commune"
+            and row.get("showOnMap") is True
+            and valid_municipal_venue_label(row.get("venue"))
+            and isinstance(row.get("lineup"), list) and row["lineup"]
+            and row.get("bands") == len(row["lineup"])):
+        return ("Dates et genre revérifiés sur une fiche municipale officielle ; "
+                "salle confirmée, artistes annoncés sur la source officielle ; "
+                "repère indicatif au centre de la commune.")
+    return row.get("notes")
+
+
 def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
                                 municipal_prover=None, diagnostic=None):
     """Reprove a signed municipal event and its explicitly named venue.
@@ -732,6 +751,42 @@ def good_artist(value):
     return name
 
 
+def counted_inline_artists(value):
+    """A visible announcement with an explicit count and an inline roster.
+
+    Do not turn ordinary promotional prose into artist names. Require the
+    entire paragraph to be a roster announcement, an exact declared count,
+    distinct valid names and a bounded list. The caller must still bind the
+    source to the signed edition.
+    """
+    if not isinstance(value, str) or not 8 <= len(value) <= 2500:
+        return []
+    counts = {"deux": 2, "trois": 3, "quatre": 4, "quatres": 4,
+              "cinq": 5, "six": 6, "sept": 7, "huit": 8,
+              "neuf": 9, "dix": 10, "onze": 11, "douze": 12}
+    match = re.fullmatch(
+        r"(?:vous\s+(?:d[ée]couvrirez|retrouverez)\s+|au programme\s*:\s*)"
+        r"(\d{1,2}|" + "|".join(counts) + r")\s+"
+        r"(?:nouveaux\s+)?(?:groupes|artistes)\s*:\s*(.+)",
+        value, re.I)
+    if not match:
+        return []
+    token = match.group(1).lower()
+    count = int(token) if token.isdigit() else counts[token]
+    if not 2 <= count <= 60:
+        return []
+    parts = re.split(r"\s*,\s*|\s+et\s+(?=[^,]{2,110}$)", match.group(2),
+                     flags=re.I)
+    if len(parts) != count or any(
+            re.search(r"[;:!?]|\.(?:\s+|$)(?=\S)", part)
+            for part in parts):
+        return []
+    names = [good_artist(part) for part in parts]
+    if not all(names) or len({key(name) for name in names}) != count:
+        return []
+    return names
+
+
 def listed_artists(blocks):
     names, active = [], False
     for i, b in enumerate(blocks):
@@ -750,6 +805,8 @@ def listed_artists(blocks):
             found = good_artist(b["lead"] or b["text"])
             if found:
                 names.append(found)
+        if b["tag"] == "p":
+            names.extend(counted_inline_artists(b["text"]))
         if b["tag"] != "p" or not (GENRE_LIST.search(text)
                                   and re.search(r"\b(?:nouveaux|nouvelles|"
                                                 r"groupes attendus|groupes annonces)\b", text)
@@ -1566,6 +1623,10 @@ def apply_independently_verified_updates(
                 new["lineup"] = cleaned_lineup + new_names
                 new["bands"] = len(new["lineup"])
                 fields.extend(("lineup", "bands"))
+                fresh_roster_note = municipal_lineup_note(new)
+                if fresh_roster_note != new.get("notes"):
+                    new["notes"] = fresh_roster_note
+                    fields.append("notes")
             dated_grids = {}
             for url, html in html_pages:
                 summary = dated_ticket_table_summary(html, old, today)
