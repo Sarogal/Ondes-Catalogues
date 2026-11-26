@@ -48,3 +48,24 @@ class HistoricalVisibleTests(unittest.TestCase):
             self.assertFalse(visible_historical_identity(ITEM, html, SOURCE))
         self.assertFalse(visible_historical_identity(ITEM,
             HTML + '<script type="application/ld+json">{bad}</script>', SOURCE))
+
+
+    def test_nested_address_card_is_not_a_second_event(self):
+        page = """<html><article><h1>Les comptines</h1>
+        <p>Théâtre des enfants</p>
+        <ul><li><div><p>Le samedi, <strong>12 décembre 2026</strong>
+        de 10:00 à 11:00</p><p>Le samedi, 12 décembre 2026 de 11:15 à 12:00</p>
+        </div></li></ul>
+        <article><h3>Théâtre des enfants</h3>
+        <ul><li>25 rue de la gare<br>12345 Ville</li></ul></article>
+        </article></html>"""
+        self.assertTrue(visible_historical_identity(ITEM, page, SOURCE))
+        for bad in (
+            page.replace("<h3>Théâtre des enfants</h3>", "<h3>Autre théâtre</h3>"),
+            page.replace("12345 Ville", "12345 Autreville"),
+            page.replace("10:00 à 11:00", "10:00 à 10:30"),
+            page.replace("12345 Ville", "<span hidden>12345 Ville</span>"),
+            page.replace("<h3>Théâtre des enfants</h3>", "<h1>Théâtre des enfants</h1>"),
+            page.replace("25 rue de la gare", "13 décembre 2026"),
+        ):
+            self.assertFalse(visible_historical_identity(ITEM, bad, SOURCE), bad)
