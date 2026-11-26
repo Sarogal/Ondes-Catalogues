@@ -50,6 +50,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_missing_logo.py"
       - "radio-catalog-lab/tools/radio_daily_logo_plan.py"
       - "radio-catalog-lab/tools/test_radio_daily_logo_plan.py"
+      - "radio-catalog-lab/tools/radio_daily_merge_release_validation.py"
+      - "radio-catalog-lab/tools/test_radio_daily_merge_release_validation.py"
       - "radio-catalog-lab/tools/radio_daily_merge_plan.py"
       - "radio-catalog-lab/tools/test_radio_daily_merge_plan.py"
       - "radio-catalog-lab/tools/radio_daily_repair_material.py"
