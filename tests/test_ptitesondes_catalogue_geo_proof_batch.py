@@ -1,7 +1,12 @@
 import unittest
 from unittest.mock import Mock
 from datetime import date
-from ptitesondes_catalogue_geo_proof_batch import research_group, run_batch
+from ptitesondes_catalogue_geo_proof_batch import research_group as _research_group, run_batch, named_osm_query
+
+
+def research_group(*args, **kwargs):
+    kwargs.setdefault("named_osm_get", lambda *_: {"elements": []})
+    return _research_group(*args, **kwargs)
 from test_ptitesondes_shared_venue_location_evidence import directory, html, ban, GROUP, URL
 import test_ptitesondes_unnumbered_official_geo_proof as unnumbered
 
@@ -115,6 +120,46 @@ class CatalogueGeoProofTests(unittest.TestCase):
         street = deepcopy(response)
         street["features"][0]["properties"]["type"] = "street"
         self.assertNotIn("venue_point", check(osm, geo=street))
+
+    def test_open_named_discovery_without_known_website_or_catalogue_point(self):
+        from copy import deepcopy
+        g = dict(unnumbered.GROUP, active_ids=["old-slug"], missing_ids=["old-slug"],
+                 source_urls=[], point_hints=[dict(lat=0, lng=0)])
+        response = unnumbered.osm(city=unnumbered.CITY)
+        response["elements"][0]["tags"]["website"] = "https://independent-venue.example/"
+        def check(data, page=None, d=None):
+            named = Mock(return_value=data)
+            result = research_group(
+                g, DAY, directory_get=lambda _: unnumbered.directory() if d is None else d,
+                html_get=lambda url: unnumbered.html() if url.startswith("https://independent-venue.example") and page is None else (page if url.startswith("https://independent-venue.example") else "<html>no venue</html>"),
+                ign_get=Mock(side_effect=AssertionError("no numbered address")),
+                osm_get=Mock(side_effect=AssertionError("no old point")),
+                named_osm_get=named)
+            return result, named
+        result, named = check(response)
+        self.assertEqual(result["status"], "independent_venue_point_found")
+        self.assertEqual(result["venue_point"]["official"], "https://independent-venue.example/")
+        self.assertFalse(result["publication_ready"])
+        named.assert_called_once_with("12345", unnumbered.VENUE)
+        self.assertNotIn("venue_point", check(response, unnumbered.html(point=(44.6, 2.25)))[0])
+        self.assertNotIn("venue_point", check(response, unnumbered.html(venue="Autre lieu"))[0])
+        self.assertNotIn("venue_point", check(response, d={})[0])
+        duplicate = deepcopy(response)
+        duplicate["elements"].append(dict(duplicate["elements"][0], id=43))
+        self.assertNotIn("venue_point", check(duplicate)[0])
+        street = deepcopy(response)
+        street["elements"][0]["tags"].update({"addr:street": "Place de la Gare", "addr:postcode": "12345"})
+        page = "<html><h1>Place du village</h1><p>Place de la Gare 12345 Ville-les-Bois</p></html>"
+        self.assertIn("unnumbered street", check(street, page)[0]["venue_point"]["geo_source"])
+        street["elements"][0]["tags"]["addr:postcode"] = "99999"
+        self.assertNotIn("venue_point", check(street, page)[0])
+
+    def test_named_query_is_bounded_and_literal(self):
+        query = named_osm_query("12345", 'Théâtre "test"')
+        self.assertIn('["ref:INSEE"="12345"]', query)
+        self.assertIn('Théâtre \\"test\\"', query)
+        with self.assertRaises(ValueError):
+            named_osm_query("12345;out;", "Théâtre")
 
     def test_batch_bound_and_rotation(self):
         doc = dict(events=[dict(id=str(i), city="Ville", venue="Salle "+str(i),

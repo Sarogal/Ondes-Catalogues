@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'scripts/ptitesondes_catalogue_geo_rotation.py'
+      - 'scripts/ptitesondes_catalogue_geo_proof_batch.py'
+      - 'tests/test_ptitesondes_catalogue_geo_proof_batch.py'
       - 'tests/test_ptitesondes_catalogue_geo_rotation.py'
       - '.github/workflows/ptitesondes-catalogue-geo-rotation.yml'
   push:
@@ -10,8 +12,12 @@ on:
     paths:
       - '.github/workflows/ptitesondes-catalogue-geo-rotation.yml'
   schedule:
+    - cron: '42 01 * * *'
     - cron: '42 05 * * *'
+    - cron: '42 09 * * *'
+    - cron: '42 13 * * *'
     - cron: '42 16 * * *'
+    - cron: '42 20 * * *'
   workflow_dispatch:
 permissions:
   contents: read
@@ -34,7 +40,7 @@ jobs:
       - name: Test rotation without secrets or network
         env:
           PYTHONPATH: scripts:tests
-        run: python -m unittest -v test_ptitesondes_catalogue_geo_rotation
+        run: python -m unittest -v test_ptitesondes_catalogue_geo_rotation test_ptitesondes_catalogue_geo_proof_batch
   observe:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues'
     runs-on: ubuntu-24.04
