@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 124,
   "dueNameCount": 27,
-  "attemptedCount": 1,
+  "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "latter day exploits",
+  "retryAfterKey": "minor threat",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -689,6 +689,22 @@
       "genreSource": "musicbrainz-community",
       "sourceUrl": "https://musicbrainz.org/artist/65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab",
       "artistName": "Metallica",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "michael schulte": {
+      "status": "name_hypothesis",
+      "mbid": "5ea48d60-26c9-406c-aed3-a450bb5d8e86",
+      "genres": [
+        "dance",
+        "pop"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/5ea48d60-26c9-406c-aed3-a450bb5d8e86",
+      "artistName": "Michael Schulte",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,
