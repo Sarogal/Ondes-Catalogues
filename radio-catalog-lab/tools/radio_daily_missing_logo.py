@@ -24,7 +24,7 @@ from radio_stream_recheck_ledger import parse_day,SHA256_RE
 
 MAX_STATIONS=8
 MAX_IMAGES=2
-ANALYZER_VERSION=3
+ANALYZER_VERSION=4
 MAX_ALTERNATIVES=2
 LOGO_KINDS={"typed_station_logo","named_player_html_logo"}
 KINDS=LOGO_KINDS|{"typed_station_image","named_page_og_image"}
@@ -91,13 +91,27 @@ def candidates(station,final,body):
     # Same-host alone is not sufficient on a multi-station broadcaster.
     home=homepage_url(station.get("homepage"))
     alternate=bool(home and page_key(final)!=page_key(home))
+    nodes=list(station_nodes(p.structured))
+    matched=[n for n in nodes if name_key(n.get("name"))==name]
     if alternate:
         players={urljoin(final,u) for u in p.audio_urls}
         known={v["url"] for v in station.get("streams",[])}
-        if not (len(players)==1 and players<=known):
+        # A typed declaration can bind the station even without an HTML
+        # player, but only when the matching node itself carries the logo
+        # and an exact registered stream. Never borrow another node's URL.
+        typed_players={urljoin(final,n[k]) for n in matched
+                       for k in ("contentUrl","streamUrl")
+                       if isinstance(n.get(k),str) and n[k]}
+        if players and not players<=known:
             return {}
-    nodes=list(station_nodes(p.structured))
-    matched=[n for n in nodes if name_key(n.get("name"))==name]
+        if typed_players and not typed_players<=known:
+            return {}
+        if typed_players:
+            matched=[n for n in matched if any(
+                isinstance(n.get(k),str) and urljoin(final,n[k]) in known
+                for k in ("contentUrl","streamUrl"))]
+        elif not (len(players)==1 and players<=known):
+            return {}
     typed={}
     for key,kind in (("logo","typed_station_logo"),("image","typed_station_image")):
         for n in matched:

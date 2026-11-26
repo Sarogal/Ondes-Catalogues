@@ -195,6 +195,37 @@ class MissingLogoTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             build(raw,DAY,expected=sha,limit=9)
 
+    def test_alternate_structured_logo_and_exact_stream_same_node(self):
+        station,_=self.html_logo()
+        child="https://radio.example.org/station/iron"
+        node={"@type":"RadioStation","name":"Iron Radio","logo":URL,
+              "streamUrl":station["streams"][0]["url"]}
+        def page(*nodes):
+            return ('<script type="application/ld+json">'+json.dumps(list(nodes))+'</script>').encode()
+        self.assertEqual(candidates(station,child,page(node)),{URL:"typed_station_logo"})
+        node["streamUrl"]="https://wrong.example.org/stream"
+        self.assertEqual(candidates(station,child,page(node)),{})
+
+    def test_alternate_structured_stream_cannot_be_borrowed(self):
+        station,_=self.html_logo()
+        child="https://radio.example.org/station/iron"
+        nodes=[{"@type":"RadioStation","name":"Iron Radio","logo":URL},
+               {"@type":"RadioStation","name":"Other Radio","streamUrl":station["streams"][0]["url"]}]
+        def page():
+            return ('<script type="application/ld+json">'+json.dumps(nodes)+'</script>').encode()
+        self.assertEqual(candidates(station,child,page()),{})
+        nodes[1]["name"]="Iron Radio"
+        self.assertEqual(candidates(station,child,page()),{})
+
+    def test_alternate_structured_stream_conflicting_html_player_held(self):
+        station,_=self.html_logo()
+        child="https://radio.example.org/station/iron"
+        node={"@type":"RadioStation","name":"Iron Radio","logo":URL,
+              "contentUrl":station["streams"][0]["url"]}
+        body=('<script type="application/ld+json">'+json.dumps(node)+'</script>'
+              '<audio src="https://wrong.example.org/stream"></audio>').encode()
+        self.assertEqual(candidates(station,child,body),{})
+
     def test_external_link_not_followed(self):
         station,_=self.html_logo()
         root=b'<a href="https://other.example.org/station/iron">Iron Radio</a>'
