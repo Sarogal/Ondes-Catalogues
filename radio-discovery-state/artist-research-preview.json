@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 124,
   "dueNameCount": 42,
-  "attemptedCount": 1,
+  "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "r.e.m.",
+  "retryAfterKey": "sodom",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -850,6 +850,15 @@
     "rock antenne": {
       "status": "not_found",
       "artistName": "ROCK ANTENNE",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "saxon": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Saxon",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,
