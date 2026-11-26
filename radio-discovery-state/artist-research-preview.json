@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 124,
   "dueNameCount": 24,
-  "attemptedCount": 1,
+  "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "the misfits",
+  "retryAfterKey": "the war on drugs",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -1171,6 +1171,26 @@
       "genreSource": "musicbrainz-community",
       "sourceUrl": "https://musicbrainz.org/artist/19a2a56f-fd53-4dea-8cec-88046efb0fd5",
       "artistName": "The Gutter Twins",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "the presidents of the united states of america": {
+      "status": "name_hypothesis",
+      "mbid": "7509421d-1074-442f-be8f-b526167afcb3",
+      "genres": [
+        "alternative rock",
+        "indie rock",
+        "pop punk",
+        "post-grunge",
+        "power pop",
+        "rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/7509421d-1074-442f-be8f-b526167afcb3",
+      "artistName": "The Presidents of the United States of America",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,
