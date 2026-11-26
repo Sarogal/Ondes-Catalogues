@@ -138,8 +138,24 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
                    "<h4>Newsletter</h4></footer>")
         def no_fetch(_):
             self.fail("The signed event page is already available")
+        diagnostic = {}
         self.assertEqual(multivenue_department_from_access(
-            event + contact, row, "Colonne", no_fetch), ("39", site))
+            event + contact, row, "Colonne", no_fetch,
+            diagnostic=diagnostic), ("39", site))
+        self.assertEqual(diagnostic["multivenue_postcode"],
+                         "unique_named_venue_department")
+        wrapped_event = event.replace("scènes de Salle des Rives",
+                                      "scènes de\n <strong>Salle des Rives</strong>")
+        wrapped_contact = contact.replace("SALLE DES RIVES",
+                                          "\n SALLE <span>DES RIVES</span> \n")
+        self.assertEqual(multivenue_department_from_access(
+            wrapped_event + wrapped_contact, row, "Colonne", no_fetch,
+            diagnostic=diagnostic), ("39", site))
+        self.assertIsNone(multivenue_department_from_access(
+            event + contact.replace("39000", "code inconnu"),
+            row, "Colonne", no_fetch, diagnostic=diagnostic))
+        self.assertEqual(diagnostic["multivenue_postcode"],
+                         "named_venue_postcode_absent")
         for bad in (contact.replace("SALLE DES RIVES", "BUREAU ADMINISTRATIF"),
                     contact.replace("<p>21", "<p hidden>21"),
                     contact.replace("COLONNE", "AUTREVILLE"),
