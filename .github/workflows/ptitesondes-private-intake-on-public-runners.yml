@@ -93,7 +93,7 @@ jobs:
           assert s.count('cp "$OUT/ods-territory-cursor.json" "$STATE/ods-territory-cursor.json"') == 2
           assert s.count('git -C state add -- "automation-intake/ptitesondes/ods-territory-cursor.json"') == 2
           assert "queue: max" in s
-          dispatch_step = s.split("      - name: Demander la synchronisation publique après écriture privée validée", 1)[1].split("\n      - name:", 1)[0]
+          dispatch_step = s.rsplit("\n      - name: Demander la synchronisation publique après écriture privée validée", 1)[1].split("\n      - name:", 1)[0]
           assert "success() && env.RUN_MODE == 'write'" in dispatch_step
           assert "env.CYCLE != 'places'" not in dispatch_step
           assert "gh workflow run ptitesondes-cloud-sync.yml" in dispatch_step
