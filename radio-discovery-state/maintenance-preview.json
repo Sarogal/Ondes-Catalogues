@@ -7,20 +7,19 @@
   "stationCount": 296,
   "streamCount": 358,
   "checkedCount": 20,
-  "everObservedStreamCount": 40,
+  "everObservedStreamCount": 60,
   "sampleCounts": {
-    "audio_hint": 8,
-    "inconclusive": 6,
-    "unavailable_hint": 6
+    "audio_hint": 11,
+    "inconclusive": 9
   },
   "hlsAttemptedCount": 0,
   "hlsDeferredCount": 0,
   "hlsVerdictCounts": {},
   "reviewCounts": {
-    "audio_sample_observed": 18,
+    "audio_sample_observed": 28,
     "availability_recheck": 10,
-    "awaiting_probe": 261,
-    "inconclusive": 7
+    "awaiting_probe": 243,
+    "inconclusive": 15
   },
   "streams": [
     {
@@ -430,28 +429,52 @@
       "goStationId": "go-station-000031",
       "streamId": "legacy-stream-001",
       "streamSha256": "1cdf6b96cb641d240aacd83f882f52fc2c53b0295e06a19edece7a999469d212",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "inconclusive",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
       "goStationId": "go-station-000031",
       "streamId": "legacy-stream-002",
       "streamSha256": "d23d063f5d5d2ec11e71a208fbd48cef988654b0b63602335785f55f6555fac8",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "inconclusive",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
       "goStationId": "go-station-000032",
       "streamId": "legacy-stream-001",
       "streamSha256": "7f151083977ef0230a6ee1bb32fd23250480c44eb80d48180a7ff911e67f350a",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
       "goStationId": "go-station-000033",
       "streamId": "legacy-stream-001",
       "streamSha256": "0f0fef26d4ab6d6f84882f0f99bf814fec1a0e965d66fb79df163640595f90d6",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
@@ -471,98 +494,182 @@
       "goStationId": "go-station-000035",
       "streamId": "legacy-stream-001",
       "streamSha256": "69bf15004bd2e4f8189ba8416167bbd6dec08b110731a07ca586d36d20f5bb97",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
       "goStationId": "go-station-000036",
       "streamId": "legacy-stream-001",
       "streamSha256": "c072d5988de95f9d5638e5d38e0fe0597e691ef293a19adcabc5c32e0404a7f1",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "inconclusive",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
       "goStationId": "go-station-000037",
       "streamId": "legacy-stream-001",
       "streamSha256": "c61f24ce5ae5dea49012481bbfa8053ccabdebce737c6bcf1fd5d07552d8a0b1",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
       "goStationId": "go-station-000038",
       "streamId": "legacy-stream-001",
       "streamSha256": "5030ad225025acf2702e8352d8cff1914c4a1d35bb34a8485ecf573953c9c581",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "inconclusive",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
       "goStationId": "go-station-000039",
       "streamId": "legacy-stream-001",
       "streamSha256": "d53da52d74cdc47278215b2be48fc6c6a5c94684c588df87b618eea77c0a86a6",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
       "goStationId": "go-station-000040",
       "streamId": "legacy-stream-001",
       "streamSha256": "3bf580f0689f5c046de502585e71f7ed8caadb73e7236fa024cc4bdea5df4385",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
       "goStationId": "go-station-000040",
       "streamId": "legacy-stream-002",
       "streamSha256": "afc79f669ed490447e8ca18656b7c0c9dd3247e6d1b15918661703be941d3c2c",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
       "goStationId": "go-station-000041",
       "streamId": "legacy-stream-001",
       "streamSha256": "4c60a0bffcafdafe04f1444fb8e5a8debe3f621fc2924503c790eae39c2b437e",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
       "goStationId": "go-station-000042",
       "streamId": "legacy-stream-001",
       "streamSha256": "8f8c65f26150dc08cb1e1e51bb559feff9daf4b6103d4b22db6f4e6c603a8136",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
       "goStationId": "go-station-000043",
       "streamId": "legacy-stream-001",
       "streamSha256": "c91ca1e567f34816c494ecbb927e4d58c59c038ae77f58e5caa279708dbedf68",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
       "goStationId": "go-station-000044",
       "streamId": "legacy-stream-001",
       "streamSha256": "d4cd5621259e5c8a00aa721e91c9896818393e5e12f477c638e5fbda6acfd0fb",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "inconclusive",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
       "goStationId": "go-station-000045",
       "streamId": "legacy-stream-001",
       "streamSha256": "8b6d165bb4bb796f7f1217abede911b16029f83b87fd88b3a28cd73d81954d2c",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "inconclusive",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
       "goStationId": "go-station-000046",
       "streamId": "legacy-stream-001",
       "streamSha256": "9d9a655b8bd4626bff9128e419608a2748c83dde6665368ccb102781599e37af",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
       "goStationId": "go-station-000047",
       "streamId": "legacy-stream-001",
       "streamSha256": "c0d96f40168c40ee9d56e98b50c9e9bff19817ed6959bf937c5c2208ddf9dcbc",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "inconclusive",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
@@ -2731,14 +2838,26 @@
       "goStationId": "go-station-900001",
       "streamId": "test-candidate-1",
       "streamSha256": "8692f498a023bf15237f4c8b722179633a8bbe73f9ca11c4d438da0b745e6ae5",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "inconclusive",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
       "goStationId": "go-station-900002",
       "streamId": "test-candidate-1",
       "streamSha256": "0b667351ddb1904e27d037500da0669ff382aeca11f050d71243c938a7477802",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "outcome": "inconclusive",
+          "route": "direct"
+        }
+      ],
       "publicationAllowed": false
     },
     {
@@ -3072,10 +3191,10 @@
       "goStationId": "go-station-000031",
       "catalogueStatus": "active",
       "streamCount": 2,
-      "recentStreamCount": 0,
+      "recentStreamCount": 2,
       "positiveStreamCount": 0,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "inconclusive",
       "approved": false,
       "publicationAllowed": false
     },
@@ -3083,10 +3202,10 @@
       "goStationId": "go-station-000032",
       "catalogueStatus": "active",
       "streamCount": 1,
-      "recentStreamCount": 0,
-      "positiveStreamCount": 0,
+      "recentStreamCount": 1,
+      "positiveStreamCount": 1,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "audio_sample_observed",
       "approved": false,
       "publicationAllowed": false
     },
@@ -3094,10 +3213,10 @@
       "goStationId": "go-station-000033",
       "catalogueStatus": "active",
       "streamCount": 1,
-      "recentStreamCount": 0,
-      "positiveStreamCount": 0,
+      "recentStreamCount": 1,
+      "positiveStreamCount": 1,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "audio_sample_observed",
       "approved": false,
       "publicationAllowed": false
     },
@@ -3116,10 +3235,10 @@
       "goStationId": "go-station-000035",
       "catalogueStatus": "active",
       "streamCount": 1,
-      "recentStreamCount": 0,
-      "positiveStreamCount": 0,
+      "recentStreamCount": 1,
+      "positiveStreamCount": 1,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "audio_sample_observed",
       "approved": false,
       "publicationAllowed": false
     },
@@ -3127,10 +3246,10 @@
       "goStationId": "go-station-000036",
       "catalogueStatus": "active",
       "streamCount": 1,
-      "recentStreamCount": 0,
+      "recentStreamCount": 1,
       "positiveStreamCount": 0,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "inconclusive",
       "approved": false,
       "publicationAllowed": false
     },
@@ -3138,10 +3257,10 @@
       "goStationId": "go-station-000037",
       "catalogueStatus": "active",
       "streamCount": 1,
-      "recentStreamCount": 0,
-      "positiveStreamCount": 0,
+      "recentStreamCount": 1,
+      "positiveStreamCount": 1,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "audio_sample_observed",
       "approved": false,
       "publicationAllowed": false
     },
@@ -3149,10 +3268,10 @@
       "goStationId": "go-station-000038",
       "catalogueStatus": "active",
       "streamCount": 1,
-      "recentStreamCount": 0,
+      "recentStreamCount": 1,
       "positiveStreamCount": 0,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "inconclusive",
       "approved": false,
       "publicationAllowed": false
     },
@@ -3160,10 +3279,10 @@
       "goStationId": "go-station-000039",
       "catalogueStatus": "active",
       "streamCount": 1,
-      "recentStreamCount": 0,
-      "positiveStreamCount": 0,
+      "recentStreamCount": 1,
+      "positiveStreamCount": 1,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "audio_sample_observed",
       "approved": false,
       "publicationAllowed": false
     },
@@ -3171,10 +3290,10 @@
       "goStationId": "go-station-000040",
       "catalogueStatus": "active",
       "streamCount": 2,
-      "recentStreamCount": 0,
-      "positiveStreamCount": 0,
+      "recentStreamCount": 2,
+      "positiveStreamCount": 2,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "audio_sample_observed",
       "approved": false,
       "publicationAllowed": false
     },
@@ -3182,10 +3301,10 @@
       "goStationId": "go-station-000041",
       "catalogueStatus": "active",
       "streamCount": 1,
-      "recentStreamCount": 0,
-      "positiveStreamCount": 0,
+      "recentStreamCount": 1,
+      "positiveStreamCount": 1,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "audio_sample_observed",
       "approved": false,
       "publicationAllowed": false
     },
@@ -3193,10 +3312,10 @@
       "goStationId": "go-station-000042",
       "catalogueStatus": "active",
       "streamCount": 1,
-      "recentStreamCount": 0,
-      "positiveStreamCount": 0,
+      "recentStreamCount": 1,
+      "positiveStreamCount": 1,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "audio_sample_observed",
       "approved": false,
       "publicationAllowed": false
     },
@@ -3204,10 +3323,10 @@
       "goStationId": "go-station-000043",
       "catalogueStatus": "active",
       "streamCount": 1,
-      "recentStreamCount": 0,
-      "positiveStreamCount": 0,
+      "recentStreamCount": 1,
+      "positiveStreamCount": 1,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "audio_sample_observed",
       "approved": false,
       "publicationAllowed": false
     },
@@ -3215,10 +3334,10 @@
       "goStationId": "go-station-000044",
       "catalogueStatus": "active",
       "streamCount": 1,
-      "recentStreamCount": 0,
+      "recentStreamCount": 1,
       "positiveStreamCount": 0,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "inconclusive",
       "approved": false,
       "publicationAllowed": false
     },
@@ -3226,10 +3345,10 @@
       "goStationId": "go-station-000045",
       "catalogueStatus": "active",
       "streamCount": 1,
-      "recentStreamCount": 0,
+      "recentStreamCount": 1,
       "positiveStreamCount": 0,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "inconclusive",
       "approved": false,
       "publicationAllowed": false
     },
@@ -3237,10 +3356,10 @@
       "goStationId": "go-station-000046",
       "catalogueStatus": "active",
       "streamCount": 1,
-      "recentStreamCount": 0,
-      "positiveStreamCount": 0,
+      "recentStreamCount": 1,
+      "positiveStreamCount": 1,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "audio_sample_observed",
       "approved": false,
       "publicationAllowed": false
     },
@@ -3248,10 +3367,10 @@
       "goStationId": "go-station-000047",
       "catalogueStatus": "active",
       "streamCount": 1,
-      "recentStreamCount": 0,
+      "recentStreamCount": 1,
       "positiveStreamCount": 0,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "inconclusive",
       "approved": false,
       "publicationAllowed": false
     },
@@ -5987,10 +6106,10 @@
       "goStationId": "go-station-900001",
       "catalogueStatus": "quarantined",
       "streamCount": 1,
-      "recentStreamCount": 0,
+      "recentStreamCount": 1,
       "positiveStreamCount": 0,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "inconclusive",
       "approved": false,
       "publicationAllowed": false
     },
@@ -5998,10 +6117,10 @@
       "goStationId": "go-station-900002",
       "catalogueStatus": "quarantined",
       "streamCount": 1,
-      "recentStreamCount": 0,
+      "recentStreamCount": 1,
       "positiveStreamCount": 0,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "awaiting_probe",
+      "reviewStatus": "inconclusive",
       "approved": false,
       "publicationAllowed": false
     },
