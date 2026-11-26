@@ -965,6 +965,50 @@ class UnlistedExistingVenueTests(unittest.TestCase):
                 dynamic.validate(signed, venues, artists, TODAY,
                                  fetch=fake_fetch({"primary": body}))
 
+    def test_named_hybrid_genre_after_country_credit_reaches_publisher(self):
+        from automation.concerts import dynamic_first_party_venue_proposals as proposals
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        signed["event"]["genres"] = proof["officialGenreLabels"] = ["Punk Rap"]
+        title = " + ".join(NAMES)
+        assertion = "Les " + NAMES[-1] + " c’est du punk-rap de l’espace, avec des guitares."
+        headings = "".join("<h2>" + n + "</h2><p>(FR)</p><p>Jazz</p>"
+                           for n in NAMES[:-1])
+        last = "<h2>" + NAMES[-1] + "</h2><p>(FR)</p><p>" + assertion + "</p>"
+        body = page(EVENT, music=False, genres=False, event_name=title)
+        body = body.replace(json.dumps(
+            [{"@type": "MusicGroup", "name": n} for n in NAMES]), "[]")
+        body = body.replace("<h1>Nouvel événement</h1>",
+                            "<h1>" + title + "</h1>" + headings + last)
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+        fetch = fake_fetch({"primary": body})
+        self.assertEqual(proposals._individual_event(
+            body, EVENT, signed["event"]["date"], venue,
+            accept_generic=True, fetch=fetch, cache={}), (NAMES, ["Punk Rap"]))
+        self.assertTrue(dynamic.validate(signed, venues, artists, TODAY, fetch=fetch))
+        with mock.patch.object(dynamic, "safe_fetch", side_effect=fetch):
+            published, counts = publisher.merge(
+                BASE, BASE, {"schema": publisher.SCHEMA, "approvals": [signed]}, TODAY)
+        self.assertEqual(counts["newEvents"], 1)
+        for invalid in (
+            body.replace(assertion, "Another artist c’est du punk-rap."),
+            body.replace(assertion, NAMES[-1] + " c’est du jazz influencé par le punk-rap."),
+            body.replace(assertion, NAMES[-1] + " ce n’est pas du punk-rap."),
+            body.replace(assertion, NAMES[-1] + " joue du punk-rap comme un autre groupe."),
+            body.replace(assertion, NAMES[-1] + " joue du hardcore techno."),
+            body.replace(last, "<h2>Vous devriez aimer</h2>" + last),
+            body.replace(last, last.replace("(FR)", "(influences)")),
+            body.replace(last, last.replace("<h2>" + NAMES[-1], "<h2>Other Artist")),
+            body.replace('"performer": []', '"performer": [{"@type":"MusicGroup","name":"Other Artist"}]'),
+        ):
+            with self.subTest(invalid=invalid[:100]), self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY,
+                    fetch=fake_fetch({"primary": invalid}))
+
     def test_exact_visible_musical_prose_replayed_by_real_publisher(self):
         from automation.concerts import dynamic_first_party_venue_proposals as proposals
         signed = signed_approval()

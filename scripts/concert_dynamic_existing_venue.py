@@ -384,9 +384,39 @@ def _visible_artist_sections(html, title):
     return section
 
 
+def _visible_named_style_assertion(name, paragraph):
+    """Literal named genre assertion in the artist's own visible section.
+
+    A descriptive clause after a comma is not necessary to prove style.
+    Do not infer from comparisons, influences, another subject, or an
+    arbitrary genre keyword elsewhere in a biography.
+    """
+    if not isinstance(paragraph, str) or not 0 < len(paragraph) <= 1000:
+        return []
+    clause = re.split(r"[,;.!?](?:\s|$)", paragraph.strip(), maxsplit=1)[0]
+    text = normal(clause)
+    subject = normal(name)
+    if not subject or re.search(
+            r"\b(?:not|never|pas|sans|ne|ni|tribute|hommage|influence|"
+            r"influences|influenced|inspire|inspiree|comme|rather)\b", text):
+        return []
+    # The article can be part of a band's editorial name without being
+    # repeated in the exact event title. It does not allow arbitrary aliases.
+    if not re.match(r"^(?:le |la |les )?" + re.escape(subject) + r" ", text):
+        return []
+    predicate = re.sub(r"^(?:le |la |les )?" + re.escape(subject) + r" ", "", text, count=1)
+    found = re.fullmatch(
+        r"(?:c est|est|sont|joue|jouent) (?:du |de la |un |une )?"
+        r"(punk rap|rap punk|electro punk|punk electro|punk rock|post punk|noise rock|black metal|death metal)"
+        r"(?: (?:de l espace|melodique|experimental|experimentale|francais|francaise))?",
+        predicate)
+    return [found[1].title()] if found else []
+
+
 def _visible_artist_labels(section, name):
     """Exact standalone subgenre labels immediately under an artist heading."""
     from automation.concerts import artist_official_bio as biographies
+    import official_html_evidence as visible
 
     matches = [i for i, (kind, text) in enumerate(section)
                if kind in ("h2", "h3", "h4") and normal(text) == normal(name)]
@@ -412,8 +442,14 @@ def _visible_artist_labels(section, name):
                            "electro", "electronic", "jazz", "folk", "goth",
                            "cinematic", "indie", "dream pop", "rap", "hip hop"}:
             continue
+        # A standalone parenthesized country credit is not a style and
+        # does not break the link between the heading and its biography.
+        if (not labels and re.fullmatch(r"\([^()]{2,40}\)", text.strip())
+                and normal(text) in visible._CREDIT_ORIGINS):
+            continue
         if not labels and kind == "p":
-            return _direct_artist_description(name, text)
+            return (_direct_artist_description(name, text)
+                    or _visible_named_style_assertion(name, text))
         break
     return labels
 
