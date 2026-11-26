@@ -166,6 +166,49 @@ def _iso_date(value):
         return None
 
 
+# Only an explicit year followed by an entirely commercial suffix may
+# nominate a shorter festival identity. Provider dates stay unverified.
+_PASS_SUFFIX = re.compile(
+    r"^(?P<brand>.+?)\s+(?P<year>20[2-4][0-9])\s*[-–—:|]?\s+"
+    r"(?:[1-9]\s*(?:j|jours?|days?)\s+pass|"
+    r"pass\s+[1-9]\s*(?:j|jours?|days?)|full\s+pass|"
+    r"pass\s+(?:week[- ]?end|integral|intégral))"
+    r"(?:\s*\(?[1-9]\s*[- ]?\s*(?:events?|événements?)\)?)?\s*$",
+    re.I,
+)
+
+
+def pass_edition_title(name, year):
+    """Research identity only; never derive edition dates or site authority."""
+    if (not isinstance(name, str) or not 7 <= len(name) <= 150
+            or type(year) is not int):
+        return None
+    match = _PASS_SUFFIX.fullmatch(name.strip())
+    if match is None or int(match["year"]) != year:
+        return None
+    brand = match["brand"].strip()
+    if re.search(r"\b20[2-4][0-9]\b", brand):
+        return None
+    # "Festival X" is a generic provider label on a ticket product.
+    brand = re.sub(r"^festival\s+", "", brand, flags=re.I).strip()
+    if len(normalized(brand)) < 7 or re.search(
+            r"\b(?:pass|tickets?|billetterie|concert|warm[- ]?up)\b",
+            normalized(brand)):
+        return None
+    return f"{brand} {year}"
+
+
+def provider_title_matches(value, title, year):
+    """Exact ordinary title, or an explicitly labelled pass for that edition."""
+    if not isinstance(value, str) or not isinstance(title, str):
+        return False
+    key = normalized(value)
+    if key in (normalized(title), normalized(title.rsplit(" ", 1)[0])):
+        return True
+    shortened = pass_edition_title(value, year)
+    return shortened is not None and normalized(shortened) == normalized(title)
+
+
 def published_identity(name):
     """Conservative comparison: remove only a trailing year or edition number.
 

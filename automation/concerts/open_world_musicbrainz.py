@@ -32,6 +32,17 @@ MAX_BYTES = 400_000
 SEARCH_LIMIT = 20
 
 
+class OversizedDirectoryResponse(ValueError):
+    """Bounded response exceeded the transport budget, not an identity result."""
+
+
+class DirectoryServiceError(ValueError):
+    """Known service-wide API errors, never remote error text."""
+    def __init__(self, kind):
+        self.kind = kind if kind in {"maxlag", "ratelimited", "readonly"} else "api_error"
+        super().__init__(self.kind)
+
+
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
@@ -55,7 +66,7 @@ class Client:
         with self.opener.open(req, timeout=8) as response:
             raw = response.read(MAX_BYTES + 1)
         if len(raw) > MAX_BYTES:
-            raise ValueError("MusicBrainz response too large")
+            raise OversizedDirectoryResponse("MusicBrainz response too large")
         data = json.loads(raw)
         if not isinstance(data, dict):
             raise ValueError("Invalid MusicBrainz object")
@@ -104,7 +115,7 @@ def candidate_tasks(registry, today):
         except (TypeError, ValueError):
             continue
         explicit = lead.get("officialArtistNames")
-        named = isinstance(explicit, list) and 0 < len(explicit) <= 32
+        named = isinstance(explicit, list) and bool(explicit)
         for name in frontier.observed_artists(lead):
             if not named and frontier.normalized(name) in FALLBACK_SUPPORT_LABELS:
                 continue
@@ -170,6 +181,10 @@ def research(name, request):
 
 def service_failure_kind(exc):
     """Bounded diagnostics; never persist exception text, URLs or credentials."""
+    if isinstance(exc, DirectoryServiceError):
+        return exc.kind
+    if isinstance(exc, OversizedDirectoryResponse):
+        return "oversized_response"
     if isinstance(exc, HTTPError):
         return "http_" + str(exc.code)
     if isinstance(exc, URLError):
@@ -217,10 +232,24 @@ def build(registry, today, *, prior=None, limit=MAX_NAMES, request=None):
                 break
     failure = None
     retry_after_key = None
+    oversized = 0
     for _, _, _, key, name in ordered[:limit]:
         checked += 1
         try:
             result = research(name, request)
+        except OversizedDirectoryResponse:
+            # One large artist record must not block all following names.
+            # Cool down only this identity, without asserting a genre or URL.
+            entries[key] = {"status": "response_too_large", "artistName": name,
+                            "checkedAt": today.isoformat(), "identityVerified": False,
+                            "publicationAllowed": False}
+            counters["response_too_large"] += 1
+            oversized += 1
+            if oversized >= 2:
+                # Two bounded failures in one cycle may be systemic.
+                failure, retry_after_key = "oversized_response", key
+                break
+            continue
         except (ValueError, TypeError, OSError, TimeoutError, KeyError) as exc:
             # Stop on service failure or rate limiting; keep prior memory.
             counters["serviceHeld"] += 1

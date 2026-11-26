@@ -143,6 +143,25 @@ class OpenWorldVisibleCardTests(unittest.TestCase):
         self.assertIsNone(cards.verified_detail(
             double, "Trabendo", "Paris", "2027-04-22"))
 
+    def test_complete_large_visible_bill_never_truncated(self):
+        names = [f"Distinct touring artist number {i:03d}" for i in range(65)]
+        title = " + ".join(names)
+        self.assertGreater(len(title), 1000)
+        listing = page(title, "Metal", "22 ― avril 2027")
+        found = cards.extract(listing, "Trabendo", "Paris", DAY)
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["artists"], names)
+        detail = listing.replace("<h1>Trabendo</h1>", "<h1>" + title + "</h1>")
+        self.assertEqual(cards.verified_detail(detail, "Trabendo", "Paris", "2027-04-22"),
+                         (names, ["Metal"]))
+        div_detail = detail.replace("<p>" + title + "</p>", "<div>" + title + "</div>")
+        self.assertEqual(cards.verified_detail(div_detail, "Trabendo", "Paris", "2027-04-22"),
+                         (names, ["Metal"]))
+        # A conflicting tail beyond the historic truncation must fail.
+        conflicting = detail.replace("<p>" + title + "</p>",
+                                     "<p>" + title.replace(names[-1], "Different Artist") + "</p>")
+        self.assertIsNone(cards.verified_detail(conflicting, "Trabendo", "Paris", "2027-04-22"))
+
     def test_strict_input_bounds(self):
         html = page("Klone", "Metal", "22 ― avril 2027")
         self.assertEqual(cards.extract(html, "Trabendo", "Paris",

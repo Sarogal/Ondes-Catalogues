@@ -177,10 +177,10 @@ def visible_historical_identity(event, html, venue_official):
             place = article["places"][0]
             place_body = norm_text(" ".join(place["text"]))
             if (place["headings"] != [venue]
-                    or not re.search(r"\\b\\d{5} " + re.escape(city) + r"\\b", place_body)
+                    or not re.search(r"\b\d{5} " + re.escape(city) + r"\b", place_body)
                     or BAD_STATUS.search(place_body)
-                    or re.search(r"\\b(?:[0-3]?\\d) (?:" + "|".join(MONTHS)
-                                 + r") \\d{4}\\b", place_body)):
+                    or re.search(r"\b(?:[0-3]?\d) (?:" + "|".join(MONTHS)
+                                 + r") \d{4}\b", place_body)):
                 return False
             blocks = article["leaf_blocks"]
             if clock.group(2):
@@ -188,7 +188,9 @@ def visible_historical_identity(event, html, venue_official):
                 end_times = tuple(norm_text(x) for x in (
                     f"{int(eh):02d}:{em}", f"{int(eh)}:{em}", f"{int(eh)}h{em}"))
                 blocks = [block for block in blocks
-                          if any(_contains(block, t) for t in end_times)]
+                          if any(_contains(block, f"{start} {joiner}{end}")
+                                 for start in times for end in end_times
+                                 for joiner in ("a ", "au ", ""))]
         elif not _contains(body, city):
             return False
         return any(any(_contains(block, d) for d in dates)

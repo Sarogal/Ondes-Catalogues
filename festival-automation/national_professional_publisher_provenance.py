@@ -10,11 +10,11 @@ from urllib.parse import urlencode
 from dns_pinned_https import DNSPinnedHTTPSConnection, fetch_public_html
 from national_openagenda_research import (
     HOST, ENDPOINT, SELECT, MAX_BYTES, _canonical_url, candidate,
+    provider_title_matches,
 )
 from national_professional_profile_discovery import discover
 from national_professional_official_detail import examine
 from national_cultural_venue_discovery import cultural_detail
-from source_qualification import normalized
 
 
 def lookup_path(event):
@@ -63,8 +63,7 @@ def prove(event, title, today, *, record_fetch=fetch_record, fetch=fetch_public_
         lead = candidate(data["results"][0], today)
         if (lead is None or lead["source_url"] != event
                 or lead["edition_year_hint"] != year
-                or normalized(lead["name_hint"]) not in (
-                    normalized(title), normalized(title.rsplit(" ", 1)[0]))):
+                or not provider_title_matches(lead["name_hint"], title, year)):
             return []
         research = discover(lead["professional_source_hints_review_only"],
                             title, year, fetch=fetch)

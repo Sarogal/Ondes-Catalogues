@@ -36,6 +36,69 @@ def lookup(path, params):
 
 
 class MusicBrainzResearchTests(unittest.TestCase):
+    def test_large_explicit_roster_is_not_truncated_by_network_budget(self):
+        reg = registry()
+        names = [f"Unknown Act {i:03d}" for i in range(65)]
+        reg["items"]["lead"]["candidate"].update(
+            officialArtistNames=names, leadArtist=names[0])
+        tasks = mb.candidate_tasks(reg, DAY)
+        self.assertEqual(len(tasks), 65)
+        self.assertEqual({task[0] for task in tasks.values()}, {0})
+        self.assertEqual({task[2] for task in tasks.values()}, set(names))
+        calls = []
+        def request(path, params):
+            calls.append(params["query"])
+            return {"count": 0, "artists": []}
+        previous = None
+        for _ in range(6):
+            previous = mb.build(reg, DAY, prior=previous, request=request)
+            self.assertLessEqual(previous["namesChecked"], mb.MAX_NAMES)
+            self.assertFalse(previous["publicationAllowed"])
+        self.assertEqual(len(calls), 65)
+        self.assertEqual(len(set(calls)), 65)
+        self.assertEqual(len(previous["entries"]), 65)
+
+    def test_oversized_identity_is_held_without_blocking_next_artist(self):
+        reg = registry()
+        reg["items"]["lead"]["candidate"]["officialArtistNames"] = ["Act A", "Act B", "Act C"]
+        calls = []
+        def bounded(*args):
+            name = args[1]["query"]
+            calls.append(name)
+            if "Act A" in name:
+                raise mb.OversizedDirectoryResponse("private detail never retained")
+            return {"count": 0, "artists": []}
+        result = mb.build(reg, DAY, request=bounded)
+        self.assertEqual(result["namesChecked"], 3)
+        self.assertEqual(result["reasonCounts"], {"response_too_large": 1, "not_found": 2})
+        held = result["entries"]["act a"]
+        self.assertEqual(held["status"], "response_too_large")
+        self.assertFalse(held["identityVerified"])
+        self.assertFalse(held["publicationAllowed"])
+        self.assertNotIn("homepageHints", held)
+        self.assertNotIn("genres", held)
+        self.assertNotIn("private detail", str(result))
+        self.assertIsNone(result["serviceFailureKind"])
+        cached = mb.build(reg, DAY, prior=result,
+                                request=lambda *a: self.fail("same-day retry"))
+        self.assertEqual(cached["namesChecked"], 0)
+
+    def test_repeated_oversized_responses_stop_at_two_and_keep_other_names_due(self):
+        reg = registry()
+        reg["items"]["lead"]["candidate"]["officialArtistNames"] = ["Act A", "Act B", "Act C"]
+        def oversized(*args):
+            raise mb.OversizedDirectoryResponse("bounded")
+        result = mb.build(reg, DAY, request=oversized)
+        self.assertEqual(result["namesChecked"], 2)
+        self.assertEqual(result["serviceFailureKind"], "oversized_response")
+        self.assertEqual(set(result["entries"]), {"act a", "act b"})
+        self.assertEqual(result["serviceRetryAfterKey"], "act b")
+        recovered = mb.build(reg, DAY, prior=result,
+                                request=lambda *a: {"count": 0, "artists": []})
+        self.assertEqual(recovered["namesChecked"], 1)
+        self.assertEqual(recovered["entries"]["act c"]["status"], "not_found")
+        self.assertFalse(recovered["publicationAllowed"])
+
     def test_unknown_name_without_website(self):
         result = mb.build(registry(), DAY, request=lookup)
         entry = result["entries"][mb.exact(NAME)]

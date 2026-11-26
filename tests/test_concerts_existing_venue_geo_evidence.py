@@ -31,6 +31,66 @@ def document(**changes):
 
 
 class ExistingVenueGeoEvidenceTests(unittest.TestCase):
+    def test_named_footer_address_after_exact_visible_event_and_independent_geo(self):
+        event = dict(EVENT, title="Metal night")
+        html = ("<h1>Metal night</h1><p>New Room</p>"
+                "<p>Vendredi 12 02 2027 20:00</p>"
+                "<h2>Vous devriez aimer...</h2><p>Other show</p>"
+                "<footer><p>New Room, Allée des Jardins - 68000 Colmar"
+                " / tél. : 03 00 00 00 00</p></footer>")
+        with patch.object(evidence.official, "official_origin",
+                          return_value="https://unknown-room.fr/agenda"), \
+             patch.object(evidence.geo, "verify",
+                          return_value=(OSM, 48.08, 7.36, "named-site-point")) as geo:
+            row = evidence.verify(event, VENUE, fetch=lambda *a: html)
+            self.assertEqual(row["venuePatch"]["address"], "Allée des Jardins")
+            self.assertEqual(row["venuePatch"]["postalCode"], "68000")
+            self.assertEqual(geo.call_args.args[0]["address"], "Allée des Jardins")
+            self.assertFalse(row["publicationAllowed"])
+            self.assertFalse(row["publisherAuthorityGranted"])
+
+    def test_footer_requires_exact_event_venue_date_origin_and_visible_named_address(self):
+        event = dict(EVENT, title="Metal night")
+        prefix = "<h1>Metal night</h1><p>New Room</p><p>12 02 2027 20:00</p>"
+        footer = "<footer><p>New Room, 19 rue des Jardins - 68000 Colmar</p></footer>"
+        variants = [
+            (prefix.replace("<p>New Room</p>", "<p>Other Room</p>") + footer, True),
+            (prefix.replace("12 02", "13 02") + footer, True),
+            (prefix.replace("Metal night", "Other show") + footer, True),
+            (prefix + footer, False),
+            (prefix + footer.replace("New Room,", "Other Room,"), True),
+            (prefix + footer.replace("Colmar", "Paris"), True),
+            (prefix + footer.replace("<footer>", "<footer hidden>"), True),
+            (prefix + footer.replace("<p>", "<p style='display:none'>"), True),
+            (prefix + footer.replace("</footer>", "<p>New Room, 21 rue des Jardins 68000 Colmar</p></footer>"), True),
+            (prefix + "<p>13 02 2027 20:00</p>" + footer, True),
+            (prefix + "<h2>New Room</h2><p>19 rue des Jardins 75000 Paris</p>" + footer, True),
+            (prefix.replace("<p>New Room</p>", "") + "<h2>Vous devriez aimer...</h2><p>New Room</p>" + footer, True),
+        ]
+        for html, trusted in variants:
+            with self.subTest(html=html, trusted=trusted), \
+                 patch.object(evidence.official, "official_origin",
+                              return_value="https://unknown-room.fr/agenda" if trusted else None), \
+                 patch.object(evidence.geo, "verify",
+                              side_effect=AssertionError("unverified address reached geography")):
+                with self.assertRaises(ValueError):
+                    evidence.verify(event, VENUE, fetch=lambda *a: html)
+
+    def test_footer_does_not_override_explicit_practical_page_conflict(self):
+        event = dict(EVENT, title="Metal night")
+        html = ("<h1>Metal night</h1><p>12 02 2027 20:00</p>"
+                "<p>Lieu</p><p>New Room</p><nav><a href='/infos/'>Infos pratiques</a></nav>"
+                "<footer><p>New Room, 19 rue des Jardins 68000 Colmar</p></footer>")
+        practical = ("<h1>Infos pratiques</h1><h2>New Room</h2>"
+                     "<p>19 rue des Jardins 75000 Paris</p>")
+        with patch.object(evidence.official, "official_origin",
+                          return_value="https://unknown-room.fr/agenda"), \
+             patch.object(evidence.geo, "verify",
+                          side_effect=AssertionError("conflicting address reached geography")):
+            with self.assertRaises(ValueError):
+                evidence.verify(event, VENUE,
+                                fetch=lambda url, cache: html if url == URL else practical)
+
     def test_exact_address_does_not_mutate_original(self):
         site = evidence.extract_address(document(), EVENT, VENUE)
         self.assertEqual(site["address"], "19 rue des Jardins")
@@ -96,6 +156,55 @@ class ExistingVenueGeoEvidenceTests(unittest.TestCase):
         bad = dict(EVENT, officialUrl="https://unknown-room.example/events/metal-night")
         with self.assertRaises(ValueError):
             evidence.verify(bad, VENUE, fetch=lambda *args: self.fail("must not fetch"))
+
+    def test_same_slot_retries_rotate_across_all_rooms_and_event_pages(self):
+        venues = [dict(VENUE, id=f"room-{i}") for i in range(12)]
+        events = [dict(EVENT, id=f"event-{i}-{j}", venueId=f"room-{i}",
+                       status="confirmed", date=f"2027-02-{12+j:02d}")
+                  for i in range(12) for j in range(4)]
+        data = {"venues": venues, "events": events}
+        original = copy.deepcopy(data)
+        day = dt.date(2026, 11, 26)
+        called = []
+        def held(event, venue, **kwargs):
+            called.append((venue["id"], event["id"]))
+            raise evidence.EvidenceHeld("event_fetch_unavailable")
+        prior = None
+        for cycle in range(6):
+            prior = evidence.scan(data, day, slot=1, prior=prior, verify_one=held)
+            self.assertEqual(prior["examinedVenues"], 4)
+            self.assertEqual(prior["eventPagesExamined"], 8)
+            self.assertFalse(prior["publicationAllowed"])
+            if cycle == 2:
+                self.assertEqual(len({vid for vid, _ in called}), 12)
+        self.assertEqual(len(called), 48)
+        self.assertEqual(len(set(called)), 48)
+        self.assertEqual(data, original)
+        self.assertEqual(set(prior["recentVenueIds"]), {v["id"] for v in venues})
+
+    def test_new_room_is_preferred_and_future_or_untrusted_history_ignored(self):
+        venues = [dict(VENUE, id=f"room-{i}") for i in range(5)]
+        events = [dict(EVENT, id=f"event-{i}", venueId=f"room-{i}", status="confirmed")
+                  for i in range(5)]
+        data = {"venues": venues, "events": events}
+        day = dt.date(2026, 11, 26)
+        def held(*args, **kwargs):
+            raise evidence.EvidenceHeld("event_fetch_unavailable")
+        first = evidence.scan(data, day, slot=1, verify_one=held)
+        next_run = evidence.scan(data, day, slot=1, prior=first, verify_one=held)
+        self.assertEqual(len(set(next_run["recentVenueIds"])), 5)
+        first_ids = [v["venueId"] for v in first["held"]]
+        for invalid in ({**first, "publicationAllowed": True},
+                        {**first, "asOf": "2026-11-27"}):
+            reset = evidence.scan(data, day, slot=1, prior=invalid, verify_one=held)
+            self.assertEqual([v["venueId"] for v in reset["held"]], first_ids)
+        # Removing a corrected room also removes its obsolete memory.
+        corrected = first_ids[0]
+        data["venues"] = [dict(v, geoPrecision="named-site-point") if v["id"] == corrected else v
+                          for v in venues]
+        out = evidence.scan(data, day, slot=1, prior=next_run, verify_one=held)
+        self.assertNotIn(corrected, out["recentVenueIds"])
+        self.assertNotIn(corrected, out["recentEventIdsByVenue"])
 
     def test_rotation_covers_more_than_one_batch_without_mutating_catalogue(self):
         venues = [dict(VENUE, id=f"room-{i}") for i in range(9)]

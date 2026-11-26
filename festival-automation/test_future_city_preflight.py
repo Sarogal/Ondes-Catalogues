@@ -40,6 +40,27 @@ def catalogue(row=ROW):
 
 class FutureCityProofTests(unittest.TestCase):
 
+    def test_current_dated_multivenue_festival_city_not_single_venue(self):
+        row = dict(ROW, name="Festival Exemple : Une célébration 2027")
+        html = ("<main><h1>Festival Exemple : Une célébration</h1>"
+                "<h2>Festival - Post-Punk</h2><h3>Programme</h3>"
+                "<p>Les 2 et 3 juillet 2027, le Festival Exemple investit "
+                "4 salles de la ville de Colonne pour une célébration musicale. "
+                "Le programme rassemble des artistes de toutes les scènes.</p></main>")
+        self.assertEqual(exact_edition_city(html, row),
+                         {"slug": ROW["slug"], "city": "Colonne", "source": SITE})
+        for bad in (html.replace("Une célébration</h1>", "Autre édition</h1>"),
+                    html.replace("2 et 3 juillet 2027", "2 et 3 juillet 2026"),
+                    html.replace("le Festival Exemple investit", "Autre Festival investit"),
+                    html.replace("investit", "investissait"),
+                    html.replace("Colonne pour", "Colonne et Autreville pour"),
+                    html.replace("<p>Les", "<p hidden>Les"),
+                    html.replace("<main>", "<footer>").replace("</main>", "</footer>"),
+                    html.replace("</main>", "<p>Les 2 et 3 juillet 2027, le Festival Exemple "
+                        "investit 4 salles de la ville de Autreville pour un programme.</p></main>"),
+                    html.replace("4 salles", "1 salle")):
+            self.assertIsNone(exact_edition_city(bad, row), bad)
+
     def test_adjacent_current_date_city_and_named_countdown(self):
         hero = ("<main><h2>2 et 3 juillet 2027</h2>"
                 "<h2>à colonne</h2><p>Festival Exemple revient dans :</p>"

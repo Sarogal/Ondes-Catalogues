@@ -64,6 +64,7 @@ class HistoricalVisibleTests(unittest.TestCase):
             page.replace("<h3>Théâtre des enfants</h3>", "<h3>Autre théâtre</h3>"),
             page.replace("12345 Ville", "12345 Autreville"),
             page.replace("10:00 à 11:00", "10:00 à 10:30"),
+            page.replace("10:00 à 11:00", "10:00 à 10:30, reprise à 11:00"),
             page.replace("12345 Ville", "<span hidden>12345 Ville</span>"),
             page.replace("<h3>Théâtre des enfants</h3>", "<h1>Théâtre des enfants</h1>"),
             page.replace("25 rue de la gare", "13 décembre 2026"),

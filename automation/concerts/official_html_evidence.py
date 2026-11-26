@@ -44,9 +44,10 @@ KNOWN_GENRES = tuple(words(tag) for tag in POSITIVE_GENRES)
 
 class VisibleBlocks(HTMLParser):
     """Minimal text structure, ignoring navigation/marketing/script content."""
-    def __init__(self, *, leaf_divs=False):
+    def __init__(self, *, leaf_divs=False, complete_blocks=False):
         super().__init__(convert_charrefs=True)
         self.leaf_divs = leaf_divs
+        self.complete_blocks = complete_blocks
         self.blocks = []
         self.frames = []
         self.ignored = 0
@@ -102,8 +103,11 @@ class VisibleBlocks(HTMLParser):
             if self.frames[i][0] == tag:
                 frame = self.frames.pop(i)
                 value = " ".join(" ".join(frame[1]).split())
-                if value and (tag != "div" or (not frame[2] and len(value) <= 600)):
-                    self.blocks.append((tag, value[:1000]))
+                if value and (tag != "div" or (not frame[2] and
+                              (self.complete_blocks or len(value) <= 600))):
+                    # A bounded-page caller may need the entire named bill.
+                    # Never silently truncate such a field into a shorter bill.
+                    self.blocks.append((tag, value if self.complete_blocks else value[:1000]))
                 return
 
 

@@ -12,7 +12,7 @@ import sys
 from urllib.parse import urljoin, urlsplit
 
 from dns_pinned_https import fetch_public_html, safe_public_url, OfficialHTTPStatusError
-from national_openagenda_research import _valid_professional_hints
+from national_openagenda_research import _valid_professional_hints, provider_title_matches
 from source_qualification import Anchors, normalized, classify, visible_text
 SCRIPTS = str(Path(__file__).resolve().parents[1] / 'scripts')
 if SCRIPTS not in sys.path:
@@ -80,8 +80,7 @@ def _event_profiles(html, url, title, year, diagnostic=None):
         diagnostic['outcome'] = 'HTML_UNAVAILABLE_OR_SIZE_REJECTED'
         return None
     headings, anchors = _parse(html)
-    expected = {normalized(title), normalized(re.sub(r"\s+20[2-4][0-9]$", "", title))}
-    if len(headings) != 1 or headings[0] not in expected:
+    if len(headings) != 1 or not provider_title_matches(headings[0], title, year):
         diagnostic['outcome'] = 'EVENT_HEADING_MISMATCH'
         diagnostic['heading_count'] = min(len(headings), 100)
         return None
@@ -124,7 +123,7 @@ def _profile_websites(html, profile, label, ticket, diagnostic=None):
     identity = headings[0]
     # A card can append follower/event counts to the displayed profile name.
     if not identity or not (label == identity or re.fullmatch(
-            re.escape(identity) + r" \d[0-9 ]*(?:followers|abonnes)(?: \d[0-9 ]*(?:events|evenements))?", label)):
+            re.escape(identity) + r" \d[0-9 ]*(?:followers|abonne(?:s| e s| es)?)(?: \d[0-9 ]*(?:events?|evenements?))?", label)):
         diagnostic['outcome'] = 'PROFILE_IDENTITY_MISMATCH'
         return []
     event_identity = _path_identity(ticket)
