@@ -64,6 +64,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_state_migration.py"
       - "radio-catalog-lab/tools/radio_daily_unified_generator.py"
       - "radio-catalog-lab/tools/test_radio_daily_unified_generator.py"
+      - "radio-catalog-lab/tools/radio_daily_admission_release_validation.py"
+      - "radio-catalog-lab/tools/test_radio_daily_admission_release_validation.py"
       - "radio-catalog-lab/tools/radio_daily_v9_generator.py"
       - "radio-catalog-lab/tools/test_radio_daily_v9_generator.py"
       - "radio-catalog-lab/tools/test_radio_daily_baseline_cli.py"
