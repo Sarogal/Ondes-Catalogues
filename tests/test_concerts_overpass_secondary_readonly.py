@@ -108,6 +108,68 @@ class SecondaryReadOnlyOSMTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             geo.verify(site, contradiction)
 
+    def test_old_osm_street_requires_active_exact_establishment_and_numbered_ban(self):
+        from urllib.parse import parse_qs, urlsplit
+        site = {"name": "Salle Libre", "city": "Tours", "postalCode": "37000",
+                "address": "allée Nouvelle", "region": "Centre-Val de Loire"}
+        website = "https://salle-libre.fr/agenda"
+        siret = "12345678901234"
+        row = {"siret": siret, "etat_administratif": "A",
+               "statut_diffusion_etablissement": "O", "code_pays_etranger": None,
+               "code_postal": "37000", "libelle_commune": "Tours",
+               "numero_voie": "12", "indice_repetition": None,
+               "type_voie": "ALLEE", "libelle_voie": "NOUVELLE"}
+        xml = ('<osm version="0.6"><node id="912345678" lat="47.395" lon="0.688">'
+               '<tag k="name" v="Salle Libre"/><tag k="addr:city" v="Tours"/>'
+               '<tag k="addr:postcode" v="37000"/><tag k="addr:street" v="ancien quai"/>'
+               '<tag k="addr:housenumber" v="12"/><tag k="website" v="https://salle-libre.fr/"/>'
+               '<tag k="ref:FR:SIRET" v="' + siret + '"/></node></osm>')
+        def run(*, official=website, establishment=row, osm=xml, far=False):
+            visited = []
+            def fetch(url, cap):
+                visited.append(url)
+                if url.startswith(geo.BAN):
+                    query = parse_qs(urlsplit(url).query)["q"][0]
+                    numbered = query.startswith("12 ")
+                    props = {"postcode": "37000", "city": "Tours", "street": "allée Nouvelle",
+                             "type": "housenumber" if numbered else "street", "score": 0.84}
+                    if numbered:
+                        props["housenumber"] = "12"
+                    data = {"features": [{"geometry": {"type": "Point",
+                            "coordinates": [0.698 if numbered and far else 0.688, 47.395]},
+                            "properties": props}]}
+                    return json.dumps(data), url
+                if url.startswith(geo.OSM_MAP):
+                    return osm, url
+                if url.startswith(geo.ESTABLISHMENTS):
+                    self.assertEqual(parse_qs(urlsplit(url).query)["q"], [siret])
+                    return json.dumps({"results": [{"siren": siret[:9],
+                                                   "siege": establishment,
+                                                   "matching_etablissements": [establishment]}]}), url
+                self.fail("unexpected fetch")
+            result = geo.verify(site, fetch, official_website=official)
+            self.assertEqual(sum(u.startswith(geo.ESTABLISHMENTS) for u in visited), 1)
+            self.assertEqual(sum(u.startswith(geo.BAN) for u in visited), 2)
+            return result
+        self.assertEqual(run(), ("https://www.openstreetmap.org/node/912345678",
+                                 47.395, 0.688, "named-site-point"))
+        for changes in (
+            {"official": None}, {"official": "https://another-room.fr/"},
+            {"establishment": dict(row, etat_administratif="F")},
+            {"establishment": dict(row, statut_diffusion_etablissement="P")},
+            {"establishment": dict(row, siret="12345678900000")},
+            {"establishment": dict(row, numero_voie="13")},
+            {"establishment": dict(row, libelle_voie="AUTRE")},
+            {"establishment": dict(row, code_postal="37100")},
+            {"osm": xml.replace("Tours", "Paris")},
+            {"osm": xml.replace(siret, "invalid")},
+            {"osm": xml.replace("</osm>", xml[xml.index("<node"):xml.index("</osm>")].replace(
+                'id="912345678"', 'id="912345679"', 1) + "</osm>")},
+            {"far": True},
+        ):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                run(**changes)
+
     def test_new_site_osm_node_exact_json_identity_from_second_provider(self):
         expected = {"name": "Salle Libre", "city": "Tours",
                     "postalCode": "37000"}

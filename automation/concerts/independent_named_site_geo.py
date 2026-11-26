@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import math
 import re
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 from xml.etree import ElementTree
 
 import triage
@@ -22,6 +22,7 @@ import osm_read_only_fallback as readonly
 BAN = "https://data.geopf.fr/geocodage/search/"
 OSM_MAP = "https://api.openstreetmap.org/api/0.6/map"
 OSM_PUBLIC = "https://www.openstreetmap.org"
+ESTABLISHMENTS = "https://recherche-entreprises.api.gouv.fr/search"
 # Bounded < 200m box; no city-wide map queries or city centroid fallback.
 LAT_HALF = 0.00065
 LON_HALF = 0.00110
@@ -150,7 +151,83 @@ def _node_tags(obj):
             if t.get("k") and t.get("v")}
 
 
-def _osm_map(site, center, fetch):
+def _website_host(value):
+    if not isinstance(value, str):
+        return None
+    try:
+        parts = urlsplit(value)
+        if (parts.scheme != "https" or not parts.hostname or parts.username
+                or parts.password or parts.port not in (None, 443)
+                or parts.query or parts.fragment):
+            return None
+        return parts.hostname.casefold().removeprefix("www.")
+    except ValueError:
+        return None
+
+
+def _registered_address(site, tags, position, fetch, website, min_score):
+    """Resolve an old OSM street ONLY by an exact active public establishment.
+
+    The caller already has an independently registered official venue origin.
+    A matching name alone, business name search, coordinates alone, or an
+    approximate postcode is never enough. SIRET is read from the actual
+    named OSM feature, not from a candidate's description.
+    """
+    host = _website_host(website)
+    links = [tags[k] for k in ("website", "contact:website") if tags.get(k)]
+    siret = tags.get("ref:FR:SIRET")
+    house, street = _street_parts(site["address"])
+    osm_house = tags.get("addr:housenumber")
+    if (not host or not links or any(_website_host(link) != host for link in links)
+            or not isinstance(siret, str) or not re.fullmatch(r"\d{14}", siret)
+            or clean(tags.get("addr:city")) != clean(site["city"])
+            or tags.get("addr:postcode") != site["postalCode"]
+            or not isinstance(osm_house, str) or not re.fullmatch(r"\d{1,4}", osm_house)
+            or (house is not None and house != osm_house)):
+        return False
+    # Only public establishment fields are used; never persist raw responses,
+    # legal representatives, or any unneeded administrative data.
+    url = ESTABLISHMENTS + "?" + urlencode({"q": siret})
+    try:
+        body, final = fetch(url, 130_000)
+        if final != url or not isinstance(body, str) or len(body) > 130_000:
+            return False
+        data = json.loads(body)
+        results = data.get("results")
+        if not isinstance(results, list) or len(results) != 1:
+            return False
+        entity = results[0]
+        if entity.get("siren") != siret[:9]:
+            return False
+        establishments = entity.get("matching_etablissements") or []
+        if not isinstance(establishments, list):
+            return False
+        rows = [entity.get("siege")] + establishments
+        matches = [row for row in rows if isinstance(row, dict) and row.get("siret") == siret]
+        if not matches:
+            return False
+        for row in matches:
+            if (row.get("etat_administratif") != "A"
+                    or row.get("statut_diffusion_etablissement") != "O"
+                    or row.get("code_pays_etranger")
+                    or row.get("code_postal") != site["postalCode"]
+                    or clean(row.get("libelle_commune")) != clean(site["city"])
+                    or row.get("numero_voie") != osm_house
+                    or row.get("indice_repetition")
+                    or clean(str(row.get("type_voie") or "") + " " +
+                             str(row.get("libelle_voie") or "")) != street):
+                return False
+        # Require a separate exact BAN house-number lookup at the actual
+        # named building. The original street lookup and radius still apply.
+        numbered = dict(site, address=osm_house + " " + re.sub(
+            r"^\d{1,4}\s+", "", site["address"]))
+        center = _ban_result(numbered, fetch, min_score=min_score)
+        return _distance_meters(*center, *position) <= MAX_DISTANCE_METERS
+    except (ValueError, TypeError, KeyError, AttributeError, OSError, TimeoutError):
+        return False
+
+
+def _osm_map(site, center, fetch, *, official_website=None, min_score=0.78):
     lat, lon = center
     require(-56 <= lat <= 52 and -180 <= lon <= 180,
             "address geocode outside territorial bounds")
@@ -198,6 +275,7 @@ def _osm_map(site, center, fetch):
             nodes[ident] = (nla, nlo)
     house, official_street = _street_parts(site["address"])
     matches = []
+    conflicting_street = []
     for kind in ("node", "way"):
         for feature in root.findall(kind):
             ident = feature.get("id")
@@ -215,9 +293,8 @@ def _osm_map(site, center, fetch):
                         and tags["addr:postcode"] != site["postalCode"])
                     or tags.get("addr:country", "FR").upper() != "FR"):
                 continue
-            if (tags.get("addr:street")
-                    and clean(tags["addr:street"]) != official_street):
-                continue
+            different_street = bool(tags.get("addr:street")
+                                    and clean(tags["addr:street"]) != official_street)
             if house and tags.get("addr:housenumber") and clean(
                     tags["addr:housenumber"]) != house:
                 continue
@@ -232,17 +309,25 @@ def _osm_map(site, center, fetch):
                                 len(refs) >= 3 and all(refs)) else None
             if position and _distance_meters(
                     lat, lon, position[0], position[1]) <= MAX_DISTANCE_METERS:
-                matches.append((
-                    f"{OSM_PUBLIC}/{kind}/{ident}",
-                    position[0], position[1],
-                    "named-site-point" if kind == "node" else "named-site-area",
-                ))
+                match = (f"{OSM_PUBLIC}/{kind}/{ident}",
+                         position[0], position[1],
+                         "named-site-point" if kind == "node" else "named-site-area")
+                if different_street:
+                    conflicting_street.append((match, tags, position))
+                else:
+                    matches.append(match)
+    # Default route remains unchanged. Never resolve ambiguous named
+    # features by picking an establishment from several conflicting ones.
+    if not matches and official_website and len(conflicting_street) == 1:
+        match, tags, position = conflicting_street[0]
+        if _registered_address(site, tags, position, fetch, official_website, min_score):
+            matches.append(match)
     require(len(matches) == 1,
             "one independent named OSM feature at exact address required")
     return matches[0]
 
 
-def verify(site, fetch, *, min_score=0.78):
+def verify(site, fetch, *, min_score=0.78, official_website=None):
     """The caller must have verified a single dated first-party Event beforehand.
 
     fetch(url, byte_cap) -> (body, final_url); the production fetch honours
@@ -254,4 +339,5 @@ def verify(site, fetch, *, min_score=0.78):
         for field in ("name", "city", "address", "postalCode", "region")),
         "official event site identity absent")
     center = _ban_result(site, fetch, min_score=min_score)
-    return _osm_map(site, center, fetch)
+    return _osm_map(site, center, fetch, official_website=official_website,
+                    min_score=min_score)
