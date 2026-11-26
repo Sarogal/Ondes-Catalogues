@@ -981,6 +981,28 @@ class UnlistedExistingVenueTests(unittest.TestCase):
                 self.assertGreaterEqual(
                     metric["stateCounts"].get("held_needs_other_evidence", 0), 1)
 
+    def test_publisher_replay_reports_specific_fixed_rejection_stage(self):
+        cases = (
+            (page(EVENT, names=NAMES[:-1]), "signed_title_mismatch"),
+            (page(EVENT, date="2027-03-06"), "event_date_mismatch"),
+            (page(EVENT, venue_name="Other Place"), "venue_name_mismatch"),
+            (page(EVENT, postal="99999"), "venue_postal_identity_mismatch"),
+            (page(EVENT, country="GB"), "venue_country_unconfirmed"),
+            (page(EVENT, genres=False), "relevant_genre_missing"),
+            (page(EVENT, status="EventCancelled"), "event_not_confirmed"),
+        )
+        for html, reason in cases:
+            with self.subTest(reason=reason):
+                with self.assertRaisesRegex(
+                        ValueError, "no unique exact first-party MusicEvent: " + reason):
+                    dynamic.validate(signed_approval(),
+                                     {v["id"]: v for v in BASE["venues"]},
+                                     {a["id"]: a for a in BASE["artists"]}, TODAY,
+                                     fetch=fake_fetch({"primary": html}))
+        # Remote or unexpected exceptions must never become a report detail.
+        self.assertEqual(dynamic._replay_reason(ValueError("private remote text")),
+                         "invalid_event_node")
+
     def test_source_identity_and_exact_event_contradictions_hold(self):
         for case, changed in (
             ("source-owner", {"osm": osm(website="https://unrelated.fr")}),
