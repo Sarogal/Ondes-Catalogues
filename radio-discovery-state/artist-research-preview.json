@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 124,
   "dueNameCount": 45,
-  "attemptedCount": 1,
-  "serviceFailure": "http_503",
-  "retryAfterKey": "minor threat",
+  "attemptedCount": 4,
+  "serviceFailure": "timeout",
+  "retryAfterKey": "queens of the stone age",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -693,9 +693,38 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "nina hagen": {
+      "status": "name_hypothesis",
+      "mbid": "e4d32f51-bc57-42a4-8165-b80f7a86496d",
+      "genres": [
+        "neue deutsche welle",
+        "new wave",
+        "post-punk",
+        "punk",
+        "punk rock",
+        "rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/e4d32f51-bc57-42a4-8165-b80f7a86496d",
+      "artistName": "Nina Hagen",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "nine inch nails": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Nine Inch Nails",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "nochnoj prospekt": {
+      "status": "not_found",
+      "artistName": "Nochnoj Prospekt",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,
@@ -716,6 +745,21 @@
       "artistName": "Panda Bear, Cindy Lee",
       "source": "musicbrainz",
       "checkedAt": "2026-11-25",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "pascow": {
+      "status": "name_hypothesis",
+      "mbid": "79d4c52d-a904-4bc7-9e4d-17aa99da35d6",
+      "genres": [
+        "punk rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/79d4c52d-a904-4bc7-9e4d-17aa99da35d6",
+      "artistName": "Pascow",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },
