@@ -63,6 +63,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_baseline_cli.py"
       - "radio-catalog-lab/tools/radio_daily_release_context.py"
       - "radio-catalog-lab/tools/test_radio_daily_release_context.py"
+      - "radio-catalog-lab/tools/radio_daily_lab_signing.py"
+      - "radio-catalog-lab/tools/test_radio_daily_lab_signing.py"
       - "radio-catalog-lab/tools/radio_daily_baseline_selection.py"
       - "radio-catalog-lab/tools/test_radio_daily_baseline_selection.py"
       - "radio-catalog-lab/tools/radio_daily_baseline_verify.py"
