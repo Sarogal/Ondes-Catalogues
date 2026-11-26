@@ -104,7 +104,7 @@ class EditorialExclusionContractTests(unittest.TestCase):
         from scripts import concert_published_lineup_contract as lineup
         from test_concerts_openagenda_new_site_publisher import geo_fixture, existing
 
-        _, small, ledger, today, _ = self.setup_case()
+        _, _, _, today, _ = self.setup_case()
         record, venue, event, approval = fixture.EditorialGenreReconciliationTests().setup_case()
         # Use the real 127-event historical fixture, not a mocked merge.
         original_geo = sync.NEW_REFERENCE_GEO_SOURCES.pop(existing.VENUE_ID, None)
@@ -117,6 +117,9 @@ class EditorialExclusionContractTests(unittest.TestCase):
         anchor.update({k: v for k, v in venue.items() if k != "id"})
         event["venueId"] = anchor["id"]
         event["artistIds"] = [base["artists"][0]["id"]]
+        event["title"] = base["artists"][0]["name"]
+        record["title"] = {"fr": event["title"]}
+        approval["officialEvidence"][-1]["officialArtistNames"] = [event["title"]]
         # Bind the synthetic published snapshot and original approval.
         approval["event"] = copy.deepcopy(event)
         current = copy.deepcopy(base)
