@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 95,
-  "distinctArtistHints": 112,
+  "stationsWithArtistHints": 101,
+  "distinctArtistHints": 118,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -2145,6 +2145,114 @@
           "date": "2026-11-26",
           "artistHint": "Nina Hagen",
           "titleSha256": "894ad5ce5666a5b2c5712a11f1bfad284ca68bcab68b96768cf393593a99df8c"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "e4fc3a81-354d-420c-b204-affc7e307891",
+      "streamSha256": "a7258348619b75d963f8c3bf67f5569c2a4516d782ff1ac2307c855a797a3edd",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Television",
+          "titleSha256": "a62149f7f70c4ed42c504d66eb4e2398e70245a724286ad3a0348d96b079a6f4"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "e77ab056-eda4-4438-8e0f-6e8522e75343",
+      "streamSha256": "a81547bf21b56ece1d95d90f0750019a2988fc21d2104bf10f1278a1b623fcd4",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "The Gutter Twins",
+          "titleSha256": "3b6a685b038b9dbbe06aa5ff14ce484b358c23a7f8c8a7385720bff5008b730a"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "e98a9578-6006-4611-af89-f80d1bf13817",
+      "streamSha256": "fc25c92a0e94a603e6b1e451f368cbef23f018cdcaaef3e5565258254a4153f2",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Drake White",
+          "titleSha256": "9a6bea7222e763e260ec064265121ff92791e05ca0db8cb81041c97a359010e6"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "ea272dde-9da1-4f42-aca7-981d91254af7",
+      "streamSha256": "dee4671db8b2d8ec94a855bd538f5c1a1aa70be881f28768cd5d49a407690561",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Ali X, Ximena & PVLOMO",
+          "titleSha256": "012078f6eda93a8eda2df8fa7026e62982ac0b3f66cb2b9aafae38c007412423"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "eb3041cd-69bc-41bd-b1e0-daf2a88fe190",
+      "streamSha256": "0e8dbdfa96a66eee36f3d0de0bbf45a369f1b37765664d74623d3b2fd2536feb",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "76% Uncertain",
+          "titleSha256": "ea1347d8cc2af67ea1b168c42b6b9fb54822b0de83953178a37e914fefa8febf"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "ebdaeaf7-bbcf-4136-bb44-0c644d0c7d69",
+      "streamSha256": "bd33f2d01463fb192460f174c0ad691180cab1e96445f9834750f6d1285ca39e",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Michael Schulte",
+          "titleSha256": "0f940fb0cd1c1f3d834ce8d6a32e7bfcb8504a636d98aacafcd382dc24f9d9a3"
         }
       ],
       "alternativeVersion": 0,

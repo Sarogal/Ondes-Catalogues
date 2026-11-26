@@ -3,11 +3,11 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 112,
-  "dueNameCount": 77,
+  "observedNameCount": 118,
+  "dueNameCount": 82,
   "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "minor threat",
+  "retryAfterKey": "nina hagen",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -349,6 +349,28 @@
     "mlkuz": {
       "status": "not_found",
       "artistName": "MLKUZ",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "monster magnet": {
+      "status": "name_hypothesis",
+      "mbid": "a0955511-1324-4e9b-834f-e1e140502850",
+      "genres": [
+        "desert rock",
+        "hard rock",
+        "heavy metal",
+        "heavy psych",
+        "psychedelic rock",
+        "space rock",
+        "stoner metal",
+        "stoner rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/a0955511-1324-4e9b-834f-e1e140502850",
+      "artistName": "Monster Magnet",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,

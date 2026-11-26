@@ -4,14 +4,14 @@
   "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
   "approvedCount": 0,
   "publicationAllowed": false,
-  "eligibleStationCount": 45,
+  "eligibleStationCount": 49,
   "dueStationCount": 17,
   "attemptedCount": 4,
   "serviceFailureCount": 0,
   "stationsWithFreshHints": 2,
   "counts": {
     "candidates_observed": 2,
-    "no_candidate_observed": 30
+    "no_candidate_observed": 34
   },
   "records": [
     {
@@ -377,6 +377,50 @@
     },
     {
       "goStationId": "go-station-000124",
+      "lastAttemptDate": "2026-11-26",
+      "searchStatus": "no_candidate_observed",
+      "hintsObservedDate": "2026-11-26",
+      "hints": [],
+      "approved": false,
+      "publicationAllowed": false,
+      "maintenanceEligible": true,
+      "hintsFresh": true
+    },
+    {
+      "goStationId": "go-station-000129",
+      "lastAttemptDate": "2026-11-26",
+      "searchStatus": "no_candidate_observed",
+      "hintsObservedDate": "2026-11-26",
+      "hints": [],
+      "approved": false,
+      "publicationAllowed": false,
+      "maintenanceEligible": true,
+      "hintsFresh": true
+    },
+    {
+      "goStationId": "go-station-000130",
+      "lastAttemptDate": "2026-11-26",
+      "searchStatus": "no_candidate_observed",
+      "hintsObservedDate": "2026-11-26",
+      "hints": [],
+      "approved": false,
+      "publicationAllowed": false,
+      "maintenanceEligible": true,
+      "hintsFresh": true
+    },
+    {
+      "goStationId": "go-station-000132",
+      "lastAttemptDate": "2026-11-26",
+      "searchStatus": "no_candidate_observed",
+      "hintsObservedDate": "2026-11-26",
+      "hints": [],
+      "approved": false,
+      "publicationAllowed": false,
+      "maintenanceEligible": true,
+      "hintsFresh": true
+    },
+    {
+      "goStationId": "go-station-000134",
       "lastAttemptDate": "2026-11-26",
       "searchStatus": "no_candidate_observed",
       "hintsObservedDate": "2026-11-26",

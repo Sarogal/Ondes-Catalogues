@@ -12,20 +12,20 @@
   "counts": {
     "advanced_candidate": 2,
     "already_known": 82,
-    "editorial_review": 141,
+    "editorial_review": 140,
     "identity_review": 29,
-    "observed_music_candidate": 12,
+    "observed_music_candidate": 13,
     "programme_context_review": 4,
     "source_recheck": 2,
     "technical_review": 1
   },
   "programmeEvidenceCounts": {
     "mixed_observed_hints": 2,
-    "no_bound_programme_evidence": 148,
+    "no_bound_programme_evidence": 142,
     "no_observed_music": 30,
     "other_genre_observed_hints": 4,
-    "target_observed_hints": 10,
-    "unclassified_observations": 79
+    "target_observed_hints": 11,
+    "unclassified_observations": 84
   },
   "records": [
     {
@@ -8166,7 +8166,7 @@
       "stationuuid": "c9e17187-7b9f-48af-8454-0cf8462302c7",
       "streamSha256": "fddf34061b7fd8ee9eb7f65671814212918fe4fd90f4302cfe31dd283ec0d04b",
       "v2Decision": "editorial_review",
-      "shadowDecision": "editorial_review",
+      "shadowDecision": "observed_music_candidate",
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
@@ -8174,22 +8174,22 @@
         "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
-        "collect_more_programme_observations"
+        "resolve_remaining_station_and_technical_gates"
       ],
-      "programmeEvidenceStatus": "unclassified_observations",
+      "programmeEvidenceStatus": "target_observed_hints",
       "programmeBound": true,
       "programmeEvidence": {
         "artistHints": {
-          "target_hint": 0,
+          "target_hint": 1,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 0
         },
         "pairHints": {
-          "target_hint": 0,
+          "target_hint": 1,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 0
         },
         "collaborationMemberHints": {
           "target_hint": 0,
@@ -8198,7 +8198,7 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "no_usable_source": 1
+          "musicbrainz_only": 1
         },
         "independentObservationDays": [
           "2026-11-26"
@@ -9256,8 +9256,7 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -9311,8 +9310,7 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -9366,8 +9364,7 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -9472,8 +9469,7 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -9528,15 +9524,42 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format",
-        "repeat_continuity_on_distinct_days"
+        "resolve_mixed_or_electronic_format"
       ],
       "nextActions": [
         "collect_more_programme_observations"
       ],
-      "programmeEvidenceStatus": "no_bound_programme_evidence",
-      "programmeBound": false,
-      "programmeEvidence": null,
+      "programmeEvidenceStatus": "unclassified_observations",
+      "programmeBound": true,
+      "programmeEvidence": {
+        "artistHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 1
+        },
+        "pairHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 1
+        },
+        "collaborationMemberHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 0
+        },
+        "sourceHints": {
+          "no_usable_source": 1
+        },
+        "independentObservationDays": [
+          "2026-11-26"
+        ],
+        "reportedBroadcastDays": [],
+        "distinctArtistHints": 1,
+        "distinctArtistTitleHints": 1
+      },
       "crossSourcePairHintCount": 0,
       "stationEditorialHint": false,
       "broadcasterStreamLink": false,
@@ -9561,9 +9584,37 @@
       "nextActions": [
         "collect_more_programme_observations"
       ],
-      "programmeEvidenceStatus": "no_bound_programme_evidence",
-      "programmeBound": false,
-      "programmeEvidence": null,
+      "programmeEvidenceStatus": "unclassified_observations",
+      "programmeBound": true,
+      "programmeEvidence": {
+        "artistHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 1
+        },
+        "pairHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 1
+        },
+        "collaborationMemberHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 0
+        },
+        "sourceHints": {
+          "no_usable_source": 1
+        },
+        "independentObservationDays": [
+          "2026-11-26"
+        ],
+        "reportedBroadcastDays": [],
+        "distinctArtistHints": 1,
+        "distinctArtistTitleHints": 1
+      },
       "crossSourcePairHintCount": 0,
       "stationEditorialHint": false,
       "broadcasterStreamLink": false,
@@ -9588,9 +9639,37 @@
       "nextActions": [
         "collect_more_programme_observations"
       ],
-      "programmeEvidenceStatus": "no_bound_programme_evidence",
-      "programmeBound": false,
-      "programmeEvidence": null,
+      "programmeEvidenceStatus": "unclassified_observations",
+      "programmeBound": true,
+      "programmeEvidence": {
+        "artistHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 1
+        },
+        "pairHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 1
+        },
+        "collaborationMemberHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 0
+        },
+        "sourceHints": {
+          "no_usable_source": 1
+        },
+        "independentObservationDays": [
+          "2026-11-26"
+        ],
+        "reportedBroadcastDays": [],
+        "distinctArtistHints": 1,
+        "distinctArtistTitleHints": 1
+      },
       "crossSourcePairHintCount": 0,
       "stationEditorialHint": true,
       "broadcasterStreamLink": false,
@@ -9615,9 +9694,37 @@
       "nextActions": [
         "collect_more_programme_observations"
       ],
-      "programmeEvidenceStatus": "no_bound_programme_evidence",
-      "programmeBound": false,
-      "programmeEvidence": null,
+      "programmeEvidenceStatus": "unclassified_observations",
+      "programmeBound": true,
+      "programmeEvidence": {
+        "artistHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 1
+        },
+        "pairHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 1
+        },
+        "collaborationMemberHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 0
+        },
+        "sourceHints": {
+          "no_usable_source": 1
+        },
+        "independentObservationDays": [
+          "2026-11-26"
+        ],
+        "reportedBroadcastDays": [],
+        "distinctArtistHints": 1,
+        "distinctArtistTitleHints": 1
+      },
       "crossSourcePairHintCount": 0,
       "stationEditorialHint": false,
       "broadcasterStreamLink": false,
@@ -9642,9 +9749,37 @@
       "nextActions": [
         "collect_more_programme_observations"
       ],
-      "programmeEvidenceStatus": "no_bound_programme_evidence",
-      "programmeBound": false,
-      "programmeEvidence": null,
+      "programmeEvidenceStatus": "unclassified_observations",
+      "programmeBound": true,
+      "programmeEvidence": {
+        "artistHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 1
+        },
+        "pairHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 1
+        },
+        "collaborationMemberHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 0
+        },
+        "sourceHints": {
+          "no_usable_source": 1
+        },
+        "independentObservationDays": [
+          "2026-11-26"
+        ],
+        "reportedBroadcastDays": [],
+        "distinctArtistHints": 1,
+        "distinctArtistTitleHints": 1
+      },
       "crossSourcePairHintCount": 0,
       "stationEditorialHint": false,
       "broadcasterStreamLink": false,
@@ -9698,9 +9833,37 @@
       "nextActions": [
         "collect_more_programme_observations"
       ],
-      "programmeEvidenceStatus": "no_bound_programme_evidence",
-      "programmeBound": false,
-      "programmeEvidence": null,
+      "programmeEvidenceStatus": "unclassified_observations",
+      "programmeBound": true,
+      "programmeEvidence": {
+        "artistHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 1
+        },
+        "pairHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 1
+        },
+        "collaborationMemberHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 0
+        },
+        "sourceHints": {
+          "no_usable_source": 1
+        },
+        "independentObservationDays": [
+          "2026-11-26"
+        ],
+        "reportedBroadcastDays": [],
+        "distinctArtistHints": 1,
+        "distinctArtistTitleHints": 1
+      },
       "crossSourcePairHintCount": 0,
       "stationEditorialHint": false,
       "broadcasterStreamLink": false,
