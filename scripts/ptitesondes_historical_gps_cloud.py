@@ -55,11 +55,13 @@ def read_private_json(name, token, *, reader=github):
 
 
 def prepare_cloud_repairs(reference, current, ledger, today, token, *, reader=read_private_json,
-                          researcher_factory=hinted_researcher, **research_readers):
+                          researcher_factory=hinted_researcher, diagnostics=None, **research_readers):
     """Return current unchanged when no private queue or no verified proposal."""
     effective = reconcile(reference, current, ledger)
     checkpoint = reader("catalogue-geo-rotation.json", token)
     if checkpoint is None:
+        if diagnostics is not None:
+            diagnostics["checkpoint_missing"] = 1
         return current, ledger, 0
     progress = reader("catalogue-geo-correction-progress.json", token)
     hints = reader("acceslibre-geo-hints.json", token)
@@ -71,6 +73,11 @@ def prepare_cloud_repairs(reference, current, ledger, today, token, *, reader=re
     corrected, audit, count = prepare_corrections(
         effective, current, today, checkpoint, progress=progress,
         researcher=researcher, **research_readers)
+    if diagnostics is not None:
+        for name in ("candidate_groups", "examined_groups", "source_reads", "proposed_count"):
+            diagnostics[name] = audit[name]
+        for name in ("fresh_proof_missing_or_changed", "event_identity_unconfirmed"):
+            diagnostics[name] = audit["reasons"][name]
     if not count:
         return current, ledger, 0
     updated = record_validated_repairs(reference, current, corrected, ledger, audit, today)
