@@ -294,9 +294,33 @@ MUNICIPAL_PRIVATE_CONFIDENCE = "Agenda municipal (origine à recontrôler)"
 MUNICIPAL_PUBLIC_CONFIDENCE = "Agenda municipal officiel (Geo/DILA et fiche revérifiés)"
 
 
-def private_proposal(title, site, dates, today, *, event_ref, municipality=None):
+PROFESSIONAL_MARKER = "professional-profile.v1"
+PROFESSIONAL_PRIVATE_NOTES = "Fiche professionnelle repérée ; identité, genre et dates à revérifier."
+PROFESSIONAL_PUBLIC_NOTES = "Édition revérifiée sur la fiche officielle professionnelle ; lieu, artistes et GPS à confirmer."
+PROFESSIONAL_PRIVATE_CONFIDENCE = "Profil professionnel et fiche officielle à recontrôler"
+PROFESSIONAL_PUBLIC_CONFIDENCE = "Provenance OpenData et fiche professionnelle revérifiées"
+
+
+def private_proposal(title, site, dates, today, *, event_ref, municipality=None,
+                     professional_ticket=None):
     if event_url(event_ref) is None or slug_for(title) is None:
         return None
+    if professional_ticket is not None:
+        from national_professional_profile_discovery import _path_identity, ALLOWED_WEBSITE_ROLES
+        if (municipality is not None or safe_public_url(site) is None
+                or classify(site) not in ALLOWED_WEBSITE_ROLES
+                or _path_identity(professional_ticket) is None):
+            return None
+        root = "https://" + urlsplit(site).hostname + "/"
+        row = directory_proposal(title, root, dates, today)
+        if row is None:
+            return None
+        row.update(proofMode=PROOF_MODE, originSlug=event_ref,
+                   evidence=[event_ref, site, PROFESSIONAL_MARKER, professional_ticket],
+                   officialSite=site, source=site, notes=PROFESSIONAL_PRIVATE_NOTES,
+                   verificationStatus=PRIVATE_STATUS,
+                   sourceConfidence=PROFESSIONAL_PRIVATE_CONFIDENCE)
+        return row
     if municipality is not None:
         from national_municipal_pages_preflight import safe_same_host_article
         if not municipal_selector(municipality) or not isinstance(site, str):
@@ -335,6 +359,12 @@ def validate_private_proposal(row, today):
     evidence = row.get("evidence")
     expected_evidence = [row.get("originSlug"), row.get("officialSite")]
     municipality = None
+    professional_ticket = None
+    if isinstance(evidence, list) and len(evidence) == 4:
+        if evidence[2] != PROFESSIONAL_MARKER or not isinstance(evidence[3], str):
+            return None
+        professional_ticket = evidence[3]
+        expected_evidence.extend((PROFESSIONAL_MARKER, professional_ticket))
     if isinstance(evidence, list) and len(evidence) == 3:
         municipality = evidence[2]
         if not municipal_selector(municipality):
@@ -352,13 +382,19 @@ def validate_private_proposal(row, today):
     expected = private_proposal(
         row.get("name"), row.get("officialSite"),
         (row.get("startDate"), row.get("endDate")), row["verified_at"],
-        event_ref=row["originSlug"], municipality=municipality)
+        event_ref=row["originSlug"], municipality=municipality,
+        professional_ticket=professional_ticket)
     return row if expected == row else None
 
 
 def _approved(proposal):
     row = {key: proposal[key] for key in ROW_KEYS}
     municipal = len(proposal["evidence"]) == 3
+    if len(proposal["evidence"]) == 4:
+        row.update(verificationStatus=PUBLISHED_STATUS,
+                   sourceConfidence=PROFESSIONAL_PUBLIC_CONFIDENCE,
+                   notes=PROFESSIONAL_PUBLIC_NOTES)
+        return row
     row.update(
         verificationStatus=PUBLISHED_STATUS,
         sourceConfidence=(MUNICIPAL_PUBLIC_CONFIDENCE if municipal
@@ -378,6 +414,16 @@ def independently_verify(proposal, today, event_fetch=fetch_public_html,
     """Private hints never pick the official website the Publisher visits."""
     if validate_private_proposal(proposal, today) is None:
         return None
+    if len(proposal["evidence"]) == 4:
+        from national_professional_publisher_provenance import prove
+        proofs = prove(proposal["originSlug"], proposal["name"], today,
+                       fetch=organizer_fetch)
+        expected = {"official_detail_url": proposal["officialSite"],
+                    "ticket_url": proposal["evidence"][3],
+                    "start_date": proposal["startDate"],
+                    "end_date": proposal["endDate"],
+                    "publication_authorized": False}
+        return _approved(proposal) if expected in proofs else None
     if len(proposal["evidence"]) == 3:
         proven = prove_municipal_edition(
             proposal["evidence"][2], proposal["name"], today,
