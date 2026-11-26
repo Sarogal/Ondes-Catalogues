@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Accumulate bounded ICY artist hints by exact stream, never admit stations."""
 import argparse
+import datetime as dt
 import json
 import re
 from concurrent.futures import ThreadPoolExecutor
@@ -15,10 +16,24 @@ from radio_stream_technical_probe import validate_endpoint
 MAX_STATIONS = 6
 MAX_INPUT = 12 * 1024 * 1024
 MAX_HINTS = 90
-ALTERNATIVE_VERSION = 2
+ALTERNATIVE_VERSION = 3
+
+def valid_broadcast(h):
+    if h.get('method') != 'station_history_json':
+        return 'broadcastDate' not in h
+    try:
+        day = parse_day(h['broadcastDate'])
+        if 'date' in h:
+            age = (dt.date.fromisoformat(parse_day(h['date'])) - dt.date.fromisoformat(day)).days
+            return 0 <= age <= 30
+        return True
+    except (ValueError, KeyError, TypeError):
+        return False
+
 
 def valid_hint(h):
     return (isinstance(h,dict) and isinstance(h.get("artistHint"),str)
+            and valid_broadcast(h)
             and 2 <= len(h["artistHint"]) <= 100
             and not any(ord(c)<32 for c in h["artistHint"])
             and not re.search(r"https?://|www\.|@|[?=]",h["artistHint"],re.I)
@@ -130,6 +145,12 @@ def collect(discovery, reconciliation, continuity, decisions, *, previous=None, 
                 observation={"date":day,"artistHint":h["artistHint"],"titleSha256":h["titleSha256"]}
                 if h.get("method") in ALTERNATIVE_METHODS:
                     observation.update(method=h["method"],sourceSha256=h["sourceSha256"])
+                if h.get("method") == "station_history_json":
+                    observation["broadcastDate"] = h["broadcastDate"]
+                    if not valid_broadcast(observation):
+                        continue
+                    if any(all(old.get(k) == observation.get(k) for k in ("method","sourceSha256","broadcastDate","artistHint","titleSha256")) for old in hints):
+                        continue
                 if observation not in hints:
                     hints.append(observation)
         hints=sorted(hints,key=lambda x:(x["date"],x["artistHint"],x["titleSha256"]))[-MAX_HINTS:]
@@ -146,7 +167,8 @@ def collect(discovery, reconciliation, continuity, decisions, *, previous=None, 
                      "titleSha256":h["titleSha256"],"titleHint":h["titleHint"]}
                     for h in evidence.get("titleHints",[])[:3]
                     if valid_hint(h) and isinstance(h.get("titleHint"),str)
-                    and 1 <= len(h["titleHint"]) <= 140 and safe_digest(h["titleHint"]) == h["titleSha256"]]
+                    and 1 <= len(h["titleHint"]) <= 140 and safe_digest(h["titleHint"]) == h["titleSha256"]
+                    and any(o["date"]==day and o["artistHint"]==h["artistHint"] and o["titleSha256"]==h["titleSha256"] for o in hints)]
     with ThreadPoolExecutor(max_workers=2) as pool:
         for uid,row,titles in pool.map(check,selected):
             retained[uid]=row
@@ -156,6 +178,7 @@ def collect(discovery, reconciliation, continuity, decisions, *, previous=None, 
     return {"schemaVersion":1,"scanDate":day,"publicationAllowed":False,"approvedCount":0,
             "attemptedCount":len(selected),"stationsWithArtistHints":sum(bool(r["observations"]) for r in records),
             "distinctArtistHints":len({h["artistHint"].casefold() for r in records for h in r["observations"]}),
+            "stationsWithHistoryHints":sum(any(h.get("method")=="station_history_json" for h in r["observations"]) for r in records),
             "stationsWithAlternativeHints":sum(any(h.get("method") in ALTERNATIVE_METHODS for h in r["observations"]) for r in records),
             "records":records}
 
