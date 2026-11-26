@@ -174,7 +174,8 @@ def build_queue(state, report, curated, today):
 
     def add(title, year, region, url, origin, kind, first, last,
             city=None, archive_slug=None, date_hint=None,
-            archive_date_hints=None, institutional_date_hint=None):
+            archive_date_hints=None, institutional_date_hint=None,
+            professional_source_hints=None):
         nonlocal rejected, observed_sources, newly_discovered_sources
         ident = _identity(title, year)
         region = _safe_region(region)
@@ -264,6 +265,8 @@ def build_queue(state, report, curated, today):
                    "firstSeen": first, "lastSeen": last,
                    "independence_verified": False,
                    "publication_authorized": False}
+        if kind == "OPENAGENDA_PUBLIC_RESEARCH_ONLY" and professional_source_hints is not None:
+            witness["professional_source_hints_review_only"] = professional_source_hints
         if any(s["url"] == url and s["discovered_via"] == origin
                for s in row["sources"]):
             return
@@ -364,7 +367,8 @@ def build_queue(state, report, curated, today):
             lead["source_url"], OPENAGENDA_DATASET,
             "OPENAGENDA_PUBLIC_RESEARCH_ONLY",
             today, today, city=lead.get("city_hint_review_only"),
-            date_hint=lead.get("calendar_hint_review_only"))
+            date_hint=lead.get("calendar_hint_review_only"),
+             professional_source_hints=lead.get("professional_source_hints_review_only"))
 
     # Institutional observations only join already referenced editions. Do not
     # promote unknown slug names into event titles or infer publication.
