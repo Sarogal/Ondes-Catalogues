@@ -214,3 +214,32 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
         return proof
     except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
         return None
+
+
+def build_ban_draft(proof, today):
+    """Build only from a freshly reconstructed proof in the Publisher process."""
+    from datetime import date
+    from ptitesondes_places import validate, ban_place_id, ban_place_source_url
+    try:
+        if (type(today) is not date or proof.get("method") != "dila_official_place_address_plus_ban"
+                or proof.get("public_eligible") is not False):
+            return None
+        address = f'{proof["housenumber"]} {proof["street"]}, {proof["postcode"]} {proof["city"]}'
+        result = {
+            "id": ban_place_id(proof["city"], proof["venue"]),
+            "name": proof["venue"], "kind": "lieu-permanent",
+            "category": proof["category"], "category_label": proof["category_label"],
+            "city": proof["city"], "department": proof["department"],
+            "region": proof["region"], "postal_code": proof["postcode"],
+            "address": address, "lat": proof["lat"], "lng": proof["lng"],
+            "geo_precision": "lieu", "age_min": None, "age_max": None,
+            "admission": proof["admission"], "activities": proof["activities"],
+            "reservation_note": "Vérifier les horaires, tarifs et modalités de réservation sur le site officiel.",
+            "official_url": proof["official_url"],
+            "geo_source_url": ban_place_source_url(address),
+            "reviewed_at": today.isoformat(), "is_publicly_accessible": True,
+        }
+        validate({"version": 1, "updated_at": today.isoformat(), "places": [result]})
+        return result
+    except (ValueError, TypeError, KeyError, AttributeError, OverflowError):
+        return None
