@@ -108,5 +108,23 @@ class MetadataTests(unittest.TestCase):
         self.assertEqual(recovered["records"][0]["observations"][0]["method"],"station_now_playing_json")
         self.assertEqual(recovered["approvedCount"],0)
 
+
+    def test_history_date_and_replay_preserved_without_plain_title(self):
+        empty=lambda u:{"verdict":"metadata_no_parseable_title","titleHints":[]}
+        fallback=lambda u,s:[{"artistHint":"Band","titleHint":"Song","titleSha256":safe_digest("Song"),
+            "method":"station_history_json","sourceSha256":safe_digest("source"),"broadcastDate":"2026-11-24"}]
+        transient=[]
+        first=collect(*reports(),limit=1,observe=empty,alternative=fallback,transient_titles=transient)
+        self.assertEqual(first["stationsWithHistoryHints"],1)
+        self.assertEqual(first["records"][0]["observations"][0]["broadcastDate"],"2026-11-24")
+        self.assertNotIn("titleHint",str(first))
+        self.assertEqual(len(transient),1)
+        later=[]
+        second=collect(*reports("2026-11-26"),previous=first,limit=1,observe=empty,
+                       alternative=fallback,transient_titles=later)
+        self.assertEqual(second["records"][0]["observations"],first["records"][0]["observations"])
+        self.assertEqual(later,[])
+        self.assertEqual(second["approvedCount"],0)
+
 if __name__=="__main__":
     unittest.main()
