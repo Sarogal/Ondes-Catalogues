@@ -62,6 +62,25 @@ class OfficialDetailResearchTests(unittest.TestCase):
         self.assertEqual(calls, [ROOT, INDEX])
         self.assertEqual(result["proofs"], [])
 
+    def test_first_professional_site_cannot_starve_coorganizer(self):
+        producer = "https://production-des-rives.fr/"
+        research = deepcopy(RESEARCH)
+        research["websites"].insert(0, {
+            "website_url": producer, "ticket_url": TICKET,
+            "verified": False, "publication_authorized": False})
+        pages = dict(PAGES)
+        pages[producer] = "".join(
+            '<a href="/festival-%s/">Festival des Rives</a>' % i
+            for i in range(5))
+        for i in range(5):
+            pages[producer + "festival-%s/" % i] = "<h1>Autre événement</h1>"
+        result, calls = self.run_pages(pages, research)
+        self.assertIn(DETAIL, calls)
+        self.assertEqual(result["status"], "OFFICIAL_DETAIL_PROOF_REVIEW_ONLY")
+        self.assertEqual(result["proofs"][0]["official_detail_url"], DETAIL)
+        self.assertLessEqual(sum(u.startswith(producer) for u in calls), 4)
+        self.assertLessEqual(len(calls), MAX_PAGES)
+
     def test_request_budget_and_untrusted_input(self):
         pages = dict(PAGES)
         pages[INDEX] = "".join('<a href="/festival-%s/">Festival des Rives</a>' % i
