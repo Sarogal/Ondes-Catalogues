@@ -19,8 +19,9 @@ from dns_pinned_https import fetch_public_html, safe_public_url
 from source_qualification import classify
 from future_city_preflight import (
     exact_edition_city, _normal as normal_city, _EditionTitle,
-    current_edition_description,
+    current_edition_description, _city_from_multivenue_edition,
 )
+from future_geo_preflight import official_access_links
 from official_admin_communes import verified_commune
 from grossesondes_official_status import (
     CANCELLED, POSTPONED, explicit_statuses, apply_status,
@@ -32,7 +33,7 @@ from grossesondes_archived_html_intake import (
     official_date, official_structured_date, matching_official_jsonld_present,
 )
 from grossesondes_official_html_edition import (
-    VisibleText, MONTHS as OFFICIAL_MONTHS, CANCEL as OFFICIAL_CANCELLATION,
+    VisibleText, VisibleParagraphs, MONTHS as OFFICIAL_MONTHS, CANCEL as OFFICIAL_CANCELLATION,
     explicit_ranges as current_visible_ranges,
 )
 
@@ -1392,6 +1393,100 @@ def weekday_labelled_official_dates(html, row, year):
         matches.add((dates[0], dates[-1]))
     return next(iter(matches)) if len(matches) == 1 else None
 
+def multivenue_department_from_access(html, row, city, fetch):
+    """Disambiguate a proven commune using a named participating venue.
+
+    The signed professional event must prove its exact dates and same town
+    across multiple venues. Read only access links of this same HTTPS host.
+    Accept a postal address under the venue's own heading ONLY if the current
+    event explicitly names that venue in its stages list. No generic organizer
+    address, venue selection, guessed postal code or cross-host referral.
+    The code is a metropolitan department selector, not geographic proof;
+    the independent government commune resolver must still prove uniqueness.
+    """
+    from grossesondes_openagenda_linked_edition import PROFESSIONAL_PUBLIC_CONFIDENCE
+    site = row.get("officialSite")
+    if (row.get("sourceConfidence") != PROFESSIONAL_PUBLIC_CONFIDENCE
+            or row.get("source") != site or safe_public_url(site) != site
+            or normal_city(_city_from_multivenue_edition(html, row)) != normal_city(city)):
+        return None
+
+    class MainBody(VisibleParagraphs):
+        def handle_starttag(self, tag, attrs):
+            if tag in ("nav", "footer", "aside", "header"):
+                attrs = list(attrs) + [("hidden", None)]
+            super().handle_starttag(tag, attrs)
+
+    class VenueHeadings(VisibleInstitutionHeadings):
+        def handle_starttag(self, tag, attrs):
+            if tag in ("nav", "footer", "aside", "header"):
+                attrs = list(attrs) + [("hidden", None)]
+            super().handle_starttag(tag, attrs)
+
+    try:
+        start, end = date.fromisoformat(row["startDate"]), date.fromisoformat(row["endDate"])
+        body = MainBody()
+        body.feed(html)
+        body.close()
+        stage_lists = []
+        for raw in " ".join(body.parts).split(body.SEP):
+            if not 0 < len(raw) <= 1600:
+                continue
+            paragraph = fold(raw)
+            dates = {(a,b) for _,_,a,b in current_visible_ranges(paragraph, start.year)}
+            if dates != {(start, end)}:
+                continue
+            # A bounded, affirmative list of the current participating stages.
+            # Fold used here strips punctuation; split the original sentence
+            # first so an unrelated next sentence cannot donate a venue name.
+            for sentence in re.split(r"[.!?;]", raw):
+                match = re.search(r"\b(?:scènes|scenes|salles)\s+(?:de|du|des)\s+(.+)",
+                                  sentence, re.I)
+                if match:
+                    stage_lists.append(" " + fold(match[1]) + " ")
+        if not stage_lists:
+            return None
+        found = {}
+        # The discovery link is not evidence; both the event and address
+        # are independently reread from the same signed first-party origin.
+        for link in official_access_links(html, site):
+            try:
+                access = fetch(link)
+                if not isinstance(access, str) or not 0 < len(access) <= 650_000:
+                    continue
+                parser = VenueHeadings()
+                parser.feed(access)
+                parser.close()
+                for i, heading in enumerate(parser.headings):
+                    name = fold(heading)
+                    if len(name.replace(" ", "")) < 6 or not any(
+                            " " + name + " " in s for s in stage_lists):
+                        continue
+                    begin = parser.heading_starts[i]
+                    finish = (parser.heading_starts[i+1] if i+1 < len(parser.headings)
+                              else len(parser.parts))
+                    section = " ".join(" ".join(parser.parts[begin:finish]).split())
+                    if not 0 < len(section) <= 2200:
+                        continue
+                    city_pattern = r"[\W_]+".join(map(re.escape, fold(city).split()))
+                    # Require an actual street address, followed closely by
+                    # the exact printed postcode and commune. No phone number.
+                    matches = re.findall(
+                        r"\b\d{1,4}\s+(?:rue|avenue|boulevard|place|route|"
+                        r"allee|chemin|impasse|quai|cours|passage)\b"
+                        r"(?:\s+[a-z0-9]+){1,14}?\s+(\d{5})\s+"
+                        + city_pattern + r"\b", fold(section))
+                    for postal in matches:
+                        dep = postal[:2]
+                        if 1 <= int(dep) <= 95 and dep != "20":
+                            found.setdefault(dep, link)
+            except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+                continue
+        return next(iter(found.items())) if len(found) == 1 else None
+    except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+        return None
+
+
 def apply_independently_verified_updates(
         target, published, today, fetch=fetch_public_html, limit=MAX_HOSTS,
         tick=None, commune_resolver=verified_commune, browser_fetch=None,
@@ -1713,6 +1808,28 @@ def apply_independently_verified_updates(
                         commune = None
                     commune_diagnostic = ("admin_resolution_returned" if commune
                                           else "admin_resolution_unavailable_or_ambiguous")
+                    if not commune and old.get("department") in (None, ""):
+                        # Only after the current event has proved its city:
+                        # use one explicitly named venue's official postal
+                        # address to disambiguate, never to choose a venue pin.
+                        access_calls = 0
+                        def read_access(url):
+                            nonlocal access_calls
+                            access_calls += 1
+                            return fetch(url)
+                        extra = multivenue_department_from_access(root_html, old, claim["city"], read_access)
+                        report["rechecked_pages"] += access_calls
+                        if extra:
+                            department, access_url = extra
+                            try:
+                                resolved = commune_resolver(claim["city"], department)
+                                if (resolved and isinstance(resolved.get("codeInsee"), str)
+                                        and resolved["codeInsee"].startswith(department)):
+                                    commune = resolved
+                                    claim["venue_source"] = access_url
+                                    commune_diagnostic = "admin_resolution_returned_from_named_venue_postcode"
+                            except (OSError, TimeoutError, ValueError, UnicodeError):
+                                pass
                     if (commune and normal_city(commune.get("city")) == normal_city(claim["city"])
                             and type(commune.get("lat")) in (float, int)
                             and type(commune.get("lon")) in (float, int)

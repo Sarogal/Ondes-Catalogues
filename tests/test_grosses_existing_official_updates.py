@@ -71,6 +71,55 @@ MOTO_ARTICLE = (
 
 
 class ExistingOfficialFestivalTests(unittest.TestCase):
+    def test_multivenue_homonym_uses_only_current_named_venue_address(self):
+        from grossesondes_openagenda_linked_edition import PROFESSIONAL_PUBLIC_CONFIDENCE
+        from grossesondes_existing_official_updates import multivenue_department_from_access
+        site = "https://salle-exemple.fr/festival/"
+        access = "https://salle-exemple.fr/infos-pratiques/"
+        row = festival("festival-exemple-2027", site, dates=("2027-02-06","2027-02-07"))
+        row.update(name="Festival Exemple : Une célébration 2027",
+                   source=site, sourceConfidence=PROFESSIONAL_PUBLIC_CONFIDENCE,
+                   city=None, department=None, venue=None)
+        event = ("<nav><a href='/infos-pratiques/'>Infos pratiques</a></nav>"
+                 "<main><h1>Festival Exemple : Une célébration</h1>"
+                 "<p>Les 6 et 7 février 2027, le Festival Exemple investit 4 salles "
+                 "de la ville de Colonne pour un festival post-punk. "
+                 "Les artistes sont répartis entre les scènes de Salle des Rives, "
+                 "du Bal du Port et du Théâtre.</p></main>")
+        info = ("<main><h1>Infos pratiques</h1><h2>Salle des Rives</h2>"
+                "<p>21 rue des Arts<br>39000 COLONNE</p></main>")
+        self.assertEqual(multivenue_department_from_access(event, row, "Colonne",
+            lambda _: info), ("39", access))
+        for bad in (info.replace("Salle des Rives", "Bureau administratif"),
+                    info.replace("COLONNE", "Autreville"),
+                    info.replace("39000", "20000"),
+                    info.replace("<p>21", "<p hidden>21"),
+                    info.replace("<main>", "<footer>").replace("</main>", "</footer>")):
+            self.assertIsNone(multivenue_department_from_access(event, row, "Colonne",
+                lambda _: bad), bad)
+        self.assertIsNone(multivenue_department_from_access(
+            event.replace("Salle des Rives", "Autre salle"), row, "Colonne", lambda _: info))
+        self.assertIsNone(multivenue_department_from_access(event,
+            dict(row, sourceConfidence="unknown"), "Colonne", lambda _: info))
+        calls = []
+        def resolve(city, department):
+            calls.append((city, department))
+            if department is None:
+                return None
+            from official_admin_communes import search_url
+            return {"city": "Colonne", "codeInsee": "39160", "lat": 47.1, "lon": 5.6,
+                    "geoSource": search_url("Colonne")}
+        original = doc(row)
+        out, report = apply_independently_verified_updates(original, original, DAY,
+            fetch={site: event, access: info}.__getitem__, limit=1, tick=0,
+            commune_resolver=resolve)
+        self.assertEqual(calls, [("Colonne", None), ("Colonne", "39")])
+        updated = out["festivals"][0]
+        self.assertTrue(updated["showOnMap"])
+        self.assertIsNone(updated["venue"])
+        self.assertIn(access, updated["auditSources"])
+        self.assertTrue(_verified_official_update_delta(row, updated))
+
     def test_counted_inline_roster_and_stale_municipal_note(self):
         from grossesondes_openagenda_linked_edition import MUNICIPAL_PUBLIC_CONFIDENCE
         site = "https://agenda.example.org/evenement/festival-brume/"
