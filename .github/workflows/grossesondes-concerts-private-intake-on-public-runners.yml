@@ -1079,6 +1079,28 @@ jobs:
             echo "::warning::Prévalidation éditoriale indisponible ; collecte poursuivie."
           fi
 
+      - name: Prévalider le retrait des identités artistiques erronées orphelines
+        if: steps.access.outputs.ready == 'true' && steps.publisher_preflight.outputs.outcome == 'passed'
+        shell: bash
+        env:
+          GROSSES_ONDES_CONCERTS_AUTOREVIEW: ${{ vars.GROSSES_ONDES_CONCERTS_AUTOREVIEW }}
+        run: |
+          set -euo pipefail
+          REPORT=confidential/automation/concerts/intake/artist-retirement-preflight.json
+          rm -f "$REPORT"
+          OPTIONS=()
+          if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
+            OPTIONS+=(--apply)
+          fi
+          if ! timeout 150s python public/automation/concerts/artist_retirement_preflight.py \
+              --before confidential/automation/concerts/approved.json \
+              --reference public/docs/grossesondes/concerts-reference.json \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --report "$REPORT" "${OPTIONS[@]}" \
+              > "$RUNNER_TEMP/concerts-private-logs/artist-retirement-preflight.log" 2>&1; then
+            echo "::warning::Prévalidation des identités orphelines indisponible ; collecte poursuivie."
+          fi
+
       - name: Conserver les rapports sensibles uniquement dans le dépôt privé
         if: steps.access.outputs.ready == 'true'
         shell: bash
@@ -1238,6 +1260,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/editorial-correction-preflight.json ]; then
             git add --sparse -- automation/concerts/intake/editorial-correction-preflight.json
+          fi
+          if [ -f automation/concerts/intake/artist-retirement-preflight.json ]; then
+            git add --sparse -- automation/concerts/intake/artist-retirement-preflight.json
           fi
           if [ -f automation/concerts/intake/existing-venue-geo-preflight.json ]; then
             git add --sparse -- automation/concerts/intake/existing-venue-geo-preflight.json
