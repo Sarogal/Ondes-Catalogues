@@ -23,6 +23,7 @@ from ptitesondes_catalogue_geo_proof_batch import (
     research_group, _external_location, read_unknown_https, fetch_ign,
     fetch_overpass, _osm_website_host, _coordinates, meters,
     administrative_commune_code, fetch_commune,
+    administrative_unit_matches, fetch_administrative_unit,
 )
 
 from ptitesondes_generic_venue_osm_preflight import osm_hints
@@ -238,7 +239,8 @@ def _discover_hint_website(group, point, response):
 
 def independent_hint_location(group, hint, *, html_get=read_unknown_https,
                               ign_get=fetch_ign, osm_get=fetch_overpass,
-                              commune_get=fetch_commune):
+                              commune_get=fetch_commune,
+                              unit_get=fetch_administrative_unit):
     """Acceslibre is discovery only; live venue page + BAN + OSM must agree."""
     if (not isinstance(hint, dict) or hint.get("independent_recheck_required") is not True
             or norm(hint.get("group_city")) != norm(group["city"])
@@ -255,7 +257,7 @@ def independent_hint_location(group, hint, *, html_get=read_unknown_https,
         return None
     try:
         code = administrative_commune_code(group, commune_get(group))
-        if code is None or code != row.get("code_insee"):
+        if not administrative_unit_matches(group, code, row.get("code_insee"), unit_get):
             return None
         # A missing URL is not a permanent refusal. Use the advisory point
         # to find a unique named OSM object and discover its website. The
