@@ -206,7 +206,8 @@ jobs:
            github.event.workflow_run.status == 'completed' &&
            github.event.workflow_run.name == 'Grosses Ondes — moteur Festivals public, état privé protégé' &&
            (github.event.workflow_run.event == 'schedule' ||
-            github.event.workflow_run.event == 'workflow_dispatch') &&
+            github.event.workflow_run.event == 'workflow_dispatch' ||
+            github.event.workflow_run.event == 'push') &&
            github.event.workflow_run.head_branch == 'main' &&
            github.event.workflow_run.head_repository.full_name == github.repository))
       }}
