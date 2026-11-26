@@ -54,6 +54,11 @@ CITY_AFTER_DATE = re.compile(
     r"(?:\b(?:à|au|in|at)\s+|[·•]\s*)"
     r"([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,55}"
     r"(?:\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,40}){0,2})")
+# A dash is accepted only as the immediate separator and the entire
+# remaining block must be a plausible commune label, not a sentence.
+CITY_DASH_SUFFIX = re.compile(
+    r"\s*[-–—]\s*([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,55}"
+    r"(?:\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,40}){0,2})\s*[.!]?\s*\Z")
 CITY_FORBIDDEN = frozenset(("Festival", "France", "Programmation",
                              "Billetterie", "Musique", "Concert",
                              "Rock", "Metal", "Punk"))
@@ -141,8 +146,12 @@ def official_city_on_current_date(html, title, dates):
             # Only use town names immediately AFTER current official dates,
             # not a previous edition, contact footer, or an unrelated venue.
             for _offset, finish in printed:
-                for matched in CITY_AFTER_DATE.finditer(
-                        block, finish, min(len(block), finish + 85)):
+                matches = list(CITY_AFTER_DATE.finditer(
+                    block, finish, min(len(block), finish + 85)))
+                suffix = CITY_DASH_SUFFIX.fullmatch(block[finish:])
+                if suffix is not None:
+                    matches.append(suffix)
+                for matched in matches:
                     city = matched.group(1).strip()
                     if (len(city) >= 3
                             and city not in CITY_FORBIDDEN
