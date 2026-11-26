@@ -9,7 +9,7 @@
   "stationsWithSourceConflicts": 2,
   "stationsWithReportedHistory": 0,
   "stationsWithMultipleObservationDays": 19,
-  "stationsWithGenreHints": 36,
+  "stationsWithGenreHints": 37,
   "verifiedArtistCount": 0,
   "records": [
     {
@@ -366,16 +366,16 @@
       "distinctHistoricalArtistTitleHints": 0,
       "stalePairCount": 0,
       "artistHintCounts": {
-        "target_hint": 0,
+        "target_hint": 1,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 1
+        "unclassified_hint": 0
       },
       "artistTitleHintCounts": {
-        "target_hint": 0,
+        "target_hint": 1,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 1
+        "unclassified_hint": 0
       },
       "collaborationMemberHintCounts": {
         "target_hint": 0,
@@ -384,7 +384,7 @@
         "unclassified_hint": 0
       },
       "sourceHintCounts": {
-        "wikidata_only": 1
+        "linked_sources": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,

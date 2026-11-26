@@ -12,9 +12,9 @@
   "counts": {
     "advanced_candidate": 1,
     "already_known": 82,
-    "editorial_review": 119,
+    "editorial_review": 118,
     "identity_review": 29,
-    "observed_music_candidate": 29,
+    "observed_music_candidate": 30,
     "programme_conflict_review": 2,
     "programme_context_review": 7,
     "source_recheck": 5,
@@ -26,8 +26,8 @@
     "no_observed_music": 32,
     "other_genre_observed_hints": 7,
     "source_conflict": 2,
-    "target_observed_hints": 25,
-    "unclassified_observations": 70
+    "target_observed_hints": 26,
+    "unclassified_observations": 69
   },
   "records": [
     {
@@ -772,29 +772,29 @@
       "stationuuid": "11ebd6e7-4b9f-4c93-afcd-bca082bb82a6",
       "streamSha256": "58404456505af5db040c9dcc7ca0479017e676a947be85af7989133918c29164",
       "v2Decision": "editorial_review",
-      "shadowDecision": "editorial_review",
+      "shadowDecision": "observed_music_candidate",
       "v2BlockingReasons": [
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
         "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
-        "collect_more_programme_observations"
+        "resolve_remaining_station_and_technical_gates"
       ],
-      "programmeEvidenceStatus": "unclassified_observations",
+      "programmeEvidenceStatus": "target_observed_hints",
       "programmeBound": true,
       "programmeEvidence": {
         "artistHints": {
-          "target_hint": 0,
+          "target_hint": 1,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 0
         },
         "pairHints": {
-          "target_hint": 0,
+          "target_hint": 1,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 0
         },
         "collaborationMemberHints": {
           "target_hint": 0,
@@ -803,7 +803,7 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "wikidata_only": 1
+          "linked_sources": 1
         },
         "independentObservationDays": [
           "2026-11-26"
@@ -812,7 +812,7 @@
         "distinctArtistHints": 1,
         "distinctArtistTitleHints": 1
       },
-      "crossSourcePairHintCount": 0,
+      "crossSourcePairHintCount": 1,
       "stationEditorialHint": true,
       "broadcasterStreamLink": false,
       "programmeScopeHint": false,
