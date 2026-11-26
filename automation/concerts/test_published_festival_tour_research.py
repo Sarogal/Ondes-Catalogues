@@ -81,6 +81,25 @@ class PublishedToursTests(unittest.TestCase):
         self.assertTrue(all(r["stableObservations"] == 2
                             for r in new_day["items"].values()))
 
+    def test_large_tour_lineup_retained_in_full_without_publication(self):
+        rows = fixture()
+        names = [f"Artist {i:03}" for i in range(1, 101)]
+        for row in rows["festivals"]:
+            row["lineup"] = list(names)
+        report = bridge.find_research(rows, TODAY)
+        self.assertEqual(len(report["candidates"]), 3)
+        for candidate in report["candidates"]:
+            self.assertEqual(candidate["artistNamesFromFestivalOnly"], names)
+            self.assertFalse(candidate["publicationAllowed"])
+        registry, _ = intake_archive.merge(
+            None, report, "2026-11-21T04:22:00+00:00")
+        for record in registry["items"].values():
+            self.assertEqual(record["candidate"]["artistNamesFromFestivalOnly"], names)
+        self.assertFalse(bridge.valid_artist_names(
+            [f"Artist {i:04} " + "x" * 110 for i in range(600)]))
+        self.assertFalse(bridge.valid_artist_names(["Artist 1", "ARTIST 1"]))
+        self.assertFalse(bridge.valid_artist_names(["Artist 1", None]))
+
     def test_tour_organizer_is_queued_as_unknown_source_not_approved(self):
         report = bridge.find_research(fixture(), TODAY)
         registry, _ = intake_archive.merge(
