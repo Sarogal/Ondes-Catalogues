@@ -154,21 +154,24 @@ def direct_artist_description(html, name):
     labels = sorted(set(BIO_GENRES) | {"metal", "punk"},
                     key=lambda value: (-len(value), value))
     genre_pattern = "|".join(re.escape(label) for label in labels)
+    suffix = r"(?: (?:from|based in|formed in|originaire de|forme en|base a|basee a) [a-z0-9 ]{1,100})?"
     patterns = (
-        rf"^{re.escape(target)} (?:is|are) (?:an? |the )?"
-        rf"({genre_pattern}) (?:band|group|duo|trio|artist|musician)(?: |$)",
-        rf"^{re.escape(target)} (?:est|sont) (?:un |une |le |la )?"
+        rf"{re.escape(target)} (?:is|are) (?:an? |the )?"
+        rf"({genre_pattern}) (?:band|group|duo|trio|artist|musician)" + suffix,
+        rf"{re.escape(target)} (?:est|sont) (?:un |une |le |la )?"
         rf"(?:groupe|duo|trio|artiste|musicien) (?:de |du |d )?"
-        rf"({genre_pattern})(?: |$)",
+        rf"({genre_pattern})" + suffix,
     )
     found = set()
     for paragraph in parser.paragraphs[:4]:
         for sentence in re.split(r"[.!?;\n]+", paragraph[:650]):
             normalized = words(sentence)
-            if NEGATION.search(normalized):
+            if (NEGATION.search(normalized) or re.search(
+                    r"\b(?:tribute|hommage|influence|influenced|influences|inspire|inspiree)\b",
+                    normalized)):
                 continue
             for pattern in patterns:
-                match = re.match(pattern, normalized)
+                match = re.fullmatch(pattern, normalized)
                 if match:
                     found.add(match.group(1))
     if not found:
