@@ -11,12 +11,15 @@ import json
 import os
 from pathlib import Path
 import re
+from time import monotonic
 
 from proof import norm
 from ptitesondes_catalogue_geo_research import research_queue
 from ptitesondes_catalogue_geo_proof_batch import MAX_GROUPS, research_group
 
 SCHEMA = "ptitesondes.catalogue_geo_rotation.v1"
+LIVE_MAX_GROUPS = 6
+LIVE_SOFT_SECONDS = 600
 
 
 def identity(group):
@@ -26,7 +29,13 @@ def identity(group):
                              separators=(",", ":")).encode()).hexdigest()
 
 
-def rotate(catalogue, today, previous=None, *, researcher=research_group, priority_keys=()):
+def rotate(catalogue, today, previous=None, *, researcher=research_group, priority_keys=(),
+           max_groups=MAX_GROUPS, soft_seconds=None, clock=monotonic):
+    if (type(max_groups) is not int or not 1 <= max_groups <= LIVE_MAX_GROUPS
+            or soft_seconds is not None and
+            (type(soft_seconds) is not int or not 1 <= soft_seconds <= LIVE_SOFT_SECONDS)):
+        raise ValueError("invalid_rotation_budget")
+    started = clock()
     groups = research_queue(catalogue, today)["research_groups"]
     current = {identity(g): g for g in groups}
     if len(current) != len(groups):
@@ -50,17 +59,20 @@ def rotate(catalogue, today, previous=None, *, researcher=research_group, priori
     present = set(order)
     order.extend(k for k in current if k not in present)
     priority = set(priority_keys)
-    selected = order[:MAX_GROUPS]
-    accelerated = 0
-    if MAX_GROUPS >= 2 and len(order) > MAX_GROUPS:
+    planned = order[:max_groups]
+    accelerated_key = None
+    if max_groups >= 2 and len(order) > max_groups:
         # Preserve the first MAX_GROUPS-1 FIFO places. Select the oldest
         # hinted group from the remaining queue; no group can starve.
-        candidate = next((k for k in order[MAX_GROUPS-1:] if k in priority), None)
-        if candidate is not None and candidate not in selected:
-            selected = selected[:-1] + [candidate]
-            accelerated = 1
+        candidate = next((k for k in order[max_groups-1:] if k in priority), None)
+        if candidate is not None and candidate not in planned:
+            planned = planned[:-1] + [candidate]
+            accelerated_key = candidate
     latest = {k: v for k, v in previous["latest"].items() if k in current}
-    for key in selected:
+    selected = []
+    for key in planned:
+        if selected and soft_seconds is not None and clock() - started >= soft_seconds:
+            break
         group = current[key]
         try:
             result = researcher(group, today)
@@ -69,12 +81,14 @@ def rotate(catalogue, today, previous=None, *, researcher=research_group, priori
         except (OSError, ValueError, TypeError, KeyError, TimeoutError):
             result = dict(status="research_retry_later", publication_ready=False)
         latest[key] = dict(day=today.isoformat(), result=result)
+        selected.append(key)
     selected_set = set(selected)
     state = dict(schema=SCHEMA, pending=[k for k in order if k not in selected_set] + selected,
                  latest=latest)
     summary = dict(group_count=len(groups), examined=len(selected),
                    never_examined=len(current.keys()-latest.keys()),
-                   accelerated_hints=accelerated,
+                   accelerated_hints=int(accelerated_key in selected_set),
+                   budget_deferred=len(planned)-len(selected),
                    venue_points_found=sum(latest[k]["result"].get("status") ==
                                           "independent_venue_point_found"
                                           for k in selected),
@@ -133,6 +147,7 @@ if __name__ == "__main__":
                      if isinstance(value, dict) and isinstance(value.get("hint"), dict)
                      and value.get("independent_recheck_required") is True}
     state, summary = rotate(catalogue, a.day, previous,
-        researcher=hinted_researcher(hints), priority_keys=priority_keys)
+        researcher=hinted_researcher(hints), priority_keys=priority_keys,
+        max_groups=LIVE_MAX_GROUPS, soft_seconds=LIVE_SOFT_SECONDS)
     write_state(a.state, state)
     print(json.dumps(summary))
