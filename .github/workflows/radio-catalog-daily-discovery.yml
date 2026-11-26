@@ -897,8 +897,8 @@ jobs:
               local_count = report.get("localImportedCount",0)
               network_count = report.get("networkRecoveredCount",report["recoveredCount"])
               assert type(local_count) is int and 0 <= local_count <= 100
-              assert type(network_count) is int and 0 <= network_count <= 12
-              assert len(files) == report["recoveredCount"] == local_count+network_count <= 112
+              assert type(network_count) is int and 0 <= network_count <= 36
+              assert len(files) == report["recoveredCount"] == local_count+network_count <= 136
               assert sum(item.stat().st_size for item in files) <= 48*1024*1024
               cache = dst / "artwork-cache" / "sha256"
               cache.mkdir(parents=True, exist_ok=True)

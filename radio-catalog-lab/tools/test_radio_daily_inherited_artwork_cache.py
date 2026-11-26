@@ -2,7 +2,7 @@ import copy
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from radio_daily_inherited_artwork_cache import populate, cached, filename
 from radio_daily_live_inherited_artwork import recover_inherited, ArtworkUnavailable
 from radio_daily_v9_generator import digest
@@ -40,6 +40,21 @@ class InheritedCacheTests(unittest.TestCase):
         r=self.run_cache(fetch,previous=self.root/"out",name="second")
         self.assertEqual(r["cachedCount"],1)
         self.assertEqual(r["attemptedCount"],0)
+        fetch.assert_not_called()
+
+    def test_expanded_network_budget_and_upper_bound(self):
+        fetch=Mock(return_value=(DATA,"image/png"))
+        report=self.run_cache(fetch,limit=36)
+        self.assertEqual(report["recoveredCount"],1)
+        with self.assertRaises(ValueError):
+            self.run_cache(fetch,name="over",limit=37)
+
+    def test_signed_byte_budget_defers_network_without_fetch(self):
+        fetch=Mock()
+        with patch("radio_daily_inherited_artwork_cache.MAX_RECOVERED_BYTES",len(DATA)-1):
+            report=self.run_cache(fetch,limit=36)
+        self.assertEqual(report["attemptedCount"],0)
+        self.assertEqual(report["remainingCount"],1)
         fetch.assert_not_called()
 
     def test_wrong_bytes_never_written(self):

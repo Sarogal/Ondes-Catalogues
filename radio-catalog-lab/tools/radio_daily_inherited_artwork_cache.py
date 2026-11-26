@@ -16,7 +16,8 @@ from radio_catalog_logo_pilot_probe import fetch_strict_https, MAX_LOGO_BYTES
 from radio_daily_v9_generator import digest, encode
 from radio_stream_recheck_ledger import parse_day
 
-MAX_OBJECTS = 12
+MAX_OBJECTS = 36
+MAX_RECOVERED_BYTES = 48 * 1024 * 1024
 MAX_LOCAL_OBJECTS = 100
 MAX_LOCAL_BYTES = 32 * 1024 * 1024
 MAX_SECONDS = 90
@@ -101,6 +102,16 @@ def populate(pointer, raw, *, anchor, day, previous, output, limit=MAX_OBJECTS,
     queue = (rotate(first)[:limit//2] + rotate(other)[:limit-limit//2])
     selected = {x[0] for x in queue}
     queue += [x for x in rotate(first)+rotate(other) if x[0] not in selected][:limit-len(queue)]
+    # Reserve the signed byte sizes before starting any network work. The
+    # persistence job applies the same aggregate limit to the artifact.
+    bounded = []
+    reserved = local_bytes
+    for item in queue:
+        size = next(iter(item[1].values()))["byte_size"]
+        if reserved + size <= MAX_RECOVERED_BYTES:
+            bounded.append(item)
+            reserved += size
+    queue = bounded
     deadline = clock() + MAX_SECONDS
     def load(item):
         name, sources = item
