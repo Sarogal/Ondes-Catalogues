@@ -130,6 +130,52 @@ class _OfficialBio(HTMLParser):
             self._skip = max(self._skip - 1, 0)
 
 
+
+def direct_artist_description(html, name):
+    """Read a named, explicit self-description on an already fetched page.
+
+    This is a research hint only. Do not infer genre from tour bills, venue
+    names, influences, keywords, metadata or another artist's description.
+    Unlike a linked biography, a homepage need not have a separate Bio URL.
+    """
+    if not isinstance(html, str) or not 0 < len(html) <= 600_000:
+        raise ValueError("Unsafe artist page")
+    target = words(name)
+    if not target:
+        raise ValueError("Missing artist identity")
+    parser = _OfficialBio()
+    parser.feed(html)
+    parser.close()
+    if not re.search(r"(?<!\w)" + re.escape(target) + r"(?!\w)",
+                     words(parser.title)):
+        raise ValueError("Artist absent from page title")
+    # A complete grammatical assertion about this exact artist is required.
+    # Generic punk/metal is acceptable ONLY in this explicit artist context.
+    labels = sorted(set(BIO_GENRES) | {"metal", "punk"},
+                    key=lambda value: (-len(value), value))
+    genre_pattern = "|".join(re.escape(label) for label in labels)
+    patterns = (
+        rf"^{re.escape(target)} (?:is|are) (?:an? |the )?"
+        rf"({genre_pattern}) (?:band|group|duo|trio|artist|musician)(?: |$)",
+        rf"^{re.escape(target)} (?:est|sont) (?:un |une |le |la )?"
+        rf"(?:groupe|duo|trio|artiste|musicien) (?:de |du |d )?"
+        rf"({genre_pattern})(?: |$)",
+    )
+    found = set()
+    for paragraph in parser.paragraphs[:4]:
+        for sentence in re.split(r"[.!?;\n]+", paragraph[:650]):
+            normalized = words(sentence)
+            if NEGATION.search(normalized):
+                continue
+            for pattern in patterns:
+                match = re.match(pattern, normalized)
+                if match:
+                    found.add(match.group(1))
+    if not found:
+        raise ValueError("No explicit individual artist self-description")
+    return [label.title() for label in sorted(found)]
+
+
 def verify_official_biography(source, catalogue, bio_html, actual_bio_url,
                               biography_link, checked_at):
     """Conservative *artist-only* genre evidence from a linked first-party bio."""
