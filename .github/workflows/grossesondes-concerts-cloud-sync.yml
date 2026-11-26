@@ -127,6 +127,7 @@ jobs:
               f"Catalogue : {d['publicEventsBefore']} → {d['publicEventsAfter']} concerts",
               f"Nouvelles fiches : {d['newEvents']} ; nouveaux artistes : {d['newArtists']}",
               f"Salles géolocalisées après revue : {d.get('correctedVenues', 0)}",
+              f"Identités artistiques erronées retirées : {d.get('retiredArtists', 0)}",
               f"Approbations déjà publiées : {d['alreadyPublished']}",
               f"Nouvelles salles : {d.get('newVenues', 0)} ; "
               f"salles déjà enregistrées : {d.get('alreadyRegisteredVenues', 0)}",
