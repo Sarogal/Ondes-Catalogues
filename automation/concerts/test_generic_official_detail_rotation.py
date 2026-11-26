@@ -2,12 +2,69 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
+import tempfile
+from pathlib import Path
 import unittest
 
 import discover
 
 
 class GenericVenueLinkRotationTests(unittest.TestCase):
+    def test_same_slot_rotates_all_unknown_urls_before_repeating(self):
+        day = dt.date(2026, 11, 26)
+        links = [f"https://venue.example/event/act-{i:02d}" for i in range(24)]
+        recent = []
+        visited = []
+        for _ in range(4):
+            selected = discover.select_generic_official_detail_links(
+                links, day, 1, limit=6, known=set(), recent_attempts=recent)
+            self.assertEqual(len(selected), 6)
+            visited.extend(selected)
+            recent.extend(discover.detail_key(link) for link in selected)
+        self.assertEqual(len(set(visited)), 24)
+        new = "https://venue.example/event/new-band"
+        selected = discover.select_generic_official_detail_links(
+            links + [new], day, 1, limit=6, known=set(), recent_attempts=recent)
+        self.assertEqual(selected[0], new)
+        self.assertEqual(selected[1:], visited[:5])
+
+    def test_history_is_private_hashed_and_invalid_file_is_advisory_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "history.json"
+            history = {discover.detail_key("https://venue.example/agenda"):
+                       [discover.detail_key("https://venue.example/concert/new-act")]}
+            self.assertEqual(discover.load_detail_history(path), {})
+            discover.store_detail_history(path, history)
+            self.assertEqual(discover.load_detail_history(path), history)
+            self.assertNotIn("venue.example", path.read_text())
+            raw = json.loads(path.read_text())
+            self.assertFalse(raw["publicationAllowed"])
+            raw["publicationAllowed"] = True
+            path.write_text(json.dumps(raw))
+            self.assertEqual(discover.load_detail_history(path), {})
+            path.write_text("broken")
+            self.assertEqual(discover.load_detail_history(path), {})
+
+    def test_history_never_changes_public_artist_lane_budget(self):
+        day = dt.date(2026, 11, 26)
+        known = [f"https://venue.example/event/famous-band-{i}" for i in range(4)]
+        unknown = [f"https://venue.example/event/new-act-{i}" for i in range(12)]
+        recent = []
+        visited_unknown = set()
+        for _ in range(3):
+            selected = discover.select_generic_official_detail_links(
+                known + unknown, day, 1, limit=6, known=set(),
+                artist_names=["Famous Band"], recent_attempts=recent)
+            self.assertEqual(len(set(selected) & set(known)), 2)
+            visited_unknown.update(set(selected) & set(unknown))
+            for link in selected:
+                key = discover.detail_key(link)
+                if key in recent:
+                    recent.remove(key)
+                recent.append(key)
+        self.assertEqual(visited_unknown, set(unknown))
+
     def test_three_slots_cover_entire_first_party_programme(self):
         day = dt.date(2026, 11, 19)
         links = [
