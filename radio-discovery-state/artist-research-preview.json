@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 58,
-  "attemptedCount": 6,
+  "dueNameCount": 53,
+  "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "epica",
+  "retryAfterKey": "foreigner",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -270,6 +270,21 @@
     "elektron": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Elektron",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "eva under fire": {
+      "status": "name_hypothesis",
+      "mbid": "1b09e72f-374a-42aa-8bf7-4eb4b2b6eb59",
+      "genres": [
+        "rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/1b09e72f-374a-42aa-8bf7-4eb4b2b6eb59",
+      "artistName": "EVA UNDER FIRE",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,

@@ -11,18 +11,18 @@
     "already_known": 82,
     "editorial_review": 156,
     "identity_review": 29,
-    "source_recheck": 2,
+    "source_recheck": 3,
     "technical_review": 1
   },
   "blockingReasonCounts": {
-    "bind_broadcaster_to_stream": 154,
-    "confirm_station_level_programme_scope": 161,
+    "bind_broadcaster_to_stream": 155,
+    "confirm_station_level_programme_scope": 162,
     "obtain_current_continuity_evidence": 40,
-    "obtain_station_bound_editorial_evidence": 144,
-    "refresh_current_reconciliation": 2,
-    "repeat_continuity_on_distinct_days": 43,
+    "obtain_station_bound_editorial_evidence": 145,
+    "refresh_current_reconciliation": 3,
+    "repeat_continuity_on_distinct_days": 44,
     "resolve_duplicate_or_legacy_identity": 29,
-    "resolve_mixed_or_electronic_format": 39,
+    "resolve_mixed_or_electronic_format": 40,
     "resolve_recent_negative_technical_observation": 40
   },
   "records": [
@@ -2604,7 +2604,7 @@
     {
       "stationuuid": "76200b90-939a-46ad-9b37-069f32ba4366",
       "name": "RADIOACTIVO 98 1/2: Fuck Everyone Else!",
-      "decision": "editorial_review",
+      "decision": "source_recheck",
       "streamSha256": "d4533161a11fed9e2f4e982f99d3d385c7ff3c2f87f8ed161777ea7ed1d96ca8",
       "editorialMatch": false,
       "broadcasterStreamLink": false,
@@ -2617,6 +2617,7 @@
       ],
       "logoDecodedHint": false,
       "blockingReasons": [
+        "refresh_current_reconciliation",
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
@@ -2913,6 +2914,30 @@
       "positiveContinuityDays": [],
       "logoDecodedHint": false,
       "blockingReasons": [],
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "84d6bcb6-493b-43f8-aea4-1289fccfecb8",
+      "name": "Zion Radio",
+      "decision": "editorial_review",
+      "streamSha256": "04ddc354c50813f888b5121bc77ab677b815da0a7b22dcc2dcb23a3bea594f0a",
+      "editorialMatch": false,
+      "broadcasterStreamLink": false,
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-26"
+      ],
+      "logoDecodedHint": false,
+      "blockingReasons": [
+        "obtain_station_bound_editorial_evidence",
+        "bind_broadcaster_to_stream",
+        "confirm_station_level_programme_scope",
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
+      ],
       "approved": false,
       "publicationAllowed": false
     },

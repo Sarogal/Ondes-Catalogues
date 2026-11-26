@@ -4,12 +4,12 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "freshnessDays": 30,
-  "stationCount": 138,
-  "stationsWithWikidataHints": 15,
-  "stationsWithSourceConflicts": 0,
+  "stationCount": 139,
+  "stationsWithWikidataHints": 14,
+  "stationsWithSourceConflicts": 1,
   "stationsWithReportedHistory": 0,
   "stationsWithMultipleObservationDays": 19,
-  "stationsWithGenreHints": 29,
+  "stationsWithGenreHints": 28,
   "verifiedArtistCount": 0,
   "records": [
     {
@@ -2466,7 +2466,7 @@
       "stationuuid": "76200b90-939a-46ad-9b37-069f32ba4366",
       "streamSha256": "d4533161a11fed9e2f4e982f99d3d385c7ff3c2f87f8ed161777ea7ed1d96ca8",
       "matchesDecisionStream": true,
-      "observedInScan": true,
+      "observedInScan": false,
       "distinctArtistHints": 1,
       "distinctArtistTitleHints": 1,
       "distinctTitleHashes": 1,
@@ -2770,6 +2770,41 @@
       "sourceHintCounts": {
         "no_usable_source": 1
       },
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "84d6bcb6-493b-43f8-aea4-1289fccfecb8",
+      "streamSha256": "04ddc354c50813f888b5121bc77ab677b815da0a7b22dcc2dcb23a3bea594f0a",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 0,
+      "distinctArtistTitleHints": 0,
+      "distinctTitleHashes": 0,
+      "observationDates": [],
+      "reportedBroadcastDates": [],
+      "distinctHistoricalArtistTitleHints": 0,
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "sourceHintCounts": {},
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -5046,16 +5081,16 @@
       "distinctHistoricalArtistTitleHints": 0,
       "stalePairCount": 0,
       "artistHintCounts": {
-        "target_hint": 1,
+        "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 0
+        "unclassified_hint": 1
       },
       "artistTitleHintCounts": {
-        "target_hint": 1,
+        "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 0
+        "unclassified_hint": 1
       },
       "collaborationMemberHintCounts": {
         "target_hint": 0,
@@ -5064,7 +5099,7 @@
         "unclassified_hint": 0
       },
       "sourceHintCounts": {
-        "wikidata_only": 1
+        "cross_source_identity_unlinked": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,

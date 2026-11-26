@@ -7,7 +7,7 @@
   "counts": {
     "already_known": 82,
     "identity_review": 29,
-    "awaiting_evidence": 162
+    "awaiting_evidence": 163
   },
   "records": [
     {
@@ -9132,7 +9132,7 @@
       "firstSeen": "2026-11-25",
       "lastSeen": "2026-11-26",
       "seenDays": 2,
-      "observedInScan": true,
+      "observedInScan": false,
       "lastSourceObservation": {
         "date": "2026-11-26",
         "countryCode": "MX",
@@ -9212,23 +9212,14 @@
         "icyHeaderPresent": true,
         "earlyEnd": false
       },
-      "logoEvidence": {
-        "sourceClass": "external_image_host_review",
-        "sourceSha256": null,
-        "retrieval": "not_attempted",
-        "imageSha256": null,
-        "mime": null,
-        "width": null,
-        "height": null,
-        "byteLength": null,
-        "observedDate": null
-      },
+      "logoEvidence": null,
       "logoIdentityVerified": false,
       "status": "awaiting_evidence",
       "reviewReasons": [
         "independent_editorial_programme_evidence_required",
         "resolve_genre_context",
-        "verify_continuous_live_playback"
+        "verify_continuous_live_playback",
+        "source_not_in_current_scan"
       ],
       "nextReviewDate": "2026-11-27",
       "approved": false,
@@ -10289,6 +10280,104 @@
       "status": "already_known",
       "reviewReasons": [],
       "nextReviewDate": null,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "84d6bcb6-493b-43f8-aea4-1289fccfecb8",
+      "name": "Zion Radio",
+      "firstSeen": "2026-11-26",
+      "lastSeen": "2026-11-26",
+      "seenDays": 1,
+      "observedInScan": true,
+      "lastSourceObservation": {
+        "date": "2026-11-26",
+        "countryCode": "CH",
+        "reportedTags": "blues,chanson engagée,chansons françaises,classic hip hop,classic rock,conscious reggae,dub,dub reggae,eclectic music,electric,electric blues,electric guitar,folk,french blues,french chansons,funk,hard rock,hip hop,humour,independent music,jazz,musique originale,old school hip hop,poetry,political,protest songs,reggae,rock,rock metal,roots music,roots reggae,satire,ska,soul music,underground hip hop,worldmusic",
+        "reportedHomepageHost": "zionradio.ch",
+        "streamSha256": "04ddc354c50813f888b5121bc77ab677b815da0a7b22dcc2dcb23a3bea594f0a",
+        "reportedFaviconSha256": null,
+        "classification": "unmapped_candidate",
+        "existingGoStationId": null,
+        "possibleGoStationIds": []
+      },
+      "editorialSignal": "target_genre_indication",
+      "editorialVerified": false,
+      "homepageEvidence": {
+        "reportedHost": "zionradio.ch",
+        "homepageSha256": "d4518c7cc61c2c93cd5f2a161ca0c1f7fbc42bb3779a086bd186cf900dfad108",
+        "identityNameSha256": "2a801743c4dc42aec34a1901193990acd07c880fc032c67829173a67968abecd",
+        "observedDate": "2026-11-26",
+        "retrieval": "html_observed",
+        "identityNameMatch": true,
+        "signal": "no_format_evidence",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [],
+        "primaryElectronicTerms": [],
+        "pageSha256": "618fa6daebeeb23d0d1f0154b7480fc2e4f793c7d2a515dc098c5f554d94462f",
+        "finalPageSha256": "d4518c7cc61c2c93cd5f2a161ca0c1f7fbc42bb3779a086bd186cf900dfad108",
+        "imageHintSha256": [],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": false,
+        "programmeScopeEvidence": false,
+        "programmeScopeSources": [],
+        "programmeScopeTerms": [],
+        "otherFormatTerms": [
+          "reggae"
+        ],
+        "declaredStreamLinked": false,
+        "streamSha256": "04ddc354c50813f888b5121bc77ab677b815da0a7b22dcc2dcb23a3bea594f0a"
+      },
+      "officialHomepageVerified": false,
+      "duplicateRisk": false,
+      "streamEvidence": {
+        "streamSha256": "04ddc354c50813f888b5121bc77ab677b815da0a7b22dcc2dcb23a3bea594f0a",
+        "audioEvidenceDates": [
+          "2026-11-26"
+        ],
+        "liveFrameEvidenceDates": [
+          "2026-11-26"
+        ],
+        "lastObservedDate": "2026-11-26",
+        "lastVerdict": "audio_sample_ok"
+      },
+      "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "04ddc354c50813f888b5121bc77ab677b815da0a7b22dcc2dcb23a3bea594f0a",
+        "observedDate": "2026-11-26",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-26"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4000,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
+      "logoEvidence": {
+        "sourceClass": "missing_source",
+        "sourceSha256": null,
+        "retrieval": "not_attempted",
+        "imageSha256": null,
+        "mime": null,
+        "width": null,
+        "height": null,
+        "byteLength": null,
+        "observedDate": null
+      },
+      "logoIdentityVerified": false,
+      "status": "awaiting_evidence",
+      "reviewReasons": [
+        "independent_editorial_programme_evidence_required",
+        "repeat_live_frame_evidence_on_distinct_days"
+      ],
+      "nextReviewDate": "2026-11-27",
       "approved": false,
       "publicationAllowed": false
     },

@@ -3,8 +3,8 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "technicallyQualifiedCount": 0,
-  "attemptedCount": 0,
-  "continuousIcyCount": 135,
+  "attemptedCount": 1,
+  "continuousIcyCount": 136,
   "finiteResponseCount": 3,
   "records": [
     {
@@ -1498,7 +1498,7 @@
         "2026-11-25",
         "2026-11-26"
       ],
-      "observedInScan": true,
+      "observedInScan": false,
       "technicalQualified": false,
       "publicationAllowed": false,
       "verdict": "continuous_icy_frame_indication",
@@ -1690,6 +1690,27 @@
       "observedDate": "2026-11-26",
       "positiveObservationDates": [
         "2026-11-25",
+        "2026-11-26"
+      ],
+      "observedInScan": true,
+      "technicalQualified": false,
+      "publicationAllowed": false,
+      "verdict": "continuous_icy_frame_indication",
+      "windowCount": 3,
+      "sampleBytes": 12288,
+      "elapsedMs": 4000,
+      "coherentWindowCount": 3,
+      "distinctWindowCount": 3,
+      "frameCodec": "mpeg_layer3",
+      "finiteResponse": false,
+      "icyHeaderPresent": true,
+      "earlyEnd": false
+    },
+    {
+      "stationuuid": "84d6bcb6-493b-43f8-aea4-1289fccfecb8",
+      "streamSha256": "04ddc354c50813f888b5121bc77ab677b815da0a7b22dcc2dcb23a3bea594f0a",
+      "observedDate": "2026-11-26",
+      "positiveObservationDates": [
         "2026-11-26"
       ],
       "observedInScan": true,

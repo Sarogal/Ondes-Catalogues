@@ -3,7 +3,7 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "attemptedCount": 0,
+  "attemptedCount": 1,
   "stationsWithArtistHints": 107,
   "distinctArtistHints": 124,
   "attemptedHlsCount": 0,
@@ -1122,7 +1122,7 @@
       "stationuuid": "76200b90-939a-46ad-9b37-069f32ba4366",
       "streamSha256": "d4533161a11fed9e2f4e982f99d3d385c7ff3c2f87f8ed161777ea7ed1d96ca8",
       "observedDate": "2026-11-26",
-      "observedInScan": true,
+      "observedInScan": false,
       "approved": false,
       "publicationAllowed": false,
       "verdict": "icy_artist_title_hint",
@@ -1261,6 +1261,18 @@
       ],
       "alternativeVersion": 0,
       "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "84d6bcb6-493b-43f8-aea4-1289fccfecb8",
+      "streamSha256": "04ddc354c50813f888b5121bc77ab677b815da0a7b22dcc2dcb23a3bea594f0a",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "87ef9042-ae9a-4994-8900-026cb0dd6420",

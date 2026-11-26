@@ -1425,6 +1425,22 @@
       "publicationAllowed": false
     },
     {
+      "stationuuid": "84d6bcb6-493b-43f8-aea4-1289fccfecb8",
+      "streamSha256": "04ddc354c50813f888b5121bc77ab677b815da0a7b22dcc2dcb23a3bea594f0a",
+      "audioEvidenceDates": [
+        "2026-11-26"
+      ],
+      "liveFrameEvidenceDates": [
+        "2026-11-26"
+      ],
+      "lastObservedDate": "2026-11-26",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
       "stationuuid": "87ef9042-ae9a-4994-8900-026cb0dd6420",
       "streamSha256": "3db12730b755989de338f8a94c14d866f2c843226981e74ccf6d9f185038cdb4",
       "audioEvidenceDates": [

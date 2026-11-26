@@ -840,16 +840,6 @@
       "observedInScan": true
     },
     {
-      "stationuuid": "76200b90-939a-46ad-9b37-069f32ba4366",
-      "sourceClass": "external_image_host_review",
-      "sourceSha256": null,
-      "audioEvidenceRank": 2,
-      "retrieval": "not_attempted",
-      "logoApproved": false,
-      "publicationAllowed": false,
-      "observedInScan": true
-    },
-    {
       "stationuuid": "77337406-99c4-11e9-a605-52543be04c81",
       "sourceClass": "missing_source",
       "sourceSha256": null,
@@ -958,6 +948,16 @@
       "height": 600,
       "byteLength": 759932,
       "observedDate": "2026-11-25"
+    },
+    {
+      "stationuuid": "84d6bcb6-493b-43f8-aea4-1289fccfecb8",
+      "sourceClass": "missing_source",
+      "sourceSha256": null,
+      "audioEvidenceRank": 2,
+      "retrieval": "not_attempted",
+      "logoApproved": false,
+      "publicationAllowed": false,
+      "observedInScan": true
     },
     {
       "stationuuid": "87ef9042-ae9a-4994-8900-026cb0dd6420",

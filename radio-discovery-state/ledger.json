@@ -3,9 +3,9 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "automaticallyApprovedCount": 0,
-  "newCandidateCount": 0,
-  "reobservedCandidateCount": 270,
-  "notSeenTodayCount": 3,
+  "newCandidateCount": 1,
+  "reobservedCandidateCount": 269,
+  "notSeenTodayCount": 4,
   "records": [
     {
       "stationuuid": "01707580-90b4-47cd-9a46-2954e457ea8f",
@@ -1553,6 +1553,17 @@
       "lastSeen": "2026-11-25",
       "seenDays": 1,
       "name": "Dark Symphony Radio",
+      "lastStatus": "candidate_requires_qualification",
+      "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
+      "repeatedObservation": false
+    },
+    {
+      "stationuuid": "84d6bcb6-493b-43f8-aea4-1289fccfecb8",
+      "firstSeen": "2026-11-26",
+      "lastSeen": "2026-11-26",
+      "seenDays": 1,
+      "name": "Zion Radio",
       "lastStatus": "candidate_requires_qualification",
       "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",

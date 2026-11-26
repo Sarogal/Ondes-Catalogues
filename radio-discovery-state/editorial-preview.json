@@ -3,9 +3,9 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "editoriallyApprovedCount": 0,
-  "attemptedPageCount": 0,
+  "attemptedPageCount": 1,
   "linkedPagesFetched": 0,
-  "htmlObservedCount": 112,
+  "htmlObservedCount": 113,
   "identityTargetCount": 18,
   "structuredProgrammeCount": 6,
   "programmeScopeCount": 1,
@@ -1996,7 +1996,7 @@
       "identityNameSha256": "5517f65091d83b7c7c2e407ebc2536b769f24a803640932d9176c5fbfe077387",
       "reportedHost": "zeno.fm",
       "observedDate": "2026-11-26",
-      "observedInScan": true,
+      "observedInScan": false,
       "retrieval": "html_observed",
       "analyzerVersion": 4,
       "streamSha256": "d4533161a11fed9e2f4e982f99d3d385c7ff3c2f87f8ed161777ea7ed1d96ca8",
@@ -2269,6 +2269,36 @@
           "declaredStreamLinked": false
         }
       ]
+    },
+    {
+      "stationuuid": "84d6bcb6-493b-43f8-aea4-1289fccfecb8",
+      "homepageSha256": "d4518c7cc61c2c93cd5f2a161ca0c1f7fbc42bb3779a086bd186cf900dfad108",
+      "identityNameSha256": "2a801743c4dc42aec34a1901193990acd07c880fc032c67829173a67968abecd",
+      "reportedHost": "zionradio.ch",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "04ddc354c50813f888b5121bc77ab677b815da0a7b22dcc2dcb23a3bea594f0a",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": true,
+      "signal": "no_format_evidence",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [
+        "reggae"
+      ],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [],
+      "primaryElectronicTerms": [],
+      "pageSha256": "618fa6daebeeb23d0d1f0154b7480fc2e4f793c7d2a515dc098c5f554d94462f",
+      "finalPageSha256": "d4518c7cc61c2c93cd5f2a161ca0c1f7fbc42bb3779a086bd186cf900dfad108",
+      "imageHintSha256": [],
+      "linkedPageEvidence": []
     },
     {
       "stationuuid": "87ef9042-ae9a-4994-8900-026cb0dd6420",
