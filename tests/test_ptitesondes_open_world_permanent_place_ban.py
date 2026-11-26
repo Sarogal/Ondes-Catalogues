@@ -116,6 +116,46 @@ class OfficialPlaceBANTests(unittest.TestCase):
         self.assertEqual(summary["unattempted"], 0)
         self.assertTrue(all(r["public_eligible"] is False for r in state["records"]))
 
+    def test_publisher_rebuilds_fresh_ban_draft_and_append_only(self):
+        from datetime import date
+        from ptitesondes_open_world_permanent_place_research import STATE_SCHEMA
+        from ptitesondes_open_world_permanent_place_publisher_preview import review_drafts
+        from ptitesondes_place_preflight import merge_open_world_drafts
+        from ptitesondes_places import validate
+        day = date(2026, 11, 26)
+        private = {"schema": STATE_SCHEMA, "records": [{
+            "city": CITY, "venue": VENUE, "status": "independent_evidence_found",
+            "public_eligible": False,
+            "evidence": {"public_eligible": False,
+                         "method": "dila_official_place_address_plus_ban",
+                         "official_url": PAGE, "lat": 0, "lng": 0,
+                         "postcode": "99999", "admission": "invented"}}]}
+        kwargs = dict(directory_fetch=lambda _: DIR, page_read=lambda _: HTML,
+                      ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN,
+                      osm_fetch=lambda *_: self.fail("must not call Overpass"))
+        drafts, summary = review_drafts(private, day, **kwargs)
+        self.assertEqual(summary["complete_draft_records"], 1)
+        draft = drafts[0]
+        self.assertEqual((draft["lat"], draft["lng"]), (45.1, 3.1))
+        self.assertEqual(draft["postal_code"], "12345")
+        self.assertNotEqual(draft["admission"], "invented")
+        self.assertIsNone(draft["age_min"])
+        self.assertTrue(draft["id"].startswith("ban-place-"))
+        current = {"version": 1, "updated_at": day.isoformat(), "places": []}
+        out, counts = merge_open_world_drafts(current, drafts, day)
+        self.assertEqual(counts["open_world_added"], 1)
+        self.assertEqual(validate(out), 1)
+        same, counts = merge_open_world_drafts(out, drafts, day)
+        self.assertEqual(same, out)
+        self.assertEqual(counts["open_world_duplicate"], 1)
+        forged = dict(draft, geo_source_url="https://data.geopf.fr/geocodage/search?q=wrong")
+        _, counts = merge_open_world_drafts(current, [forged], day)
+        self.assertEqual(counts["open_world_invalid"], 1)
+        kwargs["ban_fetch"] = lambda _: {"type": "FeatureCollection", "features": []}
+        drafts, summary = review_drafts(private, day, **kwargs)
+        self.assertEqual(drafts, [])
+        self.assertEqual(summary["counts"]["fresh_ban_evidence_unavailable"], 1)
+
     def test_ban_unavailable_is_not_publication_permission(self):
         def down(_):
             raise OSError("provider unavailable")
