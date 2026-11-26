@@ -3,13 +3,13 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "editoriallyApprovedCount": 0,
-  "attemptedPageCount": 0,
+  "attemptedPageCount": 1,
   "linkedPagesFetched": 0,
-  "htmlObservedCount": 113,
-  "identityTargetCount": 18,
-  "structuredProgrammeCount": 6,
-  "programmeScopeCount": 1,
-  "declaredStreamLinkedCount": 8,
+  "htmlObservedCount": 114,
+  "identityTargetCount": 19,
+  "structuredProgrammeCount": 7,
+  "programmeScopeCount": 2,
+  "declaredStreamLinkedCount": 9,
   "records": [
     {
       "stationuuid": "01707580-90b4-47cd-9a46-2954e457ea8f",
@@ -941,7 +941,7 @@
       "identityNameSha256": "e2cde67a539cb6b1966151589ac2ccda1c29df3c4f60c5d15dc4df576c08e299",
       "reportedHost": "radiomutation.com",
       "observedDate": "2026-11-25",
-      "observedInScan": true,
+      "observedInScan": false,
       "retrieval": "html_observed",
       "analyzerVersion": 4,
       "streamSha256": "d1acc08808177d77aa6a3dc02df4f7c699172cf867d4579205efa763b5255f72",
@@ -2925,6 +2925,52 @@
       "publicationAllowed": false
     },
     {
+      "stationuuid": "b5a3e6e2-c26d-420f-ac46-d26e04382f7b",
+      "homepageSha256": "0a239b7485f85607483903f4f01f072e6c3b4fcfa2bff414f20def42569dfedb",
+      "identityNameSha256": "ff24edbcfa2af81353caeb5e9493d6f8878f1f5d519fc006079c86104e36ece6",
+      "reportedHost": "www.rockspaceradio.com",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "8075cc137c75baa02a371778be5272dc3876f4a23a563e243e342f3bd0eb5fb3",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": true,
+      "signal": "identity_and_target_indication",
+      "structuredProgrammeEvidence": true,
+      "programmeScopeEvidence": true,
+      "programmeScopeSources": [
+        "explicit_html_station_scope",
+        "typed_station_genre"
+      ],
+      "programmeScopeTerms": [
+        "hard rock",
+        "heavy metal"
+      ],
+      "otherFormatTerms": [],
+      "declaredStreamLinked": true,
+      "primaryTargetTerms": [
+        "hard rock",
+        "heavy metal"
+      ],
+      "visibleTargetTerms": [
+        "hard rock",
+        "heavy metal",
+        "metal",
+        "punk"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "9507e6be14c245d1668232894577a651f48d4b30c1138cd0d9901f797e146339",
+      "finalPageSha256": "0a239b7485f85607483903f4f01f072e6c3b4fcfa2bff414f20def42569dfedb",
+      "imageHintSha256": [
+        "592b9a7eed52666512a5ffae612198beb05f91355999094744579f115cc59231",
+        "b8cea620996b9df348cc8231e8809f4fc2eb040c2524a19781a31199a9ff3a21",
+        "f065d736ff5c8d0efcdd170e05b21a028148609038cfac72f8c3c4fa69371c3d"
+      ],
+      "linkedPageEvidence": []
+    },
+    {
       "stationuuid": "bb38c058-7757-48e7-a73e-ccdc4fad7d2e",
       "homepageSha256": "94a3d47143e0643067a430630f3905d7bbea4ee2afc413a60922d142ec856f16",
       "identityNameSha256": "9524efb2e729d2b8754d545a7d28445e5c53e9e575e705ad65ef16a17e5f8bdb",
@@ -4048,7 +4094,7 @@
       "identityNameSha256": "64cb38b7d6181baf27efd49de0c99bb93edcd91f8c95b1836e9d33995773df54",
       "reportedHost": "radio.mntl.top",
       "observedDate": "2026-11-25",
-      "observedInScan": true,
+      "observedInScan": false,
       "retrieval": "html_observed",
       "analyzerVersion": 4,
       "streamSha256": "4e27e4d6738f20999869a79a2470b349aa03f07f91b60abd99443bce0f4e76cb",

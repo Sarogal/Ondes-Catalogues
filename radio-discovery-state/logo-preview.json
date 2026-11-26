@@ -3,10 +3,10 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedLogoCount": 0,
-  "candidateCount": 160,
+  "candidateCount": 159,
   "attemptedSourceCount": 0,
-  "decodedCandidateCount": 27,
-  "retainedEvidenceCount": 0,
+  "decodedCandidateCount": 26,
+  "retainedEvidenceCount": 1,
   "records": [
     {
       "stationuuid": "01707580-90b4-47cd-9a46-2954e457ea8f",
@@ -351,11 +351,11 @@
       "stationuuid": "2d8f653c-0709-42b0-bc76-71434a8d31b7",
       "sourceClass": "same_reported_host",
       "sourceSha256": "6cde0543a35eb0f31c327cf2e24372c9fc1b3619d8fcf13321fca9d1d62ccd8b",
-      "audioEvidenceRank": 2,
-      "retrieval": "decoded_unapproved",
+      "audioEvidenceRank": 0,
+      "observedInScan": false,
       "logoApproved": false,
       "publicationAllowed": false,
-      "observedInScan": true,
+      "retrieval": "decoded_unapproved",
       "imageSha256": "d2a5d223ac1c95c9a2214bd1224e612f79055ff688c5778852aa505f5ebc57be",
       "mime": "image/png",
       "width": 750,
@@ -1245,6 +1245,16 @@
       "observedInScan": true
     },
     {
+      "stationuuid": "b5a3e6e2-c26d-420f-ac46-d26e04382f7b",
+      "sourceClass": "missing_source",
+      "sourceSha256": null,
+      "audioEvidenceRank": 2,
+      "retrieval": "not_attempted",
+      "logoApproved": false,
+      "publicationAllowed": false,
+      "observedInScan": true
+    },
+    {
       "stationuuid": "b6b231d4-bd2f-4127-995f-670ce4b3178a",
       "sourceClass": "missing_source",
       "sourceSha256": null,
@@ -1700,16 +1710,6 @@
     },
     {
       "stationuuid": "ec5f9687-4dc2-4358-ad16-bed7a17cc0a0",
-      "sourceClass": "external_image_host_review",
-      "sourceSha256": null,
-      "audioEvidenceRank": 2,
-      "retrieval": "not_attempted",
-      "logoApproved": false,
-      "publicationAllowed": false,
-      "observedInScan": true
-    },
-    {
-      "stationuuid": "ed02a49b-11e2-4de3-b279-279529290257",
       "sourceClass": "external_image_host_review",
       "sourceSha256": null,
       "audioEvidenceRank": 2,

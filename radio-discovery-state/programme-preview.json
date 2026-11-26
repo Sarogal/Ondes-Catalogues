@@ -4,12 +4,12 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "freshnessDays": 30,
-  "stationCount": 139,
+  "stationCount": 140,
   "stationsWithWikidataHints": 14,
   "stationsWithSourceConflicts": 1,
   "stationsWithReportedHistory": 0,
   "stationsWithMultipleObservationDays": 19,
-  "stationsWithGenreHints": 34,
+  "stationsWithGenreHints": 35,
   "verifiedArtistCount": 0,
   "records": [
     {
@@ -1038,7 +1038,7 @@
       "stationuuid": "2d8f653c-0709-42b0-bc76-71434a8d31b7",
       "streamSha256": "d1acc08808177d77aa6a3dc02df4f7c699172cf867d4579205efa763b5255f72",
       "matchesDecisionStream": true,
-      "observedInScan": true,
+      "observedInScan": false,
       "distinctArtistHints": 1,
       "distinctArtistTitleHints": 1,
       "distinctTitleHashes": 1,
@@ -3731,6 +3731,45 @@
       "publicationAllowed": false
     },
     {
+      "stationuuid": "b5a3e6e2-c26d-420f-ac46-d26e04382f7b",
+      "streamSha256": "8075cc137c75baa02a371778be5272dc3876f4a23a563e243e342f3bd0eb5fb3",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 1,
+      "distinctArtistTitleHints": 1,
+      "distinctTitleHashes": 1,
+      "observationDates": [
+        "2026-11-26"
+      ],
+      "reportedBroadcastDates": [],
+      "distinctHistoricalArtistTitleHints": 0,
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 1,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 1,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "sourceHintCounts": {
+        "musicbrainz_only": 1
+      },
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
       "stationuuid": "b6b231d4-bd2f-4127-995f-670ce4b3178a",
       "streamSha256": "d7b4669f97b6987ac697a397a9622cdbf85cdf4545d343db356ea80e0180057f",
       "matchesDecisionStream": true,
@@ -5106,7 +5145,7 @@
       "stationuuid": "ed02a49b-11e2-4de3-b279-279529290257",
       "streamSha256": "4e27e4d6738f20999869a79a2470b349aa03f07f91b60abd99443bce0f4e76cb",
       "matchesDecisionStream": true,
-      "observedInScan": true,
+      "observedInScan": false,
       "distinctArtistHints": 1,
       "distinctArtistTitleHints": 1,
       "distinctTitleHashes": 1,

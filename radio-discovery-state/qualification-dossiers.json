@@ -7,7 +7,7 @@
   "counts": {
     "already_known": 82,
     "identity_review": 29,
-    "awaiting_evidence": 163
+    "awaiting_evidence": 164
   },
   "records": [
     {
@@ -3669,7 +3669,7 @@
       "firstSeen": "2026-11-25",
       "lastSeen": "2026-11-26",
       "seenDays": 2,
-      "observedInScan": true,
+      "observedInScan": false,
       "lastSourceObservation": {
         "date": "2026-11-26",
         "countryCode": "US",
@@ -3761,7 +3761,8 @@
       "status": "awaiting_evidence",
       "reviewReasons": [
         "independent_editorial_programme_evidence_required",
-        "repeat_live_frame_evidence_on_distinct_days"
+        "repeat_live_frame_evidence_on_distinct_days",
+        "source_not_in_current_scan"
       ],
       "nextReviewDate": "2026-11-27",
       "approved": false,
@@ -14235,6 +14236,120 @@
       "publicationAllowed": false
     },
     {
+      "stationuuid": "b5a3e6e2-c26d-420f-ac46-d26e04382f7b",
+      "name": "Rock Space Radio",
+      "firstSeen": "2026-11-26",
+      "lastSeen": "2026-11-26",
+      "seenDays": 1,
+      "observedInScan": true,
+      "lastSourceObservation": {
+        "date": "2026-11-26",
+        "countryCode": "ES",
+        "reportedTags": "alternative rock,classic rock,hard rock,hard rock heavy metal,heavy metal,indie rock,pop rock,progressive rock,punk rock,rock",
+        "reportedHomepageHost": "www.rockspaceradio.com",
+        "streamSha256": "8075cc137c75baa02a371778be5272dc3876f4a23a563e243e342f3bd0eb5fb3",
+        "reportedFaviconSha256": null,
+        "classification": "unmapped_candidate",
+        "existingGoStationId": null,
+        "possibleGoStationIds": []
+      },
+      "editorialSignal": "target_genre_indication",
+      "editorialVerified": false,
+      "homepageEvidence": {
+        "reportedHost": "www.rockspaceradio.com",
+        "homepageSha256": "0a239b7485f85607483903f4f01f072e6c3b4fcfa2bff414f20def42569dfedb",
+        "identityNameSha256": "ff24edbcfa2af81353caeb5e9493d6f8878f1f5d519fc006079c86104e36ece6",
+        "observedDate": "2026-11-26",
+        "retrieval": "html_observed",
+        "identityNameMatch": true,
+        "signal": "identity_and_target_indication",
+        "primaryTargetTerms": [
+          "hard rock",
+          "heavy metal"
+        ],
+        "visibleTargetTerms": [
+          "hard rock",
+          "heavy metal",
+          "metal",
+          "punk"
+        ],
+        "primaryElectronicTerms": [],
+        "pageSha256": "9507e6be14c245d1668232894577a651f48d4b30c1138cd0d9901f797e146339",
+        "finalPageSha256": "0a239b7485f85607483903f4f01f072e6c3b4fcfa2bff414f20def42569dfedb",
+        "imageHintSha256": [
+          "592b9a7eed52666512a5ffae612198beb05f91355999094744579f115cc59231",
+          "b8cea620996b9df348cc8231e8809f4fc2eb040c2524a19781a31199a9ff3a21",
+          "f065d736ff5c8d0efcdd170e05b21a028148609038cfac72f8c3c4fa69371c3d"
+        ],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": true,
+        "programmeScopeEvidence": true,
+        "programmeScopeSources": [
+          "explicit_html_station_scope",
+          "typed_station_genre"
+        ],
+        "programmeScopeTerms": [
+          "hard rock",
+          "heavy metal"
+        ],
+        "otherFormatTerms": [],
+        "declaredStreamLinked": true,
+        "streamSha256": "8075cc137c75baa02a371778be5272dc3876f4a23a563e243e342f3bd0eb5fb3"
+      },
+      "officialHomepageVerified": false,
+      "duplicateRisk": false,
+      "streamEvidence": {
+        "streamSha256": "8075cc137c75baa02a371778be5272dc3876f4a23a563e243e342f3bd0eb5fb3",
+        "audioEvidenceDates": [
+          "2026-11-26"
+        ],
+        "liveFrameEvidenceDates": [
+          "2026-11-26"
+        ],
+        "lastObservedDate": "2026-11-26",
+        "lastVerdict": "audio_sample_ok"
+      },
+      "streamEvidenceMatchesCurrentSource": true,
+      "hlsEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "8075cc137c75baa02a371778be5272dc3876f4a23a563e243e342f3bd0eb5fb3",
+        "observedDate": "2026-11-26",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-26"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4021,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "aac_adts",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
+      "logoEvidence": {
+        "sourceClass": "missing_source",
+        "sourceSha256": null,
+        "retrieval": "not_attempted",
+        "imageSha256": null,
+        "mime": null,
+        "width": null,
+        "height": null,
+        "byteLength": null,
+        "observedDate": null
+      },
+      "logoIdentityVerified": false,
+      "status": "awaiting_evidence",
+      "reviewReasons": [
+        "independent_editorial_programme_evidence_required",
+        "repeat_live_frame_evidence_on_distinct_days"
+      ],
+      "nextReviewDate": "2026-11-27",
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
       "stationuuid": "b6b231d4-bd2f-4127-995f-670ce4b3178a",
       "name": "Radio Caprice - Symphonic Gothic Metal",
       "firstSeen": "2026-11-25",
@@ -18797,7 +18912,7 @@
       "firstSeen": "2026-11-25",
       "lastSeen": "2026-11-26",
       "seenDays": 2,
-      "observedInScan": true,
+      "observedInScan": false,
       "lastSourceObservation": {
         "date": "2026-11-26",
         "countryCode": "BR",
@@ -18871,22 +18986,13 @@
         "icyHeaderPresent": true,
         "earlyEnd": false
       },
-      "logoEvidence": {
-        "sourceClass": "external_image_host_review",
-        "sourceSha256": null,
-        "retrieval": "not_attempted",
-        "imageSha256": null,
-        "mime": null,
-        "width": null,
-        "height": null,
-        "byteLength": null,
-        "observedDate": null
-      },
+      "logoEvidence": null,
       "logoIdentityVerified": false,
       "status": "awaiting_evidence",
       "reviewReasons": [
         "independent_editorial_programme_evidence_required",
-        "verify_continuous_live_playback"
+        "verify_continuous_live_playback",
+        "source_not_in_current_scan"
       ],
       "nextReviewDate": "2026-11-27",
       "approved": false,

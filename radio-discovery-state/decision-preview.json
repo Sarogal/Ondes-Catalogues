@@ -7,20 +7,20 @@
   "approvedCount": 0,
   "stagingReviewCount": 0,
   "counts": {
-    "advanced_candidate": 3,
+    "advanced_candidate": 4,
     "already_known": 82,
-    "editorial_review": 156,
+    "editorial_review": 154,
     "identity_review": 29,
-    "source_recheck": 3,
+    "source_recheck": 5,
     "technical_review": 1
   },
   "blockingReasonCounts": {
     "bind_broadcaster_to_stream": 155,
     "confirm_station_level_programme_scope": 162,
     "obtain_current_continuity_evidence": 40,
-    "obtain_station_bound_editorial_evidence": 145,
-    "refresh_current_reconciliation": 3,
-    "repeat_continuity_on_distinct_days": 44,
+    "obtain_station_bound_editorial_evidence": 146,
+    "refresh_current_reconciliation": 5,
+    "repeat_continuity_on_distinct_days": 45,
     "resolve_duplicate_or_legacy_identity": 29,
     "resolve_mixed_or_electronic_format": 40,
     "resolve_recent_negative_technical_observation": 40
@@ -1032,9 +1032,9 @@
     {
       "stationuuid": "2d8f653c-0709-42b0-bc76-71434a8d31b7",
       "name": "Radio Mutation",
-      "decision": "editorial_review",
+      "decision": "source_recheck",
       "streamSha256": "d1acc08808177d77aa6a3dc02df4f7c699172cf867d4579205efa763b5255f72",
-      "editorialMatch": true,
+      "editorialMatch": false,
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
@@ -1044,6 +1044,8 @@
       ],
       "logoDecodedHint": true,
       "blockingReasons": [
+        "refresh_current_reconciliation",
+        "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
         "repeat_continuity_on_distinct_days"
@@ -4145,6 +4147,26 @@
       "publicationAllowed": false
     },
     {
+      "stationuuid": "b5a3e6e2-c26d-420f-ac46-d26e04382f7b",
+      "name": "Rock Space Radio",
+      "decision": "advanced_candidate",
+      "streamSha256": "8075cc137c75baa02a371778be5272dc3876f4a23a563e243e342f3bd0eb5fb3",
+      "editorialMatch": true,
+      "broadcasterStreamLink": true,
+      "structuredProgrammeEvidence": true,
+      "programmeScopeEvidence": true,
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-26"
+      ],
+      "logoDecodedHint": false,
+      "blockingReasons": [
+        "repeat_continuity_on_distinct_days"
+      ],
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
       "stationuuid": "b6b231d4-bd2f-4127-995f-670ce4b3178a",
       "name": "Radio Caprice - Symphonic Gothic Metal",
       "decision": "editorial_review",
@@ -5342,7 +5364,7 @@
     {
       "stationuuid": "ed02a49b-11e2-4de3-b279-279529290257",
       "name": "Montiel Rock",
-      "decision": "editorial_review",
+      "decision": "source_recheck",
       "streamSha256": "4e27e4d6738f20999869a79a2470b349aa03f07f91b60abd99443bce0f4e76cb",
       "editorialMatch": false,
       "broadcasterStreamLink": false,
@@ -5355,6 +5377,7 @@
       ],
       "logoDecodedHint": false,
       "blockingReasons": [
+        "refresh_current_reconciliation",
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope"
