@@ -33,6 +33,8 @@ class ArtworkPage(Page):
         super().__init__()
         self.og_titles=[]
         self.og_images=[]
+        self.visible_identity=[]
+        self.identity_tag=None
     def handle_starttag(self,tag,attrs):
         if tag=="meta" and not self.ignored:
             a=dict(attrs)
@@ -42,7 +44,18 @@ class ArtworkPage(Page):
                 self.og_titles.append(v)
             if k in ("og:image","og:image:secure_url") and len(self.og_images)<8:
                 self.og_images.append(v)
+        if tag in ("title","h1") and not self.ignored:
+            self.identity_tag=tag
+            self.visible_identity.append("")
         super().handle_starttag(tag,attrs)
+    def handle_data(self,data):
+        if self.identity_tag and not self.ignored:
+            self.visible_identity[-1]=(self.visible_identity[-1]+data)[:500]
+        super().handle_data(data)
+    def handle_endtag(self,tag):
+        if tag==self.identity_tag:
+            self.identity_tag=None
+        super().handle_endtag(tag)
 
 def image_values(value):
     if isinstance(value,str):
@@ -70,15 +83,27 @@ def candidates(station,final,body):
         for n in matched:
             for v in image_values(n.get(key)):
                 typed.setdefault(urljoin(final,v),kind)
+    # A logo declared for another station on the same page is ambiguous.
+    other={urljoin(final,v) for n in nodes if n not in matched for key in ("logo","image")
+           for v in image_values(n.get(key))}
+    if set(typed)&other:
+        return {}
     if typed:
         # Prefer explicit logos to illustrations, but preserve conflicts
         # between multiple declared logo addresses.
         return {u:k for u,k in typed.items() if k=="typed_station_logo"} or typed
     if (not nodes and p.og_titles and all(name_key(t)==name for t in p.og_titles)
-            and any(name_key(t)==name for t in p.identity)):
+            and any(name_key(t)==name for t in p.visible_identity)):
         # No favicon fallback; OG image is a lower-confidence hypothesis.
         return {urljoin(final,v):"named_page_og_image" for v in p.og_images if v}
     return {}
+
+def confirmation_status(row,dates):
+    if row.get("reviewStatus")!="decoded_review":
+        return "no_current_image"
+    if row.get("sourceKind")!="typed_station_logo":
+        return "illustration_review_only"
+    return "stable_typed_logo_review" if len(dates)==2 else "await_distinct_day"
 
 def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch_page=fetch_html,
           fetch_image=fetch_strict_https,decode=decode_image):
@@ -112,28 +137,45 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch_page=fetch_html,
                     raise ValueError("invalid decoded artwork")
             elif any(row.get(k) is not None for k in ("image","sourceKind","sourceSha256","pageSha256")):
                 raise ValueError("unexpected prior artwork")
+            dates=row.get("logoEvidenceDates",[])
+            if (not isinstance(dates,list) or len(dates)>2 or dates!=sorted(set(dates))
+                    or any(parse_day(d)>day for d in dates)
+                    or (dates and (status!="decoded_review" or row.get("sourceKind")!="typed_station_logo" or dates[-1]!=date))):
+                raise ValueError("invalid artwork confirmation dates")
+            if "confirmationStatus" in row and row["confirmationStatus"] != confirmation_status(row,dates):
+                raise ValueError("invalid artwork confirmation status")
+            if sid not in eligible and status!="synthetic_held":
+                raise ValueError("synthetic artwork history")
             old[sid]=row
     def order(sid):
         previous=old.get(sid,{})
-        return (eligible[sid]["status"]["state"]!="active",previous.get("observedDate") or "",sid)
+        return (previous.get("observedDate") or "",eligible[sid]["status"]["state"]!="active",sid)
     queue=sorted((sid for sid in eligible if not old.get(sid,{}).get("observedDate")
-                  or age(day,old[sid]["observedDate"]) >= (7 if old[sid]["reviewStatus"]=="decoded_review" else 1)),key=order)
+                  or age(day,old[sid]["observedDate"]) >= (7 if old[sid].get("confirmationStatus")=="stable_typed_logo_review" else 1)),key=order)
     rows={}
     for sid in missing:
         rows[sid]={"goStationId":sid,"catalogueStatus":missing[sid]["status"]["state"],
                    "reviewStatus":"awaiting_search" if sid in eligible else "synthetic_held",
                    "observedDate":None,"sourceKind":None,"sourceSha256":None,"pageSha256":None,"image":None,
+                   "logoEvidenceDates":[],"confirmationStatus":"no_current_image",
                    "logoApproved":False,"publicationAllowed":False}
         if sid in old:
             for k in ("reviewStatus","observedDate","sourceKind","sourceSha256","pageSha256","image"):
                 rows[sid][k]=old[sid].get(k)
+            previous=old[sid]
+            dates=previous.get("logoEvidenceDates",[])
+            if "logoEvidenceDates" not in previous and previous.get("sourceKind")=="typed_station_logo":
+                dates=[previous["observedDate"]]
+            rows[sid]["logoEvidenceDates"]=dates
+            rows[sid]["confirmationStatus"]=confirmation_status(rows[sid],dates)
     images={}
     image_attempts=0
     selected=queue[:limit]
     for sid in selected:
         s=eligible[sid]
         row=rows[sid]
-        row.update(observedDate=day,reviewStatus="page_held",sourceKind=None,sourceSha256=None,pageSha256=None,image=None)
+        row.update(observedDate=day,reviewStatus="page_held",sourceKind=None,sourceSha256=None,pageSha256=None,image=None,
+                   logoEvidenceDates=[],confirmationStatus="no_current_image")
         page=homepage_url(s.get("homepage"))
         if not page:
             continue
@@ -162,7 +204,13 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch_page=fetch_html,
         if url not in images:
             if image_attempts>=MAX_IMAGES:
                 # Budget deferral is not a failed observation.
-                row["observedDate"]=None
+                if sid in old:
+                    for k in ("reviewStatus","observedDate","sourceKind","sourceSha256","pageSha256","image"):
+                        row[k]=old[sid].get(k)
+                    row["logoEvidenceDates"]=old[sid].get("logoEvidenceDates",[])
+                    row["confirmationStatus"]=confirmation_status(row,row["logoEvidenceDates"])
+                else:
+                    row.update(observedDate=None,reviewStatus="awaiting_search")
                 continue
             image_attempts+=1
             try:
@@ -180,11 +228,22 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch_page=fetch_html,
         if images[url]:
             row.update(reviewStatus="decoded_review",sourceKind=kind,sourceSha256=digest(url),
                        pageSha256=hashlib.sha256(body).hexdigest(),image=images[url])
+            previous=old.get(sid,{})
+            dates=[]
+            if kind=="typed_station_logo":
+                if (previous.get("reviewStatus")=="decoded_review" and previous.get("sourceKind")==kind
+                        and previous.get("sourceSha256")==row["sourceSha256"] and previous.get("image")==row["image"]):
+                    dates=previous.get("logoEvidenceDates",[previous["observedDate"]])
+                dates=sorted(set([d for d in dates if age(day,d)<=30]+[day]))[-2:]
+            row["logoEvidenceDates"]=dates
+            row["confirmationStatus"]=confirmation_status(row,dates)
     records=[rows[sid] for sid in sorted(rows)]
     return {"schemaVersion":1,"scanDate":day,"catalogBaselineSha256":expected,"publicationAllowed":False,
             "approvedLogoCount":0,"catalogChanged":False,"missingCount":len(missing),"eligibleCount":len(eligible),
             "attemptedStationCount":len(selected),"attemptedImageCount":image_attempts,
-            "counts":dict(sorted(Counter(x["reviewStatus"] for x in records).items())),"records":records}
+            "counts":dict(sorted(Counter(x["reviewStatus"] for x in records).items())),
+            "confirmationCounts":dict(sorted(Counter(x["confirmationStatus"] for x in records).items())),
+            "records":records}
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)

@@ -46,11 +46,38 @@ class MissingLogoTests(unittest.TestCase):
 
     def test_named_page_og_same_host_only(self):
         def og(url):
-            return ('<meta property="og:title" content="Iron Radio"><meta property="og:image" content="'+url+'">').encode()
+            return ('<title>Iron Radio</title><meta property="og:title" content="Iron Radio"><meta property="og:image" content="'+url+'">').encode()
         r=run(og("https://radio.example.org/logo.png"))
         self.assertEqual(r["records"][0]["sourceKind"],"named_page_og_image")
         r=run(og(URL),fetch_image=lambda u,h:self.fail("cross-host OG"))
         self.assertEqual(r["counts"],{"image_held":1})
+
+    def test_og_title_alone_cannot_confirm_identity(self):
+        body=b'<meta property="og:title" content="Iron Radio"><meta property="og:image" content="https://radio.example.org/logo.png">'
+        r=run(body,fetch_image=lambda u,h:self.fail("OG self corroboration"))
+        self.assertEqual(r["counts"],{"no_bound_image":1})
+
+    def test_shared_network_logo_held(self):
+        body=typed()+typed(name="Another Station")
+        r=run(body,fetch_image=lambda u,h:self.fail("network artwork"))
+        self.assertEqual(r["counts"],{"no_bound_image":1})
+
+    def test_distinct_day_stability_and_changed_image(self):
+        r=run(typed())
+        self.assertEqual(r["records"][0]["confirmationStatus"],"await_distinct_day")
+        r=run(typed(),prior=r,day="2026-11-27")
+        self.assertEqual(r["records"][0]["confirmationStatus"],"stable_typed_logo_review")
+        self.assertEqual(r["records"][0]["logoEvidenceDates"],[DAY,"2026-11-27"])
+        self.assertFalse(r["records"][0]["logoApproved"])
+        r=run(typed(),prior=r,day="2026-12-04",fetch_image=lambda u,h:(b"changed bytes","image/png"))
+        self.assertEqual(r["records"][0]["logoEvidenceDates"],["2026-12-04"])
+        self.assertEqual(r["records"][0]["confirmationStatus"],"await_distinct_day")
+
+    def test_typed_illustration_not_qualified(self):
+        body=typed().replace(b'"logo"',b'"image"')
+        r=run(body)
+        self.assertEqual(r["records"][0]["confirmationStatus"],"illustration_review_only")
+        self.assertEqual(r["records"][0]["logoEvidenceDates"],[])
 
     def test_synthetic_never_searched(self):
         r=run(typed(),synthetic=True,fetch_image=lambda u,h:self.fail("synthetic"))
