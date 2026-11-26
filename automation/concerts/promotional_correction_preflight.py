@@ -107,7 +107,8 @@ def select(previous, report, reference, current, today, *, audit=audit_correctio
         evidence = row.get("officialEvidence")
         if (not isinstance(evidence, list) or len(evidence) != 1
                 or not isinstance(evidence[0], dict)
-                or evidence[0].get("proofType") != contract.PROMOTIONAL_PROOF):
+                or evidence[0].get("proofType") not in (contract.PROMOTIONAL_PROOF,
+                    contract.bill_identity.PROOF)):
             continue
         eid = row.get("eventId")
         if (not isinstance(eid, str) or eid in seen or eid in corrected
