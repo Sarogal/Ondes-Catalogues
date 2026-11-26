@@ -19,6 +19,29 @@ NON_PERFORMANCE_GATHERING = re.compile(
     r"table ronde|assemblee generale|reunion d information|"
     r"seminaire|debat citoyen))\b"
 )
+RECRUITMENT_FORMAT = re.compile(
+    r"\b(?:job dating|forum (?:de l emploi|des metiers|du recrutement)|"
+    r"salon (?:de l emploi|des metiers|du recrutement)|"
+    r"rencontre(?:s)? de recrutement)\b"
+)
+RECRUITMENT_PURPOSE = re.compile(
+    r"\b(?:demandeurs? d emploi|opportunites? professionnelles?|"
+    r"offres? d emploi|recherche d emploi|rencontrer des professionnels|"
+    r"recruter|reconversion professionnelle)\b"
+)
+# These phrases describe an artist's past or persona, not the audience.
+BIOGRAPHICAL_CHILD_CUES = re.compile(
+    r"\b(?:reve(?:s)? d enfant|souvenir(?:s)? d enfance|"
+    r"depuis (?:son|sa) enfance|quand (?:il|elle) etait enfant|"
+    r"l enfant du rock)\b"
+)
+
+
+def audience_text(title, description):
+    """Remove narrowly defined biographical cues, not actual audience claims."""
+    return BIOGRAPHICAL_CHILD_CUES.sub(" ", norm(title + " " + description))
+
+
 MARKET_GATHERING = re.compile(
     r"^(?:(?:le |la |un |une |grand |petit )?marche(?:s)? "
     r"(?:de noel|de saint nicolas|artisanal|artisans|des artisans|"
@@ -95,6 +118,8 @@ def primary_out_of_scope(title, description=""):
         return "school_support_primary"
     if NON_PERFORMANCE_GATHERING.search(main):
         return "non_performance_gathering_primary"
+    if RECRUITMENT_FORMAT.search(main) and RECRUITMENT_PURPOSE.search(norm(description)):
+        return "recruitment_gathering_primary"
     if MARKET_GATHERING.search(main):
         return "market_gathering_primary"
     if COMMERCIAL_STUDIO_SERVICE.search(main):

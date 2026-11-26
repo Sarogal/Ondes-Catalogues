@@ -22,9 +22,13 @@ from test_ptitesondes_open_world_release_rehearsal import (
 )
 
 
-def live_case(title, description, *, category=None):
+def live_case(title, description, *, category=None, age=None, without_age=False):
     source = dict(oa_event(), title={"fr": title},
                   description={"fr": description}, age={"min": 5, "max": 13})
+    if without_age:
+        source.pop("age", None)
+    elif age is not None:
+        source["age"] = age
     item = dict(lead(), title=title)
     ref = base()
     if category:
@@ -209,6 +213,33 @@ class PrimaryEditorialTests(unittest.TestCase):
         for title in ("Concert pour enfants", "Conte musical de Noël",
                       "Éveil musical au parc", "Spectacle de marionnettes"):
             self.assertIsNone(primary_out_of_scope(title, desc))
+
+    def test_job_dating_is_not_a_youth_performance(self):
+        title = "Industrie fait son show : job dating et spectacle"
+        desc = "Pour les demandeurs d'emploi, jeunes et familles : découvrir les opportunités professionnelles."
+        self.assertEqual(primary_out_of_scope(title, desc), "recruitment_gathering_primary")
+        self.assertIsNone(category_for(title, desc))
+        self.assertIsNone(propose_family_activity(title, desc)["category_proposal"])
+        item, reason = live_case(title, desc, category="spectacle-jeunesse")
+        self.assertIsNone(item)
+        self.assertEqual(reason, "oa_direct_primary_activity_outside_scope")
+        self.assertIsNone(primary_out_of_scope(
+            "Spectacle de marionnettes", "Pour les enfants. Avant le job dating."))
+
+    def test_artist_childhood_is_not_a_youth_audience(self):
+        title = "Un humoriste en spectacle"
+        desc = "Il revient à son rêve d'enfant avec un nouveau one man show."
+        self.assertIsNone(propose_family_activity(title, desc)["category_proposal"])
+        item, reason = live_case(title, desc, category="spectacle-jeunesse", without_age=True)
+        self.assertIsNone(item)
+        self.assertEqual(reason, "oa_direct_child_audience_missing")
+        self.assertEqual(propose_family_activity(
+            title, desc + " Spectacle pour les enfants et leurs parents.")["category_proposal"],
+            "spectacle-jeunesse")
+        item, reason = live_case(title, desc + " Spectacle pour enfants.",
+                                 category="spectacle-jeunesse", without_age=True)
+        self.assertEqual(reason, "oa_direct_live_source_accepted")
+        self.assertEqual(item["category"], "spectacle-jeunesse")
 
     def test_no_session_count_cap_on_real_youth_workshops(self):
         self.assertIsNone(primary_out_of_scope(
