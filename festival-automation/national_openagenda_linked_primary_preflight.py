@@ -27,6 +27,7 @@ from national_openagenda_research import (SOURCE as OPENAGENDA_DATASET,
                                           validated_leads as validated_openagenda_leads)
 from national_professional_profile_discovery import discover as discover_professional_profiles
 from national_professional_official_detail import examine as examine_professional_details
+from national_cultural_venue_discovery import cultural_detail
 from national_generic_primary_domain_preflight import (
     _edition_name, _published, QUEUE_SCHEMA,
 )
@@ -179,8 +180,9 @@ def examine(state, queue, catalogue, today, *, event_fetch=None,
     read_site = organizer_fetch or fetch_public_html
     output = []
     rate_limited_hosts = set()
-    current_hints = {lead['source_url']: lead.get('professional_source_hints_review_only')
-                     for lead in validated_openagenda_leads(state, today)}
+    current_leads = {lead['source_url']: lead for lead in validated_openagenda_leads(state, today)}
+    current_hints = {url: lead.get('professional_source_hints_review_only')
+                     for url, lead in current_leads.items()}
     for source in selected:
         url = source["url"]
         prior = observed.pop(url, {})
@@ -252,6 +254,12 @@ def examine(state, queue, catalogue, today, *, event_fetch=None,
                 row["professional_official_detail_review_only"] = examine_professional_details(
                     row["professional_research_review_only"], source["title"],
                     source["year"], today, fetch=read_site)
+                if (row["professional_official_detail_review_only"]["status"] ==
+                        "NO_OFFICIAL_DETAIL_PROOF"):
+                    fallback = cultural_detail(current_leads.get(url), source["title"],
+                                               source["year"], today, fetch=read_site)
+                    if fallback["registry_requests"]:
+                        row["professional_official_detail_review_only"] = fallback
         if url not in observed:
             observed[url] = {"lastChecked": today}
         serial += 1
