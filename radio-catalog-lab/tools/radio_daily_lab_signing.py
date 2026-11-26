@@ -10,7 +10,7 @@ from radio_stream_recheck_ledger import parse_day
 
 def validate_candidate(prior_pointer, prior_body, candidate, *, expected_sha,
                        expected_sequence, expected_candidate_sha, public_key, key_id, day,
-                       logo_evidence=None, repair_evidence=None):
+                       logo_evidence=None, repair_evidence=None, status_evidence=None):
     """Revalidate exact bytes independently of the staging generator's assertions."""
     day = parse_day(day)
     old = verify_baseline(prior_pointer, prior_body, expected_sha=expected_sha,
@@ -34,7 +34,7 @@ def validate_candidate(prior_pointer, prior_body, candidate, *, expected_sha,
     # This gate permits an exact logo-only successor; not a caller-supplied
     # list of authorized rows or a generic waiver. All other fields survive.
     reference = old
-    if logo_evidence is not None and repair_evidence is not None:
+    if sum(x is not None for x in (logo_evidence, repair_evidence, status_evidence)) > 1:
         raise ValueError("conflicting specialized evidence")
     if logo_evidence is not None:
         from radio_daily_logo_release_validation import expected_logo_release
@@ -62,7 +62,20 @@ def validate_candidate(prior_pointer, prior_body, candidate, *, expected_sha,
         reference = strict_json(rebuilt)
         reference["release_sequence"] = old["release_sequence"]
         reference["generated_at"] = old["generated_at"]
-    issues = validate_catalog(new, mode="publish", previous=reference, authenticated_legacy=True)
+    if status_evidence is not None:
+        from radio_daily_status_release_validation import expected_status_release
+        if not isinstance(status_evidence, dict) or set(status_evidence) != {
+                "maintenance", "repair", "confirmation", "status"}:
+            raise ValueError("invalid status evidence contract")
+        rebuilt = expected_status_release(prior_body, expected_sha=expected_sha,
+            expected_sequence=expected_sequence, day=day, **status_evidence)
+        if candidate != rebuilt:
+            raise ValueError("unauthorized catalogue delta")
+        reference = strict_json(rebuilt)
+    # The original authenticated predecessor remains the reference for alias
+    # preservation and mass-removal checks, even after evidence verification.
+    issues = validate_catalog(new, mode="publish", previous=old, authenticated_legacy=True,
+                              legacy_reference=reference)
     if issues:
         raise ValueError("publication guard refused: " + "; ".join(issues[:8]))
     if any(stream["state"] == "candidate_verified"
@@ -80,12 +93,12 @@ class EphemeralLabSigner:
         self.key_id = "radio-lab-" + digest(raw)[:24]
 
     def sign_candidate(self, prior_pointer, prior_body, candidate, *, expected_sha,
-                       expected_sequence, expected_candidate_sha, day, logo_evidence=None, repair_evidence=None):
+                       expected_sequence, expected_candidate_sha, day, logo_evidence=None, repair_evidence=None, status_evidence=None):
         new = validate_candidate(prior_pointer, prior_body, candidate,
                                  expected_sha=expected_sha, expected_sequence=expected_sequence,
                                  expected_candidate_sha=expected_candidate_sha,
                                  public_key=self.public_key, key_id=self.key_id, day=day,
-                                 logo_evidence=logo_evidence, repair_evidence=repair_evidence)
+                                 logo_evidence=logo_evidence, repair_evidence=repair_evidence, status_evidence=status_evidence)
         pointer = dict(schema_version=1, catalog_id="grosses-ondes-radio",
                        release_sequence=new["release_sequence"], published_at=day+"T00:00:00Z",
                        content_sha256=expected_candidate_sha, content_length=len(candidate),

@@ -47,7 +47,7 @@ def safe_url(value, https_only=False):
         return False
 
 
-def validate_catalog(document, *, mode="staging", previous=None, authenticated_legacy=False):
+def validate_catalog(document, *, mode="staging", previous=None, authenticated_legacy=False, legacy_reference=None):
     """The default publish policy remains strict.
 
     authenticated_legacy is reserved for the laboratory verifier after
@@ -60,7 +60,10 @@ def validate_catalog(document, *, mode="staging", previous=None, authenticated_l
         return ["invalid authenticated legacy option"]
     if authenticated_legacy and (mode != "publish" or not isinstance(previous, dict)):
         return ["authenticated legacy requires a verified predecessor"]
-    legacy = {row["go_station_id"]: row for row in previous["stations"]
+    if legacy_reference is not None and not authenticated_legacy:
+        return ["legacy evidence requires authenticated predecessor"]
+    source = previous if legacy_reference is None else legacy_reference
+    legacy = {row["go_station_id"]: row for row in source["stations"]
               if row.get("editorial", {}).get("admission_state") == "legacy_preserved"
               } if authenticated_legacy else {}
     if mode not in ("staging", "publish"):

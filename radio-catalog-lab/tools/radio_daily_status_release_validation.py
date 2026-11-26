@@ -12,12 +12,11 @@ from radio_daily_publication_simulator import publish
 from radio_daily_v9_generator import digest, encode
 
 
-def validate_status_release(prior_pointer, prior_body, candidate, *, anchor, day,
+def expected_status_release(prior_body, *, expected_sha, expected_sequence, day,
                             maintenance, repair, confirmation, status):
-    new = validate_candidate(prior_pointer, prior_body, candidate,
-                             expected_candidate_sha=digest(candidate), day=day,
-                             **anchor)
-    sha = anchor["expected_sha"]
+    sha = expected_sha
+    if digest(prior_body) != sha:
+        raise ValueError("status baseline mismatch")
     if any(x.get("scanDate") != day for x in (maintenance, repair, confirmation, status)):
         raise ValueError("status evidence date mismatch")
     repairs = plan(prior_body, maintenance, repair, confirmation, expected=sha)
@@ -48,10 +47,17 @@ def validate_status_release(prior_pointer, prior_body, candidate, *, anchor, day
         changed += 1
     if not changed:
         raise ValueError("no qualified status transition")
-    expected.update(release_sequence=anchor["expected_sequence"]+1,
+    expected.update(release_sequence=expected_sequence+1,
                     generated_at=day+"T00:00:00Z")
-    if new != expected or candidate != encode(expected):
-        raise ValueError("unauthorized catalogue delta")
+    return encode(expected)
+
+
+def validate_status_release(prior_pointer, prior_body, candidate, *, anchor, day,
+                            maintenance, repair, confirmation, status):
+    evidence = dict(maintenance=maintenance, repair=repair,
+                    confirmation=confirmation, status=status)
+    validate_candidate(prior_pointer, prior_body, candidate,
+        expected_candidate_sha=digest(candidate), day=day, status_evidence=evidence, **anchor)
     return digest(candidate)
 
 
@@ -67,4 +73,6 @@ def publish_status_release(store, signer, prior_pointer, prior_body, candidate, 
         raise ValueError("validated candidate digest mismatch")
     return publish(store, signer, prior_pointer, prior_body, candidate,
         expected_sha=expected_sha, expected_sequence=expected_sequence,
-        expected_candidate_sha=verified, day=day, checkpoint=checkpoint)
+        expected_candidate_sha=verified, day=day, checkpoint=checkpoint,
+        status_evidence=dict(maintenance=maintenance, repair=repair,
+                             confirmation=confirmation, status=status))

@@ -17,13 +17,14 @@ from test_radio_daily_repair_plan import DAY, SID
 
 
 class IndependentStatusGateTests(unittest.TestCase):
-    def fixture(self, quarantined=False, redirect=False, count=1, synthetic=False):
+    def fixture(self, quarantined=False, redirect=False, count=1, synthetic=False, approved=True):
         self.signer = EphemeralLabSigner()
         raw, _ = setup(quarantined=quarantined, redirect=redirect, count=count)
         doc = json.loads(raw)
         for row in doc["stations"]:
             row["logo"] = None
-            row["editorial"].update(admission_state="approved", reviewed_at=DAY+"T00:00:00Z")
+            if approved:
+                row["editorial"].update(admission_state="approved", reviewed_at=DAY+"T00:00:00Z")
         if synthetic:
             doc["stations"][0]["status"]["reason_code"] = "synthetic_diagnostic_not_for_playback"
         self.pointer, self.raw = signed(doc, self.signer._key, self.signer.key_id)
@@ -122,6 +123,49 @@ class IndependentStatusGateTests(unittest.TestCase):
                 expected_candidate_sha=digest(self.candidate), **args)
         self.assertEqual(result["sequence"],9)
         verify_visible(store,store.current(),sha=digest(self.candidate),sequence=9,signer=self.signer)
+
+    def publish_current(self):
+        store=MemoryStore(self.pointer,self.raw)
+        result=publish_status_release(store,self.signer,self.pointer,self.raw,self.candidate,
+            expected_sha=self.anchor["expected_sha"],expected_sequence=8,
+            expected_candidate_sha=digest(self.candidate),day=DAY,**self.evidence)
+        self.assertEqual(result["sequence"],9)
+        return verify_visible(store,store.current(),sha=digest(self.candidate),sequence=9,signer=self.signer)
+
+    def test_legacy_quarantine_preserves_editorial_and_streams(self):
+        self.fixture(approved=False)
+        row=self.publish_current()["stations"][0]
+        self.assertEqual(row["status"]["state"],"quarantined")
+        old=json.loads(self.raw)["stations"][0]
+        self.assertEqual(row["editorial"],old["editorial"])
+        self.assertEqual(row["streams"],old["streams"])
+        self.assertEqual(row["legacy_aliases"],old["legacy_aliases"])
+
+    def test_legacy_recovery_preserves_editorial(self):
+        self.fixture(quarantined=True,approved=False)
+        row=self.publish_current()["stations"][0]
+        self.assertEqual(row["status"]["state"],"active")
+        self.assertEqual(row["editorial"],json.loads(self.raw)["stations"][0]["editorial"])
+
+    def test_legacy_status_without_evidence_refused(self):
+        self.fixture(approved=False)
+        with self.assertRaisesRegex(ValueError,"publication guard"):
+            self.signer.sign_candidate(self.pointer,self.raw,self.candidate,
+                expected_sha=self.anchor["expected_sha"],expected_sequence=8,
+                expected_candidate_sha=digest(self.candidate),day=DAY)
+
+    def test_legacy_status_cannot_upgrade_editorial(self):
+        self.fixture(approved=False)
+        doc=json.loads(self.candidate)
+        doc["stations"][0]["editorial"].update(admission_state="approved",reviewed_at=DAY+"T00:00:00Z")
+        with self.assertRaisesRegex(ValueError,"unauthorized catalogue delta"):
+            self.verify(encode(doc))
+
+    def test_legacy_redirect_target_remains_protected(self):
+        self.fixture(redirect=True,approved=False)
+        self.assertIsNone(self.candidate)
+        with self.assertRaises(ValueError):
+            self.verify(self.manual_transition("quarantined"))
 
 
 if __name__=="__main__":
