@@ -13,6 +13,7 @@ import datetime as dt
 import json
 from collections import Counter
 from pathlib import Path
+from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 import artist_genre_knowledge as knowledge
@@ -23,8 +24,76 @@ SCHEMA = "grossesondes.concert.artist-genre-source-preflight.v1"
 SOURCE_SCHEMA = "grossesondes.concert.artist_tour_sources.v1"
 
 
+MAX_EVIDENCE_AGE = dt.timedelta(days=60)
+
+
+def retained_facts(prior, candidates, selected, catalogue, today):
+    """Keep only fresh, unselected evidence bound to a current official source.
+
+    Private research hints only: a previously observed profile does not grant
+    publication authority. An attempted recheck replaces or invalidates its
+    old observation; an unselected source keeps its original verification date.
+    """
+    if (not isinstance(prior, dict) or prior.get("schema") != SCHEMA
+            or prior.get("publicationAllowed") is not False
+            or prior.get("approvalsProposed") != 0
+            or not isinstance(prior.get("verifiedArtists"), list)):
+        return []
+    eligible = {(s["artistId"], s["url"]) for s in candidates}
+    attempted = {(s["artistId"], s["url"]) for s in selected}
+    artists = {a["id"]: a for a in catalogue["artists"]
+               if isinstance(a, dict) and isinstance(a.get("id"), str)}
+    aliases, collisions = knowledge._aliases(catalogue)
+    kept = {}
+    duplicate = set()
+    for row in prior["verifiedArtists"]:
+        if not isinstance(row, dict):
+            continue
+        try:
+            checked = dt.date.fromisoformat(row["verifiedAt"])
+            aid = row["artistId"]
+            url = row["sourceUrl"]
+            kind = row["evidenceKind"]
+            # Legacy structured facts can be tied to their exact manifest
+            # URL; a legacy linked biography cannot reconstruct that binding.
+            manifest = row.get("manifestSourceUrl")
+            if manifest is None and kind == "first-party-artist-structured-profile":
+                manifest = url
+            key = (aid, manifest)
+            if key not in eligible or key in attempted:
+                continue
+            artist = artists[aid]
+            name = knowledge.words(artist["name"])
+            a, b = urlsplit(manifest), urlsplit(url)
+            if (not dt.timedelta(0) <= today - checked <= MAX_EVIDENCE_AGE
+                    or row.get("schema") != knowledge.SCHEMA
+                    or row.get("artistName") != artist["name"]
+                    or not name or name in collisions or aliases.get(name) != aid
+                    or row.get("scope") != "individual_artist_not_event"
+                    or row.get("publicationAllowed") is not False
+                    or row.get("approvalsProposed") != 0
+                    or row.get("eventDateLocationAndLineupProved") is not False
+                    or kind not in {"first-party-artist-structured-profile",
+                                    "first-party-artist-visible-linked-bio"}
+                    or a.scheme != "https" or b.scheme != "https"
+                    or not a.hostname or a.netloc.casefold() != b.netloc.casefold()
+                    or a.username or a.password or b.username or b.password or b.fragment
+                    or (kind == "first-party-artist-structured-profile"
+                        and (a.path.rstrip("/") != b.path.rstrip("/") or a.query != b.query))
+                    or not isinstance(row.get("genres"), list)
+                    or not row["genres"]
+                    or not all(knowledge._relevant_genre(g) for g in row["genres"])):
+                continue
+            if key in kept:
+                duplicate.add(key)
+            kept[key] = dict(row, manifestSourceUrl=manifest)
+        except (ValueError, TypeError, KeyError, AttributeError):
+            continue
+    return [kept[k] for k in sorted(kept) if k not in duplicate]
+
+
 def build(sources, catalogue, today, *, fetch=discover.download,
-          robots=discover.robots_allow, limit=6, scan_slot=0):
+          robots=discover.robots_allow, limit=6, scan_slot=0, prior=None):
     if (not isinstance(sources, dict)
             or sources.get("schema") != SOURCE_SCHEMA
             or not isinstance(sources.get("sources"), list)
@@ -58,7 +127,8 @@ def build(sources, catalogue, today, *, fetch=discover.download,
     else:
         selected = []
     counters = Counter()
-    evidence = []
+    evidence = retained_facts(prior, candidates, selected, catalogue, today)
+    retained_count = len(evidence)
     robots_cache = {}
     for source in selected:
         url = source["url"]
@@ -93,7 +163,7 @@ def build(sources, catalogue, today, *, fetch=discover.download,
             # Do not disclose source URL or network exceptions in public logs.
             counters["network_or_source_unavailable"] += 1
             continue
-        evidence.append(fact)
+        evidence.append(dict(fact, manifestSourceUrl=url))
         counters["official_artist_genre_verified"] += 1
     return {
         "schema": SCHEMA,
@@ -101,6 +171,8 @@ def build(sources, catalogue, today, *, fetch=discover.download,
         "sourceManifest": "committed-public-artist-tour-sources",
         "artistSourcesEligible": len(candidates),
         "artistSourcesChecked": len(selected),
+        "retainedEvidenceCount": retained_count,
+        "newlyVerifiedEvidenceCount": len(evidence) - retained_count,
         "verifiedArtistCount": len({fact["artistId"] for fact in evidence}),
         "verifiedArtists": evidence,
         "reasonCounts": dict(sorted(counters.items())),
@@ -122,8 +194,15 @@ def main():
     read = lambda path: json.loads(path.read_text(encoding="utf-8"))
     local_now = dt.datetime.now(ZoneInfo("Europe/Paris"))
     scan_slot = 0 if local_now.hour < 12 else (1 if local_now.hour < 18 else 2)
+    prior = None
+    if args.out.is_file():
+        try:
+            prior = read(args.out)
+        except (OSError, ValueError):
+            # A damaged old diagnostic cannot prevent a fresh observation.
+            pass
     report = build(read(args.sources), read(args.catalogue),
-                   local_now.date(), scan_slot=scan_slot)
+                   local_now.date(), scan_slot=scan_slot, prior=prior)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(
         json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True)
