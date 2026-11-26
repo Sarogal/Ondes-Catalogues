@@ -69,6 +69,29 @@ class ArtistRetirementTests(unittest.TestCase):
         live["events"][0]["artistIds"].append(bad)
         self.assertNotIn(bad, retirement.candidates(base, live, ledger, self.today))
 
+    def test_real_publisher_preflight_signed_retirement_and_replay(self):
+        from automation.concerts import artist_retirement_preflight as preflight
+        base, current, ledger, bad = self.corrected()
+        before, stats = sync.merge(base, current, ledger, self.today)
+        self.assertEqual(before, current)
+        self.assertIn(bad, {a["id"] for a in before["artists"]})
+        proposed, report = preflight.select(ledger, base, current, self.today)
+        self.assertTrue(report["validatedByPublisher"], report)
+        self.assertEqual(proposed["approvals"], ledger["approvals"])
+        self.assertEqual(proposed["lineupCorrections"], ledger["lineupCorrections"])
+        result, stats = sync.merge(base, current, proposed, self.today)
+        self.assertEqual(stats["retiredArtists"], 1)
+        self.assertEqual(result["events"], current["events"])
+        self.assertEqual(result["venues"], current["venues"])
+        self.assertEqual(result[retirement.KEY], [bad])
+        with mock.patch.object(lineup, "network_fetch",
+                               side_effect=AssertionError("offline historical replay")):
+            replay, stats = sync.merge(base, result, proposed, self.today)
+        self.assertEqual(replay, result)
+        self.assertEqual(stats["retiredArtists"], 0)
+        with self.assertRaises(ValueError):
+            sync.merge(base, result, ledger, self.today)
+
     def test_no_forged_receipt_or_unapproved_cleanup(self):
         base, current, ledger, bad = self.corrected()
         result, _ = retirement.retire(base, current, ledger, self.today)
