@@ -3,6 +3,7 @@
 Only explicitly advertised JSON endpoints or scoped inert HTML/JSON.
 No guessed paths, scripts, credentials, redirects, or catalogue changes.
 """
+import datetime as dt
 import http.client
 import json
 import re
@@ -21,7 +22,8 @@ MAX_ENDPOINTS = 2
 MAX_DOCUMENTS = 12
 MAX_NODES = 256
 ALTERNATIVE_METHODS = frozenset({"icecast_json", "shoutcast_json", "station_jsonld",
-                                "station_now_playing_json", "station_embedded_json", "station_html"})
+                                "station_now_playing_json", "station_embedded_json", "station_html",
+                                "station_history_json"})
 
 
 def origin(url):
@@ -52,8 +54,9 @@ def combined(value, method, source):
 def json_hints(data, stream, source):
     """Icecast source or Shoutcast stats must explicitly name the exact stream."""
     generic = now_playing_hints(data, stream, source, "station_now_playing_json")
-    if generic:
-        return generic
+    history = history_hints(data, stream, source)
+    if generic or history:
+        return (generic + history)[:3]
     if not isinstance(data, dict):
         return []
     stats = data.get("icestats")
@@ -75,6 +78,97 @@ def json_hints(data, stream, source):
         return []
     return [h] if h else []
 
+
+
+
+def broadcast_day(value, now):
+    """Explicit timestamp only: epoch seconds or timezone-aware ISO 8601."""
+    try:
+        if type(value) is int:
+            when = dt.datetime.fromtimestamp(value, dt.timezone.utc)
+        elif isinstance(value, str) and len(value) <= 40 and "T" in value:
+            when = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if when.tzinfo is None:
+                return None
+            when = when.astimezone(dt.timezone.utc)
+        else:
+            return None
+        if not dt.timedelta(0) <= now - when < dt.timedelta(days=30):
+            return None
+        return when.date().isoformat()
+    except (ValueError, OverflowError, OSError, TypeError):
+        return None
+
+
+def history_hints(data, stream, source, *, now=None):
+    """Only dated history in a uniquely matched station record.
+    
+    Playlists, scheduled tracks and unbound sibling histories are not evidence.
+    Return at most three different artist/title pairs per station and run.
+    """
+    now = now if now is not None else dt.datetime.now(dt.timezone.utc)
+    pending = [(data, 0)]
+    matched = []
+    count = 0
+    while pending:
+        row, depth = pending.pop()
+        count += 1
+        if count > MAX_NODES:
+            return []
+        if depth > 8:
+            continue
+        if isinstance(row, list):
+            if len(row) > 64:
+                return []
+            pending.extend((x, depth + 1) for x in row)
+            continue
+        if not isinstance(row, dict):
+            continue
+        station = row.get("station")
+        if not isinstance(station, dict):
+            station = row
+        urls = [station[k] for k in ("listen_url", "listenUrl", "streamUrl", "stream_url", "contentUrl")
+                if isinstance(station.get(k), str)]
+        if stream in urls:
+            matched.append(row)
+            continue
+        for key in ("stations", "data", "radios", "channels", "players", "props", "pageProps"):
+            if key in row:
+                pending.append((row[key], depth + 1))
+    if len(matched) != 1:
+        return []
+    row = matched[0]
+    histories = [row[k] for k in ("song_history", "songHistory", "playedTracks", "recentlyPlayed") if k in row]
+    if len(histories) != 1 or not isinstance(histories[0], list) or len(histories[0]) > 100:
+        return []
+    candidates = []
+    for event in histories[0]:
+        if not isinstance(event, dict):
+            continue
+        stamps = [event[k] for k in ("played_at", "playedAt", "broadcastAt") if k in event]
+        if len(stamps) != 1:
+            continue
+        day = broadcast_day(stamps[0], now)
+        if day is None:
+            continue
+        track = event.get("song", event)
+        if not isinstance(track, dict):
+            continue
+        artist = track.get("artist", track.get("byArtist"))
+        if isinstance(artist, dict):
+            artist = artist.get("name")
+        h = hint(artist, track.get("title", track.get("name")), "station_history_json", source)
+        if h:
+            candidates.append(dict(h, broadcastDate=day))
+    result, seen = [], set()
+    for h in sorted(candidates, key=lambda x: (x["broadcastDate"], x["artistHint"], x["titleSha256"]), reverse=True):
+        pair = h["artistHint"].casefold(), h["titleSha256"]
+        if pair not in seen:
+            result.append(h)
+            seen.add(pair)
+        if len(result) >= 3:
+            break
+    return result
 
 
 def now_playing_hints(data, stream, source, method):
@@ -174,15 +268,21 @@ def embedded_hints(body, stream, source):
     # Treat each JSON document as a separate source declaration. No union
     # across records, and conflicting observations are not silently picked.
     candidates = []
+    histories = []
     for data in p.documents:
         candidates.extend(now_playing_hints(data, stream, source, "station_embedded_json"))
+        found = history_hints(data, stream, source)
+        if found:
+            histories.append(found)
     for url, artist, title in p.blocks:
         if urljoin(source, url) == stream:
             h = hint(artist, title, "station_html", source)
             if h:
                 candidates.append(h)
     identities = {(h["artistHint"], h["titleSha256"]) for h in candidates}
-    return candidates[:1] if len(identities) == 1 else []
+    if len(identities) > 1 or len(histories) > 1:
+        return []
+    return (candidates[:1] + (histories[0] if histories else []))[:3]
 
 
 def page_hints(page, name, stream, source):
@@ -216,7 +316,7 @@ def advertised_endpoints(page, source, stream):
             if p.scheme != "https" or origin(url) not in {origin(stream), origin(source)}:
                 continue
             path = p.path.rsplit("/", 1)[-1].lower()
-            if path not in {"status-json.xsl", "stats", "statistics", "stats.json", "nowplaying", "now-playing", "now_playing"} and not path.endswith(".json") and not re.search(r"/(?:nowplaying|now-playing|now_playing)/[^/]+$", p.path, re.I):
+            if path not in {"status-json.xsl", "stats", "statistics", "stats.json", "nowplaying", "now-playing", "now_playing", "history", "song-history", "recently-played"} and not path.endswith(".json") and not re.search(r"/(?:nowplaying|now-playing|now_playing)/[^/]+$", p.path, re.I):
                 continue
             if p.query and not re.fullmatch(r"(?:sid=[1-9][0-9]{0,3}&json=1|json=1&sid=[1-9][0-9]{0,3}|json=1)", p.query):
                 continue
