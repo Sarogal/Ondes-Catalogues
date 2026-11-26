@@ -3,8 +3,8 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 24,
-  "dueNameCount": 20,
+  "observedNameCount": 27,
+  "dueNameCount": 17,
   "attemptedCount": 6,
   "serviceFailure": null,
   "retryAfterKey": null,
@@ -41,6 +41,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "bates fm": {
+      "status": "not_found",
+      "artistName": "Bates FM",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "blondinka ksju": {
       "status": "identity_held",
       "artistName": "Blondinka Ksju",
@@ -54,6 +63,15 @@
       "artistName": "Dead End Tragedy",
       "checkedAt": "2026-11-25",
       "source": "wikidata",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "downtown mystics": {
+      "status": "not_found",
+      "artistName": "Downtown Mystics",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },
@@ -128,6 +146,42 @@
     "lars frederiksen and the bastards": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Lars Frederiksen And The Bastards",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "marc freak": {
+      "status": "not_found",
+      "artistName": "Marc Freak",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "megadeth": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Megadeth",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "never obey again": {
+      "status": "not_found",
+      "artistName": "Never Obey Again",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "nine inch nails": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Nine Inch Nails",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,

@@ -3,11 +3,11 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 24,
-  "dueNameCount": 21,
+  "observedNameCount": 27,
+  "dueNameCount": 22,
   "attemptedCount": 3,
   "serviceFailure": "http_503",
-  "retryAfterKey": "the futureheads",
+  "retryAfterKey": "норвежская сказка: читает воронмрак (улан-удэ)",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -52,6 +52,36 @@
     "shadow la sombra": {
       "status": "not_found",
       "artistName": "Shadow La Sombra",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "the who": {
+      "status": "name_hypothesis",
+      "mbid": "9fdaa16b-a6c4-4831-b87c-bc9ca8ce7eaa",
+      "genres": [
+        "art rock",
+        "british rhythm & blues",
+        "classic rock",
+        "freakbeat",
+        "hard rock",
+        "mod",
+        "pop rock",
+        "rock",
+        "rock opera"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/9fdaa16b-a6c4-4831-b87c-bc9ca8ce7eaa",
+      "artistName": "The Who",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "wdk": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "WDK",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "identityVerified": false,

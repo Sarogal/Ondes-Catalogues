@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 22,
-  "distinctArtistHints": 24,
+  "stationsWithArtistHints": 24,
+  "distinctArtistHints": 27,
   "records": [
     {
       "stationuuid": "0231aca1-4e0c-41e4-9b17-74538f1d3c25",
@@ -46,6 +46,48 @@
           "date": "2026-11-26",
           "artistHint": "Fuzz Kill Radio",
           "titleSha256": "1a43d1c435f5cd81dbdad3d43676f740d4ae8dc197445a8d275e7bef07017f49"
+        }
+      ]
+    },
+    {
+      "stationuuid": "0abce032-b825-46fb-96a4-016d75420ade",
+      "streamSha256": "cba5d24e595f67fe2b680a9aa4342ed0a3e90867cab971dc275f76f4f228d3b5",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Phinehas",
+          "titleSha256": "c50e5bb4b0308721f744bae7af56f10a0847091200fdbf445f3f0c9519745ded"
+        }
+      ]
+    },
+    {
+      "stationuuid": "10d01aca-f5de-4591-b4e0-441ce8e1ddfe",
+      "streamSha256": "557aaa2ff12b76757fa71e73ac8c531052135e5f5927e64558aa2af1165fd00f",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": []
+    },
+    {
+      "stationuuid": "11d1fe19-b237-4bfc-95fb-fd9757f40916",
+      "streamSha256": "ff612bdb6c540027b35e41a6056fbfe68b817dfecbe8b98382c14b3b3e551599",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Bates FM",
+          "titleSha256": "e8dddbb7f115cd2de287c59bf62c05b482c3a56e56107925547e868fe578a2e6"
         }
       ]
     },
@@ -110,7 +152,7 @@
     {
       "stationuuid": "3446b04f-839f-4367-b119-b85842787b97",
       "streamSha256": "cf9456eb48746077c2743b972d475238f611c9da63a84c430c49892e8ed9f3d8",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -120,7 +162,7 @@
     {
       "stationuuid": "35080d89-d7b9-4e1e-af80-ae4a50420f67",
       "streamSha256": "49ad66de7ab731d5dfd7d4a726e439856c73f3f336de0397fff71bbdf37f11ff",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -130,7 +172,7 @@
     {
       "stationuuid": "3a40f5fc-8ba3-4177-a145-b1f90dfb06d5",
       "streamSha256": "dd30406461d941b61cc5c3c9e0cdba561a7062b93da113034e70735e044481e4",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -140,6 +182,11 @@
           "date": "2026-11-25",
           "artistHint": "38 Special",
           "titleSha256": "c338ab8dfc50a84f1ce91246bc8ce0ba1420c87f73be57548916aa35254a8ed4"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "Downtown Mystics",
+          "titleSha256": "b3c901b98eca84f0ee54255a71b2f644151b39b0fbc921ca35c4a449a2d24e1e"
         }
       ]
     },
