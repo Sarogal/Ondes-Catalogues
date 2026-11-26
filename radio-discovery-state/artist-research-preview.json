@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 52,
-  "attemptedCount": 3,
+  "dueNameCount": 50,
+  "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "hanson brothers",
+  "retryAfterKey": "heaven shall burn",
   "entries": {
     "2000 fm": {
       "status": "not_found",
