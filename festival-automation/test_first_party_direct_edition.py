@@ -87,6 +87,15 @@ class FirstPartyDirectTests(TestCase):
         self.assertEqual(official_city_on_current_date(
             "<p>Du 1er au 6 décembre 2026 à Saint-Étienne.</p>", title, dates),
             "Saint-Étienne")
+        for separator in (" - ", " – ", " — "):
+            ticket_city = info.replace("6 décembre 2026", "6 décembre 2026" + separator + "Toulouse")
+            self.assertEqual(verify_first_party_claims(
+                site, title, today, fetch=lambda url: home if url == site else ticket_city),
+                (dates, "Toulouse"))
+        self.assertIsNone(official_city_on_current_date(
+            "<p>Du 1er au 6 décembre 2026 - Toulouse et ses alentours</p>", title, dates))
+        self.assertIsNone(official_city_on_current_date(
+            "<p>Du 2 au 5 décembre 2026 - Toulouse</p>", title, dates))
         for invalid in (
             info.replace("1er au 6", "2 au 5"),
             info.replace("Du 1er", "Pass du 1er"),
