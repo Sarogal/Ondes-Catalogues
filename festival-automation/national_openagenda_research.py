@@ -17,19 +17,20 @@ import ssl
 from urllib.parse import urlencode, urlsplit
 from zoneinfo import ZoneInfo
 
-from dns_pinned_https import DNSPinnedHTTPSConnection
+from dns_pinned_https import DNSPinnedHTTPSConnection, safe_public_url
 from regional_festival_discovery import APPROVED
 from source_qualification import normalized
 
 SCHEMA = "grossesondes.national-openagenda-research-private.v1"
-RESEARCH_RULESET = "event-title-and-published-edition-dedup.v5"
+RESEARCH_RULESET = "event-title-and-published-edition-dedup.v6"
 STATE_KEY = "national_openagenda_research_private"
 SOURCE = "https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/evenements-publics-openagenda/records"
 HOST = "public.opendatasoft.com"
 ENDPOINT = "/api/explore/v2.1/catalog/datasets/evenements-publics-openagenda/records"
 SELECT = ("uid,canonicalurl,title_fr,description_fr,keywords_fr,"
           "firstdate_begin,lastdate_begin,updatedat,location_region,"
-          "location_city,location_countrycode,status")
+          "location_city,location_countrycode,status,location_name,location_website,"
+          "location_links,registration,links,originagenda_title")
 QUERIES = (
     'search(title_fr,"festival")',
     'search(title_fr,"metal")',
@@ -57,6 +58,8 @@ PER_PAGE = 25
 # institutionally published metadata. This is bounded discovery only.
 FESTIVAL_PAGE_OFFSETS = tuple(range(0, 200, PER_PAGE))
 MAX_LEADS = 60
+MAX_PROFESSIONAL_LINKS = 6
+PROFESSIONAL_LINK_FIELDS = ("location_website", "location_links", "registration", "links")
 YEAR = re.compile(r"(?<![0-9])20[2-4][0-9](?![0-9])")
 FEST = re.compile(
     r"(?:\bfestival\b|\bfest\b|\b[a-z0-9]{3,40}fest\b|"
@@ -228,6 +231,85 @@ def _valid_calendar_hint(hint, year, today):
             and 0 <= (last - first).days <= 366)
 
 
+def _professional_url(value):
+    # Only a syntactically safe candidate; no DNS lookup or network access
+    # here. Any future consumer must use DNS-pinned HTTPS and verify identity.
+    if not isinstance(value, str) or len(value) > 500:
+        return None
+    if any(c in value for c in "<>{}"):
+        return None
+    return safe_public_url(value)
+
+
+def _provider_links(value):
+    """Bounded OpenData JSON-link arrays; no recursive parsing or free text."""
+    if isinstance(value, str):
+        if len(value) > 12000:
+            return []
+        try:
+            value = json.loads(value)
+        except (ValueError, TypeError, RecursionError):
+            return []
+    if not isinstance(value, list) or len(value) > 24:
+        return []
+    return [item["value"] for item in value
+            if isinstance(item, dict) and item.get("type") == "link"
+            and isinstance(item.get("value"), str)]
+
+
+def _professional_label(value):
+    if (not isinstance(value, str) or not 1 <= len(value) <= 150
+            or value != value.strip() or FORBIDDEN.search(value)
+            or any(c in value for c in ("\\r", "\\n", "\\t"))):
+        return None
+    return value
+
+
+def _professional_hints(row):
+    links, seen = [], set()
+    for field in PROFESSIONAL_LINK_FIELDS:
+        raw = row.get(field)
+        values = [raw] if field == "location_website" else _provider_links(raw)
+        for value in values:
+            url = _professional_url(value)
+            if url is None or (field, url) in seen:
+                continue
+            seen.add((field, url))
+            links.append({"field": field, "url": url})
+            if len(links) >= MAX_PROFESSIONAL_LINKS:
+                break
+        if len(links) >= MAX_PROFESSIONAL_LINKS:
+            break
+    return {
+        "location_name": _professional_label(row.get("location_name")),
+        "originagenda_title": _professional_label(row.get("originagenda_title")),
+        "links": links, "verified": False,
+    }
+
+
+def _valid_professional_hints(hint):
+    if (not isinstance(hint, dict) or set(hint) != {
+            "location_name", "originagenda_title", "links", "verified"}
+            or hint["verified"] is not False
+            or not isinstance(hint["links"], list)
+            or len(hint["links"]) > MAX_PROFESSIONAL_LINKS):
+        return False
+    for field in ("location_name", "originagenda_title"):
+        if hint[field] is not None and _professional_label(hint[field]) != hint[field]:
+            return False
+    seen = set()
+    for link in hint["links"]:
+        if (not isinstance(link, dict) or set(link) != {"field", "url"}
+                or link["field"] not in PROFESSIONAL_LINK_FIELDS
+                or _professional_url(link["url"]) is None):
+            return False
+        key = (link["field"], link["url"])
+        if key in seen:
+            return False
+        seen.add(key)
+    return True
+
+
 def candidate(row, today):
     """Untrusted metadata can become only an unverified discovery lead."""
     if not isinstance(row, dict) or len(row) > 80:
@@ -278,6 +360,7 @@ def candidate(row, today):
         "id": "oa-" + digest, "name_hint": title,
         "edition_year_hint": year, "region_hint": region,
         "city_hint_review_only": _safe_city_hint(row.get("location_city")),
+        "professional_source_hints_review_only": _professional_hints(row),
         # lastdate_begin is the last advertised session's starting day,
         # not an independently established festival closing date.
         "calendar_hint_review_only": (
@@ -328,6 +411,8 @@ def validated_leads(state, today):
             continue
         title, year = row["name_hint"], row["edition_year_hint"]
         hint = row.get("calendar_hint_review_only")
+        if not _valid_professional_hints(row.get("professional_source_hints_review_only")):
+            continue
         if hint is not None and not _valid_calendar_hint(hint, year, today):
             continue
         years = {int(x) for x in YEAR.findall(normalized(title))}
@@ -363,7 +448,8 @@ def scan(state, today, fetch=None, catalog=None):
             and previous.get("requests_attempted") == len(fixed_query_urls(today))
             and previous.get("requests_failed") == 0
             and isinstance(previous.get("leads"), list)
-            and len(previous["leads"]) <= MAX_LEADS):
+            and len(previous["leads"]) <= MAX_LEADS
+            and len(validated_leads(state, today)) == len(previous["leads"])):
         return previous
     read = (lambda url: fetch_json(url, today)) if fetch is None else fetch
     found, already_published = {}, set()

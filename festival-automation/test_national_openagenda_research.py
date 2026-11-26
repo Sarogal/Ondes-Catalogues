@@ -115,6 +115,59 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
             "start_date": "2027-04-23", "end_date": "2027-04-24",
             "verified": False})
 
+    def test_professional_links_remain_private_and_reach_dossier(self):
+        import json
+        from urllib.parse import parse_qs, urlsplit
+        from national_discovery_queue import build_queue
+        ticket = "https://shotgun.live/events/festival-metal-garrigues"
+        venue = "https://venue.fr/programme"
+        record = dict(EVENT, location_name="Salle municipale",
+                      originagenda_title="Billetterie partenaire",
+                      location_website=venue,
+                      registration=json.dumps([{"type": "link", "value": ticket}]))
+        fields = parse_qs(urlsplit(fixed_query_urls(DAY)[0]).query)["select"][0].split(",")
+        for field in ("location_name", "location_website", "location_links",
+                      "registration", "links", "originagenda_title"):
+            self.assertIn(field, fields)
+        current = state()
+        result = scan(current, DAY, fetch=lambda _: payload([record]))
+        hints = result["leads"][0]["professional_source_hints_review_only"]
+        self.assertEqual(hints["links"], [{"field": "location_website", "url": venue},
+                                         {"field": "registration", "url": ticket}])
+        self.assertIs(hints["verified"], False)
+        self.assertIs(result["leads"][0]["official_site_verified"], False)
+        queue = build_queue(current, {
+            "schema": "grossesondes.source-watch-report.v1", "date": DAY,
+            "source_reference_leads_review_only": [],
+        }, [], DAY)
+        witness = queue["dossiers"][0]["sources"][0]
+        self.assertEqual(witness["professional_source_hints_review_only"], hints)
+        self.assertIs(witness["publication_authorized"], False)
+        self.assertIs(queue["dossiers"][0]["safe_to_publish"], False)
+        self.assertEqual(queue["network_requests"], 0)
+
+    def test_professional_links_reject_unsafe_or_forged_values(self):
+        import json
+        invalid = ["http://venue.fr/", "https://127.0.0.1/",
+                   "https://intranet.local/", "https://user@venue.fr/",
+                   "https://venue.fr:443/", "https://venue.fr/?token=secret",
+                   "https://venue.fr/#anchor", "https://venue.fr/<script>"]
+        for url in invalid:
+            record = dict(EVENT, location_website=url,
+                          registration=json.dumps([{"type": "link", "value": url}]))
+            self.assertEqual(candidate(record, DAY)["professional_source_hints_review_only"]["links"], [])
+        current = state()
+        scan(current, DAY, fetch=lambda _: payload([EVENT]))
+        for patch in ({"verified": True}, {"links": [{"field": "registration", "url": invalid[1]}]},
+                      {"links": [{"field": "official_site", "url": "https://venue.fr/"}]},
+                      {"links": [{"field": "links", "url": "https://venue.fr/"}] * 7}):
+            forged = deepcopy(current)
+            forged[STATE_KEY]["leads"][0]["professional_source_hints_review_only"].update(patch)
+            self.assertEqual(validated_leads(forged, DAY), [])
+        current[STATE_KEY]["research_ruleset"] = "event-title-and-published-edition-dedup.v5"
+        self.assertEqual(validated_leads(current, DAY), [])
+        self.assertEqual(scan(current, DAY, fetch=lambda _: payload([EVENT]))["leads_count"], 1)
+
     def test_city_hint_is_not_geocoding_or_municipal_authority(self):
         from national_discovery_queue import build_queue
         current = state()
@@ -183,7 +236,7 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
     def test_compound_festival_names_and_fixed_subgenres_remain_private(self):
         from urllib.parse import parse_qs, urlsplit
         from national_openagenda_research import RESEARCH_RULESET
-        self.assertTrue(RESEARCH_RULESET.endswith(".v5"))
+        self.assertTrue(RESEARCH_RULESET.endswith(".v6"))
         where = [parse_qs(urlsplit(url).query)["where"][0]
                  for url in fixed_query_urls(DAY)]
         for keyword in (
