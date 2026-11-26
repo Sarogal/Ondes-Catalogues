@@ -153,7 +153,7 @@ def _profile_websites(html, profile, label, ticket, diagnostic=None):
     return found
 
 
-def discover(hints, title, year, *, fetch=fetch_public_html):
+def discover(hints, title, year, *, fetch=fetch_public_html, rate_limited_hosts=None):
     """Return only private research paths. No external website is fetched here."""
     result = {"status": "NO_PROFESSIONAL_PATH", "requests": 0, "websites": [],
               "review_only": True, "safe_to_publish": False, "publication_authorized": False,
@@ -162,9 +162,19 @@ def discover(hints, title, year, *, fetch=fetch_public_html):
             or not 7 <= len(title) <= 160 or type(year) is not int or not 2020 <= year <= 2049):
         return result
     visited = set()
+    # One explicit 429 defers further requests to that origin for this pass.
+    # A caller shares this set across dossiers; it is not publication evidence.
+    if rate_limited_hosts is None:
+        rate_limited_hosts = set()
+    deferred = False
 
     def read(url, stage):
+        nonlocal deferred
         if result["requests"] >= MAX_REQUESTS or url in visited:
+            return None, None
+        host = urlsplit(url).hostname
+        if host in rate_limited_hosts:
+            deferred = True
             return None, None
         visited.add(url)
         result["requests"] += 1
@@ -175,6 +185,9 @@ def discover(hints, title, year, *, fetch=fetch_public_html):
         except OfficialHTTPStatusError as exc:
             diagnostic['outcome'] = 'HTTP_STATUS_REJECTED'
             diagnostic['http_status'] = exc.status_code
+            if exc.status_code == 429:
+                rate_limited_hosts.add(host)
+                deferred = True
         except (OSError, ValueError, TypeError, UnicodeError, KeyError):
             pass
         return None, diagnostic
@@ -207,4 +220,6 @@ def discover(hints, title, year, *, fetch=fetch_public_html):
             # Exact event already found. No alternate page or recursive traversal.
             if result["websites"]:
                 return result
+    if deferred and not result["websites"]:
+        result["status"] = "PROFESSIONAL_RATE_LIMITED"
     return result

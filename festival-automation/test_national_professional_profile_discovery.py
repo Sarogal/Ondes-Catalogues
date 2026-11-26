@@ -80,6 +80,39 @@ class ProfessionalProfileDiscoveryTests(unittest.TestCase):
             self.assertEqual(result["websites"], [])
         self.assertLessEqual(len(result["diagnostics"]), 5)
 
+    def test_429_defers_same_host_without_spending_other_dossier_budget(self):
+        from dns_pinned_https import OfficialHTTPStatusError
+        blocked = set()
+        calls = []
+        def fetch(url):
+            calls.append(url)
+            from urllib.parse import urlsplit
+            if urlsplit(url).hostname == "billetterie.fr":
+                raise OfficialHTTPStatusError(429)
+            return "<h1>Autre événement</h1>"
+        result = discover(HINTS, TITLE, 2027, fetch=fetch,
+                          rate_limited_hosts=blocked)
+        self.assertEqual(calls, [EVENT])
+        self.assertEqual(result["requests"], 1)
+        self.assertEqual(result["status"], "PROFESSIONAL_RATE_LIMITED")
+        self.assertEqual(result["diagnostics"], [
+            {"stage": "TICKET_EVENTS", "outcome": "HTTP_STATUS_REJECTED", "http_status": 429}])
+        self.assertEqual(blocked, {"billetterie.fr"})
+        other = dict(HINTS, links=[
+            {"field": "registration", "url": EVENT.replace("festival-des-rives", "festival-du-nord")},
+            {"field": "links", "url": "https://autre-billetterie.fr/events/festival-des-rives"}])
+        result = discover(other, TITLE, 2027, fetch=fetch,
+                          rate_limited_hosts=blocked)
+        self.assertEqual(result["requests"], 2)
+        self.assertEqual(len(calls), 3)
+        self.assertTrue(all("autre-billetterie.fr" in url for url in calls[1:]))
+        self.assertEqual(result["websites"], [])
+        self.assertFalse(result["publication_authorized"])
+        # A later independent collection can retry normally.
+        result = discover(HINTS, TITLE, 2027,
+                          fetch=lambda url: {FEST: EVENT_PAGE, PROFILE: PROFILE_PAGE}[url])
+        self.assertEqual(result["status"], "PROFESSIONAL_WEBSITE_HINTS")
+
     def test_total_budget_and_no_cross_host_profile(self):
         other = EVENT_PAGE.replace("/fr/venues/production-des-rives",
                                    "https://other.fr/venues/production-des-rives")
