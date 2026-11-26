@@ -23,7 +23,9 @@ if SCRIPTS not in sys.path:
     sys.path.insert(0, SCRIPTS)
 
 from dns_pinned_https import fetch_public_html
-from national_openagenda_research import SOURCE as OPENAGENDA_DATASET
+from national_openagenda_research import (SOURCE as OPENAGENDA_DATASET,
+                                          validated_leads as validated_openagenda_leads)
+from national_professional_profile_discovery import discover as discover_professional_profiles
 from national_generic_primary_domain_preflight import (
     _edition_name, _published, QUEUE_SCHEMA,
 )
@@ -165,6 +167,8 @@ def examine(state, queue, catalogue, today, *, event_fetch=None,
     read_event = event_fetch or fetch_public_html
     read_site = organizer_fetch or fetch_public_html
     output = []
+    current_hints = {lead['source_url']: lead.get('professional_source_hints_review_only')
+                     for lead in validated_openagenda_leads(state, today)}
     for source in selected:
         url = source["url"]
         prior = observed.pop(url, {})
@@ -226,6 +230,11 @@ def examine(state, queue, catalogue, today, *, event_fetch=None,
                 start_date_hint=dates[0], end_date_hint=dates[1],
                 municipality_review_only=municipality,
             )
+        # Only a fresh validated OpenData lead may initiate bounded ticket/profile
+        # research. No discovered website enters the existing proposal gate.
+        if dates is None and current_hints.get(url) is not None:
+            row["professional_research_review_only"] = discover_professional_profiles(
+                current_hints[url], source["title"], source["year"], fetch=read_site)
         if url not in observed:
             observed[url] = {"lastChecked": today}
         output.append(row)
