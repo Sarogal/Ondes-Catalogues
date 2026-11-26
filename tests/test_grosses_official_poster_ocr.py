@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "festival-automatio
 from grossesondes_official_poster_ocr import (
     MAX_BYTES, qualified_url, parse_tsv, read_official_poster,
     load_ocr_cache, save_ocr_cache, recognize_poster, poster_review_claims,
-    _choose_ocr_pass,
+    _choose_ocr_pass, poster_known_artist_candidates,
 )
 from dns_pinned_https import OfficialHTTPStatusError
 
@@ -165,6 +165,27 @@ class PosterOCRTests(unittest.TestCase):
         different = words(("2027", 99), ("13", 99), ("au", 99),
                           ("16", 99), ("août", 99), ("Alpha", 99))
         self.assertIs(_choose_ocr_pass(dates, different), dates)
+
+    def test_artist_hints_require_complete_confident_geometric_segments(self):
+        words = []
+        def line(tokens, y, confidence=98):
+            x = 20
+            for token in tokens.split():
+                width = len(token) * 10
+                words.append({"text": token, "confidence": confidence,
+                              "box": [x, y, width, 20], "review_only": True})
+                x += width + 5
+        line("ALPHA BETA", 0)
+        line("Sponsor Gamma", 40)
+        line("Delta", 80, 40)
+        line("Omega Records", 120)
+        line("New Artist", 160)
+        line("Rival", 200)
+        reading = {"status": "review_only", "review_only": True, "words": words}
+        known = ["Alpha Beta", "Alpha", "Gamma", "Sponsor Gamma", "Delta",
+                 "Omega", "Rival", "RIVAL"]
+        self.assertEqual(poster_known_artist_candidates(reading, known), ["Alpha Beta"])
+        self.assertEqual(poster_known_artist_candidates(dict(reading, review_only=False), known), [])
 
     def test_failed_recognition_not_cached(self):
         cache = {}
