@@ -27,7 +27,8 @@ class GitHubJSONReader:
     def __init__(self, *, token=None, max_calls=None, max_seconds=300,
                  resolver=socket.getaddrinfo, clock=time.monotonic):
         if token is not None and (not isinstance(token,str)
-                or not re.fullmatch(r"[A-Za-z0-9_]{1,512}",token)):
+                or not 1 <= len(token) <= 8192
+                or not re.fullmatch(r"[A-Za-z0-9._~+/-]+=*",token)):
             raise ValueError("invalid explicit read credential")
         ceiling = 1000 if token else 30
         max_calls = ceiling if max_calls is None else max_calls

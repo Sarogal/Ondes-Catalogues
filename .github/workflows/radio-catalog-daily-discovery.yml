@@ -752,11 +752,12 @@ jobs:
           from radio_daily_github_transfer_contract import DESTINATION
           from radio_daily_git_lab_transport import REF, ZERO
           import os
-          reader = GitHubJSONReader(token=os.environ["RADIO_GITHUB_READ_TOKEN"], max_calls=2, max_seconds=30)
+          reader = None
           try:
+              reader = GitHubJSONReader(token=os.environ.get("RADIO_GITHUB_READ_TOKEN") or None, max_calls=2, max_seconds=30)
               head = GitHubReadback(reader).read_head(DESTINATION, REF)
           except (ValueError, OSError):
-              print("GITHUB_LAB_READBACK_SMOKE held", reader.diagnostic, "; no write attempted")
+              print("GITHUB_LAB_READBACK_SMOKE held", reader.diagnostic if reader is not None else "credential_configuration", "; no write attempted")
           else:
               print("GITHUB_LAB_READBACK_SMOKE verified", "absent" if head == ZERO else "present")
           PY

@@ -99,3 +99,15 @@ class GitHubJSONReaderTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             GitHubReadback(reader).read_head(DESTINATION,REF)
         self.assertEqual(reader.diagnostic,"http_403")
+
+    @patch("radio_daily_github_json_reader.http.client.HTTPSConnection")
+    def test_long_structured_bearer_token_and_header_injection_refusal(self,factory):
+        conn=factory.return_value
+        synthetic="a"*700+".b-_~.c"
+        conn.getresponse.side_effect=[self.repo(),response(status=404)]
+        reader=GitHubJSONReader(token=synthetic,resolver=resolver)
+        self.assertEqual(GitHubReadback(reader).read_head(DESTINATION,REF),ZERO)
+        self.assertEqual(conn.request.call_args.kwargs["headers"]["Authorization"],"Bearer "+synthetic)
+        for bad in ("", "a b", "a\r\nb", "a\x00b", "a"*8193, "a=b"):
+            with self.subTest(length=len(bad)),self.assertRaisesRegex(ValueError,"invalid explicit"):
+                GitHubJSONReader(token=bad,resolver=resolver)
