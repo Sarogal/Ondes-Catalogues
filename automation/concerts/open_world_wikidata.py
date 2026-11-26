@@ -22,7 +22,8 @@ import source_admission_intake as intake
 
 SCHEMA = "grossesondes.concert.wikidata-research.v1"
 BASE = "https://www.wikidata.org/w/api.php"
-MAX_NAMES = 12
+MAX_NAMES = 24
+MAX_REVIEW_SECONDS = 120  # soft budget between completed name lookups
 MAX_BYTES = 600_000
 SEARCH_LIMIT = 20
 MAX_EXACT_MATCHES = 6
@@ -151,8 +152,10 @@ def research(name, request):
     return {"status": "hypothesis", "qid": qid, "homepageHints": sorted(links)}
 
 
-def build(registry, today, *, prior=None, limit=MAX_NAMES, request=None):
-    if type(limit) is not int or not 1 <= limit <= MAX_NAMES:
+def build(registry, today, *, prior=None, limit=MAX_NAMES, request=None,
+          max_seconds=MAX_REVIEW_SECONDS):
+    if (type(limit) is not int or not 1 <= limit <= MAX_NAMES
+            or type(max_seconds) is not int or not 1 <= max_seconds <= MAX_REVIEW_SECONDS):
         raise ValueError("Invalid directory budget")
     if prior is None:
         prior = {"schema": SCHEMA, "publicationAllowed": False,
@@ -182,7 +185,12 @@ def build(registry, today, *, prior=None, limit=MAX_NAMES, request=None):
     request = request if request is not None else Client()
     counters, checked, failure, retry = Counter(), 0, None, None
     oversized = 0
+    deferred = 0
+    started = time.monotonic()
     for _, _, _, key, name in ordered[:limit]:
+        if time.monotonic() - started >= max_seconds:
+            deferred = min(len(ordered), limit) - checked
+            break
         checked += 1
         try:
             result = research(name, request)
@@ -207,6 +215,9 @@ def build(registry, today, *, prior=None, limit=MAX_NAMES, request=None):
             "publicationAllowed": False, "approvalsProposed": 0,
             "eligibleNames": len(names), "dueNames": len(due),
             "namesChecked": checked, "reasonCounts": dict(counters),
+            "reviewBudget": limit, "reviewTimeBudgetSeconds": max_seconds,
+            "reviewDeferredByTimeBudget": deferred,
+            "reviewElapsedSeconds": round(time.monotonic() - started, 2),
             "entries": entries, "serviceFailureKind": failure,
             "serviceRetryAfterKey": retry}
 
