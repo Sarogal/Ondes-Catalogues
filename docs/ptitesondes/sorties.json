@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-26T00:08:49+01:00",
+  "updated_at": "2026-11-26T01:15:36+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -21683,6 +21683,46 @@
       "geo_precision": "venue",
       "lat": 49.859972,
       "lng": 3.278576
+    },
+    {
+      "id": "openagenda-31479102-2026-12-28",
+      "title": "Conte d'Hiver",
+      "category": "spectacle-jeunesse",
+      "category_label": "Spectacle jeune public",
+      "date_start": "2026-12-28",
+      "date_end": "2026-12-28",
+      "time": "10:30 ; 14:00",
+      "city": "Cysoing",
+      "department": "Nord",
+      "region": "Hauts-de-France",
+      "venue": "Théâtre Mariska",
+      "source_url": "https://openagenda.com/mariska/events/31479102_conte-dhiver-3628105",
+      "source_label": "Théâtre Mariska - spectacles de marionnettes à fils pour enfants et familles — Licence Ouverte 2.0 — données mises à jour le 20/11/2026",
+      "verified_at": "2026-11-26",
+      "geo_verified_at": "2026-11-26",
+      "geo_precision": "venue",
+      "lat": 50.562243,
+      "lng": 3.210809
+    },
+    {
+      "id": "openagenda-31479102-2026-12-29",
+      "title": "Conte d'Hiver",
+      "category": "spectacle-jeunesse",
+      "category_label": "Spectacle jeune public",
+      "date_start": "2026-12-29",
+      "date_end": "2026-12-29",
+      "time": "10:30 ; 14:00",
+      "city": "Cysoing",
+      "department": "Nord",
+      "region": "Hauts-de-France",
+      "venue": "Théâtre Mariska",
+      "source_url": "https://openagenda.com/mariska/events/31479102_conte-dhiver-3628105",
+      "source_label": "Théâtre Mariska - spectacles de marionnettes à fils pour enfants et familles — Licence Ouverte 2.0 — données mises à jour le 20/11/2026",
+      "verified_at": "2026-11-26",
+      "geo_verified_at": "2026-11-26",
+      "geo_precision": "venue",
+      "lat": 50.562243,
+      "lng": 3.210809
     }
   ]
 }

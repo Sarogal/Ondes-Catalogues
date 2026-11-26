@@ -1,0 +1,34 @@
+{
+  "schema": "ptitesondes.official_reconciliation.v1",
+  "checked_on": "2026-11-26",
+  "slot": 0,
+  "source_series_checked": 30,
+  "total_source_series": 128,
+  "before_count": 1052,
+  "after_count": 1054,
+  "source_summary": {
+    "official_new_session_admitted": 1,
+    "official_new_session_held": 1,
+    "official_unavailable": 2,
+    "official_unchanged": 27
+  },
+  "catalogue_before_sha256": "83b28132c4d926c35a80e0acd15ebbdbfcc6843caa99c907485431280e90bfab",
+  "catalogue_after_sha256": "7ffa17354397ac648230ad1dbcf302c90c91623440723ee4f444bc78a4e9b4a9",
+  "operations": [
+    {
+      "id": "openagenda-31479102-2026-12-28",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/mariska/events/31479102_conte-dhiver-3628105",
+      "new_event_sha256": "baa9979b3f40bea522bee6fc4c5c72d1a65d752884cd74b1b895b36b362538fb"
+    },
+    {
+      "id": "openagenda-31479102-2026-12-29",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/mariska/events/31479102_conte-dhiver-3628105",
+      "new_event_sha256": "c5e4fbf6e294980d2d7dfdbe319eea9aaa2c1d05f889d30fe2fb9e082824ac16"
+    }
+  ],
+  "unrelated_public_records_preserved": true
+}
