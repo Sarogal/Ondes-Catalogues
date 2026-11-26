@@ -210,3 +210,21 @@ class CatalogueGeoProofTests(unittest.TestCase):
             self.assertFalse(administrative_unit_matches(g, "75056", "75120",
                                                          lambda _: other))
         self.assertFalse(administrative_unit_matches(g, "75056", "77001", reader))
+
+
+    def test_provider_diagnostics_distinguish_transport_failure_from_no_match(self):
+        group = dict(city="Ville", venue="Salle", department="Test (01)",
+                     active_ids=["a"], missing_ids=["a"], source_urls=[])
+        def offline(*args):
+            raise OSError("private URL must not appear")
+        result = research_group(group, DAY, directory_get=offline,
+            commune_get=lambda _: [dict(nom="Ville", code="01001", codeDepartement="01")],
+            named_osm_get=offline)
+        self.assertEqual(result["status"], "directory_unavailable")
+        self.assertEqual(result["provider_diagnostics"], {
+            "dila": {"calls": 1, "errors": 1},
+            "administrative": {"calls": 1, "errors": 0},
+            "osm_named": {"calls": 1, "errors": 1},
+        })
+        self.assertNotIn("private URL", str(result))
+        self.assertFalse(result["publication_ready"])

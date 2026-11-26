@@ -293,13 +293,38 @@ def _discover_named_location(group, directory, named_osm_get, html_get, ign_get,
     return dict(lat=point[0], lng=point[1], official=url, geo_source=method)
 
 
+class ResearchDiagnostics:
+    """Record only fixed provider counters; preserve all proof decisions."""
+    def __init__(self):
+        self.counts = {}
+
+    def wrap(self, provider, reader):
+        def read(*args, **kwargs):
+            row = self.counts.setdefault(provider, {"calls": 0, "errors": 0})
+            row["calls"] += 1
+            try:
+                return reader(*args, **kwargs)
+            except ERRORS:
+                row["errors"] += 1
+                raise
+        return read
+
+
 def research_group(group, today, *, directory_get=fetch_dila,
                    html_get=read_unknown_https, ign_get=fetch_ign,
                    osm_get=fetch_overpass, named_osm_get=fetch_named_osm,
                    commune_get=fetch_commune):
+    diagnostics = ResearchDiagnostics()
+    directory_get = diagnostics.wrap("dila", directory_get)
+    commune_get = diagnostics.wrap("administrative", commune_get)
+    html_get = diagnostics.wrap("official_html", html_get)
+    ign_get = diagnostics.wrap("ban", ign_get)
+    osm_get = diagnostics.wrap("osm_nearby", osm_get)
+    named_osm_get = diagnostics.wrap("osm_named", named_osm_get)
     result = dict(city=group["city"], venue=group["venue"],
                   active_ids=group["active_ids"], missing_ids=group["missing_ids"],
-                  status="venue_proof_not_found", publication_ready=False)
+                  status="venue_proof_not_found", publication_ready=False,
+                  provider_diagnostics=diagnostics.counts)
     try:
         directory = directory_get(group["city"])
     except ERRORS:
