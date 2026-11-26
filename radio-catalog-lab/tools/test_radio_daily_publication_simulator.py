@@ -166,6 +166,7 @@ class GeneratedMultiversionTests(unittest.TestCase):
 
     def test_two_generated_logo_releases_and_resume(self):
         import tempfile
+        from radio_daily_logo_release_validation import publish_logo_release
         from pathlib import Path
         from radio_daily_state_snapshot import transition, POINTER, BODY
         from radio_daily_release_context import STATE_FILES, REQUALIFY
@@ -242,19 +243,20 @@ class GeneratedMultiversionTests(unittest.TestCase):
                 self.assertEqual((candidate, objects), (rebuilt, replay))
                 args_publish = dict(expected_sha=sha, expected_sequence=seq,
                                     expected_candidate_sha=digest(candidate),
-                                    day=day, objects=objects)
+                                    day=day, objects=objects, logo_maintenance=lm,
+                                    missing_logo=nm, artwork=artwork)
                 stop = "before_pointer_swap" if seq == 8 else "after_pointer_swap"
                 def interrupt(phase):
                     if phase == stop:
                         raise RuntimeError("laboratory interruption")
                 with self.assertRaisesRegex(RuntimeError, "laboratory interruption"):
-                    publish(store, signer, pointer, raw, candidate,
-                            checkpoint=interrupt, **args_publish)
+                    publish_logo_release(store, signer, pointer, raw, candidate,
+                                         checkpoint=interrupt, **args_publish)
                 if seq == 8:
                     self.assertEqual(store.current(), pointer)
                 else:
                     self.assertNotEqual(store.current(), pointer)
-                result = publish(store, signer, pointer, raw, candidate, **args_publish)
+                result = publish_logo_release(store, signer, pointer, raw, candidate, **args_publish)
                 self.assertEqual(result["resumed"], seq == 9)
                 visible = store.current()
                 self.assertEqual(verify_visible(store, visible, sha=digest(candidate),
