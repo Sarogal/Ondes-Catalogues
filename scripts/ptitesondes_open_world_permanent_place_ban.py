@@ -160,3 +160,57 @@ def corroborate_official_ban(city, venue, url, html, directory, ban_fetch, admin
                 "publication_ready": False, "public_writes": 0}
     except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
         return None
+
+
+def discover_official_ban(row, *, directory_fetch=None, page_read=None,
+                          ban_fetch=None, admin_fetch=None):
+    """Use an untrusted venue URL or exact municipal homepage link as a hint.
+
+    Every page is authenticated by a fresh DILA result before network access.
+    No external crawling, manual venue registry, or reuse of old coordinates.
+    """
+    from ptitesondes_dila_municipal_domains import fetch_dila, municipal_site_hosts
+    from ptitesondes_municipal_venue_link_discovery import exact_named_venue_page
+    from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
+    from ptitesondes_generic_venue_ign_corroboration import fetch_ign
+    from ptitesondes_open_world_permanent_place_draft import fetch_admin
+    directory_fetch = directory_fetch or fetch_dila
+    page_read = page_read or read_unknown_https
+    ban_fetch = ban_fetch or fetch_ign
+    admin_fetch = admin_fetch or fetch_admin
+    try:
+        city, venue = row["city"], row["venue"]
+        directory = directory_fetch(city)
+        hosts = municipal_site_hosts(city, directory)
+        if not hosts:
+            return None
+        hint = row.get("possible_website_unverified")
+        pages = []
+        if approved_municipal_page_host(hint, city, directory):
+            p = urlsplit(hint)
+            if p.path.strip("/") and not p.query and not p.fragment:
+                pages.append(hint)
+        # At most one authenticated homepage, and one exact visible venue link.
+        home = "https://" + sorted(hosts)[0] + "/"
+        for url in pages:
+            try:
+                proof = corroborate_official_ban(city, venue, url, page_read(url),
+                                                 directory, ban_fetch, admin_fetch)
+                if proof is not None:
+                    historical = row.get("historical_address_unverified")
+                    if isinstance(historical, dict) and historical.get("postal_code") not in (None, proof["postcode"]):
+                        return None
+                    return proof
+            except (OSError, ValueError, TypeError, UnicodeError):
+                pass
+        url = exact_named_venue_page(venue, home, page_read(home), city, directory)
+        if not url or url in pages:
+            return None
+        proof = corroborate_official_ban(city, venue, url, page_read(url),
+                                         directory, ban_fetch, admin_fetch)
+        historical = row.get("historical_address_unverified")
+        if proof is not None and isinstance(historical, dict) and historical.get("postal_code") not in (None, proof["postcode"]):
+            return None
+        return proof
+    except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
+        return None
