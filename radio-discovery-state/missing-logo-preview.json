@@ -8,8 +8,8 @@
     "no_current_image": 32
   },
   "counts": {
-    "no_bound_image": 15,
-    "page_held": 15,
+    "no_bound_image": 16,
+    "page_held": 14,
     "synthetic_held": 2
   },
   "eligibleCount": 30,
@@ -47,7 +47,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 2,
+      "analyzerVersion": 4,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000039",
@@ -62,7 +62,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 2,
+      "analyzerVersion": 4,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000067",
@@ -77,7 +77,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 2,
+      "analyzerVersion": 4,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000069",
@@ -107,7 +107,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 2,
+      "analyzerVersion": 4,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000087",
@@ -117,12 +117,12 @@
       "observedDate": "2026-11-26",
       "pageSha256": null,
       "publicationAllowed": false,
-      "reviewStatus": "page_held",
+      "reviewStatus": "no_bound_image",
       "sourceKind": null,
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 2,
+      "analyzerVersion": 4,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000090",
@@ -137,7 +137,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 2,
+      "analyzerVersion": 4,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000094",
@@ -152,7 +152,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 3,
+      "analyzerVersion": 4,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000098",
@@ -167,7 +167,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 3,
+      "analyzerVersion": 4,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000107",
