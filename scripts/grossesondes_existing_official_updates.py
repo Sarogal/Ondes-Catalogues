@@ -781,7 +781,10 @@ def counted_inline_artists(value):
             re.search(r"[;:!?]|\.(?:\s+|$)(?=\S)", part)
             for part in parts):
         return []
-    names = [good_artist(part) for part in parts]
+    # HTML may split the final punctuation from a bold roster into a
+    # separate text node ("Artist ."). Preserve the actual artist spelling.
+    names = [good_artist(re.sub(r"\s+\.$", ".", part.strip()))
+             for part in parts]
     if not all(names) or len({key(name) for name in names}) != count:
         return []
     return names
