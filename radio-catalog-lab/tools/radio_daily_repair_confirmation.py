@@ -17,16 +17,21 @@ from radio_daily_maintenance_preview import catalogue_rows, digest, age, outcome
 from radio_daily_v9_generator import BASELINE
 from radio_daily_qualification_dossiers import MAX_BYTES
 from radio_catalog_daily_candidate_reconcile import index_catalog
-from radio_daily_editorial_preview import Page, station_nodes, homepage_url, fetch_html, related_host
+from radio_daily_editorial_preview import Page, station_nodes, homepage_url, fetch_html, related_host, followup_links
 from radio_daily_discovery import fetch_page, resolve_api_mirrors
 from radio_stream_technical_probe import PinnedHttpTransport, probe_url
 from radio_stream_recheck_ledger import parse_day, SHA256_RE
+from radio_daily_hls_preview import observe as observe_hls
+from radio_daily_continuity_preview import observe_url
 
 MAX_CHECKS=4
+ANALYZER_VERSION=2
+ROUTES={"direct","hls"}
+CONTINUITY={"not_checked","continuous_hint","inconclusive"}
 STATUSES={"directory_held","directory_changed","broadcaster_held","broadcaster_unlinked",
           "audio_hint","unavailable_hint","inconclusive"}
 POSITIVE={"audio_hint"}
-DECLARATIONS={"typed_station","unique_named_player"}
+DECLARATIONS={"typed_station","unique_named_player","linked_typed_station","linked_unique_named_player"}
 
 def declaration(station, final, body, url):
     p=Page()
@@ -48,7 +53,42 @@ def declaration(station, final, body, url):
         return "unique_named_player"
     return None
 
-def build(raw,repair,*,expected=BASELINE,prior=None,limit=0,search=None,fetch=None,probe=None):
+def named_root(station,body):
+    p=Page()
+    p.feed(body.decode("utf-8",errors="replace"))
+    name=name_key(station["display_name"])
+    return (len(name)>=5 and name not in {"radio","metal","punk","hard rock"}
+            and (any(name_key(v)==name for v in p.identity)
+                 or any(name_key(n.get("name"))==name for n in station_nodes(p.structured))))
+
+def confirm_page(station,page,url,fetch):
+    final,body=fetch(page)
+    if (not related_host(final,page) or homepage_url(final)!=final
+            or page_key(final)!=page_key(page) or not isinstance(body,bytes) or len(body)>256*1024):
+        raise ValueError("unexpected broadcaster response")
+    root_hash=hashlib.sha256(body).hexdigest()
+    mode=declaration(station,final,body,url)
+    if mode:
+        return mode,root_hash,None
+    # Only follow the generic editorial player/about links on a named
+    # station page. The child must independently declare the same station.
+    if named_root(station,body):
+        for child in followup_links(final,body):
+            try:
+                child_final,child_body=fetch(child)
+                if (not related_host(child_final,final) or homepage_url(child_final)!=child_final
+                        or page_key(child_final)!=page_key(child)
+                        or not isinstance(child_body,bytes) or len(child_body)>256*1024):
+                    continue
+                mode=declaration(station,child_final,child_body,url)
+                if mode:
+                    return "linked_"+mode,hashlib.sha256(child_body).hexdigest(),root_hash
+            except (ValueError,OSError,http.client.HTTPException,TypeError,AttributeError):
+                continue
+    return None,None,None
+
+def build(raw,repair,*,expected=BASELINE,prior=None,limit=0,search=None,fetch=None,probe=None,
+          hls_probe=None,continuity_probe=None):
     day=parse_day(repair.get("scanDate"))
     stations,streams=catalogue_rows(raw,expected)
     doc=json.loads(raw)
@@ -112,19 +152,37 @@ def build(raw,repair,*,expected=BASELINE,prior=None,limit=0,search=None,fetch=No
                          (mode not in DECLARATIONS or not SHA256_RE.fullmatch(page or ""))) or
                         (status not in ("audio_hint","unavailable_hint","inconclusive") and (mode is not None or page is not None))):
                     raise ValueError("invalid confirmation observation")
+                root=o.get("rootPageSha256")
+                route=o.get("route","direct" if mode else None)
+                continuity=o.get("continuity","not_checked")
+                version=o.get("analyzerVersion",1)
+                if (type(version) is not int or not 1<=version<=ANALYZER_VERSION
+                        or (mode in ("linked_typed_station","linked_unique_named_player") and not SHA256_RE.fullmatch(root or ""))
+                        or (mode not in ("linked_typed_station","linked_unique_named_player") and root is not None)
+                        or (mode and route not in ROUTES) or (not mode and route is not None)
+                        or continuity not in CONTINUITY
+                        or (continuity=="continuous_hint" and status!="audio_hint")):
+                    raise ValueError("invalid extended confirmation observation")
                 dates.append(date)
                 if k in history and age(day,date)<30:
-                    history[k].append({"date":date,"status":status,"declaration":mode,"pageSha256":page})
+                    history[k].append({"date":date,"status":status,"declaration":mode,"pageSha256":page,
+                                       "rootPageSha256":root,"route":route,"continuity":continuity,"analyzerVersion":version})
             if dates!=sorted(set(dates)):
                 raise ValueError("duplicate confirmation dates")
     queue=sorted((k for k in candidates if k not in conflicts and
-                  (not history[k] or history[k][-1]["date"]!=day)),
+                  (not history[k] or history[k][-1]["date"]!=day or
+                   (history[k][-1]["status"]=="broadcaster_unlinked" and
+                    history[k][-1]["analyzerVersion"]<ANALYZER_VERSION))),
                  key=lambda k:(history[k][-1]["date"] if history[k] else "",k))
     if limit and queue and any(x is None for x in (search,fetch,probe)):
         raise ValueError("explicit confirmation services required")
     attempted=0
-    def record(k,status,mode=None,page=None):
-        history[k].append({"date":day,"status":status,"declaration":mode,"pageSha256":page})
+    def record(k,status,mode=None,page=None,root=None,route=None,continuity="not_checked"):
+        if history[k] and history[k][-1]["date"]==day:
+            history[k].pop()
+        history[k].append({"date":day,"status":status,"declaration":mode,"pageSha256":page,
+                           "rootPageSha256":root,"route":route,"continuity":continuity,
+                           "analyzerVersion":ANALYZER_VERSION})
     for k in queue[:limit]:
         sid,uid,sha=k
         station=by_id[sid]
@@ -147,22 +205,34 @@ def build(raw,repair,*,expected=BASELINE,prior=None,limit=0,search=None,fetch=No
         url=next(iter(urls))
         page=homepage_url(station.get("homepage"))
         try:
-            final,body=fetch(page)
-            if (not related_host(final,page) or homepage_url(final)!=final
-                    or page_key(final)!=page_key(page) or not isinstance(body,bytes) or len(body)>256*1024):
-                raise ValueError("unexpected broadcaster response")
-            mode=declaration(station,final,body,url)
+            mode,page_hash,root_hash=confirm_page(station,page,url,fetch)
         except (ValueError,OSError,http.client.HTTPException,TypeError,AttributeError):
             record(k,"broadcaster_held")
             continue
         if not mode:
             record(k,"broadcaster_unlinked")
             continue
+        route="direct"
+        continuity="not_checked"
         try:
-            status=outcome(probe(url),sha)
+            sample=probe(url)
+            status=outcome(sample,sha)
+            if sample.get("verdict")=="playlist_pending" and hls_probe is not None:
+                route="hls"
+                h=hls_probe(url)
+                if h.get("verdict")=="advancing_hls_audio_frame_indication" and h.get("frameCodec"):
+                    status="audio_hint"
+                    continuity="continuous_hint"
+                else:
+                    status="inconclusive"
+                    continuity="inconclusive"
+            elif status=="audio_hint" and continuity_probe is not None:
+                c=continuity_probe(url)
+                continuity=("continuous_hint" if c.get("verdict")=="continuous_icy_frame_indication" else "inconclusive")
         except (ValueError,OSError,http.client.HTTPException):
             status="inconclusive"
-        record(k,status,mode,hashlib.sha256(body).hexdigest())
+            continuity="inconclusive"
+        record(k,status,mode,page_hash,root_hash,route,continuity)
     records=[]
     for k,obs in sorted(history.items()):
         recent=[x for x in obs if age(day,x["date"])<=7]
@@ -171,14 +241,20 @@ def build(raw,repair,*,expected=BASELINE,prior=None,limit=0,search=None,fetch=No
             if o["status"]!="audio_hint":
                 break
             positives.append(o["date"])
+        strong=[]
+        for o in reversed(recent):
+            if o["status"]!="audio_hint" or o.get("continuity")!="continuous_hint":
+                break
+            strong.append(o["date"])
         state=("identity_collision_held" if k in conflicts else
+               "repeated_continuity_review" if len(strong)>=2 and day in strong else
                "repeated_audio_review" if len(positives)>=2 and day in positives else
                recent[-1]["status"] if recent else "awaiting_confirmation")
         records.append({"goStationId":k[0],"stationuuid":k[1],"streamSha256":k[2],
-                        "observations":obs,"positiveDates":sorted(positives),"reviewStatus":state,
+                        "observations":obs,"positiveDates":sorted(positives),"continuityDates":sorted(strong),"reviewStatus":state,
                         "approved":False,"publicationAllowed":False})
     return {"schemaVersion":1,"scanDate":day,"catalogBaselineSha256":expected,
-            "approvedCount":0,"publicationAllowed":False,"attemptedCount":attempted,
+            "approvedCount":0,"publicationAllowed":False,"analyzerVersion":ANALYZER_VERSION,"attemptedCount":attempted,
             "candidateCount":len(candidates),"counts":dict(sorted(Counter(r["reviewStatus"] for r in records).items())),
             "records":records}
 
@@ -206,7 +282,8 @@ def main():
     report=build(load(a.baseline),json.loads(load(a.repair)),
                  prior=json.loads(load(a.previous)) if a.previous else None,
                  limit=a.limit,search=search,fetch=fetch_html,
-                 probe=lambda u:probe_url(u,transport.request))
+                 probe=lambda u:probe_url(u,transport.request),
+                 hls_probe=observe_hls,continuity_probe=observe_url)
     payload=json.dumps(report,ensure_ascii=False,indent=2)+"\n"
     if len(payload.encode())>MAX_BYTES:
         raise ValueError("oversize confirmation output")

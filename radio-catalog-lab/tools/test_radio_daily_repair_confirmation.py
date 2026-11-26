@@ -16,10 +16,11 @@ def page(url):
 def audio(url):
     return {"streamSha256":digest(url),"verdict":"audio_sample_ok","frameChain":"mp3"}
 
-def run(prior=None,fetch=page,search=lambda n:[candidate()],probe=audio,day=DAY):
+def run(prior=None,fetch=page,search=lambda n:[candidate()],probe=audio,day=DAY,hls=None,continuity=None):
     raw,sha,r=inputs()
     r["scanDate"]=day
-    return build(raw,r,expected=sha,prior=prior,limit=1,search=search,fetch=fetch,probe=probe)
+    return build(raw,r,expected=sha,prior=prior,limit=1,search=search,fetch=fetch,probe=probe,
+                 hls_probe=hls,continuity_probe=continuity)
 
 class ConfirmationTests(unittest.TestCase):
     def test_typed_broadcaster_and_two_days(self):
@@ -52,6 +53,50 @@ class ConfirmationTests(unittest.TestCase):
     def test_redirect_to_different_station_held(self):
         r=run(fetch=lambda p:("https://radio.example.org/other",page(p)[1]),probe=lambda u:self.fail("redirect"))
         self.assertEqual(r["counts"],{"broadcaster_held":1})
+
+    def test_linked_named_player_page(self):
+        child="https://radio.example.org/listen"
+        def fetch(p):
+            if p==PAGE:
+                return PAGE,b'<h1>Iron Radio</h1><a href="/listen">Listen live</a>'
+            self.assertEqual(p,child)
+            return child,('<h1>Iron Radio</h1><audio src="'+NEXT+'"></audio>').encode()
+        r=run(fetch=fetch)
+        o=r["records"][0]["observations"][0]
+        self.assertEqual(o["declaration"],"linked_unique_named_player")
+        self.assertIsNotNone(o["rootPageSha256"])
+
+    def test_generic_root_cannot_follow_player(self):
+        def fetch(p):
+            self.assertEqual(p,PAGE)
+            return PAGE,b'<h1>Radio Network</h1><a href="/listen">Listen live</a>'
+        r=run(fetch=fetch,probe=lambda u:self.fail("unbound"))
+        self.assertEqual(r["counts"],{"broadcaster_unlinked":1})
+
+    def test_hls_manifest_only_and_audio_continuity(self):
+        def playlist(u):return {"streamSha256":digest(u),"verdict":"playlist_pending"}
+        r=run(probe=playlist,hls=lambda u:{"verdict":"advancing_hls_manifest_only"})
+        self.assertEqual(r["counts"],{"inconclusive":1})
+        def hls(u):return {"verdict":"advancing_hls_audio_frame_indication","frameCodec":"aac"}
+        r=run(probe=playlist,hls=hls)
+        r=run(prior=r,day="2026-11-27",probe=playlist,hls=hls)
+        self.assertEqual(r["counts"],{"repeated_continuity_review":1})
+        self.assertEqual(len(r["records"][0]["continuityDates"]),2)
+
+    def test_direct_samples_not_continuity(self):
+        r=run(continuity=lambda u:{"verdict":"continuous_icy_frame_indication"})
+        r=run(prior=r,day="2026-11-27",continuity=lambda u:{"verdict":"finite_response_review"})
+        self.assertEqual(r["counts"],{"repeated_audio_review":1})
+        self.assertEqual(r["records"][0]["continuityDates"],[])
+
+    def test_old_analyzer_unlinked_revisited_without_duplicate_day(self):
+        r=run(fetch=lambda p:(PAGE,b'<h1>Iron Radio</h1>'))
+        o=r["records"][0]["observations"][0]
+        o.pop("analyzerVersion")
+        r=run(prior=r)
+        self.assertEqual(r["attemptedCount"],1)
+        self.assertEqual(len(r["records"][0]["observations"]),1)
+        self.assertEqual(r["counts"],{"audio_hint":1})
 
     def test_negative_breaks_positive_streak(self):
         r=run()
