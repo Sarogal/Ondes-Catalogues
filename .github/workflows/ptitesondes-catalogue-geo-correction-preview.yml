@@ -63,7 +63,7 @@ jobs:
           set -euo pipefail
           umask 077
           PROGRESS="state/automation-intake/ptitesondes/catalogue-geo-correction-progress.json"
-          if ! python scripts/ptitesondes_catalogue_geo_correction_preview.py --catalogue docs/ptitesondes/sorties.json --state state/automation-intake/ptitesondes/catalogue-geo-rotation.json --progress "$PROGRESS" --day "$(TZ=Europe/Paris date +%F)" --live > "$RUNNER_TEMP/gps-preview.json" 2> "$RUNNER_TEMP/gps-preview-errors.log"; then
+          if ! python scripts/ptitesondes_catalogue_geo_correction_preview.py --catalogue docs/ptitesondes/sorties.json --state state/automation-intake/ptitesondes/catalogue-geo-rotation.json --progress "$PROGRESS" --acceslibre-hints state/automation-intake/ptitesondes/acceslibre-geo-hints.json --day "$(TZ=Europe/Paris date +%F)" --live > "$RUNNER_TEMP/gps-preview.json" 2> "$RUNNER_TEMP/gps-preview-errors.log"; then
             echo "::error::Historical GPS correction rehearsal failed without public writes."
             exit 1
           fi

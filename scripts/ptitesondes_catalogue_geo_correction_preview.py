@@ -234,6 +234,7 @@ if __name__ == "__main__":
     p.add_argument("--catalogue", type=Path, required=True)
     p.add_argument("--state", type=Path, required=True)
     p.add_argument("--progress", type=Path, required=True)
+    p.add_argument("--acceslibre-hints", type=Path)
     p.add_argument("--day", type=date.fromisoformat, required=True)
     p.add_argument("--live", action="store_true")
     args = p.parse_args()
@@ -244,7 +245,9 @@ if __name__ == "__main__":
     if args.progress.is_symlink():
         raise ValueError("unsafe_progress_path")
     previous = json.loads(args.progress.read_text(encoding="utf-8")) if args.progress.exists() else None
-    _, report = preview(catalogue, args.day, checkpoint, progress=previous)
+    from ptitesondes_acceslibre_geo_hints import load_hints, hinted_researcher
+    _, report = preview(catalogue, args.day, checkpoint, progress=previous,
+        researcher=hinted_researcher(load_hints(args.acceslibre_hints, args.day)))
     write_state(args.progress, report["progress"])
     # Do not export private research details to the public runner log.
     print(json.dumps({k: report[k] for k in (

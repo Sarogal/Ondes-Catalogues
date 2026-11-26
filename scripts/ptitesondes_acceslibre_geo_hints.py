@@ -17,8 +17,13 @@ from urllib.request import Request, HTTPRedirectHandler, build_opener
 
 from proof import norm
 from ptitesondes_catalogue_geo_research import research_queue
-from ptitesondes_catalogue_geo_rotation import identity
+from ptitesondes_catalogue_geo_rotation import identity, write_state
 from ptitesondes_dynamic_municipal_source_links import _safe_url
+from ptitesondes_catalogue_geo_proof_batch import (
+    research_group, _external_location, read_unknown_https, fetch_ign,
+    fetch_overpass, _osm_website_host, _coordinates, meters,
+    administrative_commune_code, fetch_commune,
+)
 
 RESOURCE = "https://www.data.gouv.fr/api/1/datasets/r/5b0f44f2-e6ea-4a58-874d-6fe364b40342"
 # Fixed transport providers for one national public dataset, not venue hosts.
@@ -184,9 +189,79 @@ def scan_file(catalogue, today, path):
         return scan(catalogue, today, reader)
 
 
+MAX_HINT_BYTES = 2_000_000
+MAX_HINT_AGE = 7
+
+
+def load_hints(path, today):
+    """Corrupt, absent or expired advisory cache cannot halt the normal route."""
+    if path is None:
+        return {}
+    try:
+        if path.is_symlink() or not 0 < path.stat().st_size <= MAX_HINT_BYTES:
+            return {}
+        report = json.loads(path.read_text(encoding="utf-8"))
+        if (type(report) is not dict or report.get("schema") != SCHEMA
+                or report.get("resource") != RESOURCE
+                or report.get("publication_ready") is not False
+                or report.get("public_writes") != 0
+                or not 0 <= (today - date.fromisoformat(report["day"])).days <= MAX_HINT_AGE
+                or type(report.get("hints")) is not dict):
+            return {}
+        return report["hints"]
+    except (OSError, ValueError, TypeError, KeyError, UnicodeError):
+        return {}
+
+
+def independent_hint_location(group, hint, *, html_get=read_unknown_https,
+                              ign_get=fetch_ign, osm_get=fetch_overpass,
+                              commune_get=fetch_commune):
+    """Acceslibre is discovery only; live venue page + BAN + OSM must agree."""
+    if (not isinstance(hint, dict) or hint.get("independent_recheck_required") is not True
+            or norm(hint.get("group_city")) != norm(group["city"])
+            or norm(hint.get("group_venue")) != norm(group["venue"])):
+        return None
+    row = hint.get("hint")
+    if (not isinstance(row, dict) or row.get("publication_ready") is not False
+            or norm(row.get("city")) != norm(group["city"])
+            or _name(row.get("name")) != _name(group["venue"])):
+        return None
+    point = _coordinates((row.get("lat_hint"), row.get("lng_hint")))
+    url = row.get("website_hint")
+    if point is None or point == (0, 0) or not _safe_url(url) or not _osm_website_host(url):
+        return None
+    try:
+        code = administrative_commune_code(group, commune_get(group))
+        if code is None or code != row.get("code_insee"):
+            return None
+        verified = _external_location(group, url, html_get(url), ign_get, osm_get)
+        if verified is None or meters(point, (verified["lat"], verified["lng"])) > 65:
+            return None
+        return dict(verified, geo_source="Acceslibre discovery + " + verified["geo_source"])
+    except (OSError, ValueError, TypeError, KeyError, TimeoutError, UnicodeError):
+        return None
+
+
+def hinted_researcher(hints, *, base=research_group, verify=independent_hint_location):
+    """Prioritize the existing independent route; use new hints only on a miss."""
+    def research(group, today):
+        result = base(group, today)
+        if result.get("status") not in ("venue_proof_not_found",
+                "directory_unavailable", "municipality_not_independently_identified"):
+            return result
+        location = verify(group, hints.get(identity(group)))
+        if location is None:
+            return result
+        return dict(result, status="independent_venue_point_found",
+                    venue_point=location, event_identity_recheck_required=True,
+                    publication_ready=False)
+    return research
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--catalogue", type=Path, required=True)
+    p.add_argument("--private-output", type=Path)
     p.add_argument("--day", type=date.fromisoformat, required=True)
     modes = p.add_mutually_exclusive_group(required=True)
     modes.add_argument("--csv", type=Path)
@@ -200,7 +275,9 @@ def main():
             report = scan_file(catalogue, a.day, export)
     else:
         report = scan_file(catalogue, a.day, a.csv)
-    # This first live rehearsal exports counts only; no candidate becomes proof.
+    if a.private_output is not None:
+        write_state(a.private_output, report)
+    # Export counts only to public logs; private hints are never proof.
     print(json.dumps({k: v for k, v in report.items() if k != "hints"}))
 
 
