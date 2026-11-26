@@ -60,6 +60,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_unified_generator.py"
       - "radio-catalog-lab/tools/radio_daily_v9_generator.py"
       - "radio-catalog-lab/tools/test_radio_daily_v9_generator.py"
+      - "radio-catalog-lab/tools/radio_daily_baseline_selection.py"
+      - "radio-catalog-lab/tools/test_radio_daily_baseline_selection.py"
       - "radio-catalog-lab/tools/radio_daily_baseline_verify.py"
       - "radio-catalog-lab/tools/test_radio_daily_baseline_verify.py"
       - "radio-catalog-lab/tools/radio_daily_alternative_metadata.py"
@@ -245,8 +247,9 @@ jobs:
           curl --fail --silent --show-error --max-time 45 --max-filesize 16384 \
             "https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/feature/go-radio-test-v2-isolated-20261123/grossesondes/radio-test-v2/current.json" \
             --output "$pointer"
-          python radio-catalog-lab/tools/radio_daily_baseline_verify.py \
-            --pointer "$pointer" --baseline "$baseline"
+          python radio-catalog-lab/tools/radio_daily_baseline_selection.py \
+            --pointer "$pointer" --baseline "$baseline" \
+            --report "$RUNNER_TEMP/go-radio-discovery/baseline-selection.json"
           # Digest is pinned to the previously signed TEST v8. This is a
           # classification-only report, not authority to admit or sign.
           python radio-catalog-lab/tools/radio_catalog_daily_candidate_reconcile.py \
