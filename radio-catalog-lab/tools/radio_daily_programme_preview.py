@@ -122,6 +122,7 @@ def build(metadata, research, decisions, *, wikidata=None, recordings=None):
         counts = Counter({k:0 for k in BUCKETS})
         artists = Counter({k:0 for k in BUCKETS})
         source_counts=Counter()
+        member_buckets={}
         def classify(artist,title_hash):
             k=key(artist)
             if not bound or len(spellings[k])!=1:
@@ -133,7 +134,20 @@ def build(metadata, research, decisions, *, wikidata=None, recordings=None):
             wd=fresh(w,artist,"artistName","name_hypothesis")
             rc=fresh(r,artist,"artistHint","recording_credit_hypothesis")
             if rc and len(r["artistMbids"])!=1:
-                return "unclassified_hint","collaboration_held"
+                # A composite name hypothesis must not be merged with individual credits.
+                if mb or wd:
+                    return "unclassified_hint","collaboration_identity_held"
+                members=r.get("collaborationGenreEvidence",{})
+                buckets=[]
+                for mid in sorted(set(r["artistMbids"])):
+                    bucket=label_bucket(members.get(mid,{}).get("genres",[]))
+                    member_buckets.setdefault(mid,set()).add(bucket)
+                    buckets.append(bucket)
+                if not buckets or "unclassified_hint" in buckets:
+                    return "unclassified_hint","collaboration_partial"
+                if "mixed_hint" in buckets or len(set(buckets))>1:
+                    return "mixed_hint","collaboration_credit_genres"
+                return buckets[0],"collaboration_credit_genres"
             mid=m["mbid"] if mb else None
             links=set(w["musicbrainzIds"]) if wd else set()
             rid=r["artistMbids"][0] if rc else None
@@ -169,7 +183,11 @@ def build(metadata, research, decisions, *, wikidata=None, recordings=None):
             bucket,source=classify(artist,title_hash)
             counts[bucket]+=1
             source_counts[source]+=1
-            by_artist.setdefault(artist,set()).add(bucket)
+            # A composite credit is not one independently classified artist.
+            by_artist.setdefault(artist,set()).add("unclassified_hint" if source.startswith("collaboration_") else bucket)
+        member_counts=Counter({k:0 for k in BUCKETS})
+        for values in member_buckets.values():
+            member_counts[next(iter(values)) if len(values)==1 else "unclassified_hint"]+=1
         for values in by_artist.values():
             artists[next(iter(values)) if len(values)==1 else "unclassified_hint"]+=1
         records.append({"stationuuid":uid, "streamSha256":row["streamSha256"],
@@ -179,15 +197,16 @@ def build(metadata, research, decisions, *, wikidata=None, recordings=None):
                         "observationDates":sorted(days), "reportedBroadcastDates":sorted(history_days),
                         "distinctHistoricalArtistTitleHints":len(history_pairs), "stalePairCount":len(stale-seen),
                         "artistHintCounts":dict(artists), "artistTitleHintCounts":dict(counts),
+                        "collaborationMemberHintCounts":dict(member_counts),
                         "sourceHintCounts":dict(sorted(source_counts.items())),
                         "verifiedArtistCount":0, "approved":False, "publicationAllowed":False})
     return {"schemaVersion":1, "scanDate":day, "publicationAllowed":False, "approvedCount":0,
             "freshnessDays":FRESH_DAYS, "stationCount":len(records),
             "stationsWithWikidataHints":sum(any(r["sourceHintCounts"].get(k,0) for k in ("wikidata_only","recording_wikidata","linked_sources","recording_linked_sources")) for r in records),
-            "stationsWithSourceConflicts":sum(any(r["sourceHintCounts"].get(k,0) for k in ("identity_conflict","genre_conflict","cross_source_identity_unlinked")) for r in records),
+            "stationsWithSourceConflicts":sum(any(r["sourceHintCounts"].get(k,0) for k in ("identity_conflict","genre_conflict","cross_source_identity_unlinked","collaboration_identity_held")) for r in records),
             "stationsWithReportedHistory":sum(bool(r["reportedBroadcastDates"]) for r in records),
             "stationsWithMultipleObservationDays":sum(len(r["observationDates"])>1 for r in records),
-            "stationsWithGenreHints":sum(any(r["artistHintCounts"][k] for k in BUCKETS[:-1]) for r in records),
+            "stationsWithGenreHints":sum(any(r["artistHintCounts"][k] or r["collaborationMemberHintCounts"][k] for k in BUCKETS[:-1]) for r in records),
             "verifiedArtistCount":0, "records":records}
 
 def main():

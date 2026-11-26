@@ -79,6 +79,21 @@ def lookup_credit_genres(mbid, request):
             "sourceUrl": "https://musicbrainz.org/artist/" + mbid}
 
 def valid_credit_genres(entry, day=None):
+    members=entry.get("collaborationGenreEvidence")
+    if members is not None:
+        ids=entry.get("artistMbids")
+        if (entry.get("status")!="recording_credit_hypothesis"
+                or not isinstance(ids,list) or not 2<=len(ids)<=20 or any(not valid_id(x) for x in ids)
+                or not isinstance(members,dict) or not members or not set(members)<=set(ids)
+                or entry.get("creditGenreEvidence") is not None):
+            return False
+        for mid,evidence in members.items():
+            if not isinstance(evidence,dict) or "checkedAt" not in evidence:
+                return False
+            if not valid_credit_genres({"status":"recording_credit_hypothesis",
+                    "artistMbids":[mid],"checkedAt":entry["checkedAt"],
+                    "genreCheckedAt":evidence["checkedAt"],"creditGenreEvidence":evidence},day):
+                return False
     if "genreCheckedAt" in entry:
         if (entry.get("creditGenreEvidence") is None
                 or parse_day(entry["genreCheckedAt"]) < parse_day(entry["checkedAt"])
@@ -95,6 +110,13 @@ def valid_credit_genres(entry, day=None):
             and evidence.get("sourceUrl") == "https://musicbrainz.org/artist/" + ids[0]
             and isinstance(evidence.get("genres"), list) and len(evidence["genres"]) <= 200
             and all(safe_name(g) for g in evidence["genres"]))
+
+def store_member_genres(entry, mid, evidence, day):
+    if len(entry["artistMbids"])==1:
+        return dict(entry,creditGenreEvidence=evidence,genreCheckedAt=day)
+    members=dict(entry.get("collaborationGenreEvidence",{}))
+    members[mid]=dict(evidence,checkedAt=day)
+    return dict(entry,collaborationGenreEvidence=members)
 
 def build(metadata,research,titles,*,prior=None,limit=0,request=None,artist_request=None):
     day=parse_day(metadata["scanDate"])
@@ -162,12 +184,18 @@ def build(metadata,research,titles,*,prior=None,limit=0,request=None,artist_requ
     retry_genres=[]
     for k,e in entries.items():
         if (k not in active_pairs or e.get("status")!="recording_credit_hypothesis"
-                or len(e["artistMbids"])!=1 or (today-dt.date.fromisoformat(e["checkedAt"])).days>=30):
+                or (today-dt.date.fromisoformat(e["checkedAt"])).days>=30):
             continue
-        evidence=e.get("creditGenreEvidence")
-        if evidence is None or (not evidence["genres"] and
-                (today-dt.date.fromisoformat(e.get("genreCheckedAt",e["checkedAt"]))).days>=7):
-            retry_genres.append(k)
+        for mid in sorted(set(e["artistMbids"])):
+            if len(e["artistMbids"])==1:
+                evidence=e.get("creditGenreEvidence")
+                checked=e.get("genreCheckedAt",e["checkedAt"])
+            else:
+                evidence=e.get("collaborationGenreEvidence",{}).get(mid)
+                checked=evidence["checkedAt"] if evidence else e["checkedAt"]
+            if evidence is None or (not evidence["genres"] and
+                    (today-dt.date.fromisoformat(checked)).days>=7):
+                retry_genres.append((k,mid))
     attempted=0
     failure=None
     # Avoid hammering the same API after a failed artist research call.
@@ -182,16 +210,16 @@ def build(metadata,research,titles,*,prior=None,limit=0,request=None,artist_requ
     # Reserve at least half the genre budget for newly found credits when present.
     retry_budget=(limit//2 if tasks else limit)
     if not held and artist_request is not None:
-        for k in sorted(retry_genres)[:retry_budget]:
+        for k,mid in sorted(retry_genres)[:retry_budget]:
             genre_attempts+=1
             genre_retries+=1
             old=entries[k]
             try:
-                evidence=lookup_credit_genres(old["artistMbids"][0],artist_request)
+                evidence=lookup_credit_genres(mid,artist_request)
             except (ValueError,OSError,TypeError,KeyError,AttributeError) as exc:
                 failure="http_"+str(exc.code) if isinstance(exc,HTTPError) else "service_or_response_held"
                 break
-            entries[k]=dict(old,creditGenreEvidence=evidence,genreCheckedAt=day)
+            entries[k]=store_member_genres(old,mid,evidence,day)
     for k,t in sorted(tasks.items())[:0 if held or failure else limit]:
         attempted+=1
         try:
@@ -199,21 +227,22 @@ def build(metadata,research,titles,*,prior=None,limit=0,request=None,artist_requ
         except (ValueError,OSError,TypeError,KeyError) as exc:
             failure="http_"+str(exc.code) if isinstance(exc,HTTPError) else "service_or_response_held"
             break
-        if (artist_request is not None and genre_attempts<limit
-                and result.get("status")=="recording_credit_hypothesis"
-                and len(result["artistMbids"])==1):
-            genre_attempts+=1
-            try:
-                result["creditGenreEvidence"]=lookup_credit_genres(result["artistMbids"][0],artist_request)
-                result["genreCheckedAt"]=day
-            except (ValueError,OSError,TypeError,KeyError,AttributeError) as exc:
-                failure="http_"+str(exc.code) if isinstance(exc,HTTPError) else "service_or_response_held"
-                # A failed genre refresh must not erase the exact credit or a
-                # previously corroborated genre list for that same credit.
+        if artist_request is not None and result.get("status")=="recording_credit_hypothesis":
+            for mid in dict.fromkeys(result["artistMbids"]):
+                if genre_attempts>=limit:
+                    break
+                genre_attempts+=1
+                try:
+                    evidence=lookup_credit_genres(mid,artist_request)
+                    result=store_member_genres(result,mid,evidence,day)
+                except (ValueError,OSError,TypeError,KeyError,AttributeError) as exc:
+                    failure="http_"+str(exc.code) if isinstance(exc,HTTPError) else "service_or_response_held"
+                    break
+            if failure:
                 old=entries.get(k,{})
-                if (old.get("artistMbids")==result["artistMbids"]
-                        and old.get("creditGenreEvidence") is not None):
-                    # Retain the original checkedAt; do not re-date stale evidence.
+                if (old.get("artistMbids")==result["artistMbids"] and
+                        (old.get("creditGenreEvidence") is not None or old.get("collaborationGenreEvidence"))):
+                    # Do not re-date old evidence when a refresh fails.
                     break
         entries[k]=dict(result,artistHint=t["artistHint"],titleSha256=t["titleSha256"],
                         source="musicbrainz-recording-search",checkedAt=day,identityVerified=False,publicationAllowed=False)
@@ -223,6 +252,8 @@ def build(metadata,research,titles,*,prior=None,limit=0,request=None,artist_requ
             "duePairCount":len(tasks),"attemptedCount":attempted,"genreLookupAttemptedCount":genre_attempts,
             "dueGenreRetryCount":len(retry_genres),"genreRetryAttemptedCount":genre_retries,
             "creditGenreEvidenceCount":sum(e.get("creditGenreEvidence") is not None for e in entries.values()),
+            "collaborationGenreEvidenceCount":sum(bool(e.get("collaborationGenreEvidence")) for e in entries.values()),
+            "collaborationMembersResearchedCount":sum(len(e.get("collaborationGenreEvidence",{})) for e in entries.values()),
             "heldByArtistService":held,
             "serviceFailure":failure,"entries":dict(sorted(entries.items()))}
 

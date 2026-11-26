@@ -144,6 +144,32 @@ class RecordingTests(unittest.TestCase):
         m=collect(*reports(),limit=1,observe=lambda u:h,transient_titles=transient)
         self.assertEqual(transient[0]["titleHint"],"Song")
         self.assertNotIn("titleHint",m["records"][0]["observations"][0])
+    def test_collaboration_individual_genres_and_bounded_retry(self):
+        m,r,t=fixture()
+        name="Iron Band, Other Band"
+        m["records"][0]["observations"][0]["artistHint"]=t[0]["artistHint"]=name
+        row=recording()
+        row["artist-credit"][0]["joinphrase"]=", "
+        row["artist-credit"].append({"name":"Other Band","artist":{"id":UID}})
+        def search(params):
+            return {"count":1,"recordings":[row]}
+        def artist(mid,params):
+            return {"id":mid,"name":"Canonical Artist","genres":[{"name":"heavy metal" if mid==MBID else "pop","count":1}]}
+        first=build(m,r,t,limit=1,request=search,artist_request=artist)
+        e=next(iter(first["entries"].values()))
+        self.assertEqual(set(e["collaborationGenreEvidence"]),{MBID})
+        self.assertEqual(first["genreLookupAttemptedCount"],1)
+        second=build(m,r,[],prior=first,limit=1,artist_request=artist)
+        e=next(iter(second["entries"].values()))
+        self.assertEqual(set(e["collaborationGenreEvidence"]),{MBID,UID})
+        self.assertEqual(e["collaborationGenreEvidence"][UID]["genres"],["pop"])
+        self.assertEqual(second["genreRetryAttemptedCount"],1)
+        self.assertEqual(second["collaborationMembersResearchedCount"],2)
+        self.assertFalse(e["identityVerified"])
+        e["collaborationGenreEvidence"][UID]["mbid"]=MBID
+        with self.assertRaises(ValueError):
+            build(m,r,[],prior=second)
+
     def test_collaboration_exact_credit(self):
         row=recording()
         row["artist-credit"][0]["joinphrase"]=", "

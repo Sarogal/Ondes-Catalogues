@@ -68,6 +68,33 @@ class CrossSourceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             build(m,music(m),decisions(m),recordings=cr)
 
+    def test_collaboration_individual_and_pair_buckets(self):
+        from test_radio_daily_recording_preview import recording as recording_row
+        m,r,t=fixture()
+        name="Iron Band, Other Band"
+        m["records"][0]["observations"][0]["artistHint"]=t[0]["artistHint"]=name
+        row=recording_row()
+        row["artist-credit"][0]["joinphrase"]=", "
+        row["artist-credit"].append({"name":"Other Band","artist":{"id":UID}})
+        def search(params):
+            return {"count":1,"recordings":[row]}
+        def artist(mid,params):
+            return {"id":mid,"name":"Canonical Artist","genres":[{"name":"heavy metal" if mid==MBID else "pop","count":1}]}
+        cr=recording(m,r,t,limit=1,request=search,artist_request=artist)
+        partial=build(m,music(m),decisions(m),recordings=cr)["records"][0]
+        self.assertEqual(partial["sourceHintCounts"],{"collaboration_partial":1})
+        self.assertEqual(partial["collaborationMemberHintCounts"]["target_hint"],1)
+        self.assertEqual(partial["collaborationMemberHintCounts"]["unclassified_hint"],1)
+        self.assertEqual(partial["artistTitleHintCounts"]["unclassified_hint"],1)
+        cr=recording(m,r,[],prior=cr,limit=1,artist_request=artist)
+        full=build(m,music(m),decisions(m),recordings=cr)["records"][0]
+        self.assertEqual(full["sourceHintCounts"],{"collaboration_credit_genres":1})
+        self.assertEqual(full["artistTitleHintCounts"]["mixed_hint"],1)
+        self.assertEqual(full["artistHintCounts"]["unclassified_hint"],1)
+        self.assertEqual(full["collaborationMemberHintCounts"]["target_hint"],1)
+        self.assertEqual(full["collaborationMemberHintCounts"]["other_hint"],1)
+        self.assertEqual(full["verifiedArtistCount"],0)
+
     def test_stale_wikidata_and_bad_provenance(self):
         m=report()
         w=wiki(m,limit=1,request=request)
