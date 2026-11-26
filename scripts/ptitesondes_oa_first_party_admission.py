@@ -109,6 +109,33 @@ def explicit_minimum_child_audience(description, conditions):
     return False
 
 
+def publishable_minimum_age(description, conditions, age):
+    """Return only an unambiguous first-party minimum, never a guessed range."""
+    minima = set()
+    for raw in (conditions, description):
+        if not isinstance(raw, str):
+            continue
+        text = _norm(raw)
+        if AGE_NEGATIVE.search(text) or EXCLUSIVELY_ADULT.search(text):
+            return None
+        minima.update(int(m[1]) for m in AGE_MINIMUM_CONTEXT.finditer(text))
+        for clause in re.split(r"[.!?;\n\r]+", raw):
+            match = AGE_MINIMUM_LABEL.fullmatch(_norm(clause))
+            if match:
+                minima.add(int(match[1]))
+    if len(minima) != 1:
+        return None
+    minimum = next(iter(minima))
+    if not 1 <= minimum <= 17:
+        return None
+    if isinstance(age, dict):
+        if age.get("min") is not None and age["min"] != minimum:
+            return None
+        if age.get("max") is not None and age["max"] < minimum:
+            return None
+    return minimum
+
+
 def explicit_child_age_text(value):
     if not isinstance(value, str):
         return False
@@ -366,6 +393,11 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published,
         "geo_precision": "venue", "lat": point[0], "lng": point[1],
     }
     fields = set().union(*(set(x) for x in baseline["events"]))
+    minimum = publishable_minimum_age(description, conditions, age)
+    if minimum is not None and "age_min" in fields:
+        candidate["age_min"] = minimum
+        if "age_label" in fields:
+            candidate["age_label"] = f"Dès {minimum} ans"
     categories = {x["category"] for x in baseline["events"]} | PUBLISHABLE_CHILD_ARTS
     if not valid(candidate, categories, fields, today)[0]:
         return fail("oa_direct_public_contract_rejected")
