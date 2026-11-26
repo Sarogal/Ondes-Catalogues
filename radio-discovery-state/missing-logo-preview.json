@@ -1,7 +1,7 @@
 {
   "approvedLogoCount": 0,
   "attemptedImageCount": 0,
-  "attemptedStationCount": 0,
+  "attemptedStationCount": 4,
   "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
   "catalogChanged": false,
   "confirmationCounts": {
@@ -17,6 +17,7 @@
   "publicationAllowed": false,
   "records": [
     {
+      "analyzerVersion": 2,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000017",
@@ -31,6 +32,7 @@
       "sourceSha256": null
     },
     {
+      "analyzerVersion": 2,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000020",
@@ -45,6 +47,7 @@
       "sourceSha256": null
     },
     {
+      "analyzerVersion": 2,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000039",
@@ -59,6 +62,7 @@
       "sourceSha256": null
     },
     {
+      "analyzerVersion": 2,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000067",
