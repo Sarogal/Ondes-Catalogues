@@ -21,9 +21,10 @@ REASONS = frozenset(("school_support_primary",
                      "non_performance_gathering_primary",
                      "evergreen_commercial_studio_availability",
                      "adult_audience_official", "market_gathering_primary",
-                     "mixed_umbrella_programme_primary", "park_visit_programme_primary"))
+                     "mixed_umbrella_programme_primary", "park_visit_programme_primary", "recruitment_gathering_primary"))
 EVENT_ID = re.compile(r"openagenda-[1-9][0-9]{0,11}-20[0-9]{2}-[0-9]{2}-[0-9]{2}\Z")
 TITLE_CLUES = {
+    "recruitment_gathering_primary": re.compile(r"\bjob dating\b", re.I),
     # For the adult-audience reason the exact source-reviewed record,
     # official municipal evidence URL and concert category are checked below.
     "adult_audience_official": re.compile(r"\S"),
@@ -81,7 +82,7 @@ def reviewed_retraction(document, manifest):
            and len({e["id"] for e in events}) == len(events),
            "catalogue_invalid_or_duplicate_ids")
     reject(type(manifest) is dict and manifest.get("schema") == SCHEMA
-           and manifest.get("reviewed_on") in ("2026-11-22", "2026-11-23", "2026-11-25")
+           and manifest.get("reviewed_on") in ("2026-11-22", "2026-11-23", "2026-11-25", "2026-11-26")
            and type(manifest.get("catalogue_min_count")) is int
            and manifest["catalogue_min_count"] >= 1
            and type(manifest.get("approvals")) is list
@@ -137,6 +138,14 @@ def reviewed_retraction(document, manifest):
                    and row["evidence_url"] == "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/"
                    and expected["source_url"] == "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
                    "invalid_official_park_visit_evidence")
+        if row["reason_code"] == "recruitment_gathering_primary":
+            reject(manifest["reviewed_on"] == "2026-11-26"
+                   and eid == "openagenda-21002913-2026-12-01"
+                   and expected.get("category") == "spectacle-jeunesse"
+                   and expected.get("time") == "09:30"
+                   and row["evidence_url"] == expected["source_url"]
+                   and row["evidence_url"] == "https://openagenda.com/semaine-industrie-2026/events/21002913_industrie-fait-son-show-job-dating-et-spectacle-pour-changer-votre-regard-sur-lindustrie",
+                   "invalid_official_recruitment_evidence")
         targets[eid] = row
     original = {e["id"]: e for e in events}
     present = [eid for eid in targets if eid in original]

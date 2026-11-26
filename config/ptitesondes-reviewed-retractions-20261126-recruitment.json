@@ -1,0 +1,32 @@
+{
+  "schema": "ptitesondes.reviewed_retractions.v1",
+  "reviewed_on": "2026-11-26",
+  "catalogue_min_count": 1033,
+  "approvals": [
+    {
+      "action": "withdraw",
+      "reason_code": "recruitment_gathering_primary",
+      "evidence_url": "https://openagenda.com/semaine-industrie-2026/events/21002913_industrie-fait-son-show-job-dating-et-spectacle-pour-changer-votre-regard-sur-lindustrie",
+      "expected_event": {
+        "id": "openagenda-21002913-2026-12-01",
+        "title": "Industrie fait son show : job dating et spectacle pour changer votre regard sur l'industrie !",
+        "category": "spectacle-jeunesse",
+        "category_label": "Spectacle jeune public",
+        "date_start": "2026-12-01",
+        "date_end": "2026-12-01",
+        "time": "09:30",
+        "city": "Nogent-le-Rotrou",
+        "department": "Eure-et-Loir",
+        "region": "Centre-Val de Loire",
+        "venue": "Nogent-le-Rotrou - Agence NOGENT LE ROTROU",
+        "source_url": "https://openagenda.com/semaine-industrie-2026/events/21002913_industrie-fait-son-show-job-dating-et-spectacle-pour-changer-votre-regard-sur-lindustrie",
+        "source_label": "Semaine de l'industrie 2026 — Licence Ouverte 2.0 — données mises à jour le 25/11/2026",
+        "verified_at": "2026-11-26",
+        "geo_verified_at": "2026-11-26",
+        "geo_precision": "venue",
+        "lat": 48.318722,
+        "lng": 0.802858
+      }
+    }
+  ]
+}
