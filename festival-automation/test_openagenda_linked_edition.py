@@ -18,6 +18,7 @@ from grossesondes_openagenda_linked_edition import (
     validate_private_proposal, validate_verified_row, independently_verify,
     prove_municipal_edition,
 )
+from national_openagenda_research import pass_edition_title, provider_title_matches
 from grossesondes_cloud_sync import collect_registered_openagenda_sources
 from grossesondes_stage import stage
 from test_grosses_stage import fixtures
@@ -90,6 +91,41 @@ class OpenAgendaLinkedPublisherTests(TestCase):
         self.assertFalse(row["showOnMap"])
         self.assertEqual(row["lineup"], [])
         self.assertIsNone(row["lat"])
+
+    def test_commercial_pass_is_a_research_alias_not_edition_dates(self):
+        for suffix in ("4J PASS (4-events)", "Pass 3 jours", "Full Pass",
+                       "Pass Weekend"):
+            with self.subTest(suffix=suffix):
+                raw = "Festival Ferrailles du Nord Festival 2027 - " + suffix
+                self.assertEqual(pass_edition_title(raw, 2027), TITLE)
+                self.assertTrue(provider_title_matches(raw, TITLE, 2027))
+        commercial = "Festival Ferrailles du Nord Festival 2027 - 4J PASS (4-events)"
+        q = queue()
+        q["dossiers"][0]["name_hint"] = commercial
+        catalogue = {"schema": 1, "festivals": []}
+        self.assertEqual(eligible(q, catalogue, D1)[0]["title"], TITLE)
+        oa = OA.replace(TITLE, commercial).replace(
+            "Festival annoncé en 2027.", "Pass du 10 au 11 juin 2027.")
+        self.assertEqual(attributed_site(oa, TITLE, EVENT), SITE)
+        proposal = private_proposal(TITLE, SITE, DATES, D1, event_ref=EVENT)
+        row = independently_verify(proposal, D2, event_fetch=lambda _: oa,
+                                   organizer_fetch=lambda _: PRIMARY)
+        self.assertEqual(row["startDate"], DATES[0])
+        self.assertEqual(row["endDate"], DATES[1])
+        forged = private_proposal(TITLE, SITE, ("2027-06-10", "2027-06-11"),
+                                  D1, event_ref=EVENT)
+        self.assertIsNone(independently_verify(
+            forged, D2, event_fetch=lambda _: oa, organizer_fetch=lambda _: PRIMARY))
+
+    def test_commercial_alias_does_not_remove_artist_or_wrong_year(self):
+        for raw in ("Ferrailles du Nord Festival 2026 - Pass 3 jours",
+                    "Ferrailles du Nord Festival 2027 - Pass 3 jours + autre groupe",
+                    "Concert Ferrailles du Nord Festival 2027 - Pass 3 jours",
+                    "Ferrailles du Nord Festival 2026 2027 - Full Pass",
+                    "Autre Festival 2027 - Pass 3 jours"):
+            with self.subTest(raw=raw):
+                self.assertFalse(provider_title_matches(raw, TITLE, 2027))
+                self.assertIsNone(attributed_site(OA.replace(TITLE, raw), TITLE, EVENT))
 
     def test_no_unsafe_openagenda_url_or_embedded_authority(self):
         for url in (
