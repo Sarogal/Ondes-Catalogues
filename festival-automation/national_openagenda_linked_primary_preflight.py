@@ -236,9 +236,10 @@ def examine(state, queue, catalogue, today, *, event_fetch=None,
         if dates is None and current_hints.get(url) is not None:
             row["professional_research_review_only"] = discover_professional_profiles(
                 current_hints[url], source["title"], source["year"], fetch=read_site)
-            row["professional_official_detail_review_only"] = examine_professional_details(
-                row["professional_research_review_only"], source["title"],
-                source["year"], today, fetch=read_site)
+            if site is None:
+                row["professional_official_detail_review_only"] = examine_professional_details(
+                    row["professional_research_review_only"], source["title"],
+                    source["year"], today, fetch=read_site)
         if url not in observed:
             observed[url] = {"lastChecked": today}
         output.append(row)
@@ -274,7 +275,8 @@ def stable_private_proposals(state, queue, catalogue, report, today):
                      for lead in validated_openagenda_leads(state, today)}
     for row in report["rows"]:
         if (isinstance(row, dict)
-                and row.get("status") == "OPENAGENDA_OFFICIAL_LINK_UNPROVEN"
+                and row.get("status") in ("OPENAGENDA_OFFICIAL_LINK_UNPROVEN",
+                    "OPENAGENDA_OR_FIRST_PARTY_HTTPS_UNAVAILABLE")
                 and row.get("publication_authorized") is False):
             key = row.get("dossier_id"), row.get("event_ref_review_only")
             source = source_map.get(key)
