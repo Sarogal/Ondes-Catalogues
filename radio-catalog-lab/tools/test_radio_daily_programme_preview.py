@@ -69,5 +69,19 @@ class ProgrammeTests(unittest.TestCase):
         result=read_icy_titles(io.BytesIO(block("StreamTitle='Nick Cave & The Bad Seeds - Song';")),"4",10,lambda:0)
         self.assertEqual(result["titleHints"][0]["artistHint"],"Nick Cave & The Bad Seeds")
 
+
+    def test_reported_history_does_not_fake_independent_observation_days(self):
+        m=report()
+        obs=m["records"][0]["observations"]
+        obs[0].update(method="station_history_json",sourceSha256=safe_digest("source"),broadcastDate="2026-11-24")
+        obs.append(dict(obs[0],broadcastDate="2026-11-23"))
+        result=build(m,research(m,limit=1,request=service),decisions(m))
+        row=result["records"][0]
+        self.assertEqual(row["distinctHistoricalArtistTitleHints"],1)
+        self.assertEqual(row["reportedBroadcastDates"],["2026-11-23","2026-11-24"])
+        self.assertEqual(row["observationDates"],[])
+        self.assertEqual(result["stationsWithMultipleObservationDays"],0)
+        self.assertEqual(result["stationsWithReportedHistory"],1)
+
 if __name__=="__main__":
     unittest.main()
