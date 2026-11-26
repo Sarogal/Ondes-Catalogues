@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-26T05:11:19+01:00",
+  "updated_at": "2026-11-26T05:26:45+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -21243,6 +21243,66 @@
       "geo_precision": "venue",
       "lat": 46.800676,
       "lng": 0.527157
+    },
+    {
+      "id": "openagenda-28539575-2027-01-09",
+      "title": "Musique et doudou",
+      "category": "eveil-musical",
+      "category_label": "Éveil musical",
+      "date_start": "2027-01-09",
+      "date_end": "2027-01-09",
+      "time": "09:30 ; 10:30 ; 11:30",
+      "city": "Rouen",
+      "department": "Seine-Maritime",
+      "region": "Normandie",
+      "venue": "Théâtre des Arts",
+      "source_url": "https://openagenda.com/la-murmure/events/28539575_musique-et-doudou-3600042",
+      "source_label": "Opéra Orchestre Normandie Rouen — Licence Ouverte 2.0 — données mises à jour le 16/07/2026",
+      "verified_at": "2026-11-26",
+      "geo_verified_at": "2026-11-26",
+      "geo_precision": "venue",
+      "lat": 49.439785,
+      "lng": 1.089912
+    },
+    {
+      "id": "openagenda-79678494-2026-12-12",
+      "title": "Musique et doudou",
+      "category": "eveil-musical",
+      "category_label": "Éveil musical",
+      "date_start": "2026-12-12",
+      "date_end": "2026-12-12",
+      "time": "09:30 ; 10:30 ; 11:30",
+      "city": "Rouen",
+      "department": "Seine-Maritime",
+      "region": "Normandie",
+      "venue": "Théâtre des Arts",
+      "source_url": "https://openagenda.com/la-murmure/events/79678494_musique-et-doudou-2915046",
+      "source_label": "Opéra Orchestre Normandie Rouen — Licence Ouverte 2.0 — données mises à jour le 13/07/2026",
+      "verified_at": "2026-11-26",
+      "geo_verified_at": "2026-11-26",
+      "geo_precision": "venue",
+      "lat": 49.439785,
+      "lng": 1.089912
+    },
+    {
+      "id": "openagenda-88547855-2026-11-29",
+      "title": "Spectacle Cahutes - à partir de 6 mois",
+      "category": "spectacle-jeunesse",
+      "category_label": "Spectacle jeune public",
+      "date_start": "2026-11-29",
+      "date_end": "2026-11-29",
+      "time": "10:30",
+      "city": "Sotteville-lès-Rouen",
+      "department": "Seine-Maritime",
+      "region": "Normandie",
+      "venue": "Maison Pour tous, Sotteville-Lès-Rouen",
+      "source_url": "https://openagenda.com/la-murmure/events/88547855_spectacle-cahutes-a-partir-de-6-mois",
+      "source_label": "L'agenda différent de la Seine-Maritime — Licence Ouverte 2.0 — données mises à jour le 02/11/2026",
+      "verified_at": "2026-11-26",
+      "geo_verified_at": "2026-11-26",
+      "geo_precision": "venue",
+      "lat": 49.413898,
+      "lng": 1.096552
     }
   ]
 }
