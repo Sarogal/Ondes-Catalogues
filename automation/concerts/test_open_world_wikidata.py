@@ -47,16 +47,51 @@ class WikidataResearchTests(unittest.TestCase):
         self.assertEqual(sites.select_sources(report, registry(), DAY,
                                              wikidata=result), [])
 
-    def test_ambiguous_and_incomplete_never_get_homepage(self):
-        for response in (
-                {"search": [{"id": "Q123", "label": NAME},
-                            {"id": "Q124", "label": NAME}]},
-                {"search": [{"id": "Q123", "label": NAME}], "search-continue": 20}):
-            def ambiguous(params):
-                self.assertEqual(params["action"], "wbsearchentities")
-                return response
-            self.assertEqual(wd.research(NAME, ambiguous),
-                             {"status": "ambiguous_or_incomplete"})
+    def test_incomplete_never_gets_homepage(self):
+        def incomplete(params):
+            self.assertEqual(params["action"], "wbsearchentities")
+            return {"search": [{"id": "Q123", "label": NAME}],
+                    "search-continue": 20}
+        self.assertEqual(wd.research(NAME, incomplete),
+                         {"status": "ambiguous_or_incomplete"})
+
+    def test_explicit_nonperformer_collision_is_only_navigation_hint(self):
+        for kind in ("Q11424", "Q482994", "Q7366", "Q4167410"):
+            with self.subTest(kind=kind):
+                def collision(params):
+                    if params["action"] == "wbsearchentities":
+                        return {"search": [{"id": "Q123", "label": NAME},
+                                            {"id": "Q124", "label": NAME}]}
+                    self.assertEqual(params["ids"], "Q123|Q124")
+                    data = request({**params, "ids": "Q123"})
+                    data["entities"]["Q124"] = {
+                        "id": "Q124", "labels": {"en": {"value": NAME}},
+                        "claims": {"P31": [statement({"id": kind})],
+                                   "P856": [statement("https://unrelated.example/")]}}
+                    return data
+                result = wd.build(registry(), DAY, request=collision)
+                entry = result["entries"][NAME.casefold()]
+                self.assertEqual(entry["qid"], "Q123")
+                self.assertEqual(entry["homepageHints"], [URL])
+                self.assertFalse(entry["identityVerified"])
+                self.assertFalse(entry["publicationAllowed"])
+                self.assertEqual(result["approvalsProposed"], 0)
+
+    def test_musical_or_unresolved_collision_stays_held(self):
+        for kinds in (["Q215380"], ["Q5"], ["Q999"], [], None):
+            with self.subTest(kinds=kinds):
+                def collision(params):
+                    if params["action"] == "wbsearchentities":
+                        return {"search": [{"id": "Q123", "label": NAME},
+                                            {"id": "Q124", "label": NAME}]}
+                    data = request({**params, "ids": "Q123"})
+                    if kinds is not None:
+                        data["entities"]["Q124"] = {
+                            "id": "Q124", "labels": {"en": {"value": NAME}},
+                            "claims": {"P31": [statement({"id": k}) for k in kinds]}}
+                    return data
+                self.assertEqual(wd.research(NAME, collision),
+                                 {"status": "ambiguous_or_incomplete"})
 
     def test_nonmusical_homonym_held(self):
         def wrong(params):
