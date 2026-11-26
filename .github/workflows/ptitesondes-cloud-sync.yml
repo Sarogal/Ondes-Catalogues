@@ -80,6 +80,7 @@ jobs:
           python -m unittest discover -s tests -p 'test_daily_outings_proof.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_places.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_place_preflight.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_open_world_permanent_place_*.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_historical_gps*.py' -v
       - name: Contrôler les lieux permanents (append-only)
         id: places
