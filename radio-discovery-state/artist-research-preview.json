@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 124,
   "dueNameCount": 74,
-  "attemptedCount": 1,
+  "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "the rolling stones",
+  "retryAfterKey": "the war on drugs",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -674,6 +674,15 @@
       "genreSource": "musicbrainz-community",
       "sourceUrl": "https://musicbrainz.org/artist/19a2a56f-fd53-4dea-8cec-88046efb0fd5",
       "artistName": "The Gutter Twins",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "the static teeth": {
+      "status": "not_found",
+      "artistName": "The Static Teeth",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,
