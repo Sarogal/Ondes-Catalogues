@@ -12,6 +12,7 @@ from radio_daily_v9_generator import BASELINE, build as add_build, digest, encod
 from radio_daily_baseline_verify import strict_json, validate_shape, verify_baseline
 from radio_daily_repair_plan import plan as repair_plan, simulate as repair_simulate
 from radio_daily_status_preview import build as status_build, MAX_CHECKS
+from radio_daily_logo_plan import plan as logo_plan, stage as logo_stage
 
 
 def stream_urls(station):
@@ -19,7 +20,8 @@ def stream_urls(station):
 
 
 def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation,
-          repair_report, status_report=None, *, urls=None, expected=BASELINE):
+          repair_report, status_report=None, logo_maintenance=None, missing_logo=None, *,
+          urls=None, artwork=None, expected=BASELINE):
     old = strict_json(raw)
     validate_shape(old)
     if digest(raw) != expected:
@@ -98,7 +100,33 @@ def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation
             status_deferred.append({"reason": "mass_transition_held"})
     else:
         status_deferred.append({"reason": "status_report_not_supplied"})
-    changed = bool(added or applied or transitions)
+    logo_changes, logo_deferred, objects = [], [], {}
+    materials = dict(artwork or {})
+    if (logo_maintenance is None)!=(missing_logo is None):
+        raise ValueError("incomplete artwork reports")
+    if logo_maintenance is not None:
+        proposals, logo_deferred = logo_plan(raw,day,logo_maintenance,missing_logo,expected=expected)
+        if set(materials)-{p["goStationId"] for p in proposals}:
+            raise ValueError("unexpected artwork material")
+        for p in proposals:
+            sid=p["goStationId"]
+            if sid not in materials:
+                logo_deferred.append({"goStationId":sid,"operation":p["operation"],
+                    "imageSha256":p["image"]["imageSha256"],"reason":"verified_object_and_identity_material_required"})
+                continue
+            descriptor,path,data=logo_stage(original[sid],p,materials[sid])
+            if path in objects and objects[path]!=data:
+                raise ValueError("artwork digest collision")
+            objects[path]=data
+            previous=copy.deepcopy(current[sid]["logo"])
+            current[sid]["logo"]=descriptor
+            logo_changes.append({"goStationId":sid,"operation":p["operation"],"previousLogo":previous,
+                                 "proposedLogo":descriptor,"objectPath":path})
+    elif materials:
+        raise ValueError("artwork material without reports")
+    else:
+        logo_deferred.append({"reason":"artwork_reports_not_supplied"})
+    changed = bool(added or applied or transitions or logo_changes)
     report = {"schemaVersion": 1, "publicationAllowed": False, "signed": False,
               "catalogBaselineSha256": expected, "scanDate": day,
               "baselineSequence": old["release_sequence"], "candidateSequence": None,
@@ -106,7 +134,9 @@ def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation
               "repaired": applied, "admissionDeferred": deferred,
               "repairDeferred": checked["deferred"] + pending,
               "statusTransitions": transitions, "statusDeferred": status_deferred,
-              "unsupportedOperations": ["logo_attachment", "logo_update", "merge_redirect"],
+              "logoChanges": logo_changes, "logoDeferred": logo_deferred,
+              "previewObjectPaths": sorted(objects),
+              "unsupportedOperations": ["merge_redirect"],
               "removed": [], "existingStationsPreserved": len(old["stations"]),
               "tombstonesPreserved": len(old["tombstones"])}
     if not changed:
@@ -126,6 +156,11 @@ def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation
         if station["status"] != p["proposedStatus"]:
             raise ValueError("unexpected status delta")
         station["status"] = p["previousStatus"]
+    for p in logo_changes:
+        station=by_id[p["goStationId"]]
+        if station["logo"]!=p["proposedLogo"]:
+            raise ValueError("unexpected artwork delta")
+        station["logo"]=p["previousLogo"]
     for k in ("release_sequence", "generated_at"):
         restored[k] = old[k]
     if restored != old:
@@ -140,7 +175,7 @@ def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     names = ("pointer", "baseline", "discovery", "dossiers", "decisions", "maintenance",
-             "repair", "confirmation", "repair-report", "status-report", "output-dir")
+             "repair", "confirmation", "repair-report", "status-report", "logo-maintenance", "missing-logo", "output-dir")
     for name in names:
         p.add_argument("--" + name, type=Path, required=True)
     a = p.parse_args()
@@ -151,7 +186,7 @@ def main():
     # Public runner has no transient repair URLs yet; pending repairs are
     # recorded rather than fetched or guessed. No competing v9 artifact.
     payload, report = build(raw, *(strict_json(load_bytes(getattr(a, k))) for k in
-        ("discovery", "dossiers", "decisions", "maintenance", "repair", "confirmation", "repair_report", "status_report")))
+        ("discovery", "dossiers", "decisions", "maintenance", "repair", "confirmation", "repair_report", "status_report", "logo_maintenance", "missing_logo")))
     a.output_dir.mkdir(parents=True)
     if payload is not None:
         (a.output_dir / "unsigned-candidate-v9.json").write_bytes(payload)
