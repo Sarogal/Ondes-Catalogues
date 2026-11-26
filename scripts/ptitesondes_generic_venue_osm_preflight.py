@@ -16,6 +16,8 @@ from collections import Counter
 from time import monotonic
 from urllib.error import HTTPError, URLError
 from http.client import HTTPException
+import socket
+import ssl
 from urllib.parse import urlencode
 from urllib.request import Request, build_opener, HTTPRedirectHandler
 
@@ -23,7 +25,7 @@ from proof import meters, norm
 from ptitesondes_candidate_promotion import admission_failure_group, api_record
 
 SCHEMA = "ptitesondes.generic_venue_osm_preflight.v1"
-ENDPOINTS = ("https://lz4.overpass-api.de/api/interpreter",
+ENDPOINTS = ("https://overpass-api.de/api/interpreter",
              "https://overpass.private.coffee/api/interpreter")
 MAX_BACKLOG = 4000
 MAX_PER_RUN = 12
@@ -133,10 +135,11 @@ def overpass_query(lat, lng):
 
 # Per-process only: one bounded rotation shares health across both OSM paths.
 # Fixed labels, never query text, venue names, URLs or response bodies.
-OSM_ENDPOINT_LABELS = ("lz4", "private_coffee")
+OSM_ENDPOINT_LABELS = ("fossgis", "private_coffee")
 OSM_PATHS = ("nearby", "named", "acceslibre")
 OSM_CATEGORIES = ("success", "cooldown", "http_400", "http_403", "http_429",
                   "http_5xx", "http_other", "timeout", "network",
+                  "dns", "tls", "connection",
                   "invalid_response", "invalid_json", "incomplete_response",
                   "invalid_size")
 _osm_counters = Counter()
@@ -155,6 +158,12 @@ def _osm_error_category(error):
     reason = error.reason if isinstance(error, URLError) else error
     if isinstance(reason, TimeoutError):
         return "timeout"
+    if isinstance(reason, socket.gaierror):
+        return "dns"
+    if isinstance(reason, ssl.SSLError):
+        return "tls"
+    if isinstance(reason, ConnectionError):
+        return "connection"
     return "network"
 
 
@@ -199,7 +208,8 @@ def fetch_osm_query(query, *, pathway, unavailable):
                         else "invalid_response")
         _osm_counters[pathway, label, category] += 1
         delay = {"http_429": 300, "http_5xx": 120, "timeout": 60,
-                 "network": 60, "http_403": 300}.get(category, 0)
+                 "network": 60, "dns": 120, "tls": 120, "connection": 60,
+                 "http_403": 300}.get(category, 0)
         if delay:
             _osm_cooldowns[label] = monotonic() + delay
     raise ValueError(unavailable)
