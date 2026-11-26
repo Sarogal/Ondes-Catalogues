@@ -576,12 +576,11 @@ def _verified_street(street, venue, place):
     return 2 * radius * math.asin(min(1, math.sqrt(arc))) <= 125
 
 
-def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
-    """Fresh OpenAgenda-owned single-event export; no external corroboration.
+def _verified_export_identity(raw_json, url, when, venue, *, agenda_uid, event_uid):
+    """Authenticate original UID, slug, scheduled date, physical site and title.
 
-    The public national index may suggest IDs, but cannot sign a concert.
-    The actual OpenAgenda export must bind both IDs to the exact source slug,
-    date, published location and music classification.
+    Identity alone never establishes editorial eligibility or admission.
+    Shared by the independent publication and editorial review contracts.
     """
     if not is_openagenda_event_url(url):
         raise ValueError("OpenAgenda: noncanonical event URL")
@@ -674,6 +673,17 @@ def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
         suffix = re.search(r"\s+[-–—]\s+([^–—]+?)\s*\Z", title)
         if suffix and normalized(suffix.group(1)) == normalized(venue.get("name")):
             title = title[:suffix.start()]
+    return record, title
+
+
+class MissingGenreEvidence(ValueError):
+    """An authenticated scheduled source lacks a supported musical genre."""
+
+
+def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
+    """Authenticate and qualify one fresh first-party OpenAgenda export."""
+    record, title = _verified_export_identity(
+        raw_json, url, when, venue, agenda_uid=agenda_uid, event_uid=event_uid)
     keys = record.get("keywords")
     raw_genres = ((keys.get("fr") or keys.get("en"))
                   if isinstance(keys, dict) else None)
@@ -696,7 +706,7 @@ def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
             record, raw_genres if isinstance(raw_genres, list) else [], genres):
         genres = []
     if not genres or len(genres) > 20:
-        raise ValueError("OpenAgenda: original metal/punk genre evidence missing")
+        raise MissingGenreEvidence("OpenAgenda: original metal/punk genre evidence missing")
     # The raw export has no typed performers in many official records.
     # An explicit promotional suffix is not part of the group's identity.
     # If the original announcement cannot corroborate the cleaned name,

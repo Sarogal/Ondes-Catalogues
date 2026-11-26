@@ -1,0 +1,56 @@
+name: "P'tites Ondes — découverte Acceslibre sans publication"
+on:
+  pull_request:
+    paths:
+      - scripts/ptitesondes_acceslibre_geo_hints.py
+      - tests/test_ptitesondes_acceslibre_geo_hints.py
+      - .github/workflows/ptitesondes-acceslibre-geo-hints.yml
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/ptitesondes-acceslibre-geo-hints.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify streaming schema and ambiguous venue refusal
+        env:
+          PYTHONPATH: scripts:tests
+        run: python -m unittest -v test_ptitesondes_acceslibre_geo_hints
+  live:
+    needs: offline
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download one national export and measure coverage
+        run: |
+          python scripts/ptitesondes_acceslibre_geo_hints.py --catalogue docs/ptitesondes/sorties.json --day "$(TZ=Europe/Paris date +%F)" --live | tee "$RUNNER_TEMP/acceslibre-summary.json"
+          python - "$RUNNER_TEMP/acceslibre-summary.json" <<'PY'
+          import json, sys, os
+          with open(sys.argv[1]) as f:
+              report = json.load(f)
+          assert report["publication_ready"] is False and report["public_writes"] == 0
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              for k in ("groups", "rows_scanned", "unique_hints", "ambiguous_groups", "unmatched_groups", "covered_missing_events"):
+                  assert type(report[k]) is int and report[k] >= 0
+                  f.write(f"- {k}: {report[k]}\n")
+          PY
+          git diff --exit-code -- docs/ptitesondes/sorties.json

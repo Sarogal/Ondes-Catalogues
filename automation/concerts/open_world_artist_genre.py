@@ -19,6 +19,8 @@ from zoneinfo import ZoneInfo
 import artist_genre_knowledge as knowledge
 import artist_official_bio as bio
 import open_world_frontier as frontier
+import open_world_musicbrainz as mb
+import open_world_wikidata as wd
 import open_world_site_research as sites
 import source_evidence_probe as probe
 from triage import words
@@ -28,7 +30,7 @@ MAX_SOURCES = 24
 MAX_HTML = probe.MAX_BYTES
 
 
-def candidate_sources(registry, today):
+def candidate_sources(registry, today, *, musicbrainz=None, wikidata=None):
     """Follow only named, performer-specific links; ambiguous hosts stay held."""
     if (not isinstance(registry, dict)
             or registry.get("schema") != "grossesondes.concert.intake.v1"
@@ -70,6 +72,43 @@ def candidate_sources(registry, today):
                 url = sites.safe_page(lead.get("sourceUrl"))
                 if url:
                     hints[frontier.normalized(name)].add((name, url))
+    # Directory results are ONLY additional navigation hints for names
+    # present in the live pending registry. Never import community genres.
+    # Prefer existing event-attached links; directory suggestions fill gaps,
+    # rather than turning a tour page and a homepage into false ambiguity.
+    direct_keys = set(hints)
+    for _, task in mb.candidate_tasks(registry, today).items():
+        name = task[2]
+        key = frontier.normalized(name)
+        if not key or key in direct_keys:
+            continue
+        for directory, schema, id_field, valid_id in (
+                (musicbrainz, mb.SCHEMA, "mbid", mb.valid_id),
+                (wikidata, wd.SCHEMA, "qid", wd.valid_id)):
+            if (not isinstance(directory, dict) or directory.get("schema") != schema
+                    or directory.get("publicationAllowed") is not False
+                    or directory.get("approvalsProposed") != 0
+                    or not isinstance(directory.get("entries"), dict)):
+                continue
+            entry = directory["entries"].get(mb.exact(name))
+            if (not isinstance(entry, dict) or entry.get("status") != "hypothesis"
+                    or entry.get("identityVerified") is not False
+                    or entry.get("publicationAllowed") is not False
+                    or mb.exact(entry.get("artistName")) != mb.exact(name)
+                    or not valid_id(entry.get(id_field))
+                    or not isinstance(entry.get("homepageHints"), list)
+                    or len(entry["homepageHints"]) > 20):
+                continue
+            try:
+                age = (today - dt.date.fromisoformat(entry["checkedAt"])).days
+            except (KeyError, TypeError, ValueError):
+                continue
+            if not 0 <= age <= 30:
+                continue
+            for raw in entry["homepageHints"]:
+                url = sites.safe_page(raw)
+                if url:
+                    hints[key].add((name, url))
     selected, ambiguous = [], 0
     for name_key, values in sorted(hints.items()):
         urls = {u for _, u in values}
@@ -83,6 +122,7 @@ def candidate_sources(registry, today):
             "name": display_name,
             "identityKey": frontier.identity("artist", display_name),
             "url": url,
+            "discoveryKind": "event-attached-hint" if name_key in direct_keys else "directory-hint",
         })
     return selected, ambiguous
 
@@ -152,11 +192,11 @@ def _memory(prior):
 
 
 def build(registry, today, *, prior=None, slot=0, limit=18,
-          fetch=probe.safe_fetch):
+          fetch=probe.safe_fetch, musicbrainz=None, wikidata=None):
     if (slot not in (0, 1, 2) or type(limit) is not int
             or not 1 <= limit <= MAX_SOURCES):
         raise ValueError("Invalid bounded artist research cohort")
-    sources, ambiguous = candidate_sources(registry, today)
+    sources, ambiguous = candidate_sources(registry, today, musicbrainz=musicbrainz, wikidata=wikidata)
     facts = _memory(prior)
     if sources:
         offset = ((today.toordinal() * 3 + slot) * limit) % len(sources)
@@ -176,7 +216,7 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
                 genres = profile_genres(html, source["name"])
                 evidence_kind = "unverified-origin-artist-structured-profile"
                 genre_url = url
-            except (ValueError, TypeError, RecursionError):
+            except MissingStructuredArtistGenre:
                 # Follow ONLY an explicit same-host Bio/About link. Even a
                 # convincing first-person biography is untrusted research
                 # until domain ownership is independently authenticated.
@@ -225,6 +265,8 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
         "asOf": today.isoformat(),
         "scanSlot": slot,
         "candidateArtistSources": len(sources),
+        "directoryHintSources": sum(s["discoveryKind"] == "directory-hint" for s in sources),
+        "directoryHintSourcesChecked": sum(s["discoveryKind"] == "directory-hint" for s in selection),
         "ambiguousArtistSourcesHeld": ambiguous,
         "sourcesChecked": len(selection),
         "profilesRefreshed": refreshed,
@@ -244,14 +286,23 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--registry", required=True, type=Path)
     p.add_argument("--out", required=True, type=Path)
+    p.add_argument("--musicbrainz", type=Path)
+    p.add_argument("--wikidata", type=Path)
     p.add_argument("--scan-slot", type=int, choices=(0, 1, 2), default=0)
     p.add_argument("--max-sources", type=int, default=18)
     args = p.parse_args()
     day = dt.datetime.now(ZoneInfo("Europe/Paris")).date()
     registry = json.loads(args.registry.read_text("utf-8"))
     prior = json.loads(args.out.read_text("utf-8")) if args.out.exists() else None
+    def optional_directory(path):
+        try:
+            return json.loads(path.read_text("utf-8")) if path else None
+        except (OSError, ValueError):
+            return None
     result = build(registry, day, prior=prior, slot=args.scan_slot,
-                   limit=args.max_sources)
+                   limit=args.max_sources,
+                   musicbrainz=optional_directory(args.musicbrainz),
+                   wikidata=optional_directory(args.wikidata))
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(
         json.dumps(result, indent=2, ensure_ascii=False, sort_keys=True)

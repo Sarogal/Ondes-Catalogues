@@ -1,11 +1,12 @@
 import unittest
 from unittest.mock import Mock
 from datetime import date
-from ptitesondes_catalogue_geo_proof_batch import research_group as _research_group, run_batch, named_osm_query
+from ptitesondes_catalogue_geo_proof_batch import research_group as _research_group, run_batch, named_osm_query, administrative_commune_code
 
 
 def research_group(*args, **kwargs):
     kwargs.setdefault("named_osm_get", lambda *_: {"elements": []})
+    kwargs.setdefault("commune_get", lambda *_: [])
     return _research_group(*args, **kwargs)
 from test_ptitesondes_shared_venue_location_evidence import directory, html, ban, GROUP, URL
 import test_ptitesondes_unnumbered_official_geo_proof as unnumbered
@@ -153,6 +154,25 @@ class CatalogueGeoProofTests(unittest.TestCase):
         self.assertIn("unnumbered street", check(street, page)[0]["venue_point"]["geo_source"])
         street["elements"][0]["tags"]["addr:postcode"] = "99999"
         self.assertNotIn("venue_point", check(street, page)[0])
+
+    def test_admin_geo_fallback_without_municipal_site(self):
+        g = dict(unnumbered.GROUP, department="Corse-du-Sud (2A)",
+                 active_ids=["old"], missing_ids=["old"], source_urls=[])
+        row = dict(nom=g["city"], code="2A123", codeDepartement="2A")
+        response = unnumbered.osm(city=g["city"])
+        response["elements"][0]["tags"]["website"] = "https://independent-venue.example/"
+        named = Mock(return_value=response)
+        r = research_group(g, DAY, directory_get=lambda _: {},
+                           commune_get=lambda _: [row],
+                           named_osm_get=named, html_get=lambda _: unnumbered.html(),
+                           ign_get=Mock(side_effect=AssertionError()))
+        self.assertEqual(r["status"], "independent_venue_point_found")
+        self.assertFalse(r["publication_ready"])
+        named.assert_called_once_with("2A123", g["venue"])
+        for rows in ([], [row, row], [dict(row, code="2B123")],
+                     [dict(row, nom="Other")], [dict(row, codeDepartement="2B")]):
+            self.assertIsNone(administrative_commune_code(g, rows))
+        self.assertIn('["ref:INSEE"="2A123"]', named_osm_query("2A123", g["venue"]))
 
     def test_named_query_is_bounded_and_literal(self):
         query = named_osm_query("12345", 'Théâtre "test"')

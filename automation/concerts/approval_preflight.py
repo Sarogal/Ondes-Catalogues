@@ -233,10 +233,15 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
     }
     require(len(old_signed) == len(previous["approvals"]),
             "Duplicate or malformed previously signed approvals")
+    from scripts import concert_editorial_exclusion_contract as editorial
+    editorial_rows = previous.get(editorial.KEY, [])
+    require(isinstance(editorial_rows, list), "Invalid editorial correction ledger")
+    editorial_ids = {row["originalEvent"]["id"] for row in editorial_rows}
     pending_old = set(old_signed) - already
     baseline_by_id = None
     baseline_ids = already
-    if pending_old:
+    baseline_receipts = None
+    if pending_old or editorial_ids:
         baseline, _baseline_stats = publisher(
             reference, current, previous, today)
         baseline_rows = baseline.get("events") if isinstance(baseline, dict) else None
@@ -245,8 +250,15 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
         baseline_by_id = {row.get("id"): row for row in baseline_rows
                           if isinstance(row, dict)}
         baseline_ids = set(baseline_by_id)
-        require(len(baseline_by_id) == len(baseline_rows)
-                and already.issubset(baseline_ids)
+        baseline_receipts = baseline.get(editorial.RECEIPTS, [])
+        require(isinstance(baseline_receipts, list), "Invalid editorial receipts")
+        removed = already - baseline_ids
+        receipt_ids = {row["eventId"] for row in baseline_receipts}
+        require(len(receipt_ids) == len(baseline_receipts)
+                and receipt_ids.issubset(editorial_ids)
+                and removed.issubset(receipt_ids)
+                and not receipt_ids.intersection(baseline_ids)
+                and len(baseline_by_id) == len(baseline_rows)
                 and baseline_ids.issubset(already | set(old_signed)),
                 "Signed publisher baseline lost an event or inserted an unsigned event")
         for event_id in baseline_ids - already:
@@ -329,6 +341,8 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
     require(set(candidate_ids) == baseline_ids | incoming,
             "Publisher removed a published concert or added an unsigned one")
     if baseline_by_id is not None:
+        require(candidate.get(editorial.RECEIPTS, []) == baseline_receipts,
+                "Editorial receipts changed during approval preflight")
         require(all(published[event_id] == baseline_by_id[event_id]
                     for event_id in baseline_ids),
                 "Publisher mutated an existing signed event during preflight")
