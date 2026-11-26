@@ -1,0 +1,70 @@
+"""Offline independent gate for status-only releases of existing stations.
+
+Recompute repair and status proposals from evidence, never the generator's
+report. Only existing stream availability transitions are in scope.
+"""
+import copy
+from radio_daily_baseline_verify import strict_json
+from radio_daily_lab_signing import validate_candidate
+from radio_daily_repair_plan import plan
+from radio_daily_status_preview import build as status_build, MAX_CHECKS
+from radio_daily_publication_simulator import publish
+from radio_daily_v9_generator import digest, encode
+
+
+def validate_status_release(prior_pointer, prior_body, candidate, *, anchor, day,
+                            maintenance, repair, confirmation, status):
+    new = validate_candidate(prior_pointer, prior_body, candidate,
+                             expected_candidate_sha=digest(candidate), day=day,
+                             **anchor)
+    sha = anchor["expected_sha"]
+    if any(x.get("scanDate") != day for x in (maintenance, repair, confirmation, status)):
+        raise ValueError("status evidence date mismatch")
+    repairs = plan(prior_body, maintenance, repair, confirmation, expected=sha)
+    if type(status.get("attemptedCount")) is not int or not 0 <= status["attemptedCount"] <= MAX_CHECKS:
+        raise ValueError("invalid status budget")
+    checked = status_build(prior_body, maintenance, repairs, expected=sha, prior=status)
+    checked["attemptedCount"] = status["attemptedCount"]
+    if checked != status:
+        raise ValueError("status evidence mismatch")
+    expected = copy.deepcopy(strict_json(prior_body))
+    rows = {r["go_station_id"]: r for r in expected["stations"]}
+    repair_ids = {p["goStationId"] for p in repairs["proposals"]}
+    redirect_ids = {t.get("redirect_to") for t in expected["tombstones"]}
+    changed = 0
+    for proposal in checked["proposals"]:
+        sid = proposal["goStationId"]
+        row = rows[sid]
+        if (row["status"].get("reason_code") == "synthetic_diagnostic_not_for_playback"
+                or sid in repair_ids
+                or (proposal["to"] == "quarantined" and sid in redirect_ids)):
+            continue
+        if digest(encode(row)) != proposal["stationSha256"] or row["status"]["state"] != proposal["from"]:
+            raise ValueError("status station identity mismatch")
+        row["status"].update(state=proposal["to"],
+            reason_code="experimental_recovery_review" if proposal["to"] == "active"
+                        else "experimental_unavailability_review",
+            changed_at=day+"T00:00:00Z")
+        changed += 1
+    if not changed:
+        raise ValueError("no qualified status transition")
+    expected.update(release_sequence=anchor["expected_sequence"]+1,
+                    generated_at=day+"T00:00:00Z")
+    if new != expected or candidate != encode(expected):
+        raise ValueError("unauthorized catalogue delta")
+    return digest(candidate)
+
+
+def publish_status_release(store, signer, prior_pointer, prior_body, candidate, *,
+                           expected_sha, expected_sequence, expected_candidate_sha,
+                           day, maintenance, repair, confirmation, status, checkpoint=None):
+    anchor = dict(expected_sha=expected_sha, expected_sequence=expected_sequence,
+                  public_key=signer.public_key, key_id=signer.key_id)
+    verified = validate_status_release(prior_pointer, prior_body, candidate,
+        anchor=anchor, day=day, maintenance=maintenance, repair=repair,
+        confirmation=confirmation, status=status)
+    if verified != expected_candidate_sha:
+        raise ValueError("validated candidate digest mismatch")
+    return publish(store, signer, prior_pointer, prior_body, candidate,
+        expected_sha=expected_sha, expected_sequence=expected_sequence,
+        expected_candidate_sha=verified, day=day, checkpoint=checkpoint)
