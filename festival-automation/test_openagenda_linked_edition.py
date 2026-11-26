@@ -117,6 +117,21 @@ class OpenAgendaLinkedPublisherTests(TestCase):
         self.assertIsNone(independently_verify(
             forged, D2, event_fetch=lambda _: oa, organizer_fetch=lambda _: PRIMARY))
 
+    def test_provider_pass_label_can_follow_the_brand(self):
+        canonical = "Ombres du Nord 2027"
+        oa_title = "Festival Ombres du Nord 2027 - 4J PASS (4-events)"
+        ticket_title = "Ombres du Nord Festival 2027 - 4j Pass (4-Events)"
+        self.assertEqual(pass_edition_title(oa_title, 2027), canonical)
+        self.assertEqual(pass_edition_title(ticket_title, 2027), canonical)
+        self.assertTrue(provider_title_matches(ticket_title, canonical, 2027))
+        self.assertTrue(provider_title_matches(
+            "ombres du nord festival 2027 4j pass 4 events", canonical, 2027))
+        self.assertFalse(provider_title_matches(
+            ticket_title.replace("Nord", "Sud"), canonical, 2027))
+        self.assertFalse(provider_title_matches(
+            "Ombres Festival du Nord 2027 - 4j Pass", canonical, 2027))
+        self.assertIsNone(pass_edition_title("Ombres du Nord Festival 2027", 2027))
+
     def test_commercial_alias_does_not_remove_artist_or_wrong_year(self):
         for raw in ("Ferrailles du Nord Festival 2026 - Pass 3 jours",
                     "Ferrailles du Nord Festival 2027 - Pass 3 jours + autre groupe",

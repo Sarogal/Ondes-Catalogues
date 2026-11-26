@@ -528,8 +528,12 @@ def verify(event, venue, *, fetch=probe.safe_fetch, cache=None):
                 "independent geographical evidence unavailable")
         return body, endpoint
 
+    # Only an independently bound official venue origin may invoke the
+    # extra public-establishment corroboration for a conflicting OSM street.
+    homepage = official.official_origin(venue, url)
     try:
-        feature, lat, lon, precision = geo.verify(site, bounded)
+        options = {"official_website": homepage} if homepage else {}
+        feature, lat, lon, precision = geo.verify(site, bounded, **options)
     except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
         # Compare only known fixed messages; never persist remote response text.
         msg = str(exc)
@@ -544,7 +548,6 @@ def verify(event, venue, *, fetch=probe.safe_fetch, cache=None):
             "no independent named physical site")
     # The existing source manifest is only one provenance route. Unlisted
     # venues may use the independently matched OSM website, without a PR.
-    homepage = official.official_origin(venue, url)
     if homepage is None:
         homepage, independently_named = address_source.website_from_address(
             site, fetch=fetch, cache=cache)
