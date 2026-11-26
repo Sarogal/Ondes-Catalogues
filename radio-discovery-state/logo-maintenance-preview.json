@@ -1,0 +1,4615 @@
+{
+  "approvedLogoCount": 0,
+  "attemptedCount": 8,
+  "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
+  "catalogChanged": false,
+  "counts": {
+    "awaiting_check": 246,
+    "missing_logo": 32,
+    "query_source_held": 10,
+    "unchanged": 8
+  },
+  "observedSourceCount": 8,
+  "publicationAllowed": false,
+  "records": [
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "164f78b2eb48ff6f3f8fe445319b1a82970e1236a6f9cdacbb8a1fb187f1dde8",
+      "goStationId": "go-station-000001",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "3f76c9bcb26824547ad1d7a86b958280ae759d1a8e5be044c9909a30dfc81ccc"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "a22ca77a163182f6879533e6d56e9968830f73b6c7dda204205e277f5fdb3796",
+      "goStationId": "go-station-000002",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "6a751ddff92fb9940a4f2955c443ded230adc5fb573d9e63828939ae683f048b"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000004",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000005",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "fdf5abb4bfb0837aa5ace1b1ebcd486d25eeee9ca976fbecdd7c0389117dcd99",
+      "goStationId": "go-station-000006",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "7dc024a66f7b1f81e5f1f84e705d95fe39277c75b392fa04594e462da028cb81"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "8c81d8a7b1dbfdbb9d9d4a3448f7815f5c9cd87eaf7f65759e451e4eddf0758b",
+      "goStationId": "go-station-000007",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "f47f2322f2c266b59f29f0d7f487616a5d058ecd898f9640b971cb60d8a03216"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000008",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "77090ec6fb241a81dae61b66eeecddf8c2bb1dc68c21a31c75f3b5a5a322c949",
+      "goStationId": "go-station-000009",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "d5c5da606c66a14042043a588392700a00a20110dfec261213c1d086a0ff4eb1"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000011",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000012",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "b063da4bbb1c2b2ae74110cce4ddd769b77d99c2429afebb15b144a217b2ab2d",
+      "goStationId": "go-station-000014",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "86d0c56c9de00f025dffd2641247544509ab6582194d28855152969d045ae862"
+    },
+    {
+      "catalogueStatus": "quarantined",
+      "changedDates": [],
+      "expectedImageSha256": "ad7ec4e28689b7e71ffa712cb142fe9779f6ff9f4ad5a73974021deb287ff3fd",
+      "goStationId": "go-station-000015",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "c6d4c9a20b973756932c16b4e3cd61e494ac7517988649089a8c8d392ffeefc6"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "b0ea124e96783090b082f41413b9b6b5dcea8ffbdaffa0006cccddf95d93d9cf",
+      "goStationId": "go-station-000016",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "c68c5a8cb54338e1771b49a7c82fd9b0a187546b93b3cb5501b13046a7321e1c"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000017",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "41d70bf91da8cd79a4a4facfe04839986f9971f4e81bb9604ff94781bdbea3d2",
+      "goStationId": "go-station-000018",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "4dac089e07e82a38b08a1e007c833cf2671c6ba1acfada921f2c1244897cc032"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "68c5c581122af57279fdab698da4aaee46793ca26a970449ff105611feb1c6e0",
+      "goStationId": "go-station-000019",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "cb20cb985830997bb2af3a617af3f2a70837e478d0d407e5cc686c5f4e5e86f4"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000020",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000021",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "0a83b738877ac1c5fe0146ad1c445d7a8d65444da56997802ae51aced3c696ec",
+      "goStationId": "go-station-000022",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "2d500e2e953d29a2be13ffa6fd11548be3cc0559e24dfa66f651ea403df4ae89"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000023",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "ca6c81dc2248f5d04c93d0e7270ec7470503295604ccccd48c8d45545c7c8ad5",
+      "goStationId": "go-station-000024",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "d457ef8d5d5826d2868c8b5eeb07a5a9ca95a43f8c44b7ad4f577033f079afe2"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "2e9ca6f3a02c1a4036765d22e6472931169e4e2f9b9599f35b81634a2250c42c",
+      "goStationId": "go-station-000025",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "9ff09f9ebcd8c106092f4851d9b9979c690cc39162989c6bc70f9f437883e525"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "24947c80aeaad8cdf78837ec384aa282a3df79e9673c20fa7681a04ea6524f95",
+      "goStationId": "go-station-000026",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "5c3056b809c65d105038b324d63d083e763bef5fa36e0f1a0a7003c3a38c67d7"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000027",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "ec9257b8179a4ebe0f135a4b4bd991c6215dbdde5eff19a7d3098829f4adc85e",
+      "goStationId": "go-station-000028",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "ac069b2cdc638962f042821ae783f18fa600353676cbb794c808261c13f9bfb1"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "46337bc5a89ee3845b2ebaa5eb904f76272380dbb1e76e8458dfe024822888a2",
+      "goStationId": "go-station-000029",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "2f883a117e1cf4164e548537de9c71073a3c8e72fb4adc51293fb85399ec4ff0"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "f9e9407bf35183e7ded4f0aee140f3a19d98d2526c021e68c2be22b84eeba3ad",
+      "goStationId": "go-station-000030",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "308c692b596c34afe45f6b7c4d0b09de55c5f9d153cc2d4ee6ef4feb062f436e"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000031",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "b5d1661cc531ea52dadf76d59012b16a68a2653dfdf08506de69128a0f621470",
+      "goStationId": "go-station-000032",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "e1ba0c0465e24fce1ddb4162c33b7dd01a3d2b0cc30a29c63f39bb11cf6ac390"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "39297ce5f502437cd116d8e34a0700543cfaab026fa36b9f17caa8f53f7f78ae",
+      "goStationId": "go-station-000033",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "577d28a9cecaca9a8d62630f131528ac93061eff370cdff72953715a46f12fcd"
+    },
+    {
+      "catalogueStatus": "quarantined",
+      "changedDates": [],
+      "expectedImageSha256": "2e9ca6f3a02c1a4036765d22e6472931169e4e2f9b9599f35b81634a2250c42c",
+      "goStationId": "go-station-000034",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "9ff09f9ebcd8c106092f4851d9b9979c690cc39162989c6bc70f9f437883e525"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "030a30f5396b4f216ccefbb148284ebb9f923a8bc9f2ea6cdb3b27b3a2c53744",
+      "goStationId": "go-station-000035",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "dc16a99a86e8307fb09175932ad8218810a01109f448664959d8378325ade4b8"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "62839d87cbe8f10eb830c4052c3454e6231afa307e5225739cad75ccf2d7f95f",
+      "goStationId": "go-station-000036",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "41f588802b33d9d644c10a4e57630f99b9c15ca2f494414d4bebf08109cb5ff2"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "fdad9aa2bea9952ce028bfe6d7fde3a3ef1e929cabeb31c23411751d6722d3a2",
+      "goStationId": "go-station-000037",
+      "lastObservationDate": "2026-11-26",
+      "logoApproved": false,
+      "observedImageSha256": "fdad9aa2bea9952ce028bfe6d7fde3a3ef1e929cabeb31c23411751d6722d3a2",
+      "publicationAllowed": false,
+      "reviewStatus": "unchanged",
+      "sourceSha256": "054b94d3a1281ab649b9620212a5d49c3d1eda287726f158cc78b012e98d12c9"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "5f49e4ae99e21a23ffbfaa23b495137c108023265795b4be71ad377ed7fffe34",
+      "goStationId": "go-station-000038",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "b2c7adfa574e0555482389c91ec53a88875297f8456fced584084179eb37f12e"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000039",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "11a772bc028dea770f86a99f20d16317092c145738d5d673334089dc9d70acfa",
+      "goStationId": "go-station-000040",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "880e620e551d61094d374f84def68418c147e9c96e6a910e2c0108fa13d3014c"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "ae1c36428e4e25701163d639d5133c826462a013cdcceb8b3bf075d51f1908a9",
+      "goStationId": "go-station-000041",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "451cac5c0581d2be2a1ff74673a0395c22dab9863018492f99a4a398b30642f7"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "ae244e934186b8d3a9f406d8ce8af36c257952c7134d46c717c88f9801293d74",
+      "goStationId": "go-station-000042",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "abdf75f6c1cfeed3b93a9270765ac867b3e9c80d7be32d9564a56823887bc625"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000043",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000044",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000045",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "c17784a27ff5972c60ea10c716f2921f8a60b4af9e9d2015d13da5952389a31f",
+      "goStationId": "go-station-000046",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "e68a300a9e7dd5a8b846a95631512cd9407cfc03d8cd15656d04619351db0eaa"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000047",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "49679a4954e4c0a6332774217b68ad201f0b44c3e9fbb741e601e5569cfb8ec8",
+      "goStationId": "go-station-000048",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "6a8e2d144cb7752c996de93fd6425fde0bbddab474971bbc04ae0c4cedf6727a"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000049",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "bb40711b9851cf369c1ea3998f846d57e21842a54af07319035756019735eda9",
+      "goStationId": "go-station-000050",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "5dd3b32ce5499748e88f074dea68f612e5f5347bf23b35f4ba982f8e24f5776b"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "2ba01e52927911b74df20f2b9d3e08847826ba5c01b2d2c612ca43937c539fee",
+      "goStationId": "go-station-000051",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "7a3779c5f872edd23bd6facd1ade905f94076c0afe287d76b81c5d3580a78a56"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "67f5cde10a95f092c86730c90797e871b99b410a30855b2f51c8ac66ec139fca",
+      "goStationId": "go-station-000052",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "12054d93572c0d355629df5c7f853faf6d0670b165becd0ef23a96a6e9dab4ac"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "67a1d1063da977cecc5758e4800afc8a3cad3ea90c0d2adb86682fbc41584eae",
+      "goStationId": "go-station-000053",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "c654a471e6b0406ce46a4e766e51d22cd09a75a2e0f479dbe6ecca8281d9ab12"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "775dcc0bc753233ae93be80fbb3134978ee2606fd79aaa56dc62aada99a8d878",
+      "goStationId": "go-station-000054",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "f2b2760bef9cfacf390e1b80145e0509769b7e2008af58d50baf9eeab3b19e6f"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "36a10707e4d052bcedae4d7b301f24ecb7b6b5ea4c5d077e138f65ea0709c7de",
+      "goStationId": "go-station-000055",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "94e6744c6541d95afb38b9063954f72c465a0a01d3a02cf6c31cd9a48dd6ce64"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "176c0194cfd4dd5afce7f94809e01f1f1e9e2f7324337cf86e19ec7b35f7ddbf",
+      "goStationId": "go-station-000056",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "7882c84ae1a3d2e315d4a02943c36c7a9450a1966ca8e2296c095cc8020e48cd"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "b319da383de6df4481124b4101931744198d4b1068d35772992b196633ddd7cd",
+      "goStationId": "go-station-000057",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "query_source_held",
+      "sourceSha256": "f3060d626879d88190cdcc6e35ecc13743e66ea315ef9221d147b04bcd915ea9"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000058",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000059",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "337088616cea39e471d62b67a41af7b146b500d44649af734d9e115eda8c44bb",
+      "goStationId": "go-station-000062",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "52ece21163c8d1ce21dbf6286aaa95ed02df28cc3a4e3b14478b1aabeaaf4338"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "e99e1638ab9d2532325cb3cd5978f2213bf8dc8e9f1ce8f9e2b707677f7d18ad",
+      "goStationId": "go-station-000063",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "6678e8262dd1142aa1ecaeee945c7872a3b5465fb5591f3509f51c63fe89d6c7"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "9062dfa02af87db83e91a0ca966782870eaf72969e6025b2f100d1d2847894e2",
+      "goStationId": "go-station-000064",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "b5e85bed4d70d735dc1c551569ad626f361b7a910655e87c49c7cc280a84ffc4"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000065",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "7d0afd2a1547b5dd94f94b76d314f1764af9c92b9880587a21fe278d446c10e0",
+      "goStationId": "go-station-000066",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "b8e53293e2439af4ad18c06944ee4b59d993863496cd80f4d5ac9adb75109a0b"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000067",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "709706ccb1008c6802e481cf69c4258a7f6a2433c81015079e1cd268ddd9c7f1",
+      "goStationId": "go-station-000068",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "3f0269de9dbaeaecb1fad61880389c86c95122fb97f179031eaa0cb334a4190a"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000069",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "9364ae5d7f485ead48e5eb79cb991bccdbf39e0a55660f53b559eac89f96c0a7",
+      "goStationId": "go-station-000070",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "6343ed03fd8c14597ce4fdd66b1212b2e877fe34f643e4199b7f7d489b174672"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "eeffa8c023a4e31455ce256f0636a984688ee0154b4d786cbb2f7627cc6c8f02",
+      "goStationId": "go-station-000071",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "165c6ecae269c51e0f09a52237161399e575745f1108e3b1a353a7239e2025bd"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "9706694c6411750660cc7f585b70d52d12b11e458562cacc505fe40b7530afa6",
+      "goStationId": "go-station-000073",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "177a7ad347c4abf6aeea41081b2c323b1439cdb92fb7d36223d7597464538664"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "428a6ff2d9fa2136ab23974d53b381462d4dc3eada40a348ca9c12b869441be3",
+      "goStationId": "go-station-000074",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "44c891fc21e01d76270a741d6fda497877d55702b9170abea620ed1fca58905c"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "6f2e8488d89af214991cd831d24e64cbce8e2c072df9fc330e7867ec5b475f82",
+      "goStationId": "go-station-000075",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "4d3b47055f79553810be56b43990bf95d1d89f62a45b3aca9ede9584e025e5fe"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "05790a94c1cd0a83acf69d1c0fa176998caf1008ff8fd7860f65a1e15edb6d47",
+      "goStationId": "go-station-000076",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "e37500a3495f9b81a440cdf166b674f6537305dc2a8dd5beafebadd16b4ea160"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "956b925e91a4efbd780d34953c62f1176bb5d8f215e0e3c69a88aec7b961d825",
+      "goStationId": "go-station-000077",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "cdb76234c6b9478878610fe2f5f2816bebfb7503fe454703e56aafcca09bfaa3"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "fff2c7ac4a2ebaecdc164b4b0c425472b2766c47967ffe8f18359e0b0b6dc742",
+      "goStationId": "go-station-000078",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "c52f7e0431eb8cbff87d3586a88e7896e4058233e39ae8211afb3ec25de28952"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "025473f958093bdf26ecd569a6a23b847d363e50780dd6a111fde90dffb0abb9",
+      "goStationId": "go-station-000079",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "f7427ed66cd199479bf39228b7a8a6060acf5a9856e3c907d151f72e4f8c93b9"
+    },
+    {
+      "catalogueStatus": "quarantined",
+      "changedDates": [],
+      "expectedImageSha256": "4566e9b793c3f602954309fb3cadd48991e614707ffc5ab03ae85fc4a8d92bfb",
+      "goStationId": "go-station-000080",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "7876b66b81759f9b0cb46840993af3383673b9d5d38298755aff5ad8fb6dd0c9"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "de080d8622e7705db768199c54c4ee7be6c562aa2735c3035eed2bff602bb3ec",
+      "goStationId": "go-station-000081",
+      "lastObservationDate": "2026-11-26",
+      "logoApproved": false,
+      "observedImageSha256": "de080d8622e7705db768199c54c4ee7be6c562aa2735c3035eed2bff602bb3ec",
+      "publicationAllowed": false,
+      "reviewStatus": "unchanged",
+      "sourceSha256": "017bed37977c95c013da55dbedc28a1da7d334f78015fd65bb219e2f3805e6f6"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "68d64bb68eec7f037ae515c1585e8db4cfed95d13337618d51863adc03a8956e",
+      "goStationId": "go-station-000082",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "dba4785fa5313865a989b9e9a3f9ef1f0108d2f8fd33662467cc18772ea1d1bc"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "a7785b76c24a41e3b646703bd577bda086a07f1791ccb452ab8a6f567592dddb",
+      "goStationId": "go-station-000083",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "5b1ec6dc3a1bb28629c46415653dca5a8955e8644b7515343b296ab163815610"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000084",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "quarantined",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000085",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "0c01e445b53c2d1edf8ba4624b0cfc3ce495770ae4f069505547fd579c654e07",
+      "goStationId": "go-station-000086",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "d39416813240c3df986abba67a154c92fad5070a4825f843a22ced6da51a4a27"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000087",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "1725db18cd75eb17c7b39b814971c1baa5add3ea3ba8ac77069e2647ae5a6bed",
+      "goStationId": "go-station-000088",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "f627ecaf62de0ebd4381a5ad9afb6d9b12f6d31a0b35d61c477c630dee377a04"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "232a29856e2e3b807e1c86f21cc1547c93dd02d6c04634aa3c31ecb1c2ae31bd",
+      "goStationId": "go-station-000089",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "df95a9e675e66c99f26e3faca218e4f753594e60b4e83d233f7e453efff7392a"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000090",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "f81d40082d032ac3511f979906ac6d71e025dd83b1729ab958d05668b6e7b175",
+      "goStationId": "go-station-000091",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "37c2a4eebb49d664d46a377726855bbf2fac872b04a06089cc662080d60acd87"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "c9f28689815b32b6ff9e9f7b867a49309d6e3a566d81aa09e001e94abd9857fe",
+      "goStationId": "go-station-000092",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "9f418e61378380a065b8a0784b7cecb77a57b38dd0adbe8379ff25bb81a4eac7"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000093",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000094",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "a478db2e793ba2499d8dc93cf70480735c7d48051aabceade914b4fa4b5e09dd",
+      "goStationId": "go-station-000095",
+      "lastObservationDate": "2026-11-26",
+      "logoApproved": false,
+      "observedImageSha256": "a478db2e793ba2499d8dc93cf70480735c7d48051aabceade914b4fa4b5e09dd",
+      "publicationAllowed": false,
+      "reviewStatus": "unchanged",
+      "sourceSha256": "0e5380dc9bd22f2a56a44ae4da06e9b878d1f794a0de1e99409943dced83ba35"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000096",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000098",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000099",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "076004761be8f6581ae10eefbf6704b13582c494f383e85ebd3b381ea3d33189",
+      "goStationId": "go-station-000100",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "query_source_held",
+      "sourceSha256": "d4630501d161056824b2f0e62099bd2849c08a2b0ac900a031fdf8b89c221242"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "6053589f3889f33ab799c196162c49436f11d24a63bbefebcc9d18bda1983b6d",
+      "goStationId": "go-station-000101",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "5a097fd0614aa493dd74a37edb57628006748fd15fe8195973d9e0c96c2c0317"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "d9c787f1580281fab6c1660afdb6d557071dd6072d89e3efbf746d8ddb6d0e93",
+      "goStationId": "go-station-000102",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "469cb286147aaf0b492d4e8c5f3ad2be930ccfeb242f52f2d607242b43c51835"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "7b05b1f75f9fd4359ba13401db15018b153247257452cb319a98d1b8b8fd9fc7",
+      "goStationId": "go-station-000103",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "2c681d8496e30990aa6798c68aa10f3839a0b69742d29ac297193075598f9f1d"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000104",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000107",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "491ba834a69c4fb76e7c943c7e3f3dfc53612f97c0ed26e320cbb783da87cbc3",
+      "goStationId": "go-station-000108",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "b1425e49f7a6c4aaf0df76f900c5e056a202c399ba65813273a71f72ab6243d4"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000109",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000110",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "bc33c5de9a403eededb9b0d72d97439370a001284db5d6d27f4840c4f5bd3838",
+      "goStationId": "go-station-000111",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "46dc5c144fbdb1308db64d1865f92473eebc9fd3a305a78de6b502cef0da6ff8"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "9706694c6411750660cc7f585b70d52d12b11e458562cacc505fe40b7530afa6",
+      "goStationId": "go-station-000113",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "177a7ad347c4abf6aeea41081b2c323b1439cdb92fb7d36223d7597464538664"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "9a1ea3b5f1df853f0273a817cdd85eba81409488c76315a66cfb456fd6e8e719",
+      "goStationId": "go-station-000114",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "da6f174464847fef927d787d3484bc7b53d5844b740935a6c08c628d56b0d2dc"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "d347c375aedf48096f1d7c019153b226b14d21f285c1caa50797cb2424be0fe4",
+      "goStationId": "go-station-000115",
+      "lastObservationDate": "2026-11-26",
+      "logoApproved": false,
+      "observedImageSha256": "d347c375aedf48096f1d7c019153b226b14d21f285c1caa50797cb2424be0fe4",
+      "publicationAllowed": false,
+      "reviewStatus": "unchanged",
+      "sourceSha256": "0d6d0318614856af59689f07d53034ed62fc07d57bf57b51ec6949c9a105c4c4"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "3fd9fb9446c04653d01199044a6442a4941a65004e67d9ac47e3ae360cfdb645",
+      "goStationId": "go-station-000116",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "fe0e3455845653b1de42b949fa9806208062ef0b9860235ca596134a6796d32b"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000117",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "775dcc0bc753233ae93be80fbb3134978ee2606fd79aaa56dc62aada99a8d878",
+      "goStationId": "go-station-000118",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "f2b2760bef9cfacf390e1b80145e0509769b7e2008af58d50baf9eeab3b19e6f"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000119",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000120",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "094e597ba0435a54d87e5c37d4752da362163976d24dabb2002031be6991f32e",
+      "goStationId": "go-station-000121",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "9b249b0b409094953673facc75497d2719912709a4a7ae761ebb8686a337ccda"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000123",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "57b146f41b388e863f33fa38510b22a3de3e74f849243bc4729f0b8e14a5b4ab",
+      "goStationId": "go-station-000124",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "3b1babf248a42a19e5cabbd82c79ceb3314b681c9cb3f36c8b8e6362398ff56c"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "896949cdf9a9c74e6c84c508f8ff2835fce419427539f4b29c8018268282cda0",
+      "goStationId": "go-station-000125",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "e0cdefcf795e357d41284c1b1d7aef7abcd332175e60e7a0903efc043a629c38"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000126",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "588dbcbe37b02595c837128a8a9223c39f78c30b744a50e0b964026410863acb",
+      "goStationId": "go-station-000127",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "295354353f1042d5bc946ff915a13812f2fbcd3ba4d6781c79c6c73b309af427"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "fb82f4bd597ee5e89b44238968802e31759d63027a6be55683fbccd6a6c47fa9",
+      "goStationId": "go-station-000128",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "858c5274c476b3372aef4bfea5112aec0cfca7a609ad67ee54a22635930102c0"
+    },
+    {
+      "catalogueStatus": "quarantined",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000129",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "8ccb9932504f520161830a31beb443f979eeb92532339d30ac016a3178e34716",
+      "goStationId": "go-station-000130",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "c8764da63bf7ca527fcc3d809d9391532ffcaa4584b0fa2138c7c73fcc790826"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "49b94d80f00b8fe0efc77a9962c0140704f7e56156f468bf73988018292c4c62",
+      "goStationId": "go-station-000131",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "1be4cc3eb5076a0abbe6e55781b6e8c9a4634f5643ba8527ce896facb85f89e6"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000132",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000133",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000134",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "37c420de869654b9d48cb58d761f625a2550a1007ce114e0a555e196c8c95d4d",
+      "goStationId": "go-station-000135",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "58724e6a668697f62df5dc5c903c0e10091ee84fecc3590dda7e3d6d5c8ebb12"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "69dff8e0cbec6e21d17948bbfaeb564adc404a7c669d5503bc94805413e20276",
+      "goStationId": "go-station-000136",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "55ed8f48c4d0358045e0e75b8c196a8cfe7e70549e9cf17724afd66b24220d4c"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000137",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "8ee32c801fc05bdbc1bc927622c641219b3c822c62a9ae670153488dc864ab11",
+      "goStationId": "go-station-000138",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "aa38ad5106698c701f6b79e0182c88a76d1a9ca8188019c6bbeb8d6ee6a69cbc"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000140",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000141",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "a54cd85a72a4d9d707eb95e9df120aa71f6aaa370073286f3e0f39e8183722a2",
+      "goStationId": "go-station-000142",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "af470ef3003463253ca728b5c1c555db68623fc7e851678c8a510198fd1d522a"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000144",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "b6d6ec7ac185b917318d74979e1c2fbb82155a83705487a256ca9148255cea16",
+      "goStationId": "go-station-000145",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "2b530f7e1050ef4ca0e5afbdeeab4bbabebee887d9516ddc771dd4ebfc58fb46"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "91f0f4ffd7f3495080a611127fcb5ea73df414a324f1c09ce88d12fa9fd9e9d0",
+      "goStationId": "go-station-000146",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "2a22998a860d82e0c5957bdeee6f74eda09e6d4ae6de28aa387d50b20ec7ced8"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "7f3d308903eb8a54413ecb8681146f28bde02eacbd6e622da7cb0a9f91953da4",
+      "goStationId": "go-station-000150",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "190ff88726800cb2ce6f137553facc3a62dfc9bf47a57d59c86ce3823d0556f2"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000152",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "61e27949a4424336d052e394fb93a2d5f82132217235d7be48294e0dbd1c8f1f",
+      "goStationId": "go-station-000153",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "ee677f5b00138fc588d019acd59b5f557ec6f89f60a90c28559c05f80e75c59e"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000155",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "e118ede01f8670758c317c75598ca43541881eddff4315698ed311f04a08d4fe",
+      "goStationId": "go-station-000156",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "36ad6a80f6206aa75693e0b638bdc658b0a768dae7c44a68929745d66fe5c6ac"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "02c31c619f63eea5484b30a4eabf2387b5415df7d29e75296796c1cc13c5c435",
+      "goStationId": "go-station-000157",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "4b3583bf19842bd6e63667e657999d232be674f09ae41c8c66e81cb3a308cf45"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "28d696c9651c6277ae47aa69c6667a02526cb40d091a1d12a6b0d9d0ea968aed",
+      "goStationId": "go-station-000158",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "487d51ed6a30e9ab48f5c4953a9275f8e3629d6e018d7a4cba63430cc0244ace"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "19ff4c238dd2492fddd4775c14fd9fbe75e074f3d36034108230f713732f1095",
+      "goStationId": "go-station-000159",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "d8044e6fcda20640814dd687fa1e01748fcad129a70b96cd16fdce33f374ef6f"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "988031f0bddb7a17226ab9da5899f6e98577f2f8c241a74e91a67c5cc4bd66b2",
+      "goStationId": "go-station-000160",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "621ee0b5dcb9f40f4054816448165964475db03f2ea7a2469b230e9143a6c7a9"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "443c538aeb0f5e08ca70200ac4fab63b5deaa0ce39e3d7d3f455ed1637063632",
+      "goStationId": "go-station-000161",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "8511126278ebad3d315c253564972e8488ecd235960306004a7b856fa967ccc7"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "daf7f3b891ee8ff27394b65258f8a4581245ceb6e456b0ff9d7c63a24dfab4bc",
+      "goStationId": "go-station-000162",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "524a055597419e3fd1d2f0b1b07e296f32b447fa59d2a4dfb545c0115e63680f"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000163",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000164",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "2a43d1966a5f1a891c741a921b1f36efc87d1844b64ec2959367bbde6626c126",
+      "goStationId": "go-station-000165",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "6f4a06a0eabcf496200f4c02e582607e1fd023d8bb92dd25a6dddc73e0d8e157"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "2041f40cafdf349d635dba7bf3995f336fdc88dab907d20032a780a2cd7444a7",
+      "goStationId": "go-station-000166",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "689132e6a443c1a0d8ea61c13f423405aedd902c8c26b370e1852b3459f35aab"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "4f30b5c55db22b0999f30091c3da060e4854af3be0ab79209f2b9e4d63607105",
+      "goStationId": "go-station-000167",
+      "lastObservationDate": "2026-11-26",
+      "logoApproved": false,
+      "observedImageSha256": "4f30b5c55db22b0999f30091c3da060e4854af3be0ab79209f2b9e4d63607105",
+      "publicationAllowed": false,
+      "reviewStatus": "unchanged",
+      "sourceSha256": "0884e87cc4266a5e61ab302984b05068f2b7b713a1944d6247d70ec124627459"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "0a2b8b624dbbf10171909ed4c1119aba5fbe28fef5fc319e7e6ac5d2243146ce",
+      "goStationId": "go-station-000168",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "b6c4181c48c7d69487cc7a686cf4b2a6b27eca22267f79ec84b4d4e7c691734e"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "2c7a16770e8c0b8e21b08ecb0e1d7f54af3d8b054696fd0b66607427afb546ff",
+      "goStationId": "go-station-000169",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "2154ca848d5b56bf35f74460d5645a6439f36d99c7837a8e5421ab97094919aa"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000170",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000171",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "aa245771da9c330ffc78cb2818f74db6715c2963d4b8257b5ae8f82636c53f42",
+      "goStationId": "go-station-000172",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "be9524b8aad0bdee7a845b1d22b3c49c4f6ddb5228d9a66ca9ac868e59231402"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "16612976c806bc247b6f5d087ba637285b34886e98c359dda69450045c909c2d",
+      "goStationId": "go-station-000173",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "92a125a1dc38c09ac947129fcb46d40b21e07b821203d54d9a18b81e71fd4bb7"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "ef746603932c9b428fe0044f5a92e22a42d50138dea0d8e79852eaf9d43de4e3",
+      "goStationId": "go-station-000174",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "7441e9dd849340c0c9109b74e48b07cb0df6c529158da7e963470b59554ff234"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000175",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000176",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "775dcc0bc753233ae93be80fbb3134978ee2606fd79aaa56dc62aada99a8d878",
+      "goStationId": "go-station-000177",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "f2b2760bef9cfacf390e1b80145e0509769b7e2008af58d50baf9eeab3b19e6f"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "61ba5aad14a8a68c81c109f5b0c37c184c76095073f3854d6aba231716d7d73e",
+      "goStationId": "go-station-000178",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "cfaa003c1c9a871db1a0357faa973f1d5f0568e396a18b610166b5ecd0ae29cd"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000179",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "quarantined",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000180",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "6b1ba56064beeeafba44fd7fff7170cea9739b995eed94edabd7b89823006206",
+      "goStationId": "go-station-000181",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "fde89baaf3afebed574837c40a06efbe75849bbb669b76a8f4918cbf0f34a4ee"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "d3e58ad1b5f89b9357aebac434e041f79da5efbf237f4ea9458d967889e35e78",
+      "goStationId": "go-station-000182",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "fc7656414cef0832aec3441c84854e0cedd8192fd629604e8e61567db47931cc"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "99ec67fbb4fe007b2f0c114f30e9eb7b1a9d29d2a82bfc6765510c8e09bde17a",
+      "goStationId": "go-station-000183",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "3565f18ae0881a19a45bb748ff972be6aaf07abc3e701b9ce177a19214e12464"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "df77e80ff944caba145c1bbceea781105107a55d6665addef2255c4dfeac4494",
+      "goStationId": "go-station-000184",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "967e7d73fe2d7e59407d4b3f2db53bbcdbb64c937735681da6e98de1dcd06bde"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "bfd5e76cd729df741d821f7c1d727bd3b00dc868c1d16c2e21be8c8f89f00611",
+      "goStationId": "go-station-000185",
+      "lastObservationDate": "2026-11-26",
+      "logoApproved": false,
+      "observedImageSha256": "bfd5e76cd729df741d821f7c1d727bd3b00dc868c1d16c2e21be8c8f89f00611",
+      "publicationAllowed": false,
+      "reviewStatus": "unchanged",
+      "sourceSha256": "0ba2e8cf8c1480cf0bf3d3d0a8fc7612d09663702e90866fef161282dfb68283"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "d7bc9b06a46c6035d975779dbbc5b24b1cd24026eb5247765907fcc3effcf1c2",
+      "goStationId": "go-station-000186",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "a4d228d17fbdb418ec207923e37eae7018245f7422bacb4dec6e15d71c22b5f5"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "3c4b273713fa390437daad634c9a4bbdfec11b3efa58a94b12f0f30fbd1f10ed",
+      "goStationId": "go-station-000187",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "query_source_held",
+      "sourceSha256": "074c32b9935e8beeb5211df3353bfd8cc8a088bb057c480d7e9255beedbfdfc3"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000188",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "82aaf239b99e031c391d14fece8fdfb24916aa275817b77414bbe08249f37976",
+      "goStationId": "go-station-000189",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "19f324042588d46e9c4fa6a7087035b453dcf0b874e3b524d9b1fd4f8d5a9307"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000190",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000191",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "3a3e59a8c52cdc3516f7ba9265b9ba1c1334f6dcd864d68e1367c8072f735c9d",
+      "goStationId": "go-station-000192",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "243d339ac79972a57f5cc1bfe87855772aa221a4e55ff47c8f056473294d67c3"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000193",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000194",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "a93ab221a9fdef25eec0199c62bcdbce5b67b8f9889f2f1596b1d63b32830dc0",
+      "goStationId": "go-station-000195",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "9d9d3c36f4dd6d47e622211859abee47c60bc6cfa8f65ee94a7d3e28a5f04d2a"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "8747e056b2bf612b4eb781c8905c5474194dc4cad3270223d5512c49524adf6a",
+      "goStationId": "go-station-000196",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "d3af4a052918511a6575b6ab38729792bf05b3472ecc6a83e6643763e3537f0b"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "686219a9ece8643c6d6ebe835fa4e288a87c30fd56a807443f6c71e711517fa4",
+      "goStationId": "go-station-000197",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "c36ec652b00f8bc8a9ac52eae3db5b16e10e132cc991a15b83ad93d31905d016"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000198",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000199",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000200",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "64748c47ab7f74ba88dc5abacd7e5cee34c1ded28859e494cf73b67e046f3faf",
+      "goStationId": "go-station-000201",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "9e28769d935934e1202de080e2d54821becd04380290bfdf48ca694e2d890e1b"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000202",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "69a705dfc52c9f09e26f527e6df6b124f697d42c9dcc579ea95b9e135dc4d80e",
+      "goStationId": "go-station-000203",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "2025c10407bab2c662c05485d0e803f65d0d8e260dd19da952f854fdc9daefc9"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "b42f59eb85b8451b2d621a16bc8acceeb3e9c421c0a3df982d84ed8b0b626156",
+      "goStationId": "go-station-000204",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "46877a54130a48d678954b05110d114dad3ba47af046b8cacf9762ca65ee9c1d"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "da56ca0cac0fdc1870d9a378c0615ca2e14082119fba873014a3326758d565f8",
+      "goStationId": "go-station-000205",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "8ac40a56cc78d8eefad00b440ab7273ceb9c14223b53d1e97c27e6ed409a20ee"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000206",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "167047651c29f1570a3b64656acfd774ae16bf386009587d9c913ca582a34b46",
+      "goStationId": "go-station-000207",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "3a7137ba481d988d0a1a0b50560394b3cf752931140d80ce032e803bd4858b28"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "d41bb7131896dcdf6a8bb1119465778fd488a71abb8cdb8b38b7839439585a22",
+      "goStationId": "go-station-000209",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "fab91e03cd48c45bad1d5702b0d7985f41038bef00e1904b51292d9304d75718"
+    },
+    {
+      "catalogueStatus": "quarantined",
+      "changedDates": [],
+      "expectedImageSha256": "3476cbe81e561fc2cb322a3c54653a5d8cc9891a67d3c94fa954eb97f7cd40d7",
+      "goStationId": "go-station-000210",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "f4ab10ee97abe2a1729ce7b6f604d9625db4864de280cc50f89019262c9bb003"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "61a04ec119f4895c367e2c6063d1c29f7e9bd2e639a1f9b3b5bfd681f6d99f71",
+      "goStationId": "go-station-000211",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "3d7b7a83aef1c958bf0749e09091cc1d236adf7b472619547e7337ebcb3c3d99"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "2ac3bbbd753682f6ea4ce4b4e7f2ea23fb13a9c576262eb10f5941ddea58687e",
+      "goStationId": "go-station-000212",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "1f053ddf6868e7a8d8b69b283a10bcc0acdc01a36afb7eaaf77a383c53b327d2"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "e68490347c0d672514f7854b813c54580822e3a7e3bbcc7295427c4ad583d656",
+      "goStationId": "go-station-000213",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "20c9d85fc577e7fac89aca1119bd75bbd3c458caa839b6e75f1ea8f64b81eacd"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "aea85aff04f82577e5ac12d8f2f2fa9dad33690e93511cc341fa6b09954100c2",
+      "goStationId": "go-station-000214",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "8c2b5ff5bde162aa0c76801df9aa0a4856dce4459a2d27d191bf36da1661b8c6"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "9706694c6411750660cc7f585b70d52d12b11e458562cacc505fe40b7530afa6",
+      "goStationId": "go-station-000215",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "177a7ad347c4abf6aeea41081b2c323b1439cdb92fb7d36223d7597464538664"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000216",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "4406301d81c15db8ad20dde980bc833ddb1a56aeb634320a54a583c1882a6e95",
+      "goStationId": "go-station-000217",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "3fc29e92ff694391aee934534ec699af765561ccab4b08f9108c3f4719b84c76"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "64b499012b0e6f64ff0eca85ef69772e6e9c800c3661d4d73dad7e0b99e41503",
+      "goStationId": "go-station-000218",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "19235e17e9a18ded137d71b9759168281b9f9154a8901978db4a314839ffc584"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "f8c2f7102a4e3620a53c3c81dd2c2fd658728857aaf017b2fef3aa3b7b56927b",
+      "goStationId": "go-station-000219",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "19b16f79301134256e518a1106b1f62bba69ad807545072e016cad62b442e363"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000220",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000221",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "279efca9e14013fca4322ff8133a2e493640d796eb16dba9af497e8d4a6c50ea",
+      "goStationId": "go-station-000222",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "175eb2176ffec279b5ade80724c0a679a3cd2ab228287d9f581d78c8b1b19654"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "739ed870472535871409f4aa263c6e12c3c981da3668236e9745e3a271bc6b2f",
+      "goStationId": "go-station-000223",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "query_source_held",
+      "sourceSha256": "87ebfa8bec333ede72a9ba47e306778873657e3b01f46871474de402aef7c706"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "e600a7ed9a75cedb4083023947c5d04bf4f1901668362a6c90c17912dfd2e2ca",
+      "goStationId": "go-station-000224",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "4f87b958ffaaca41b1edda5613051d8a3945b322dc98112c5a638253a8762190"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "77006275fb574e74e5e25fb14eecc65a3d674967df5ee2119c4048fc45d146b8",
+      "goStationId": "go-station-000225",
+      "lastObservationDate": "2026-11-26",
+      "logoApproved": false,
+      "observedImageSha256": "77006275fb574e74e5e25fb14eecc65a3d674967df5ee2119c4048fc45d146b8",
+      "publicationAllowed": false,
+      "reviewStatus": "unchanged",
+      "sourceSha256": "0480ba91a5ba7ae4bcc580f7e6f3f9cb1467679112361baf336386f93a38ce65"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "336410f5471d938a35a3b8627914bf527498ef7e2938b172664bae0267ef54ec",
+      "goStationId": "go-station-000226",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "f1fd47f1471eb597518557f14ae419f19c45cf7e7ed942a43346b6d0b15b12c1"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000227",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "9b423ad10591d09a1f1b74011e2f8f943f475da3ac683c7322baae7b40c3f27f",
+      "goStationId": "go-station-000228",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "6bad070532a045184a10c151ace9f02b65232bfefc43bd172add9e681e3f2613"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000229",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "10097a6ec2ee624cf206e4c5306f6c946c811a65850aa1b31afbb42b762cec7e",
+      "goStationId": "go-station-000230",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "1a62df74c6b5984c668e1ed49ad53e539e2dab441768d59a4261816b8443d29d"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000232",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "77d577cd9e6920170c319b825bf361eacf38f836b2715e2eab688cee21c5d440",
+      "goStationId": "go-station-000233",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "1e8461ea45521e2350aaa90313dd534de523d301b235f9d5abe250ba569b7366"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "551747ae21ac5c946af90677ec61104e0f67d7fd7e8c0ea98f5ad6dd6bc01a53",
+      "goStationId": "go-station-000234",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "2bb7eb960aecc0cfac823633975a76a8f9d097cea67be5c019c68d7a0d31c802"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "ec0ac5f072896f4567a5a134741dfe498f5800516af8f6e3e7631137562c6092",
+      "goStationId": "go-station-000235",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "query_source_held",
+      "sourceSha256": "214f44e9090346c033ef703bfa502796e1eff0b52eed64c45230c0a75a6746fb"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "9fdbd3033f9fb22bbe181589a711c9539e92e781f5e5fb3533b8d1ac7bacda3b",
+      "goStationId": "go-station-000236",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "16f22caf99043102c0aa111010c5dbf29525e753fa9db7dd03d96f0c3e7ff968"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "a6a3d6317c06c1f583c08925acd69b5ee555726a9fc8c953691b75560e3c03e6",
+      "goStationId": "go-station-000237",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "84b69ef0c1d62e5f3a8213effab0f51cd794886a5e91ab2b65ac7c69b4541991"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "726763c7e1365f48d25a8d3650b4f25b7cf9a86be62df81e2a24ec9b98a384f5",
+      "goStationId": "go-station-000239",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "f5d80696f4ad5cd735e42447d9e2f90bd78714aedecde052d3dfda8d392d6b9f"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "d9cd78641414826da5700ae39218837b892c1e72fe0f272f56a6b7802631b447",
+      "goStationId": "go-station-000240",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "bf275ff2c4406f6b5240196f04a53c9fb33a06c030dab889513abf2679eaa30e"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000241",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "784339023982bfff498756e8d388f6b965ad2c6b633d34cead194d310092e633",
+      "goStationId": "go-station-000242",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "a18912b15a60263b5ef4c168ee9284ecd40cac9516812712bffb18b983eb6594"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "b5514a25a89f60de5cb330dfba2e1bccc1998c02a46bb5b88ad1a00c8eab4930",
+      "goStationId": "go-station-000243",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "749c067d343d40f9bf2b82c2f31fc86f49f790ef5c86ae294b8963f3d1c755be"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000244",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "78a3071190ffe4fd9eed71b6beeb80e69f70fdc3d2ca9f39cd784d4d300e6a08",
+      "goStationId": "go-station-000245",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "4984c272fe305fabde69d699da3d31f91538c28b898925b1f19cd08ab8724c68"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000247",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000248",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000249",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "16d699e32cf376064184818d641fb2bda11ff223f8ce473e727cca59e90d04f5",
+      "goStationId": "go-station-000250",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "e4a4a5b1cea976fec640681025a5b61e31af977ee7dcf93b1b368dba265d163a"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "11b6d64582e607d0b3e2c0dba46d6e749b9d0e4f4a281970c528cd24249588a8",
+      "goStationId": "go-station-000251",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "9ad75a6ca08d05b55cf7a2953032569e8ec9f64a3942f09d7998cf3dc1682166"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "be2d0986f07736a60058fe6df3fe8f3602f7a5b152279b1b9a4414f5891a8f24",
+      "goStationId": "go-station-000252",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "ddf2e8037e523b1ac9d6d5eb9224a64462c301c66b1959b42b1f7d0ea57ca91d"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "030a30f5396b4f216ccefbb148284ebb9f923a8bc9f2ea6cdb3b27b3a2c53744",
+      "goStationId": "go-station-000254",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "e909b8c9976286a23e026dcd2773f294c61a2cad230d7995b8c562fe7c3314ce"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "b0b6d0745ca09cd897f94fffd44a805d8273eb103344163d7712911d0861aaae",
+      "goStationId": "go-station-000255",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "58c1e08ca468be2f6596d72ab691760f411c3ea3d1768ada576812d4dc765f8b"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000256",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "8e6c9176086ebc2e286105080e6897582658fa4a44e58ea7de8a30d5e68337e6",
+      "goStationId": "go-station-000257",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "aa8261a174e15da6ac75c7ee13168f99bfaf3a6ef432d7cdbfdf806d5fcac2e6"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000258",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000259",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "3b18597aa2d83f07cf261bec35a4836a69ee14b9e896ebff9dd9338bd70f7f88",
+      "goStationId": "go-station-000260",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "7241fa2306be4502d578dd38f9edcc21fb6ed99bc9f273de1be7cab04d78832b"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "afd8ee19c9cd4e954d50de288b847dd2535de4c89d16e134577568ed11fdcd2d",
+      "goStationId": "go-station-000261",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "1fc84dcbc7254959df5e52bd3c7ccecfff0a7c7582840239d2ac59197a66a046"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "39aa292f988f21e840dbfcea7a6cfbd3e8daa6f6ddafc6665e518f5be5a1c141",
+      "goStationId": "go-station-000262",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "query_source_held",
+      "sourceSha256": "c30323afdee4306565d4718104f9eae6ed1aa6f1fecc85e4fcfb1f0dc259e8eb"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "22c3182e1460d14647c54c351a6adcabc2e796dac7175dedbbeb73099f6c08ce",
+      "goStationId": "go-station-000263",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "4ce491ab6a76d966e1331b1bba4bbd79900c07819579f0d66e5fa7efc2af4ee0"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "855a82b5230c91577fb346eed9fe3394ff2a23d6efcc3052693e0c9b4bc50543",
+      "goStationId": "go-station-000264",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "a4690d3753c27c76c953c4282057f25a3226371755ebce46e04ce0331e267313"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "9282a8ce8077a791dfd2e7d438da71b3f2505d83957ef0412ae3f99cfb578afd",
+      "goStationId": "go-station-000265",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "query_source_held",
+      "sourceSha256": "0a6d4abc1d82aeeccba47b16a05eed512e7d8cd1a7807b0a5e44706b15d31d4e"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "6da2e4faf01c2e78330d29a0e35c941d03ca0e60acad0543bb24200850f6aa61",
+      "goStationId": "go-station-000266",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "query_source_held",
+      "sourceSha256": "02082021b104ff71de1c2b2088b6ae558fa7d9c087ef6265c0a4c840b453e649"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "6f70223ab916504a6740438329bf5d292215826f46c3a2faa3f92820ec54a76c",
+      "goStationId": "go-station-000267",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "6707037ad8148c1ec7c6f65fbc9edf607fe0109382d92adce59f67ffdab718f5"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000268",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "920958a5223b271a948e656e19c77b542d4cae7ff89197617e9f12f4c2823634",
+      "goStationId": "go-station-000270",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "6ed3be1f4802cbe4b65f4798f6a9bd21dcd95b67fcc5f750e4075176fa18649e"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "ac3667d29d947e40e8fbd17b648d82952889007cbdb719ac754f55889e474663",
+      "goStationId": "go-station-000271",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "57c8e82332746dd7fb2b373bb3f59e249b81d15b42be364a3d2df6927b6c3ce2"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "c5e996f5c3a5122dcfbf88a5408cc2fc65f00255ee0ae36bd9491f87a5fc7385",
+      "goStationId": "go-station-000272",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "dd4cc57f2ab22750fbd18c984d772730f64cca8a2394b1ce30fa1a3bca1c225d"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "0f4b521f3dfa712863983134401185de2b6660cc16085ba4f6f42cb2388000af",
+      "goStationId": "go-station-000273",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "3f1a52e9a86a023d45c2eeae4630f380dcf64020a27f08b7e545dbc841b326f3"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "b42f59eb85b8451b2d621a16bc8acceeb3e9c421c0a3df982d84ed8b0b626156",
+      "goStationId": "go-station-000274",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "46877a54130a48d678954b05110d114dad3ba47af046b8cacf9762ca65ee9c1d"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000275",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "6705f200202891bfa22a159b42adbb5c95d2f48d54fa5b36fbe1430b37e48eca",
+      "goStationId": "go-station-000277",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "c9777cbe062ffaf172c8702c85be8f9581597ca36b67fd297f0d3192f9256eb8"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "b52d73abab1ef44c8179aef905042b3a142ac2ac7794e2d601b1b2793fb97089",
+      "goStationId": "go-station-000278",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "query_source_held",
+      "sourceSha256": "3b5c3eb6480f5ad395fcdc51ee8df92cdf03b8c18d87bf56751c93a0df728a9c"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "11b6d64582e607d0b3e2c0dba46d6e749b9d0e4f4a281970c528cd24249588a8",
+      "goStationId": "go-station-000279",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "9ad75a6ca08d05b55cf7a2953032569e8ec9f64a3942f09d7998cf3dc1682166"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000280",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "09fa7f315c638fcdbe7a34114b407b301838e82fd3a74299696d9ee3741a5a84",
+      "goStationId": "go-station-000281",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "f634faa9efb96448a1b68a956642a4bf9e033ca5199fca4b24ece5a66a05d338"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000282",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000283",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "09dad8fa85745f051f410fabbb9357fb38937c701cfbcfa600ef75a8b858dcd0",
+      "goStationId": "go-station-000284",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "d53720f9b8e061818f28f6a27ef2728b34be09859f874cd0ba22b162b52157c5"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "f8ce358941e3f33791d3d5449c7f5b262728073f9ff43f9cc10785678e34a32f",
+      "goStationId": "go-station-000285",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "627d7f42eebbc5a13356b9b68a7fdd638f3947a10b54205e40e596ba3b9f74e0"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "00aaa66f5021abe8e54324c2b08fa60b10b60f4dfa7f7201bcb6cbf564520a4f",
+      "goStationId": "go-station-000286",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "6f1376a300438b1723fb7778bce492affbb14fc383fabb71bca6c7f84f4324c9"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "f71c050a889417c336e139089fb4dcd5c62487d9605b16f602cd8d4061a17ac3",
+      "goStationId": "go-station-000287",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "2668e2fb5fc20a33ec9965bcc7bb14e47fb9887172e393e32e0fff859fdce895"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000288",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "71a497bab9c7e3c57ed612fb76a10dcf16f6abb3a89f9abaca25b437075dcd46",
+      "goStationId": "go-station-000289",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "8175fc0859a4c819fbbd955f10a8971505846ea71193b6d13b6f160e83f4d1bc"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "7c4220430e48d57ee2a972036b21b98ae09ef84223d1dfaaa6280a686d8501bd",
+      "goStationId": "go-station-000290",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "12cf4382b06e8d92c5fac7a710b0fec52a8aceeb216ad9533c3dc9e234ba5306"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000291",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000292",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000293",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "7f3f962fa21ac8653d14b67a61d4001eba25dab3040a18b279b6902489e18ee2",
+      "goStationId": "go-station-000294",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "1f19cec1a1aa5fdd1c86b8e7265fe86d55df37b8af73fe18ea3296ae1d2db887"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "54e665e2b5e85b14c27f94fff4d04fb914b8297e3e0a6a218824882b34e9ddcc",
+      "goStationId": "go-station-000295",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "d7a61b9235deecf4003b97c83263d34876a8db71cc8b9373caeabec1597b525f"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000296",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "0634de9ce196c1dd62e4350332a722a911b5d329fe6eb8983052c7b50e9cca91",
+      "goStationId": "go-station-000297",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "40925d372b7983831dd9c502c570eb28f1f463ee2a5c7717e9597015fba96435"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "f28d6aeca32a9fcae809d68a014d8971dd85c8c345dfba15adaf4457f8cdc8aa",
+      "goStationId": "go-station-000298",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "42a8661c16ceaf2f147732beca4c8b184ebf776fcf62d0957c990b2e36cf994f"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "98a1421dd13ae898cf22d623dcd33eceec02a9cbde776ac89440218d75d51619",
+      "goStationId": "go-station-000299",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "16f0105b998cf89bb9b0abd6101fadb2d68443a2c7296f1c3ceacdd884c6b464"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000300",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "e7679369963751db1da2d6a666fc4d1875f0e32e47597eac121168f0eaa0ce8f",
+      "goStationId": "go-station-000301",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "7e26a32ae1e440ae11f7f5d82275cdebcece9889d3356567a4ac421a6a5ee336"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "327ec9c51b154f5296736534b5befe29b17592104b4d9ce5173b7486b9743df1",
+      "goStationId": "go-station-000302",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "a71c8ba7e504814f9d43cf54fad3df1eada06eebbc0498336bb95b63bd93640a"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "a8a21c5185a0d24e4b44b21e7795acdddd0787dce2aad2a61ed3751022dcee61",
+      "goStationId": "go-station-000303",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "4a9d968e9cca52370563cc23f0970a4b9adda71ccafd092e077549ae322748b6"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "9a59af97a58f4df8e322f1e005627d315597d4cc54898420a06d3b9ffb93e30f",
+      "goStationId": "go-station-000304",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "3f6ec40f87537d833c4680db925b3f755dab4dac535016cd1a4dbc1ac07090e1"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "ef45e36b978a3c7411758d579523e28302c353fb1f5ed3b7ed43414b7bc9c48c",
+      "goStationId": "go-station-000305",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "f5ea5a0f8664d2737c8b95243fdc50156979c98d1af961c15486ab77d919cbc4"
+    },
+    {
+      "catalogueStatus": "quarantined",
+      "changedDates": [],
+      "expectedImageSha256": "ac59d254ab9635f84f369da08fe2ebdf3915117fd4efe45edcf587449d76f984",
+      "goStationId": "go-station-000306",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "873ee37832707abc7fd4aaa45c15e11b7bf976d13095855f91946d0593c2fc2b"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000307",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "f7ae5970d74cc70b96f09c797369ce2e25f9b819fa5da7eb2f76245227b972bf",
+      "goStationId": "go-station-000308",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "query_source_held",
+      "sourceSha256": "46d3a7165050ef498611cdb3ad8d106ce6654c85511fbfda3b5bba25143994c5"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000309",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "75e3054599f53f2918026857c6e791e5bb0513443cda77b1798a8b39a2f60860",
+      "goStationId": "go-station-000310",
+      "lastObservationDate": "2026-11-26",
+      "logoApproved": false,
+      "observedImageSha256": "75e3054599f53f2918026857c6e791e5bb0513443cda77b1798a8b39a2f60860",
+      "publicationAllowed": false,
+      "reviewStatus": "unchanged",
+      "sourceSha256": "0cea56d0914cc850fda24e1630b67922e0290dba4578c8acafbb744b69689481"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "22f76eca8c8a8a5c4b37870a432ce7f3dd110d2b58378829662f27104d36576d",
+      "goStationId": "go-station-000311",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "e630f379d1f2aa949e9635f5616cda3e7b88f6d369f53e92efdb905b01021528"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000312",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "cb95823509e3f2fbe893b6449e1031d714bdaf2c4594d11e69e5b0d0b2ac5b63",
+      "goStationId": "go-station-000313",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "3a72329188b70b2e16b9f4bd6a90b1bd8029b24d2767778e9ab676a68019172a"
+    },
+    {
+      "catalogueStatus": "quarantined",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-000314",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "8f4d71045896b2f8381d15c19824e5d1a6bb38828d51f0bb07f59deaef6f3816",
+      "goStationId": "go-station-000315",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "8e9ff6ca68906edf2787f584c243f532b2df7419d6425bd3fdac27f32701ad27"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000316",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "899ec2235f73eff7578cfefaa55e311c5f324437a7794365a17298f9f764fd8c",
+      "goStationId": "go-station-000317",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "catalogueStatus": "quarantined",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-900001",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "quarantined",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-900002",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "2acdf30f7740c1894fb441ee0c3e265bff353ebeae9872d5f672a9c5568f2f6a",
+      "goStationId": "go-station-900010",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "bd0007dd2b07d16ccade86c9d7014db3868323fdc40ce7676630b9b4789aa8c8"
+    },
+    {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": "715d7a4cee2db4c3852ccd3336fcabbffd9ad727981538fe2ce43ec567375331",
+      "goStationId": "go-station-900011",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "awaiting_check",
+      "sourceSha256": "52f6e48b71f05cc474118178a315ab5476e60c476680182e6c9d0c92bccea970"
+    }
+  ],
+  "scanDate": "2026-11-26",
+  "schemaVersion": 1,
+  "sourceCount": 189,
+  "sources": [
+    {
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 23113,
+            "height": 192,
+            "imageSha256": "de080d8622e7705db768199c54c4ee7be6c562aa2735c3035eed2bff602bb3ec",
+            "mime": "image/png",
+            "width": 192
+          },
+          "retrieval": "decoded"
+        }
+      ],
+      "publicationAllowed": false,
+      "sourceSha256": "017bed37977c95c013da55dbedc28a1da7d334f78015fd65bb219e2f3805e6f6"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "02082021b104ff71de1c2b2088b6ae558fa7d9c087ef6265c0a4c840b453e649"
+    },
+    {
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 538572,
+            "height": 512,
+            "imageSha256": "77006275fb574e74e5e25fb14eecc65a3d674967df5ee2119c4048fc45d146b8",
+            "mime": "image/png",
+            "width": 512
+          },
+          "retrieval": "decoded"
+        }
+      ],
+      "publicationAllowed": false,
+      "sourceSha256": "0480ba91a5ba7ae4bcc580f7e6f3f9cb1467679112361baf336386f93a38ce65"
+    },
+    {
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 120463,
+            "height": 600,
+            "imageSha256": "fdad9aa2bea9952ce028bfe6d7fde3a3ef1e929cabeb31c23411751d6722d3a2",
+            "mime": "image/png",
+            "width": 600
+          },
+          "retrieval": "decoded"
+        }
+      ],
+      "publicationAllowed": false,
+      "sourceSha256": "054b94d3a1281ab649b9620212a5d49c3d1eda287726f158cc78b012e98d12c9"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "074c32b9935e8beeb5211df3353bfd8cc8a088bb057c480d7e9255beedbfdfc3"
+    },
+    {
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 26114,
+            "height": 333,
+            "imageSha256": "4f30b5c55db22b0999f30091c3da060e4854af3be0ab79209f2b9e4d63607105",
+            "mime": "image/webp",
+            "width": 400
+          },
+          "retrieval": "decoded"
+        }
+      ],
+      "publicationAllowed": false,
+      "sourceSha256": "0884e87cc4266a5e61ab302984b05068f2b7b713a1944d6247d70ec124627459"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "0a6d4abc1d82aeeccba47b16a05eed512e7d8cd1a7807b0a5e44706b15d31d4e"
+    },
+    {
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 36136,
+            "height": 400,
+            "imageSha256": "bfd5e76cd729df741d821f7c1d727bd3b00dc868c1d16c2e21be8c8f89f00611",
+            "mime": "image/png",
+            "width": 400
+          },
+          "retrieval": "decoded"
+        }
+      ],
+      "publicationAllowed": false,
+      "sourceSha256": "0ba2e8cf8c1480cf0bf3d3d0a8fc7612d09663702e90866fef161282dfb68283"
+    },
+    {
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 77749,
+            "height": 323,
+            "imageSha256": "75e3054599f53f2918026857c6e791e5bb0513443cda77b1798a8b39a2f60860",
+            "mime": "image/png",
+            "width": 575
+          },
+          "retrieval": "decoded"
+        }
+      ],
+      "publicationAllowed": false,
+      "sourceSha256": "0cea56d0914cc850fda24e1630b67922e0290dba4578c8acafbb744b69689481"
+    },
+    {
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 85113,
+            "height": 640,
+            "imageSha256": "d347c375aedf48096f1d7c019153b226b14d21f285c1caa50797cb2424be0fe4",
+            "mime": "image/jpeg",
+            "width": 640
+          },
+          "retrieval": "decoded"
+        }
+      ],
+      "publicationAllowed": false,
+      "sourceSha256": "0d6d0318614856af59689f07d53034ed62fc07d57bf57b51ec6949c9a105c4c4"
+    },
+    {
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 404560,
+            "height": 512,
+            "imageSha256": "a478db2e793ba2499d8dc93cf70480735c7d48051aabceade914b4fa4b5e09dd",
+            "mime": "image/png",
+            "width": 512
+          },
+          "retrieval": "decoded"
+        }
+      ],
+      "publicationAllowed": false,
+      "sourceSha256": "0e5380dc9bd22f2a56a44ae4da06e9b878d1f794a0de1e99409943dced83ba35"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "12054d93572c0d355629df5c7f853faf6d0670b165becd0ef23a96a6e9dab4ac"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "12cf4382b06e8d92c5fac7a710b0fec52a8aceeb216ad9533c3dc9e234ba5306"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "165c6ecae269c51e0f09a52237161399e575745f1108e3b1a353a7239e2025bd"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "16f0105b998cf89bb9b0abd6101fadb2d68443a2c7296f1c3ceacdd884c6b464"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "16f22caf99043102c0aa111010c5dbf29525e753fa9db7dd03d96f0c3e7ff968"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "175eb2176ffec279b5ade80724c0a679a3cd2ab228287d9f581d78c8b1b19654"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "177a7ad347c4abf6aeea41081b2c323b1439cdb92fb7d36223d7597464538664"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "190ff88726800cb2ce6f137553facc3a62dfc9bf47a57d59c86ce3823d0556f2"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "19235e17e9a18ded137d71b9759168281b9f9154a8901978db4a314839ffc584"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "19b16f79301134256e518a1106b1f62bba69ad807545072e016cad62b442e363"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "19f324042588d46e9c4fa6a7087035b453dcf0b874e3b524d9b1fd4f8d5a9307"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "1a62df74c6b5984c668e1ed49ad53e539e2dab441768d59a4261816b8443d29d"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "1be4cc3eb5076a0abbe6e55781b6e8c9a4634f5643ba8527ce896facb85f89e6"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "1e8461ea45521e2350aaa90313dd534de523d301b235f9d5abe250ba569b7366"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "1f053ddf6868e7a8d8b69b283a10bcc0acdc01a36afb7eaaf77a383c53b327d2"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "1f19cec1a1aa5fdd1c86b8e7265fe86d55df37b8af73fe18ea3296ae1d2db887"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "1fc84dcbc7254959df5e52bd3c7ccecfff0a7c7582840239d2ac59197a66a046"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "2025c10407bab2c662c05485d0e803f65d0d8e260dd19da952f854fdc9daefc9"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "20c9d85fc577e7fac89aca1119bd75bbd3c458caa839b6e75f1ea8f64b81eacd"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "214f44e9090346c033ef703bfa502796e1eff0b52eed64c45230c0a75a6746fb"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "2154ca848d5b56bf35f74460d5645a6439f36d99c7837a8e5421ab97094919aa"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "243d339ac79972a57f5cc1bfe87855772aa221a4e55ff47c8f056473294d67c3"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "2668e2fb5fc20a33ec9965bcc7bb14e47fb9887172e393e32e0fff859fdce895"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "295354353f1042d5bc946ff915a13812f2fbcd3ba4d6781c79c6c73b309af427"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "2a22998a860d82e0c5957bdeee6f74eda09e6d4ae6de28aa387d50b20ec7ced8"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "2b530f7e1050ef4ca0e5afbdeeab4bbabebee887d9516ddc771dd4ebfc58fb46"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "2bb7eb960aecc0cfac823633975a76a8f9d097cea67be5c019c68d7a0d31c802"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "2c681d8496e30990aa6798c68aa10f3839a0b69742d29ac297193075598f9f1d"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "2d500e2e953d29a2be13ffa6fd11548be3cc0559e24dfa66f651ea403df4ae89"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "2f883a117e1cf4164e548537de9c71073a3c8e72fb4adc51293fb85399ec4ff0"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "308c692b596c34afe45f6b7c4d0b09de55c5f9d153cc2d4ee6ef4feb062f436e"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "3565f18ae0881a19a45bb748ff972be6aaf07abc3e701b9ce177a19214e12464"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "36ad6a80f6206aa75693e0b638bdc658b0a768dae7c44a68929745d66fe5c6ac"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "37c2a4eebb49d664d46a377726855bbf2fac872b04a06089cc662080d60acd87"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "3a7137ba481d988d0a1a0b50560394b3cf752931140d80ce032e803bd4858b28"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "3a72329188b70b2e16b9f4bd6a90b1bd8029b24d2767778e9ab676a68019172a"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "3b1babf248a42a19e5cabbd82c79ceb3314b681c9cb3f36c8b8e6362398ff56c"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "3b5c3eb6480f5ad395fcdc51ee8df92cdf03b8c18d87bf56751c93a0df728a9c"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "3d7b7a83aef1c958bf0749e09091cc1d236adf7b472619547e7337ebcb3c3d99"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "3f0269de9dbaeaecb1fad61880389c86c95122fb97f179031eaa0cb334a4190a"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "3f1a52e9a86a023d45c2eeae4630f380dcf64020a27f08b7e545dbc841b326f3"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "3f6ec40f87537d833c4680db925b3f755dab4dac535016cd1a4dbc1ac07090e1"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "3f76c9bcb26824547ad1d7a86b958280ae759d1a8e5be044c9909a30dfc81ccc"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "3fc29e92ff694391aee934534ec699af765561ccab4b08f9108c3f4719b84c76"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "40925d372b7983831dd9c502c570eb28f1f463ee2a5c7717e9597015fba96435"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "41f588802b33d9d644c10a4e57630f99b9c15ca2f494414d4bebf08109cb5ff2"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "42a8661c16ceaf2f147732beca4c8b184ebf776fcf62d0957c990b2e36cf994f"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "44c891fc21e01d76270a741d6fda497877d55702b9170abea620ed1fca58905c"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "451cac5c0581d2be2a1ff74673a0395c22dab9863018492f99a4a398b30642f7"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "46877a54130a48d678954b05110d114dad3ba47af046b8cacf9762ca65ee9c1d"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "469cb286147aaf0b492d4e8c5f3ad2be930ccfeb242f52f2d607242b43c51835"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "46d3a7165050ef498611cdb3ad8d106ce6654c85511fbfda3b5bba25143994c5"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "46dc5c144fbdb1308db64d1865f92473eebc9fd3a305a78de6b502cef0da6ff8"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "487d51ed6a30e9ab48f5c4953a9275f8e3629d6e018d7a4cba63430cc0244ace"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "4984c272fe305fabde69d699da3d31f91538c28b898925b1f19cd08ab8724c68"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "4a9d968e9cca52370563cc23f0970a4b9adda71ccafd092e077549ae322748b6"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "4b3583bf19842bd6e63667e657999d232be674f09ae41c8c66e81cb3a308cf45"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "4ce491ab6a76d966e1331b1bba4bbd79900c07819579f0d66e5fa7efc2af4ee0"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "4d3b47055f79553810be56b43990bf95d1d89f62a45b3aca9ede9584e025e5fe"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "4dac089e07e82a38b08a1e007c833cf2671c6ba1acfada921f2c1244897cc032"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "4f87b958ffaaca41b1edda5613051d8a3945b322dc98112c5a638253a8762190"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "524a055597419e3fd1d2f0b1b07e296f32b447fa59d2a4dfb545c0115e63680f"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "52ece21163c8d1ce21dbf6286aaa95ed02df28cc3a4e3b14478b1aabeaaf4338"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "52f6e48b71f05cc474118178a315ab5476e60c476680182e6c9d0c92bccea970"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "55ed8f48c4d0358045e0e75b8c196a8cfe7e70549e9cf17724afd66b24220d4c"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "577d28a9cecaca9a8d62630f131528ac93061eff370cdff72953715a46f12fcd"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "57c8e82332746dd7fb2b373bb3f59e249b81d15b42be364a3d2df6927b6c3ce2"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "58724e6a668697f62df5dc5c903c0e10091ee84fecc3590dda7e3d6d5c8ebb12"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "58c1e08ca468be2f6596d72ab691760f411c3ea3d1768ada576812d4dc765f8b"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "5a097fd0614aa493dd74a37edb57628006748fd15fe8195973d9e0c96c2c0317"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "5b1ec6dc3a1bb28629c46415653dca5a8955e8644b7515343b296ab163815610"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "5c3056b809c65d105038b324d63d083e763bef5fa36e0f1a0a7003c3a38c67d7"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "5dd3b32ce5499748e88f074dea68f612e5f5347bf23b35f4ba982f8e24f5776b"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "621ee0b5dcb9f40f4054816448165964475db03f2ea7a2469b230e9143a6c7a9"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "627d7f42eebbc5a13356b9b68a7fdd638f3947a10b54205e40e596ba3b9f74e0"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "6343ed03fd8c14597ce4fdd66b1212b2e877fe34f643e4199b7f7d489b174672"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "6678e8262dd1142aa1ecaeee945c7872a3b5465fb5591f3509f51c63fe89d6c7"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "6707037ad8148c1ec7c6f65fbc9edf607fe0109382d92adce59f67ffdab718f5"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "689132e6a443c1a0d8ea61c13f423405aedd902c8c26b370e1852b3459f35aab"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "6a751ddff92fb9940a4f2955c443ded230adc5fb573d9e63828939ae683f048b"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "6a8e2d144cb7752c996de93fd6425fde0bbddab474971bbc04ae0c4cedf6727a"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "6bad070532a045184a10c151ace9f02b65232bfefc43bd172add9e681e3f2613"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "6ed3be1f4802cbe4b65f4798f6a9bd21dcd95b67fcc5f750e4075176fa18649e"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "6f1376a300438b1723fb7778bce492affbb14fc383fabb71bca6c7f84f4324c9"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "6f4a06a0eabcf496200f4c02e582607e1fd023d8bb92dd25a6dddc73e0d8e157"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "7241fa2306be4502d578dd38f9edcc21fb6ed99bc9f273de1be7cab04d78832b"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "7441e9dd849340c0c9109b74e48b07cb0df6c529158da7e963470b59554ff234"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "749c067d343d40f9bf2b82c2f31fc86f49f790ef5c86ae294b8963f3d1c755be"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "7876b66b81759f9b0cb46840993af3383673b9d5d38298755aff5ad8fb6dd0c9"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "7882c84ae1a3d2e315d4a02943c36c7a9450a1966ca8e2296c095cc8020e48cd"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "7a3779c5f872edd23bd6facd1ade905f94076c0afe287d76b81c5d3580a78a56"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "7dc024a66f7b1f81e5f1f84e705d95fe39277c75b392fa04594e462da028cb81"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "7e26a32ae1e440ae11f7f5d82275cdebcece9889d3356567a4ac421a6a5ee336"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "8175fc0859a4c819fbbd955f10a8971505846ea71193b6d13b6f160e83f4d1bc"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "84b69ef0c1d62e5f3a8213effab0f51cd794886a5e91ab2b65ac7c69b4541991"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "8511126278ebad3d315c253564972e8488ecd235960306004a7b856fa967ccc7"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "858c5274c476b3372aef4bfea5112aec0cfca7a609ad67ee54a22635930102c0"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "86d0c56c9de00f025dffd2641247544509ab6582194d28855152969d045ae862"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "873ee37832707abc7fd4aaa45c15e11b7bf976d13095855f91946d0593c2fc2b"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "87ebfa8bec333ede72a9ba47e306778873657e3b01f46871474de402aef7c706"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "880e620e551d61094d374f84def68418c147e9c96e6a910e2c0108fa13d3014c"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "8ac40a56cc78d8eefad00b440ab7273ceb9c14223b53d1e97c27e6ed409a20ee"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "8c2b5ff5bde162aa0c76801df9aa0a4856dce4459a2d27d191bf36da1661b8c6"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "8e9ff6ca68906edf2787f584c243f532b2df7419d6425bd3fdac27f32701ad27"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "92a125a1dc38c09ac947129fcb46d40b21e07b821203d54d9a18b81e71fd4bb7"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "94e6744c6541d95afb38b9063954f72c465a0a01d3a02cf6c31cd9a48dd6ce64"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "967e7d73fe2d7e59407d4b3f2db53bbcdbb64c937735681da6e98de1dcd06bde"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "9ad75a6ca08d05b55cf7a2953032569e8ec9f64a3942f09d7998cf3dc1682166"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "9b249b0b409094953673facc75497d2719912709a4a7ae761ebb8686a337ccda"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "9d9d3c36f4dd6d47e622211859abee47c60bc6cfa8f65ee94a7d3e28a5f04d2a"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "9e28769d935934e1202de080e2d54821becd04380290bfdf48ca694e2d890e1b"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "9f418e61378380a065b8a0784b7cecb77a57b38dd0adbe8379ff25bb81a4eac7"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "9ff09f9ebcd8c106092f4851d9b9979c690cc39162989c6bc70f9f437883e525"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "a18912b15a60263b5ef4c168ee9284ecd40cac9516812712bffb18b983eb6594"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "a4690d3753c27c76c953c4282057f25a3226371755ebce46e04ce0331e267313"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "a4d228d17fbdb418ec207923e37eae7018245f7422bacb4dec6e15d71c22b5f5"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "a71c8ba7e504814f9d43cf54fad3df1eada06eebbc0498336bb95b63bd93640a"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "aa38ad5106698c701f6b79e0182c88a76d1a9ca8188019c6bbeb8d6ee6a69cbc"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "aa8261a174e15da6ac75c7ee13168f99bfaf3a6ef432d7cdbfdf806d5fcac2e6"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "abdf75f6c1cfeed3b93a9270765ac867b3e9c80d7be32d9564a56823887bc625"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "ac069b2cdc638962f042821ae783f18fa600353676cbb794c808261c13f9bfb1"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "af470ef3003463253ca728b5c1c555db68623fc7e851678c8a510198fd1d522a"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "b1425e49f7a6c4aaf0df76f900c5e056a202c399ba65813273a71f72ab6243d4"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "b2c7adfa574e0555482389c91ec53a88875297f8456fced584084179eb37f12e"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "b5e85bed4d70d735dc1c551569ad626f361b7a910655e87c49c7cc280a84ffc4"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "b6c4181c48c7d69487cc7a686cf4b2a6b27eca22267f79ec84b4d4e7c691734e"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "b8e53293e2439af4ad18c06944ee4b59d993863496cd80f4d5ac9adb75109a0b"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "bd0007dd2b07d16ccade86c9d7014db3868323fdc40ce7676630b9b4789aa8c8"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "be9524b8aad0bdee7a845b1d22b3c49c4f6ddb5228d9a66ca9ac868e59231402"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "bf275ff2c4406f6b5240196f04a53c9fb33a06c030dab889513abf2679eaa30e"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "c30323afdee4306565d4718104f9eae6ed1aa6f1fecc85e4fcfb1f0dc259e8eb"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "c36ec652b00f8bc8a9ac52eae3db5b16e10e132cc991a15b83ad93d31905d016"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "c52f7e0431eb8cbff87d3586a88e7896e4058233e39ae8211afb3ec25de28952"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "c654a471e6b0406ce46a4e766e51d22cd09a75a2e0f479dbe6ecca8281d9ab12"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "c68c5a8cb54338e1771b49a7c82fd9b0a187546b93b3cb5501b13046a7321e1c"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "c6d4c9a20b973756932c16b4e3cd61e494ac7517988649089a8c8d392ffeefc6"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "c8764da63bf7ca527fcc3d809d9391532ffcaa4584b0fa2138c7c73fcc790826"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "c9777cbe062ffaf172c8702c85be8f9581597ca36b67fd297f0d3192f9256eb8"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "cb20cb985830997bb2af3a617af3f2a70837e478d0d407e5cc686c5f4e5e86f4"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "cdb76234c6b9478878610fe2f5f2816bebfb7503fe454703e56aafcca09bfaa3"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "cfaa003c1c9a871db1a0357faa973f1d5f0568e396a18b610166b5ecd0ae29cd"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "d39416813240c3df986abba67a154c92fad5070a4825f843a22ced6da51a4a27"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "d3af4a052918511a6575b6ab38729792bf05b3472ecc6a83e6643763e3537f0b"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "d457ef8d5d5826d2868c8b5eeb07a5a9ca95a43f8c44b7ad4f577033f079afe2"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "d4630501d161056824b2f0e62099bd2849c08a2b0ac900a031fdf8b89c221242"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "d53720f9b8e061818f28f6a27ef2728b34be09859f874cd0ba22b162b52157c5"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "d5c5da606c66a14042043a588392700a00a20110dfec261213c1d086a0ff4eb1"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "d7a61b9235deecf4003b97c83263d34876a8db71cc8b9373caeabec1597b525f"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "d8044e6fcda20640814dd687fa1e01748fcad129a70b96cd16fdce33f374ef6f"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "da6f174464847fef927d787d3484bc7b53d5844b740935a6c08c628d56b0d2dc"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "dba4785fa5313865a989b9e9a3f9ef1f0108d2f8fd33662467cc18772ea1d1bc"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "dc16a99a86e8307fb09175932ad8218810a01109f448664959d8378325ade4b8"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "dd4cc57f2ab22750fbd18c984d772730f64cca8a2394b1ce30fa1a3bca1c225d"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "ddf2e8037e523b1ac9d6d5eb9224a64462c301c66b1959b42b1f7d0ea57ca91d"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "df95a9e675e66c99f26e3faca218e4f753594e60b4e83d233f7e453efff7392a"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "e0cdefcf795e357d41284c1b1d7aef7abcd332175e60e7a0903efc043a629c38"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "e1ba0c0465e24fce1ddb4162c33b7dd01a3d2b0cc30a29c63f39bb11cf6ac390"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "e37500a3495f9b81a440cdf166b674f6537305dc2a8dd5beafebadd16b4ea160"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "e4a4a5b1cea976fec640681025a5b61e31af977ee7dcf93b1b368dba265d163a"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "e630f379d1f2aa949e9635f5616cda3e7b88f6d369f53e92efdb905b01021528"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "e68a300a9e7dd5a8b846a95631512cd9407cfc03d8cd15656d04619351db0eaa"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "e909b8c9976286a23e026dcd2773f294c61a2cad230d7995b8c562fe7c3314ce"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "ee677f5b00138fc588d019acd59b5f557ec6f89f60a90c28559c05f80e75c59e"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "f1fd47f1471eb597518557f14ae419f19c45cf7e7ed942a43346b6d0b15b12c1"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "f2b2760bef9cfacf390e1b80145e0509769b7e2008af58d50baf9eeab3b19e6f"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "f3060d626879d88190cdcc6e35ecc13743e66ea315ef9221d147b04bcd915ea9"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "f47f2322f2c266b59f29f0d7f487616a5d058ecd898f9640b971cb60d8a03216"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "f4ab10ee97abe2a1729ce7b6f604d9625db4864de280cc50f89019262c9bb003"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "f5d80696f4ad5cd735e42447d9e2f90bd78714aedecde052d3dfda8d392d6b9f"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "f5ea5a0f8664d2737c8b95243fdc50156979c98d1af961c15486ab77d919cbc4"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "f627ecaf62de0ebd4381a5ad9afb6d9b12f6d31a0b35d61c477c630dee377a04"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "f634faa9efb96448a1b68a956642a4bf9e033ca5199fca4b24ece5a66a05d338"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "f7427ed66cd199479bf39228b7a8a6060acf5a9856e3c907d151f72e4f8c93b9"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "fab91e03cd48c45bad1d5702b0d7985f41038bef00e1904b51292d9304d75718"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "fc7656414cef0832aec3441c84854e0cedd8192fd629604e8e61567db47931cc"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "fde89baaf3afebed574837c40a06efbe75849bbb669b76a8f4918cbf0f34a4ee"
+    },
+    {
+      "observations": [],
+      "publicationAllowed": false,
+      "sourceSha256": "fe0e3455845653b1de42b949fa9806208062ef0b9860235ca596134a6796d32b"
+    }
+  ],
+  "stationCount": 296
+}

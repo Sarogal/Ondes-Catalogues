@@ -3,11 +3,11 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 97,
-  "dueNameCount": 67,
-  "attemptedCount": 1,
-  "serviceFailure": "http_503",
-  "retryAfterKey": "kornkob95",
+  "observedNameCount": 102,
+  "dueNameCount": 72,
+  "attemptedCount": 2,
+  "serviceFailure": "timeout",
+  "retryAfterKey": "latter day exploits",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -217,6 +217,15 @@
       "artistName": "La Pulqueria",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "lana del rey": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Lana Del Rey",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },

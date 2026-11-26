@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 80,
-  "distinctArtistHints": 97,
+  "stationsWithArtistHints": 85,
+  "distinctArtistHints": 102,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -1839,6 +1839,108 @@
           "date": "2026-11-26",
           "artistHint": "PULSO ROTO",
           "titleSha256": "f87e72561c237d6b8654007cfdda2c2df6a96b129b951b422f78a6eb12379655"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "cea9bece-6c51-47a0-bcf9-02b1377824b2",
+      "streamSha256": "6a2d92122e3601de71e45c8a16f6e5ea31e064efa2a0362151fb87762acaaa05",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
+    },
+    {
+      "stationuuid": "cf7a3162-64a7-461c-a7c4-10660bc41e82",
+      "streamSha256": "e2b6b00def8023b2c07c252c3ccf8c3d41cf090c18ba80b363cd1a1fcd624ed7",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Pascow",
+          "titleSha256": "fedbf2b9fee45af5fc870c8b204dc98517b49f308dbbfab410ef73cc381db410"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "d0d9c01c-5e0d-11ea-be63-52543be04c81",
+      "streamSha256": "ea44c95fddde7e067e6edc6c9d959b4698436d27788eb3f8c2bf17cb338ecc6c",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "ACDC",
+          "titleSha256": "a3265ccd6d04751d4c57514a826a12d64c7618470536daea20236944d503e28c"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "d2a83065-4b07-4c1c-bc0c-75f7c29cfbe1",
+      "streamSha256": "538fbf6ded60062266485eccd9638c81fb00a186ab4b3dce8b0bbf2d4d2dad28",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Dvar",
+          "titleSha256": "66a75c31df24dcd560b4ad89748af7c6eb8a4914decb6817eb3ee583ac1419ed"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "d342e328-81bb-4026-9822-cd6c02313be0",
+      "streamSha256": "bc56ddb29c4eff514166cbd9fa14d3d40c9679c76588cfd5a0979f8d182b593d",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Maluma",
+          "titleSha256": "344f004fc02c733db6a15cb0d351d9b077bfc230a7531f35bdcd665910c12183"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "d5c6fb79-1344-43bc-a995-6524620c61ba",
+      "streamSha256": "9c9b03736f802f1f2e4e45ee7ed195fedfe24fbc68d1141b2782b9ff79dc38b5",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Cats in Space",
+          "titleSha256": "bd35696dd9eb0d1d09bb350881f943cfa2a2a1508fc0320e5e7b605a4232ff8d"
         }
       ],
       "alternativeVersion": 0,
