@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 124,
   "dueNameCount": 21,
-  "attemptedCount": 1,
-  "serviceFailure": "service_or_response_held",
-  "retryAfterKey": "acdc",
+  "attemptedCount": 6,
+  "serviceFailure": null,
+  "retryAfterKey": null,
   "entries": {
     "2000 fm": {
       "status": "identity_held",
@@ -62,6 +62,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "ali x, ximena & pvlomo": {
+      "status": "not_found",
+      "artistName": "Ali X, Ximena & PVLOMO",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "athena": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Athena",
@@ -76,6 +85,15 @@
       "artistName": "AxiomMaxiom",
       "checkedAt": "2026-11-25",
       "source": "wikidata",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "bad buka": {
+      "status": "not_found",
+      "artistName": "Bad Buka",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },
@@ -134,6 +152,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "blodwen": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Blodwen",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "blondinka ksju": {
       "status": "identity_held",
       "artistName": "Blondinka Ksju",
@@ -178,6 +205,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "danger danger": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Danger Danger",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "dead end tragedy": {
       "status": "not_found",
       "artistName": "Dead End Tragedy",
@@ -204,9 +240,36 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "drake white": {
+      "status": "name_hypothesis",
+      "qid": "Q16983376",
+      "genresById": {
+        "Q83440": "country music"
+      },
+      "musicbrainzIds": [
+        "3450511f-aea9-40cd-9618-d26ca7495842"
+      ],
+      "sourceUrl": "https://www.wikidata.org/wiki/Q16983376",
+      "genreSource": "wikidata-P136",
+      "artistName": "Drake White",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "dvar": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Dvar",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "elektron": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Elektron",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
