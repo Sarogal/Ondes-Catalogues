@@ -20,6 +20,26 @@ class FestivalTrustedPushTests(unittest.TestCase):
         self.assertNotIn("pull_request:", workflow)
         self.assertNotIn("pull_request_target:", workflow)
 
+    def test_optional_ocr_cache_is_private_and_cannot_publish(self):
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        start = workflow.index("      - name: OCR statique borné")
+        finish = workflow.index("      - name: Enregistrer exclusivement", start)
+        step = workflow[start:finish]
+        self.assertIn("continue-on-error: true", step)
+        self.assertIn("timeout-minutes: 5", step)
+        self.assertIn("timeout 195s /usr/bin/python3", step)
+        self.assertIn("timeout 75s sudo apt-get install", step)
+        self.assertIn("--limit 4 --private-cache", step)
+        self.assertIn("intake/automation-intake/grossesondes/official-poster-ocr-cache.json", step)
+        self.assertIn("report['publication_authorized'] is False", step)
+        self.assertNotIn("secrets.", step)
+        self.assertNotIn("--browser", step)
+        self.assertNotIn("upload-artifact", step)
+        self.assertIn("git add -- automation-intake/grossesondes/official-poster-ocr-cache.json",
+                      workflow[finish:])
+        self.assertIn("push origin HEAD:automation/grossesondes-intake", workflow[finish:])
+        self.assertNotIn("git add -- docs/", workflow)
+
     def test_trusted_push_wakes_only_independent_publisher(self):
         publisher = PUBLISHER.read_text(encoding="utf-8")
         # A successful trusted main push can wake verification, not grant publication.
