@@ -562,7 +562,55 @@ def verify(event, venue, *, fetch=probe.safe_fetch, cache=None):
             "publisherAuthorityGranted": False}
 
 
-def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify):
+def _recent_keys(raw, active):
+    """Keep only unique active IDs, oldest to newest; advisory scheduling."""
+    if not isinstance(raw, list):
+        return []
+    seen = set()
+    result = []
+    for key in reversed(raw):
+        if isinstance(key, str) and key in active and key not in seen:
+            seen.add(key)
+            result.append(key)
+    return list(reversed(result))
+
+
+def _review_history(prior, groups, today):
+    if (not isinstance(prior, dict)
+            or prior.get("schema") != SCHEMA + ".scan"
+            or prior.get("publicationAllowed") is not False
+            or prior.get("publisherAuthorityGranted") is not False):
+        return [], {}
+    try:
+        if dt.date.fromisoformat(prior["asOf"]) > today:
+            return [], {}
+    except (KeyError, TypeError, ValueError):
+        return [], {}
+    active = {vid for vid, rows in groups.items() if rows}
+    venues = _recent_keys(prior.get("recentVenueIds"), active)
+    saved = prior.get("recentEventIdsByVenue")
+    events = {}
+    if isinstance(saved, dict):
+        for vid in active:
+            keys = {row["id"] for row in groups[vid]}
+            recent = _recent_keys(saved.get(vid), keys)
+            if recent:
+                events[vid] = recent
+    return venues, events
+
+
+def _least_recent(rotated, recent):
+    rank = {key: i for i, key in enumerate(recent)}
+    return sorted(rotated, key=lambda key: rank.get(key, -1))
+
+
+def _touch(recent, key):
+    if key in recent:
+        recent.remove(key)
+    recent.append(key)
+
+
+def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify, prior=None):
     """Bounded private research. Rotate over all eligible venues and their events.
 
     A permanent hold at the first room cannot starve the remaining rooms.
@@ -597,7 +645,8 @@ def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify):
                      key=lambda vid: (-len(groups[vid]), vid))
     cycle = today.toordinal() * 3 + slot
     start = (cycle * limit) % len(ordered) if ordered else 0
-    chosen = (ordered[start:] + ordered[:start])[:limit]
+    recent_venues, recent_events = _review_history(prior, groups, today)
+    chosen = _least_recent(ordered[start:] + ordered[:start], recent_venues)[:limit]
     report = {"schema": SCHEMA + ".scan", "asOf": today.isoformat(),
               "eligibleVenues": len(groups), "venuesWithFutureOfficialEvents": len(ordered),
               "examinedVenues": len(chosen), "eventPagesExamined": 0,
@@ -606,12 +655,17 @@ def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify):
     cache = {}
     reasons = Counter()
     for vid in chosen:
+        _touch(recent_venues, vid)
         rows = sorted(groups[vid], key=lambda e: (e["date"], e["id"]))
         # Avoid retrying only the same event page for a room indefinitely.
         offset = cycle % len(rows)
-        selected = (rows[offset:] + rows[:offset])[:per_venue]
+        by_id = {row["id"]: row for row in rows}
+        history = recent_events.setdefault(vid, [])
+        rotated = [row["id"] for row in rows[offset:] + rows[:offset]]
+        selected = [by_id[key] for key in _least_recent(rotated, history)[:per_venue]]
         venue_reasons = Counter()
         for event in selected:
+            _touch(history, event["id"])
             report["eventPagesExamined"] += 1
             try:
                 proof = verify_one(event, venues[vid], cache=cache)
@@ -626,4 +680,6 @@ def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify):
             report["held"].append({"venueId": vid, "reason": "no_verified_address",
                                    "reasonCounts": dict(sorted(venue_reasons.items()))})
     report["reasonCounts"] = dict(sorted(reasons.items()))
+    report["recentVenueIds"] = recent_venues
+    report["recentEventIdsByVenue"] = dict(sorted(recent_events.items()))
     return report
