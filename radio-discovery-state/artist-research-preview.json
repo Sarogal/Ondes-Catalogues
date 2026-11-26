@@ -3,11 +3,11 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 62,
-  "dueNameCount": 38,
-  "attemptedCount": 4,
-  "serviceFailure": "http_503",
-  "retryAfterKey": "brigadnyj podrjad",
+  "observedNameCount": 68,
+  "dueNameCount": 41,
+  "attemptedCount": 1,
+  "serviceFailure": "timeout",
+  "retryAfterKey": "gojira",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",

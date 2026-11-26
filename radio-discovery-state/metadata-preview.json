@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 44,
-  "distinctArtistHints": 62,
+  "stationsWithArtistHints": 50,
+  "distinctArtistHints": 68,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -1095,6 +1095,114 @@
           "date": "2026-11-26",
           "artistHint": "Jeff Beck Group",
           "titleSha256": "1acbc32bc8d6c12cc76d2fba29887d70c31f14528c0eabad995db5f04c970c18"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "753d2e38-194f-4fb0-9918-4263c6119188",
+      "streamSha256": "08e4121484e003dfa9074299b382beb68ab8cfb7021aec650ae9eafa5c2fcafe",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Local Natives",
+          "titleSha256": "b19d51f2626bebbedb5f6da47ee22b0b5160642d7d9f65b93481daf198e39e56"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "76200b90-939a-46ad-9b37-069f32ba4366",
+      "streamSha256": "d4533161a11fed9e2f4e982f99d3d385c7ff3c2f87f8ed161777ea7ed1d96ca8",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Radioactivo 98 1/2 FM",
+          "titleSha256": "d53faffffbefea9d8e5df252d96a66f768032c76f9b0cda531a162e3ebe7aac8"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "77337406-99c4-11e9-a605-52543be04c81",
+      "streamSha256": "48ffa310933f6876dbe66c587facef3fe955482c232973a03202d21c391216de",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Minor Threat",
+          "titleSha256": "09b8029445a8dc37309c7851238e101db23ba606d8c4cf85f43244e1488e140b"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "7912f9a4-750e-4575-8718-37a2a2edfb16",
+      "streamSha256": "fa209aa8b9a7e6d2896fc8e5a0f4d9400b3de8ba912bbeb7bd1cc46238ddf2ec",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Zeal & Ardor",
+          "titleSha256": "d8d70bf5c46fa273ec2d71840df195ddce148a86d51778e2163e09177e4268bf"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "795e1e3f-8b5a-414a-bb28-a53164c27c71",
+      "streamSha256": "792b0e94ee0667d2833b2f0125a87b57b31f43013715b16ecddd5663f1ea4dd0",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Nochnoj Prospekt",
+          "titleSha256": "b29e1084fd33710fcb024766850bcb88a43a4fd10c4b6457ef1269ea3a4f9b3d"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "7a2996c6-adf0-4f1d-8eb9-225bc90e7a34",
+      "streamSha256": "4905ac699fbd51f4a5e4f98447f27c3c812b7463246ad0796b9cf909621d9bd0",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "One and a half dog",
+          "titleSha256": "6fba0ab78ef8adb61daeeccbffcdee56f1e31cacb79baf1672d67bc72782fad4"
         }
       ],
       "alternativeVersion": 0,

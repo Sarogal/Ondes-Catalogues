@@ -3866,10 +3866,11 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "1fd1278b4e3b5b760b2afa150d0059c6f3256a2d8f707505f0be8fc0767e0f2c",
-        "observedDate": "2026-11-25",
+        "observedDate": "2026-11-26",
         "verdict": "continuous_icy_frame_indication",
         "positiveObservationDates": [
-          "2026-11-25"
+          "2026-11-25",
+          "2026-11-26"
         ],
         "windowCount": 3,
         "sampleBytes": 12288,
@@ -3980,14 +3981,15 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "ed2a3274edc9092547074120bac8f194320d86bfaa21989d4dd89c5cde525d1c",
-        "observedDate": "2026-11-25",
+        "observedDate": "2026-11-26",
         "verdict": "continuous_icy_frame_indication",
         "positiveObservationDates": [
-          "2026-11-25"
+          "2026-11-25",
+          "2026-11-26"
         ],
         "windowCount": 3,
         "sampleBytes": 12288,
-        "elapsedMs": 4187,
+        "elapsedMs": 4193,
         "coherentWindowCount": 3,
         "distinctWindowCount": 3,
         "frameCodec": "aac_adts",
@@ -4250,14 +4252,15 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "cf9456eb48746077c2743b972d475238f611c9da63a84c430c49892e8ed9f3d8",
-        "observedDate": "2026-11-25",
+        "observedDate": "2026-11-26",
         "verdict": "continuous_icy_frame_indication",
         "positiveObservationDates": [
-          "2026-11-25"
+          "2026-11-25",
+          "2026-11-26"
         ],
         "windowCount": 3,
         "sampleBytes": 12288,
-        "elapsedMs": 4399,
+        "elapsedMs": 4400,
         "coherentWindowCount": 3,
         "distinctWindowCount": 3,
         "frameCodec": "mpeg_layer3",
@@ -4348,10 +4351,11 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "49ad66de7ab731d5dfd7d4a726e439856c73f3f336de0397fff71bbdf37f11ff",
-        "observedDate": "2026-11-25",
+        "observedDate": "2026-11-26",
         "verdict": "continuous_icy_frame_indication",
         "positiveObservationDates": [
-          "2026-11-25"
+          "2026-11-25",
+          "2026-11-26"
         ],
         "windowCount": 3,
         "sampleBytes": 12288,
@@ -4886,14 +4890,15 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "dd30406461d941b61cc5c3c9e0cdba561a7062b93da113034e70735e044481e4",
-        "observedDate": "2026-11-25",
+        "observedDate": "2026-11-26",
         "verdict": "continuous_icy_frame_indication",
         "positiveObservationDates": [
-          "2026-11-25"
+          "2026-11-25",
+          "2026-11-26"
         ],
         "windowCount": 3,
         "sampleBytes": 12288,
-        "elapsedMs": 4038,
+        "elapsedMs": 4049,
         "coherentWindowCount": 3,
         "distinctWindowCount": 3,
         "frameCodec": "mpeg_layer3",
@@ -5114,14 +5119,15 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "efd4f4b76d9b1b919f4de6a1c32726c57a58dd4f4cc9b5536f0ce5230b64e94a",
-        "observedDate": "2026-11-25",
+        "observedDate": "2026-11-26",
         "verdict": "continuous_icy_frame_indication",
         "positiveObservationDates": [
-          "2026-11-25"
+          "2026-11-25",
+          "2026-11-26"
         ],
         "windowCount": 3,
         "sampleBytes": 12288,
-        "elapsedMs": 4000,
+        "elapsedMs": 4134,
         "coherentWindowCount": 3,
         "distinctWindowCount": 3,
         "frameCodec": "aac_adts",

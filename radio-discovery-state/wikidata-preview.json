@@ -3,9 +3,9 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 62,
-  "dueNameCount": 1,
-  "attemptedCount": 1,
+  "observedNameCount": 68,
+  "dueNameCount": 6,
+  "attemptedCount": 6,
   "serviceFailure": null,
   "retryAfterKey": null,
   "entries": {
@@ -309,6 +309,24 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "local natives": {
+      "status": "name_hypothesis",
+      "qid": "Q2613632",
+      "genresById": {
+        "Q183504": "indie rock"
+      },
+      "musicbrainzIds": [
+        "1bbf31dc-dbc0-4a7a-bf3f-48bc665878e1"
+      ],
+      "sourceUrl": "https://www.wikidata.org/wiki/Q2613632",
+      "genreSource": "wikidata-P136",
+      "artistName": "Local Natives",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "marc freak": {
       "status": "not_found",
       "artistName": "Marc Freak",
@@ -321,6 +339,15 @@
     "megadeth": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Megadeth",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "minor threat": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Minor Threat",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
@@ -372,6 +399,24 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "nochnoj prospekt": {
+      "status": "not_found",
+      "artistName": "Nochnoj Prospekt",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "one and a half dog": {
+      "status": "not_found",
+      "artistName": "One and a half dog",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "panda bear, cindy lee": {
       "status": "not_found",
       "artistName": "Panda Bear, Cindy Lee",
@@ -402,6 +447,15 @@
     "queens of the stone age": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Queens Of The Stone Age",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "radioactivo 98 1/2 fm": {
+      "status": "not_found",
+      "artistName": "Radioactivo 98 1/2 FM",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
@@ -600,6 +654,15 @@
     "womb": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Womb",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "zeal & ardor": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Zeal & Ardor",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,

@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "freshnessDays": 30,
-  "stationCount": 65,
-  "stationsWithWikidataHints": 6,
+  "stationCount": 71,
+  "stationsWithWikidataHints": 7,
   "stationsWithSourceConflicts": 0,
   "stationsWithReportedHistory": 0,
   "stationsWithMultipleObservationDays": 19,
@@ -2417,6 +2417,240 @@
       },
       "sourceHintCounts": {
         "musicbrainz_only": 1,
+        "no_usable_source": 1
+      },
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "753d2e38-194f-4fb0-9918-4263c6119188",
+      "streamSha256": "08e4121484e003dfa9074299b382beb68ab8cfb7021aec650ae9eafa5c2fcafe",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 1,
+      "distinctArtistTitleHints": 1,
+      "distinctTitleHashes": 1,
+      "observationDates": [
+        "2026-11-26"
+      ],
+      "reportedBroadcastDates": [],
+      "distinctHistoricalArtistTitleHints": 0,
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "sourceHintCounts": {
+        "wikidata_only": 1
+      },
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "76200b90-939a-46ad-9b37-069f32ba4366",
+      "streamSha256": "d4533161a11fed9e2f4e982f99d3d385c7ff3c2f87f8ed161777ea7ed1d96ca8",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 1,
+      "distinctArtistTitleHints": 1,
+      "distinctTitleHashes": 1,
+      "observationDates": [
+        "2026-11-26"
+      ],
+      "reportedBroadcastDates": [],
+      "distinctHistoricalArtistTitleHints": 0,
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "77337406-99c4-11e9-a605-52543be04c81",
+      "streamSha256": "48ffa310933f6876dbe66c587facef3fe955482c232973a03202d21c391216de",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 1,
+      "distinctArtistTitleHints": 1,
+      "distinctTitleHashes": 1,
+      "observationDates": [
+        "2026-11-26"
+      ],
+      "reportedBroadcastDates": [],
+      "distinctHistoricalArtistTitleHints": 0,
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "7912f9a4-750e-4575-8718-37a2a2edfb16",
+      "streamSha256": "fa209aa8b9a7e6d2896fc8e5a0f4d9400b3de8ba912bbeb7bd1cc46238ddf2ec",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 1,
+      "distinctArtistTitleHints": 1,
+      "distinctTitleHashes": 1,
+      "observationDates": [
+        "2026-11-26"
+      ],
+      "reportedBroadcastDates": [],
+      "distinctHistoricalArtistTitleHints": 0,
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "795e1e3f-8b5a-414a-bb28-a53164c27c71",
+      "streamSha256": "792b0e94ee0667d2833b2f0125a87b57b31f43013715b16ecddd5663f1ea4dd0",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 1,
+      "distinctArtistTitleHints": 1,
+      "distinctTitleHashes": 1,
+      "observationDates": [
+        "2026-11-26"
+      ],
+      "reportedBroadcastDates": [],
+      "distinctHistoricalArtistTitleHints": 0,
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "7a2996c6-adf0-4f1d-8eb9-225bc90e7a34",
+      "streamSha256": "4905ac699fbd51f4a5e4f98447f27c3c812b7463246ad0796b9cf909621d9bd0",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 1,
+      "distinctArtistTitleHints": 1,
+      "distinctTitleHashes": 1,
+      "observationDates": [
+        "2026-11-26"
+      ],
+      "reportedBroadcastDates": [],
+      "distinctHistoricalArtistTitleHints": 0,
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "collaborationMemberHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "sourceHintCounts": {
         "no_usable_source": 1
       },
       "verifiedArtistCount": 0,
