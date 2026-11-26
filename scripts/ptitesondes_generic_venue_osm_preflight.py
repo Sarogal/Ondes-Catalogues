@@ -15,6 +15,7 @@ from pathlib import Path
 from collections import Counter
 from time import monotonic
 from urllib.error import HTTPError, URLError
+from http.client import HTTPException
 from urllib.parse import urlencode
 from urllib.request import Request, build_opener, HTTPRedirectHandler
 
@@ -133,7 +134,7 @@ def overpass_query(lat, lng):
 # Per-process only: one bounded rotation shares health across both OSM paths.
 # Fixed labels, never query text, venue names, URLs or response bodies.
 OSM_ENDPOINT_LABELS = ("lz4", "private_coffee")
-OSM_PATHS = ("nearby", "named")
+OSM_PATHS = ("nearby", "named", "acceslibre")
 OSM_CATEGORIES = ("success", "cooldown", "http_400", "http_403", "http_429",
                   "http_5xx", "http_other", "timeout", "network",
                   "invalid_response", "invalid_json", "incomplete_response",
@@ -193,8 +194,8 @@ def fetch_osm_query(query, *, pathway, unavailable):
                     else:
                         _osm_counters[pathway, label, "success"] += 1
                         return data
-        except (OSError, UnicodeError, ValueError) as error:
-            category = (_osm_error_category(error) if isinstance(error, OSError)
+        except (OSError, HTTPException, UnicodeError, ValueError) as error:
+            category = (_osm_error_category(error) if isinstance(error, (OSError, HTTPException))
                         else "invalid_response")
         _osm_counters[pathway, label, category] += 1
         delay = {"http_429": 300, "http_5xx": 120, "timeout": 60,
@@ -206,6 +207,11 @@ def fetch_osm_query(query, *, pathway, unavailable):
 
 def fetch_overpass(center):
     return fetch_osm_query(overpass_query(*center), pathway="nearby",
+                           unavailable="independent_provider_unavailable")
+
+
+def fetch_acceslibre_osm(center):
+    return fetch_osm_query(overpass_query(*center), pathway="acceslibre",
                            unavailable="independent_provider_unavailable")
 
 
