@@ -1243,6 +1243,14 @@ class MunicipalVenueCityTests(unittest.TestCase):
                                  "source": self.site, "venue_source": self.venue})
         self.assertEqual(calls, [self.venue])
 
+    def test_cms_repeats_identical_municipal_title_suffix(self):
+        repeated = self.html.replace(
+            "site officiel de la Mairie</title>",
+            "site officiel de la Mairie     Ville-Test, site officiel de la Mairie</title>")
+        self.assertIsNotNone(self.prove(html=repeated)[0])
+        self.assertIsNone(self.prove(html=repeated.replace(
+            "     Ville-Test,", "     Autre-Ville,"))[0])
+
     def test_municipal_title_is_not_event_location(self):
         self.assertIsNone(self.prove(html=self.html.replace(
             "au Salle des Musiques", "en tournée"))[0])
@@ -1274,6 +1282,23 @@ class MunicipalVenueCityTests(unittest.TestCase):
         result, calls = self.prove(html=html)
         self.assertIsNone(result)
         self.assertEqual(calls, [])
+
+    def test_hidden_void_element_does_not_poison_following_visible_menu(self):
+        html = self.html.replace("<nav>", (
+            '<div hidden><input/><br/><div>hidden</div></div><nav>'))
+        self.assertIsNotNone(self.prove(html=html)[0])
+
+    def test_signed_origin_recheck_does_not_depend_on_current_agenda_index(self):
+        from unittest.mock import patch
+        from grossesondes_existing_official_updates import _reprove_signed_municipal_origin
+        mod = "national_municipal_source_research"
+        with patch(mod + ".verified_commune", return_value={
+                "city": "Ville-Test", "codeInsee": "12345"}), \
+             patch(mod + ".fetch_dila_records", return_value={}), \
+             patch(mod + ".verified_mairie_site", return_value="https://www.example.fr/"):
+            self.assertTrue(_reprove_signed_municipal_origin("Ville-Test", self.site))
+            self.assertFalse(_reprove_signed_municipal_origin(
+                "Ville-Test", "https://different.example.fr/event/"))
 
     def test_unsigned_and_cancelled_event_not_location_authority(self):
         self.assertIsNone(self.prove(row=dict(self.row, sourceConfidence="unknown"))[0])

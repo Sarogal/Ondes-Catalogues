@@ -7,11 +7,16 @@ Only the existing DNS-pinned HTTPS transport is used in production.
 from __future__ import annotations
 
 import re
+from pathlib import Path
+import sys
 from urllib.parse import urljoin, urlsplit
 
 from dns_pinned_https import fetch_public_html, safe_public_url
 from national_openagenda_research import _valid_professional_hints
 from source_qualification import Anchors, normalized, classify, visible_text
+SCRIPTS = str(Path(__file__).resolve().parents[1] / 'scripts')
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
 from grossesondes_generic_directory_edition import Heading
 
 MAX_REQUESTS = 5
@@ -154,6 +159,8 @@ def discover(hints, title, year, *, fetch=fetch_public_html):
             if profiles is None:
                 continue
             result["status"] = "TICKET_IDENTITY_REVIEW_ONLY"
+            if not profiles:
+                continue
             for profile, label in profiles:
                 profile_html = read(profile)
                 for site in _profile_websites(profile_html, profile, label, ticket):
@@ -165,5 +172,6 @@ def discover(hints, title, year, *, fetch=fetch_public_html):
                     if len(result["websites"]) >= MAX_WEBSITES:
                         return result
             # Exact event already found. No alternate page or recursive traversal.
-            return result
+            if result["websites"]:
+                return result
     return result

@@ -9,9 +9,15 @@ on:
     branches: [main]
     paths:
       - .github/workflows/ptitesondes-acceslibre-geo-hints.yml
+  schedule:
+    - cron: '22 04 * * 1,4'
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ptitesondes-public-private-intake
+  queue: max
+  cancel-in-progress: false
 jobs:
   offline:
     runs-on: ubuntu-24.04
@@ -40,9 +46,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: automation/ptitesondes-intake
+          path: state
+          sparse-checkout: |
+            automation-intake/ptitesondes
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          persist-credentials: false
       - name: Download one national export and measure coverage
         run: |
-          python scripts/ptitesondes_acceslibre_geo_hints.py --catalogue docs/ptitesondes/sorties.json --day "$(TZ=Europe/Paris date +%F)" --live | tee "$RUNNER_TEMP/acceslibre-summary.json"
+          python scripts/ptitesondes_acceslibre_geo_hints.py --catalogue docs/ptitesondes/sorties.json --day "$(TZ=Europe/Paris date +%F)" --private-output state/automation-intake/ptitesondes/acceslibre-geo-hints.json --live | tee "$RUNNER_TEMP/acceslibre-summary.json"
           python - "$RUNNER_TEMP/acceslibre-summary.json" <<'PY'
           import json, sys, os
           with open(sys.argv[1]) as f:
@@ -54,3 +69,21 @@ jobs:
                   f.write(f"- {k}: {report[k]}\n")
           PY
           git diff --exit-code -- docs/ptitesondes/sorties.json
+
+      - name: Persist private advisory hints only
+        env:
+          PRIVATE_WRITE_TOKEN: ${{ secrets.PTITESONDES_INTAKE_WRITE_TOKEN }}
+        run: |
+          set -euo pipefail
+          P="automation-intake/ptitesondes/acceslibre-geo-hints.json"
+          git -C state add -- "$P"
+          if git -C state diff --cached --quiet; then exit 0; fi
+          test "$(git -C state diff --cached --name-only)" = "$P"
+          git -C state config user.name 'github-actions[bot]'
+          git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C state commit -m 'data(ptitesondes): refresh private Acceslibre discovery hints' > "$RUNNER_TEMP/acceslibre-commit.log" 2>&1
+          AUTH="$(printf 'x-access-token:%s' "$PRIVATE_WRITE_TOKEN" | base64 -w0)"
+          if ! git -C state -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" push origin HEAD:automation/ptitesondes-intake > "$RUNNER_TEMP/acceslibre-push.log" 2>&1; then
+            echo "::error::Private hint checkpoint not saved."
+            exit 1
+          fi

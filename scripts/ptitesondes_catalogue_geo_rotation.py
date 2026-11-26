@@ -87,6 +87,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--catalogue", type=Path, required=True)
     p.add_argument("--state", type=Path, required=True)
+    p.add_argument("--acceslibre-hints", type=Path)
     p.add_argument("--day", type=date.fromisoformat, required=True)
     p.add_argument("--live", action="store_true")
     a = p.parse_args()
@@ -96,6 +97,8 @@ if __name__ == "__main__":
         raise ValueError("unsafe_state_path")
     catalogue = json.loads(a.catalogue.read_text(encoding="utf-8"))
     previous = json.loads(a.state.read_text(encoding="utf-8")) if a.state.exists() else None
-    state, summary = rotate(catalogue, a.day, previous)
+    from ptitesondes_acceslibre_geo_hints import load_hints, hinted_researcher
+    state, summary = rotate(catalogue, a.day, previous,
+        researcher=hinted_researcher(load_hints(a.acceslibre_hints, a.day)))
     write_state(a.state, state)
     print(json.dumps(summary))

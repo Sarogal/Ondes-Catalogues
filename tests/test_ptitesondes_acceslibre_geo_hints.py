@@ -60,3 +60,50 @@ class AcceslibreTests(unittest.TestCase):
         for url in ("http://static.data.gouv.fr/file", "https://static.data.gouv.fr.evil.example/file",
                     "https://user@static.data.gouv.fr/file", "https://127.0.0.1/file"):
             self.assertFalse(_trusted_export(url))
+
+
+class IndependentAcceslibreHintsTests(unittest.TestCase):
+    def test_cache_is_private_optional_and_expires(self):
+        from ptitesondes_acceslibre_geo_hints import load_hints
+        from datetime import timedelta
+        from ptitesondes_catalogue_geo_rotation import write_state
+        report = scan(DOC, DAY, [ROW])
+        with TemporaryDirectory() as folder:
+            p = Path(folder)/"hints.json"
+            self.assertEqual(load_hints(p, DAY), {})
+            write_state(p, report)
+            self.assertEqual(load_hints(p, DAY), report["hints"])
+            self.assertEqual(load_hints(p, DAY+timedelta(days=8)), {})
+            write_state(p, dict(report, publication_ready=True))
+            self.assertEqual(load_hints(p, DAY), {})
+
+    def test_live_independent_proof_required_even_with_valid_hint(self):
+        from unittest.mock import patch, Mock
+        from ptitesondes_acceslibre_geo_hints import independent_hint_location
+        from ptitesondes_catalogue_geo_research import research_queue
+        from ptitesondes_catalogue_geo_rotation import identity
+        report = scan(DOC, DAY, [ROW])
+        group = next(g for g in research_queue(DOC, DAY)["research_groups"]
+                     if g["city"] == "Nantes")
+        hint = report["hints"][identity(group)]
+        reader = Mock(return_value="<html>venue</html>")
+        commune = lambda _: [dict(nom="Nantes", code="44109", codeDepartement="44")]
+        valid = dict(lat=47.2, lng=-1.57, official=ROW["site_internet"], geo_source="BAN + OSM")
+        with patch("ptitesondes_acceslibre_geo_hints._external_location", return_value=None):
+            self.assertIsNone(independent_hint_location(group, hint, html_get=reader, commune_get=commune))
+        with patch("ptitesondes_acceslibre_geo_hints._external_location", return_value=valid):
+            self.assertEqual(independent_hint_location(group, hint, html_get=reader, commune_get=commune)["lat"], 47.2)
+            self.assertIsNone(independent_hint_location(group, hint, html_get=reader, commune_get=lambda _: []))
+        with patch("ptitesondes_acceslibre_geo_hints._external_location", return_value=dict(valid, lat=48.0)):
+            self.assertIsNone(independent_hint_location(group, hint, html_get=reader, commune_get=commune))
+
+    def test_does_not_override_existing_proof_or_conflict(self):
+        from unittest.mock import Mock
+        from ptitesondes_acceslibre_geo_hints import hinted_researcher
+        from ptitesondes_catalogue_geo_research import research_queue
+        group = research_queue(DOC, DAY)["research_groups"][0]
+        verify = Mock(side_effect=AssertionError("must not override"))
+        for status in ("independent_venue_point_found", "independent_points_conflict"):
+            old = dict(status=status, publication_ready=False)
+            self.assertEqual(hinted_researcher({}, base=lambda *_: old, verify=verify)(group, DAY), old)
+        verify.assert_not_called()

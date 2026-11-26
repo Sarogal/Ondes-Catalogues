@@ -48,11 +48,22 @@ class ProfessionalProfileDiscoveryTests(unittest.TestCase):
         forged = dict(HINTS, verified=True)
         self.assertEqual(discover(forged, TITLE, 2027, fetch=lambda _: self.fail("unsafe fetch"))["requests"], 0)
 
+    def test_retry_when_first_event_route_has_no_profiles(self):
+        pages = {EVENT: '<h1>Festival des Rives</h1><p>Festival annoncé le 6 février 2027</p>',
+                 FEST: EVENT_PAGE, PROFILE: PROFILE_PAGE}
+        calls = []
+        def fetch(url):
+            calls.append(url)
+            return pages[url]
+        result = discover(HINTS, TITLE, 2027, fetch=fetch)
+        self.assertEqual(calls, [EVENT, FEST, PROFILE])
+        self.assertEqual(result["status"], "PROFESSIONAL_WEBSITE_HINTS")
+
     def test_total_budget_and_no_cross_host_profile(self):
         other = EVENT_PAGE.replace("/fr/venues/production-des-rives",
                                    "https://other.fr/venues/production-des-rives")
         result = discover(HINTS, TITLE, 2027, fetch=lambda _: other)
-        self.assertEqual(result["requests"], 1)
+        self.assertEqual(result["requests"], 2)
         self.assertEqual(result["websites"], [])
 
 if __name__ == "__main__":
