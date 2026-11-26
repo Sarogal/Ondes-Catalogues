@@ -6425,6 +6425,30 @@
         "officialSite": "https://lamarbrerie.fr/disorder-festival-a-dark-celebration-2/",
         "markerMeaning": "centre_indicatif_de_commune"
       }
+    },
+    {
+      "city": "Toulouse",
+      "lat": null,
+      "officialSite": "https://setmanasanta.fr/",
+      "showOnMap": false,
+      "price": null,
+      "dateRangeIsContinuous": false,
+      "name": "SETMANA SANTA 2026",
+      "slug": "setmana-santa-2026",
+      "lastVerified": "2026-11-26",
+      "source": "https://setmanasanta.fr/",
+      "sourceConfidence": "Domaine du festival + annonce officielle revérifiée",
+      "notes": "Édition et dates revérifiées directement sur le site officiel du festival. Aucun recoupement extérieur des dates n'est requis. Adresse exacte et GPS à compléter.",
+      "endDate": "2026-12-06",
+      "startDate": "2026-12-01",
+      "lon": null,
+      "bands": 0,
+      "department": null,
+      "region": null,
+      "venue": null,
+      "status": "Annoncé",
+      "lineup": [],
+      "verificationStatus": "Site et édition officielle revérifiés"
     }
   ]
 }
