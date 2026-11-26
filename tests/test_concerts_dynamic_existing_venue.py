@@ -672,6 +672,80 @@ class UnlistedExistingVenueTests(unittest.TestCase):
                 dynamic.validate(signed, venues, artists, TODAY,
                                  fetch=fake_fetch({"primary": body}))
 
+    def test_exact_visible_musical_prose_replayed_by_real_publisher(self):
+        from automation.concerts import dynamic_first_party_venue_proposals as proposals
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        title = " + ".join(NAMES) + " + Guest"
+        description = ("Au programme, " + ", ".join("le groupe " + n for n in NAMES[:-1])
+                       + " et le black metal mélodique de " + NAMES[-1] + ".")
+        body = page(EVENT, music=False, genres=False, event_name=title)
+        body = body.replace(json.dumps(
+            [{"@type": "MusicGroup", "name": n} for n in NAMES]), "[]")
+        body = body.replace("<h1>Nouvel événement</h1>",
+                            "<h1>" + title + "</h1><p>" + description + "</p>")
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+        fetch = fake_fetch({"primary": body})
+        self.assertEqual(proposals._individual_event(
+            body, EVENT, signed["event"]["date"], venue,
+            accept_generic=True, fetch=fetch, cache={}), (NAMES, ["Black Metal"]))
+        self.assertTrue(dynamic.validate(signed, venues, artists, TODAY, fetch=fetch))
+        with mock.patch.object(dynamic, "safe_fetch", side_effect=fetch):
+            published, counts = publisher.merge(
+                BASE, BASE, {"schema": publisher.SCHEMA, "approvals": [signed]}, TODAY)
+        self.assertEqual(counts["newEvents"], 1)
+        event = next(e for e in published["events"] if e["id"] == signed["event"]["id"])
+        self.assertEqual(event["artistIds"], IDS)
+        self.assertEqual(event["title"], " + ".join(NAMES))
+        for bad in (
+                body.replace("le groupe " + NAMES[0], "le groupe Other Artist"),
+                body.replace("black metal mélodique", "jazz influencé par le black metal"),
+                body.replace("black metal mélodique", "hardcore techno"),
+                body.replace("le black metal", "pas le black metal"),
+                body.replace("<p>" + description, "<h2>Vous devriez aimer…</h2><p>" + description),
+                body.replace("<p>" + description, "<h3>" + NAMES[0] + "</h3><p>" + description),
+                body.replace("<h1>" + title, "<h1>Different Concert"),
+                body.replace('"performer": []', '"performer": [{"@type": "MusicGroup", "name": "Other Artist"}]'),
+        ):
+            with self.subTest(snippet=bad[:180]), self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY,
+                                 fetch=fake_fetch({"primary": bad}))
+
+    def test_visible_prose_roles_and_explicit_style_stay_artist_specific(self):
+        names = ["Example Trio", "Example Solo", "Example Group"]
+        title = " / ".join(names)
+        description = ("Au programme, la techno du trio Example Trio, les chansons "
+                       "mélancoliques de Example Solo et le groupe de rock alternatif "
+                       "et post-punk originaire de Rouen Example Group.")
+        html = "<h1>" + title + "</h1><p>" + description + "</p>"
+        people = dynamic.visible_named_bill(html, title)
+        self.assertEqual([p["name"] for p in people], names)
+        self.assertNotIn("genre", people[0])
+        self.assertNotIn("genre", people[1])
+        self.assertEqual(people[2]["genre"], ["Post Punk"])
+        self.assertEqual(dynamic.visible_named_bill(
+            html + "<p>" + description + "</p>", title), people)
+        self.assertIsNone(dynamic.visible_named_bill(
+            html + "<p>" + description.replace("post-punk", "death metal") + "</p>", title))
+
+    def test_visible_prose_trailing_guest_and_individual_punk_credits(self):
+        title = "Example A + Example B + Guest"
+        prose = ("Une session avec le punk rock féministe très riot grrrls de Example A "
+                 "et le punk grunge anarchiste de Example B.")
+        html = "<h1>" + title + "</h1><p>" + prose + "</p>"
+        people = dynamic.visible_named_bill(html, title)
+        self.assertEqual([p["name"] for p in people], ["Example A", "Example B", "Guest"])
+        self.assertEqual(people[0]["genre"], ["Punk Rock"])
+        self.assertEqual(people[1]["genre"], ["Punk"])
+        self.assertNotIn("genre", people[2])
+        for bad_title in ("Example A + Guest + Example B", "Example A + Example B + TBA + Guest"):
+            self.assertIsNone(dynamic.visible_named_bill(
+                html.replace(title, bad_title), bad_title))
+
     def test_signed_published_osm_api_node_sources_are_rechecked_without_allowlist(self):
         # Five real published venues use the API-node spelling; the old
         # validator rejected these even though it fetches that exact API.
