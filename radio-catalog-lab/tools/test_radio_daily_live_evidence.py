@@ -70,3 +70,9 @@ class LiveEvidenceTests(unittest.TestCase):
             LiveEvidence().fetch("https://a.example/")
             LiveEvidence().fetch("https://a.example/")
             self.assertEqual(fetch.call_count, 2)
+
+    @patch("radio_daily_live_evidence.fetch_page", return_value=[])
+    @patch("radio_daily_live_evidence.resolve_api_mirrors", return_value=["a"])
+    def test_repair_uses_its_own_page_limit(self, mirrors, fetch):
+        LiveEvidence(directory_limit=50).search("Radio")
+        fetch.assert_called_once_with(["a"], "name", "Radio", 0, 50)

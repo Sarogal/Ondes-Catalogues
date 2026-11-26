@@ -24,9 +24,12 @@ class EvidenceDeferred(ValueError):
 
 class LiveEvidence:
     def __init__(self, *, max_calls=MAX_CALLS, max_seconds=MAX_SECONDS,
-                 clock=time.monotonic):
+                 clock=time.monotonic, directory_limit=100):
         if not 0 < max_calls <= MAX_CALLS or not 0 < max_seconds <= MAX_SECONDS:
             raise ValueError("invalid live evidence budget")
+        if directory_limit not in (50, 100):
+            raise ValueError("invalid directory page budget")
+        self._directory_limit = directory_limit
         self._clock = clock
         self._deadline = clock() + max_seconds
         self._max_calls = max_calls
@@ -60,7 +63,7 @@ class LiveEvidence:
         def lookup(term):
             if self._hosts is None:
                 self._hosts = resolve_api_mirrors()[:2]
-            return fetch_page(self._hosts, "name", term, 0, 100)
+            return fetch_page(self._hosts, "name", term, 0, self._directory_limit)
         return self._invoke("search", name, lookup)
 
     def fetch(self, url):

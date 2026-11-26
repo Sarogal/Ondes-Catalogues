@@ -6,6 +6,8 @@ from radio_daily_baseline_verify import verify_baseline, strict_json, KEY_ID, PU
 from radio_daily_v9_generator import digest, encode, load_bytes
 from radio_daily_decision_preview import decide
 from radio_daily_repair_plan import plan
+from radio_daily_repair_preview import PAGE_SIZE
+from radio_daily_admission_release_validation import DIRECTORY_LIMIT
 from radio_daily_admission_release_validation import qualify_admission, validate_admission_release
 from radio_daily_repair_release_validation import qualify_repair, validate_repair_release
 from radio_daily_live_evidence import LiveEvidence, EvidenceDeferred
@@ -29,7 +31,7 @@ def run(pointer, raw, *, anchor, day, discovery, dossiers, maintenance, repair, 
         result = dict(proposalCount=len(proposed), networkCalls=0, candidateSha256=None,
                       outcome="no_proposal")
         if proposed:
-            live = LiveEvidence()
+            live = LiveEvidence(directory_limit=PAGE_SIZE if kind == "repair" else DIRECTORY_LIMIT)
             args = dict(anchor=anchor, day=day, **evidence, **live.services())
             try:
                 candidate = qualify(pointer, raw, **args)
