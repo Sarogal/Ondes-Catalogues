@@ -24,6 +24,8 @@ from ptitesondes_open_world_permanent_place_research import (
 from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
 
 from ptitesondes_open_world_permanent_place_draft import build_draft, fetch_admin
+from ptitesondes_open_world_permanent_place_ban import discover_official_ban, build_ban_draft
+from ptitesondes_generic_venue_ign_corroboration import fetch_ign
 
 MAX_BYTES = 900000
 MAX_RECHECK = 6
@@ -51,7 +53,7 @@ def read_private(token):
 
 
 def review_drafts(private, today, *, osm_fetch=fetch_named, page_read=read_unknown_https,
-           directory_fetch=fetch_dila, admin_fetch=fetch_admin):
+           directory_fetch=fetch_dila, admin_fetch=fetch_admin, ban_fetch=fetch_ign):
     counts = Counter()
     drafts = []
     summary = {"private_candidates": 0, "rechecked": 0,
@@ -81,7 +83,13 @@ def review_drafts(private, today, *, osm_fetch=fetch_named, page_read=read_unkno
             raise ValueError("invalid_private_place_evidence")
         # Deliberately ignore private GPS, postal code, URL and OSM object.
         # The only consumed lead is the exact city/name pair.
-        candidates.append((key, {"city": row["city"], "venue": row["venue"]}))
+        lead = {"city": row["city"], "venue": row["venue"]}
+        # The BAN route consumes an untrusted page hint only, never its
+        # saved coordinates, address, municipality code or activities.
+        if evidence.get("method") == "dila_official_place_address_plus_ban":
+            lead["ban_route"] = True
+            lead["possible_website_unverified"] = evidence.get("official_url")
+        candidates.append((key, lead))
     summary["private_candidates"] = len(candidates)
     candidates.sort(key=lambda pair: pair[0])
     if candidates:
@@ -95,6 +103,21 @@ def review_drafts(private, today, *, osm_fetch=fetch_named, page_read=read_unkno
             if city not in cache:
                 cache[city] = directory_fetch(city)
             directory = cache[city]
+            if lead.get("ban_route"):
+                fresh = discover_official_ban(lead, directory_fetch=lambda _: directory,
+                    page_read=page_read, ban_fetch=ban_fetch, admin_fetch=admin_fetch)
+                if fresh is None:
+                    counts["fresh_ban_evidence_unavailable"] += 1
+                    continue
+                summary["independently_corroborated"] += 1
+                counts["fresh_ban_place_evidence"] += 1
+                draft = build_ban_draft(fresh, today)
+                if draft is not None:
+                    drafts.append(draft)
+                    summary["complete_draft_records"] += 1
+                else:
+                    counts["draft_facts_not_complete"] += 1
+                continue
             pages = {}
             maps = []
             def mapped(city, venue):
