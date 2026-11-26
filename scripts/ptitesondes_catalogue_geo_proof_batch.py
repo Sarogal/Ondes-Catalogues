@@ -6,6 +6,9 @@ Existing coordinates are deliberately not used to mint an independent proof.
 import argparse
 from datetime import date
 import json
+import re
+from urllib.parse import urlencode, urlsplit, urlunsplit
+from urllib.request import Request, build_opener
 from pathlib import Path
 from proof import meters, norm
 from ptitesondes_catalogue_geo_research import research_queue
@@ -21,6 +24,7 @@ from ptitesondes_generic_venue_ign_corroboration import fetch_ign
 from ptitesondes_generic_venue_osm_preflight import fetch_overpass
 from ptitesondes_unnumbered_official_geo_proof import (
     _exact_official_point, mint_private_unnumbered_location_proof,
+    _visible_unnumbered_official_address,
 )
 
 from ptitesondes_municipal_event_venue_ban import mint_municipal_event_location_proof
@@ -28,7 +32,12 @@ from ptitesondes_generic_venue_official_geocode import extract_official_address
 from ptitesondes_html_independent_venue_geo import _coordinates_from_ban
 from ptitesondes_delegated_source_authority import _url_host, _same_host
 from ptitesondes_independent_venue_site_proof import _osm_website_host
-from ptitesondes_generic_venue_osm_preflight import osm_hints
+from ptitesondes_generic_venue_osm_preflight import (
+    osm_hints, ENDPOINTS, NoRedirect, MAX_ELEMENTS, MAX_BYTES,
+)
+from ptitesondes_shared_venue_location_evidence import _coordinates
+from ptitesondes_dynamic_municipal_source_links import _safe_url
+from ptitesondes_generic_venue_ign_corroboration import POSTCODE
 
 MAX_GROUPS = 3
 MAX_PAGES = 4
@@ -44,7 +53,7 @@ def _external_location(group, url, html, ign_get, osm_get):
     same website host. Neither an old catalogue pin nor a city centroid
     can supply the search centre. This returns no Publisher proof.
     """
-    host = _url_host(url)
+    host = _url_host(url) or _osm_website_host(url)
     if host is None:
         return None
     candidate = extract_official_address(group, html)
@@ -81,9 +90,122 @@ def _external_location(group, url, html, ign_get, osm_get):
                 official=url, geo_source="Exact venue address + IGN/BAN + named OSM website")
 
 
+def _commune_code(group, directory):
+    """Use one independently authenticated DILA municipality, never old GPS."""
+    if not municipal_site_hosts(group["city"], directory):
+        return None
+    rows = directory.get("results", [])
+    codes = {str(row.get("code_insee_commune", "")) for row in rows
+             if isinstance(row, dict)
+             and norm(row.get("nom")) == norm("Mairie - " + group["city"])}
+    if len(codes) != 1:
+        return None
+    code = next(iter(codes))
+    return code if re.fullmatch(r"[0-9]{5}", code) else None
+
+
+def named_osm_query(code, venue):
+    if (not isinstance(code, str) or not re.fullmatch(r"[0-9]{5}", code)
+            or not isinstance(venue, str) or not 2 <= len(venue) <= 180
+            or not norm(venue) or any(ord(c) < 32 for c in venue)):
+        raise ValueError("invalid_named_search")
+    # Exact INSEE boundary and literal name (no untrusted regex or query code).
+    return ('[out:json][timeout:20];area["boundary"="administrative"]'
+            '["admin_level"="8"]["ref:INSEE"="' + code + '"]->.a;'
+            'nwr(area.a)["name"=' + json.dumps(venue, ensure_ascii=False)
+            + '];out center tags ' + str(MAX_ELEMENTS) + ';')
+
+
+def fetch_named_osm(code, venue):
+    query = named_osm_query(code, venue)
+    for endpoint in ENDPOINTS:
+        try:
+            url = endpoint + "?" + urlencode({"data": query})
+            req = Request(url, headers={"Accept": "application/json",
+                "User-Agent": "PtitesOndesPrivateNamedVenue/1.0 (read-only)"})
+            with build_opener(NoRedirect()).open(req, timeout=26) as response:
+                if response.status != 200 or response.geturl() != url:
+                    raise ValueError("bad_named_provider_response")
+                raw = response.read(MAX_BYTES + 1)
+            if not raw or len(raw) > MAX_BYTES:
+                raise ValueError("oversized_named_provider_response")
+            return json.loads(raw)
+        except (OSError, UnicodeError, ValueError):
+            continue
+    raise ValueError("named_provider_unavailable")
+
+
+def _discover_named_location(group, directory, named_osm_get, html_get, ign_get):
+    """Independently find a named place and its website in the commune.
+
+    The OSM coordinate is only a discovery hint. A second live website
+    must explicitly corroborate the named location by a numbered BAN
+    address, structured point, or exact street/postcode without a number.
+    The result is private research only, never a publication proof.
+    """
+    code = _commune_code(group, directory)
+    if code is None:
+        return None
+    response = named_osm_get(code, group["venue"])
+    if (not isinstance(response, dict) or response.get("remark")
+            or not isinstance(response.get("elements"), list)
+            or len(response["elements"]) >= MAX_ELEMENTS):
+        return None
+    items = [x for x in response["elements"] if isinstance(x, dict)
+             and isinstance(x.get("tags"), dict)
+             and norm(x["tags"].get("name")) == norm(group["venue"])]
+    if len(items) != 1:
+        return None
+    obj = items[0]
+    tags = obj["tags"]
+    if (tags.get("addr:city") and norm(tags["addr:city"]) != norm(group["city"])
+            or tags.get("addr:country") and norm(tags["addr:country"]) not in ("fr", "france")):
+        return None
+    raw = obj if obj.get("type") == "node" else obj.get("center")
+    if not isinstance(raw, dict):
+        return None
+    point = _coordinates((raw.get("lat"), raw.get("lon")))
+    if point is None or point == (0, 0):
+        return None
+    named = {**group, "key": [norm(group["city"]), norm(group["venue"])]}
+    if len(osm_hints(named, point, response)) != 1:
+        return None
+    websites = [tags[k] for k in ("website", "contact:website") if k in tags]
+    hosts = [_osm_website_host(u) for u in websites]
+    if not hosts or any(h is None or not _same_host(h, hosts[0]) for h in hosts):
+        return None
+    # Only one website is read; safe reader rejects nonpublic DNS and redirects.
+    u = urlsplit(websites[0])
+    url = urlunsplit(("https", u.hostname, u.path or "/", "", ""))
+    if _safe_url(url) is None:
+        return None
+    page = html_get(url)
+    # Reuse exact numbered-address and named OSM attribution logic.
+    loc = _external_location(group, url, page, ign_get, lambda _: response)
+    if loc is not None:
+        return loc
+    if extract_official_address(group, page) is not None:
+        return None
+    # No street number needed if the independent venue page supplies an exact
+    # named structured point or exact street/postcode matching OSM.
+    official_point = _exact_official_point(group, page)
+    if official_point is not None:
+        if meters(official_point, point) > 65:
+            return None
+        method = "Named OSM in INSEE commune + venue website exact coordinates"
+    else:
+        address = _visible_unnumbered_official_address(group, page)
+        if (address is None or not POSTCODE.fullmatch(str(tags.get("addr:postcode", "")))
+                or str(tags["addr:postcode"]) != address["postcode"]
+                or norm(tags.get("addr:street")) != address["street_normalized"]):
+            return None
+        method = "Named OSM in INSEE commune + venue website unnumbered street"
+    return dict(lat=point[0], lng=point[1], official=url, geo_source=method)
+
+
 def research_group(group, today, *, directory_get=fetch_dila,
                    html_get=read_unknown_https, ign_get=fetch_ign,
-                   osm_get=fetch_overpass):
+                   osm_get=fetch_overpass, named_osm_get=fetch_named_osm):
     result = dict(city=group["city"], venue=group["venue"],
                   active_ids=group["active_ids"], missing_ids=group["missing_ids"],
                   status="venue_proof_not_found", publication_ready=False)
@@ -155,6 +277,13 @@ def research_group(group, today, *, directory_get=fetch_dila,
             continue
     result["pages_examined"] = len(seen)
     result["external_pages_examined"] = external_examined
+    if not locations:
+        try:
+            loc = _discover_named_location(group, directory, named_osm_get, html_get, ign_get)
+            if loc is not None:
+                locations.append(loc)
+        except ERRORS:
+            pass
     if not locations:
         return result
     first = locations[0]

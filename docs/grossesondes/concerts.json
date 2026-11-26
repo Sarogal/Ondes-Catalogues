@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-25",
+  "updatedAt": "2026-11-26",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -2526,6 +2526,21 @@
       "id": "the-locos",
       "name": "THE LOCOS",
       "aliases": []
+    },
+    {
+      "id": "the-tubs-uk",
+      "name": "THE TUBS (UK)",
+      "aliases": []
+    },
+    {
+      "id": "guests",
+      "name": "GUESTS",
+      "aliases": []
+    },
+    {
+      "id": "chaabi-live-paradise",
+      "name": "CHAÂBI LIVE PARADISE",
+      "aliases": []
     }
   ],
   "venues": [
@@ -2727,15 +2742,15 @@
     {
       "id": "le-rocher-de-palmer-cenon",
       "name": "Le Rocher de Palmer",
-      "address": "Adresse exacte à vérifier",
-      "postalCode": "À vérifier",
+      "address": "1 rue Aristide Briand",
+      "postalCode": "33150",
       "city": "Cenon",
       "department": "33",
       "region": "Nouvelle-Aquitaine",
-      "latitude": 44.856,
-      "longitude": -0.518,
-      "geoPrecision": "centre de commune (position indicative, pas la salle)",
-      "geoSource": "Géolocalisation indicative par commune"
+      "latitude": 44.862268659259264,
+      "longitude": -0.5243637666666666,
+      "geoPrecision": "named-site-area",
+      "geoSource": "https://www.openstreetmap.org/way/177290860"
     },
     {
       "id": "warehouse-nantes",
@@ -3698,6 +3713,32 @@
       "longitude": 2.3478378,
       "geoPrecision": "named-site-point",
       "id": "go-site-c0d126726d645ccd0d5a"
+    },
+    {
+      "name": "Le Chinois",
+      "city": "Montreuil",
+      "address": "6 Place du Marché",
+      "postalCode": "93100",
+      "department": "93",
+      "region": "Île-de-France",
+      "geoSource": "https://www.openstreetmap.org/node/2072607634",
+      "latitude": 48.8582338,
+      "longitude": 2.434182,
+      "geoPrecision": "named-site-point",
+      "id": "go-site-a4221278b655cca782f2"
+    },
+    {
+      "name": "Punk Paradise",
+      "city": "Paris",
+      "address": "44 Rue de la Folie Méricourt",
+      "postalCode": "75011",
+      "department": "75",
+      "region": "Île-de-France",
+      "geoSource": "https://www.openstreetmap.org/node/10130759021",
+      "latitude": 48.863692,
+      "longitude": 2.3724207,
+      "geoPrecision": "named-site-point",
+      "id": "go-site-f5054d76985c4c3a9c6e"
     }
   ],
   "events": [
@@ -15874,6 +15915,65 @@
       "history": [
         {
           "date": "2026-11-25",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261204-montreuil-the-tubs-uk",
+      "title": "THE TUBS (UK) + GUESTS",
+      "date": "2026-12-04",
+      "artistIds": [
+        "the-tubs-uk",
+        "guests"
+      ],
+      "venueId": "go-site-a4221278b655cca782f2",
+      "genres": [
+        "post punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://openagenda.com/shotgun/events/the-tubs-uk-guests",
+      "sourceType": "organisateur",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Chinois",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-26",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-26",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261205-paris-chaabi-live-paradise",
+      "title": "CHAÂBI LIVE PARADISE",
+      "date": "2026-12-05",
+      "artistIds": [
+        "chaabi-live-paradise"
+      ],
+      "venueId": "go-site-f5054d76985c4c3a9c6e",
+      "genres": [
+        "punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://openagenda.com/shotgun/events/chaabi-live-paradise",
+      "sourceType": "organisateur",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Punk Paradise",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-26",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-26",
           "change": "Ajout après revue des preuves officielles"
         }
       ]

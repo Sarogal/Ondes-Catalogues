@@ -1,0 +1,99 @@
+name: "P'tites Ondes — répétition privée des corrections GPS historiques"
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_catalogue_geo_correction_preview.py'
+      - 'tests/test_ptitesondes_catalogue_geo_correction_preview.py'
+      - '.github/workflows/ptitesondes-catalogue-geo-correction-preview.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ptitesondes-catalogue-geo-correction-preview.yml'
+  schedule:
+    - cron: '12 07,18 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ptitesondes-public-private-intake
+  queue: max
+  cancel-in-progress: false
+jobs:
+  offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test correction boundaries and unchanged catalogue
+        env:
+          PYTHONPATH: scripts:tests
+        run: python -m unittest -v test_ptitesondes_catalogue_geo_correction_preview
+  observe:
+    needs: offline
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: automation/ptitesondes-intake
+          path: state
+          sparse-checkout: |
+            automation-intake/ptitesondes
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Recheck candidates with fresh evidence without writing catalogue
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          PROGRESS="state/automation-intake/ptitesondes/catalogue-geo-correction-progress.json"
+          if ! python scripts/ptitesondes_catalogue_geo_correction_preview.py --catalogue docs/ptitesondes/sorties.json --state state/automation-intake/ptitesondes/catalogue-geo-rotation.json --progress "$PROGRESS" --day "$(TZ=Europe/Paris date +%F)" --live > "$RUNNER_TEMP/gps-preview.json" 2> "$RUNNER_TEMP/gps-preview-errors.log"; then
+            echo "::error::Historical GPS correction rehearsal failed without public writes."
+            exit 1
+          fi
+          python - "$RUNNER_TEMP/gps-preview.json" <<'PY'
+          import json, sys, os
+          report = json.load(open(sys.argv[1]))
+          assert report["publication_ready"] is False and report["public_writes"] == 0
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              for k in ("candidate_groups", "examined_groups", "source_reads", "proposed_count"):
+                  assert type(report[k]) is int and report[k] >= 0
+                  f.write(f"- {k}: {report[k]}\n")
+              for k in ("fresh_proof_missing_or_changed", "event_identity_unconfirmed"):
+                  assert type(report["reasons"][k]) is int
+                  f.write(f"- {k}: {report['reasons'][k]}\n")
+          PY
+          git diff --exit-code -- docs/ptitesondes/sorties.json
+      - name: Persist only private correction rotation progress
+        env:
+          PRIVATE_WRITE_TOKEN: ${{ secrets.PTITESONDES_INTAKE_WRITE_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${PRIVATE_WRITE_TOKEN:-}" ]]
+          P="automation-intake/ptitesondes/catalogue-geo-correction-progress.json"
+          git -C state add -- "$P"
+          if git -C state diff --cached --quiet; then exit 0; fi
+          test "$(git -C state diff --cached --name-only)" = "$P"
+          git -C state config user.name 'github-actions[bot]'
+          git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C state commit -m 'data(ptitesondes): private GPS correction fair rotation' > "$RUNNER_TEMP/gps-progress-commit.log" 2>&1
+          AUTH="$(printf 'x-access-token:%s' "$PRIVATE_WRITE_TOKEN" | base64 -w0)"
+          if ! git -C state -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" push origin HEAD:automation/ptitesondes-intake > "$RUNNER_TEMP/gps-progress-push.log" 2>&1; then
+            echo "::error::Private correction progress not saved; no public data changed."
+            exit 1
+          fi

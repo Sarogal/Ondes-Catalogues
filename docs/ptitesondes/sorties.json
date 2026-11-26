@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-26T05:26:45+01:00",
+  "updated_at": "2026-11-26T05:43:37+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -20923,26 +20923,6 @@
       "geo_precision": "venue",
       "lat": 49.431261,
       "lng": 1.08266
-    },
-    {
-      "id": "openagenda-21002913-2026-12-01",
-      "title": "Industrie fait son show : job dating et spectacle pour changer votre regard sur l'industrie !",
-      "category": "spectacle-jeunesse",
-      "category_label": "Spectacle jeune public",
-      "date_start": "2026-12-01",
-      "date_end": "2026-12-01",
-      "time": "09:30",
-      "city": "Nogent-le-Rotrou",
-      "department": "Eure-et-Loir",
-      "region": "Centre-Val de Loire",
-      "venue": "Nogent-le-Rotrou - Agence NOGENT LE ROTROU",
-      "source_url": "https://openagenda.com/semaine-industrie-2026/events/21002913_industrie-fait-son-show-job-dating-et-spectacle-pour-changer-votre-regard-sur-lindustrie",
-      "source_label": "Semaine de l'industrie 2026 — Licence Ouverte 2.0 — données mises à jour le 25/11/2026",
-      "verified_at": "2026-11-26",
-      "geo_verified_at": "2026-11-26",
-      "geo_precision": "venue",
-      "lat": 48.318722,
-      "lng": 0.802858
     },
     {
       "id": "openagenda-56355858-2027-01-10",

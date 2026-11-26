@@ -107,6 +107,36 @@ class OpenAgendaDescriptionGenreTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     check(json.dumps({"total": 1, "events": [changed]}))
 
+    def test_venue_name_is_not_genre_evidence(self):
+        for name, description in (
+            ("Punk Paradise", "Soirée chaâbi au Punk Paradise."),
+            ("Metal Hall", "Concert de jazz au METAL HALL."),
+            ("Rock Club", "Soirée raï au Rock Club."),
+        ):
+            with self.subTest(name=name):
+                raw = official_record(description=description,
+                                      keywords={"fr": ["chaâbi", "raï"]})
+                record = json.loads(raw)["events"][0]
+                record["location"]["name"] = name
+                with self.assertRaisesRegex(ValueError, "genre evidence missing"):
+                    check(json.dumps({"total": 1, "events": [record]}))
+
+    def test_separate_musical_genre_at_genre_named_venue_remains_valid(self):
+        raw = official_record(
+            description="Concert de punk rock au Punk Paradise.", keywords={})
+        record = json.loads(raw)["events"][0]
+        record["location"]["name"] = "Punk Paradise"
+        _, genres = check(json.dumps({"total": 1, "events": [record]}))
+        self.assertTrue(any("punk" in g for g in genres))
+
+    def test_hidden_inline_description_is_not_genre_evidence(self):
+        for fragment in ('<span hidden>Punk</span>',
+                         '<span aria-hidden="true">Metalcore</span>',
+                         '<span style="display:none">Death metal</span>'):
+            with self.subTest(fragment=fragment):
+                with self.assertRaisesRegex(ValueError, "genre evidence missing"):
+                    check(official_record(description=fragment + "<p>Soirée jazz.</p>"))
+
     def test_keyword_genre_still_takes_precedence_over_description(self):
         _, genres = check(official_record(
             description="<p>Simple rencontre publique.</p>",
