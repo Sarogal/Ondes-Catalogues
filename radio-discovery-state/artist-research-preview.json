@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 124,
   "dueNameCount": 47,
-  "attemptedCount": 1,
+  "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "kornkob95",
+  "retryAfterKey": "latter day exploits",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -457,6 +457,23 @@
       "artistName": "La Pulqueria",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "lamb of god": {
+      "status": "name_hypothesis",
+      "mbid": "298909e4-ebcb-47b8-95e9-cc53b087fc65",
+      "genres": [
+        "groove metal",
+        "metal",
+        "metalcore"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/298909e4-ebcb-47b8-95e9-cc53b087fc65",
+      "artistName": "Lamb of God",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },
