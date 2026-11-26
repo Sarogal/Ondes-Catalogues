@@ -9,6 +9,7 @@ from hashlib import sha256
 import json
 import re
 from collections import Counter
+from time import monotonic
 
 from ptitesondes_family_national_source_preflight import norm_text
 from ptitesondes_generic_venue_osm_preflight import fetch_osm_query, MAX_ELEMENTS
@@ -18,7 +19,10 @@ from ptitesondes_independent_venue_site_proof import _osm_website_host
 from ptitesondes_open_world_permanent_place_evidence import corroborate_place
 
 SCHEMA = "ptitesondes.private_open_world_place_research.v1"
-MAX_BATCH = 6
+DEFAULT_BATCH = 6
+MAX_BATCH = 36
+LIVE_BUDGET_SECONDS = 600
+MAX_CONSECUTIVE_UNAVAILABLE = 3
 MAX_RECORDS = 4000
 SKIP = ("already_public", "unlikely_family_venue")
 
@@ -141,13 +145,18 @@ def _inspect(row, osm_fetch, page_read):
         return "research_source_unavailable", None
 
 
-def research(report, previous, today, *, limit=MAX_BATCH,
-             osm_fetch=fetch_named, page_read=read_unknown_https):
+def research(report, previous, today, *, limit=DEFAULT_BATCH,
+             osm_fetch=fetch_named, page_read=read_unknown_https,
+             time_budget=None, clock=monotonic, stop_on_outage=False):
     if (type(today) is not date or type(limit) is not int or not 1 <= limit <= MAX_BATCH
             or not isinstance(report, dict) or report.get("schema") !=
             "ptitesondes.place_review.v1" or not isinstance(report.get("records"), list)
             or len(report["records"]) > MAX_RECORDS):
         raise ValueError("invalid_place_research_input")
+    if (time_budget is not None and
+            (type(time_budget) is not int or not 1 <= time_budget <= LIVE_BUDGET_SECONDS)
+            or not callable(clock) or type(stop_on_outage) is not bool):
+        raise ValueError("invalid_place_research_budget")
     if previous is None:
         previous = {"schema": SCHEMA, "sequence": 0, "attempts": {}}
     if (not isinstance(previous, dict) or set(previous) != {"schema", "sequence", "attempts"}
@@ -176,9 +185,22 @@ def research(report, previous, today, *, limit=MAX_BATCH,
     selected = sorted(rows, key=lambda k: (attempts.get(k, 0), k))[:limit]
     seq = previous["sequence"]
     results = []
+    started = clock() if time_budget is not None else None
+    consecutive_unavailable = 0
+    stop_reason = "batch_complete"
     for key in selected:
+        if started is not None and clock() - started >= time_budget:
+            stop_reason = "time_budget"
+            break
+        if stop_on_outage and consecutive_unavailable >= MAX_CONSECUTIVE_UNAVAILABLE:
+            stop_reason = "provider_outage"
+            break
         row = rows[key]
         status, proof = _inspect(row, osm_fetch, page_read)
+        if status in ("research_source_unavailable", "map_response_incomplete"):
+            consecutive_unavailable += 1
+        else:
+            consecutive_unavailable = 0
         seq += 1
         attempts[key] = seq
         results.append({"city": row["city"], "venue": row["venue"],
@@ -187,6 +209,7 @@ def research(report, previous, today, *, limit=MAX_BATCH,
     state = {"schema": SCHEMA, "sequence": seq, "attempts": attempts}
     summary = {"eligible_for_research": len(rows), "examined": len(results),
                "unattempted": len(set(rows) - set(attempts)),
+               "selected": len(selected), "stop_reason": stop_reason,
                "counts": dict(Counter(r["status"] for r in results)),
                "publication_ready": False, "public_writes": 0}
     return results, state, summary
@@ -238,7 +261,8 @@ def main():
     report = _read(args.qualification, 4_000_000)
     previous = (_read(args.previous, 6_000_000)
                 if args.previous.exists() or args.previous.is_symlink() else None)
-    state, summary = cycle(report, previous, args.date)
+    state, summary = cycle(report, previous, args.date, limit=MAX_BATCH,
+                           time_budget=LIVE_BUDGET_SECONDS, stop_on_outage=True)
     _atomic_json(args.output, state)
     print(json.dumps(summary, sort_keys=True))
 
