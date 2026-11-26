@@ -150,4 +150,6 @@ if __name__ == "__main__":
         researcher=hinted_researcher(hints), priority_keys=priority_keys,
         max_groups=LIVE_MAX_GROUPS, soft_seconds=LIVE_SOFT_SECONDS)
     write_state(a.state, state)
+    from ptitesondes_generic_venue_osm_preflight import osm_transport_diagnostics
+    summary["osm_transport_diagnostics"] = osm_transport_diagnostics()
     print(json.dumps(summary))

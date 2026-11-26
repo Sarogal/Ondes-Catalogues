@@ -21,12 +21,12 @@ from ptitesondes_catalogue_geo_rotation import identity, write_state
 from ptitesondes_dynamic_municipal_source_links import _safe_url
 from ptitesondes_catalogue_geo_proof_batch import (
     research_group, _external_location, read_unknown_https, fetch_ign,
-    fetch_overpass, _osm_website_host, _coordinates, meters,
+    _osm_website_host, _coordinates, meters,
     administrative_commune_code, fetch_commune,
     administrative_unit_matches, fetch_administrative_unit,
 )
 
-from ptitesondes_generic_venue_osm_preflight import osm_hints
+from ptitesondes_generic_venue_osm_preflight import osm_hints, fetch_acceslibre_osm
 from ptitesondes_delegated_source_authority import _same_host
 
 RESOURCE = "https://www.data.gouv.fr/api/1/datasets/r/5b0f44f2-e6ea-4a58-874d-6fe364b40342"
@@ -238,7 +238,7 @@ def _discover_hint_website(group, point, response):
 
 
 def independent_hint_location(group, hint, *, html_get=read_unknown_https,
-                              ign_get=fetch_ign, osm_get=fetch_overpass,
+                              ign_get=fetch_ign, osm_get=fetch_acceslibre_osm,
                               commune_get=fetch_commune,
                               unit_get=fetch_administrative_unit):
     """Acceslibre is discovery only; live venue page + BAN + OSM must agree."""

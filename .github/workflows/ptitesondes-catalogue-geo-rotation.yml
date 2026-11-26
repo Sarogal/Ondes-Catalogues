@@ -5,7 +5,9 @@ on:
       - 'scripts/ptitesondes_catalogue_geo_rotation.py'
       - 'scripts/ptitesondes_acceslibre_geo_hints.py'
       - 'scripts/ptitesondes_catalogue_geo_proof_batch.py'
+      - 'scripts/ptitesondes_generic_venue_osm_preflight.py'
       - 'tests/test_ptitesondes_catalogue_geo_proof_batch.py'
+      - 'tests/test_ptitesondes_overpass_transport.py'
       - 'tests/test_ptitesondes_catalogue_geo_rotation.py'
       - '.github/workflows/ptitesondes-catalogue-geo-rotation.yml'
   push:
@@ -14,6 +16,7 @@ on:
       - '.github/workflows/ptitesondes-catalogue-geo-rotation.yml'
       - 'scripts/ptitesondes_acceslibre_geo_hints.py'
       - 'scripts/ptitesondes_catalogue_geo_proof_batch.py'
+      - 'scripts/ptitesondes_generic_venue_osm_preflight.py'
       - 'scripts/ptitesondes_catalogue_geo_rotation.py'
   schedule:
     - cron: '42 01 * * *'
@@ -44,7 +47,7 @@ jobs:
       - name: Test rotation without secrets or network
         env:
           PYTHONPATH: scripts:tests
-        run: python -m unittest -v test_ptitesondes_catalogue_geo_rotation test_ptitesondes_catalogue_geo_proof_batch
+        run: python -m unittest -v test_ptitesondes_catalogue_geo_rotation test_ptitesondes_catalogue_geo_proof_batch test_ptitesondes_overpass_transport
   observe:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues'
     runs-on: ubuntu-24.04
@@ -80,7 +83,7 @@ jobs:
             echo "::error::GPS research incomplete; private state unchanged."
             exit 1
           fi
-          python - "$WORK/summary.json" <<'PY'
+          PYTHONPATH=scripts python - "$WORK/summary.json" <<'PY'
           import json, sys, os
           r = json.load(open(sys.argv[1]))
           assert r["publication_ready"] is False and r["public_writes"] == 0
@@ -100,6 +103,18 @@ jobs:
                   assert type(calls) is int and type(errors) is int
                   assert 0 <= errors <= calls <= 100 * r["examined"]
                   line = f"- {provider}: calls={calls}, errors={errors}"
+                  f.write(line + "\n")
+                  print(line)
+              from ptitesondes_generic_venue_osm_preflight import (
+                  OSM_ENDPOINT_LABELS, OSM_PATHS, OSM_CATEGORIES,
+              )
+              allowed = {f"{p}.{e}.{c}" for p in OSM_PATHS
+                         for e in OSM_ENDPOINT_LABELS for c in OSM_CATEGORIES}
+              transport = r.get("osm_transport_diagnostics", {})
+              assert isinstance(transport, dict) and set(transport) <= allowed
+              for key, count in sorted(transport.items()):
+                  assert type(count) is int and 0 <= count <= 100 * r["examined"]
+                  line = f"- OSM {key}: {count}"
                   f.write(line + "\n")
                   print(line)
           PY

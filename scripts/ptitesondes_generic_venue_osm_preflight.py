@@ -12,6 +12,10 @@ import json
 import math
 import os
 from pathlib import Path
+from collections import Counter
+from time import monotonic
+from urllib.error import HTTPError, URLError
+from http.client import HTTPException
 from urllib.parse import urlencode
 from urllib.request import Request, build_opener, HTTPRedirectHandler
 
@@ -127,10 +131,42 @@ def overpass_query(lat, lng):
             % (RADIUS_M, lat, lng, MAX_ELEMENTS))
 
 
-def fetch_overpass(center):
-    """Fixed trusted endpoints, no redirects, strict response size limits."""
-    query = overpass_query(*center)
-    for endpoint in ENDPOINTS:
+# Per-process only: one bounded rotation shares health across both OSM paths.
+# Fixed labels, never query text, venue names, URLs or response bodies.
+OSM_ENDPOINT_LABELS = ("lz4", "private_coffee")
+OSM_PATHS = ("nearby", "named", "acceslibre")
+OSM_CATEGORIES = ("success", "cooldown", "http_400", "http_403", "http_429",
+                  "http_5xx", "http_other", "timeout", "network",
+                  "invalid_response", "invalid_json", "incomplete_response",
+                  "invalid_size")
+_osm_counters = Counter()
+_osm_cooldowns = {}
+
+
+def osm_transport_diagnostics():
+    return {"%s.%s.%s" % key: count for key, count in sorted(_osm_counters.items())}
+
+
+def _osm_error_category(error):
+    if isinstance(error, HTTPError):
+        if error.code in (400, 403, 429):
+            return "http_%d" % error.code
+        return "http_5xx" if 500 <= error.code < 600 else "http_other"
+    reason = error.reason if isinstance(error, URLError) else error
+    if isinstance(reason, TimeoutError):
+        return "timeout"
+    return "network"
+
+
+def fetch_osm_query(query, *, pathway, unavailable):
+    """Fixed endpoints and bounded fallback, with no redirects or private logs."""
+    if pathway not in OSM_PATHS:
+        raise ValueError("invalid_osm_path")
+    for endpoint, label in zip(ENDPOINTS, OSM_ENDPOINT_LABELS):
+        if monotonic() < _osm_cooldowns.get(label, 0):
+            _osm_counters[pathway, label, "cooldown"] += 1
+            continue
+        category = None
         try:
             url = endpoint + "?" + urlencode({"data": query})
             req = Request(url, headers={
@@ -139,14 +175,44 @@ def fetch_overpass(center):
             })
             with build_opener(NoRedirect()).open(req, timeout=26) as response:
                 if response.status != 200 or response.geturl() != url:
-                    raise ValueError("bad_provider_response")
-                content = response.read(MAX_BYTES + 1)
-            if not content or len(content) > MAX_BYTES:
-                raise ValueError("oversized_provider_response")
-            return json.loads(content)
-        except (OSError, UnicodeError, ValueError):
-            continue
-    raise ValueError("independent_provider_unavailable")
+                    category = "invalid_response"
+                else:
+                    content = response.read(MAX_BYTES + 1)
+                    if not content or len(content) > MAX_BYTES:
+                        category = "invalid_size"
+            if category is None:
+                try:
+                    data = json.loads(content)
+                except (UnicodeError, ValueError):
+                    category = "invalid_json"
+                else:
+                    if (not isinstance(data, dict)
+                            or not isinstance(data.get("elements"), list)
+                            or data.get("remark")
+                            or len(data["elements"]) >= MAX_ELEMENTS):
+                        category = "incomplete_response"
+                    else:
+                        _osm_counters[pathway, label, "success"] += 1
+                        return data
+        except (OSError, HTTPException, UnicodeError, ValueError) as error:
+            category = (_osm_error_category(error) if isinstance(error, (OSError, HTTPException))
+                        else "invalid_response")
+        _osm_counters[pathway, label, category] += 1
+        delay = {"http_429": 300, "http_5xx": 120, "timeout": 60,
+                 "network": 60, "http_403": 300}.get(category, 0)
+        if delay:
+            _osm_cooldowns[label] = monotonic() + delay
+    raise ValueError(unavailable)
+
+
+def fetch_overpass(center):
+    return fetch_osm_query(overpass_query(*center), pathway="nearby",
+                           unavailable="independent_provider_unavailable")
+
+
+def fetch_acceslibre_osm(center):
+    return fetch_osm_query(overpass_query(*center), pathway="acceslibre",
+                           unavailable="independent_provider_unavailable")
 
 
 def osm_hints(group, center, response):
