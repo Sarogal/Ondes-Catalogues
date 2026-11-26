@@ -450,8 +450,27 @@ def extract_address(html, event, venue):
              and bridge._event_types(n.get("@type")) & {"MusicEvent", "Event"}]
     if not nodes:
         return visible_address(html, event, venue)
-    require(len(nodes) == 1, "single structured event required")
-    node = nodes[0]
+    # Recommendation cards may include other events. Select one exact
+    # canonical detail only if every other node is demonstrably distinct.
+    matches = [n for n in nodes if isinstance(n.get("url"), str)
+               and n["url"].rstrip("/") == url.rstrip("/")]
+    require(len(matches) == 1, "single structured event required")
+    node = matches[0]
+    primary = urlsplit(url)
+    for other in nodes:
+        if other is node:
+            continue
+        other_url = other.get("url")
+        require(isinstance(other_url, str) and intake.valid_https(other_url)
+                and isinstance(other.get("name"), str)
+                and bool(triage.words(other["name"]))
+                and triage.words(other["name"]) != triage.words(node.get("name")),
+                "ambiguous structured recommendation")
+        parts = urlsplit(other_url)
+        require(parts.netloc == primary.netloc and parts.scheme == "https"
+                and bool(parts.path) and not parts.query and not parts.fragment
+                and parts.path.rstrip("/") != primary.path.rstrip("/"),
+                "ambiguous structured recommendation")
     raw_url = node.get("url")
     require(isinstance(raw_url, str) and raw_url.rstrip("/") == url.rstrip("/"),
             "structured event URL differs from published source")
@@ -473,12 +492,18 @@ def extract_address(html, event, venue):
             and "PostalAddress" in bridge._event_types(address.get("@type")),
             "structured postal address missing")
     street, postcode = address.get("streetAddress"), address.get("postalCode")
+    if isinstance(postcode, str):
+        postcode = re.sub(r"^(\d{2})\s+(\d{3})$", r"\1\2", postcode.strip())
     require(isinstance(street, str) and 6 <= len(street.strip()) <= 160
             and isinstance(postcode, str) and re.fullmatch(r"\d{5}", postcode)
             and triage.words(address.get("addressLocality")) == triage.words(venue.get("city"))
             and bool(triage.words(venue.get("city"))), "exact postal identity missing")
     country = address.get("addressCountry")
-    require(isinstance(country, str) and country.casefold() in {"fr", "fra", "france"},
+    if isinstance(country, dict):
+        require(bridge._event_types(country.get("@type")) == {"Country"},
+                "French postal country not established")
+        country = country.get("name")
+    require(isinstance(country, str) and country.strip().casefold() in {"fr", "fra", "france"},
             "French postal country not established")
     # Existing published regional identity is retained, never inferred from
     # a search result or changed by the event page.
