@@ -34,6 +34,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_qualification_v3_preview.py"
       - "radio-catalog-lab/tools/radio_daily_maintenance_preview.py"
       - "radio-catalog-lab/tools/test_radio_daily_maintenance_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_repair_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_repair_preview.py"
       - "radio-catalog-lab/tools/radio_daily_v9_generator.py"
       - "radio-catalog-lab/tools/test_radio_daily_v9_generator.py"
       - "radio-catalog-lab/tools/radio_daily_baseline_verify.py"
@@ -131,6 +133,9 @@ jobs:
             fi
             if [[ -f "$state/artist-research-preview.json" ]]; then
               cp "$state/artist-research-preview.json" "$previous/artist-research-preview.json"
+            fi
+            if [[ -f "$state/repair-preview.json" ]]; then
+              cp "$state/repair-preview.json" "$previous/repair-preview.json"
             fi
             if [[ -f "$state/maintenance-preview.json" ]]; then
               cp "$state/maintenance-preview.json" "$previous/maintenance-preview.json"
@@ -460,6 +465,20 @@ jobs:
           python radio-catalog-lab/tools/radio_daily_maintenance_preview.py \
             --baseline "$RUNNER_TEMP/go-radio-v8-baseline.json" \
             --output "$root/maintenance-preview.json" --limit 20 --workers 4 --allow-network "${previous[@]}"
+      - name: Search replacement stream identities (review only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/repair-preview.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/repair-preview.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_repair_preview.py \
+            --baseline "$RUNNER_TEMP/go-radio-v8-baseline.json" \
+            --maintenance "$root/maintenance-preview.json" --discovery "$root/candidates.json" \
+            --output "$root/repair-preview.json" --limit 4 --allow-network "${previous[@]}"
       - name: Prepare safe durable genre hints
         shell: bash
         run: |
@@ -511,9 +530,9 @@ jobs:
           src = Path(os.environ["RUNNER_TEMP"]) / "go-radio-state-input"
           dst = Path("radio-discovery-state")
           dst.mkdir(exist_ok=True)
-          for name in ("ledger.json", "genre-hints.json", "stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json", "decision-preview.json", "metadata-preview.json", "artist-research-preview.json", "programme-preview.json", "recording-preview.json", "wikidata-preview.json", "qualification-v3-preview.json", "maintenance-preview.json"):
+          for name in ("ledger.json", "genre-hints.json", "stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json", "decision-preview.json", "metadata-preview.json", "artist-research-preview.json", "programme-preview.json", "recording-preview.json", "wikidata-preview.json", "qualification-v3-preview.json", "maintenance-preview.json", "repair-preview.json"):
               path = src / name
-              if name in ("stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json", "decision-preview.json", "metadata-preview.json", "artist-research-preview.json", "programme-preview.json", "recording-preview.json", "wikidata-preview.json", "qualification-v3-preview.json", "maintenance-preview.json") and not path.exists():
+              if name in ("stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json", "decision-preview.json", "metadata-preview.json", "artist-research-preview.json", "programme-preview.json", "recording-preview.json", "wikidata-preview.json", "qualification-v3-preview.json", "maintenance-preview.json", "repair-preview.json") and not path.exists():
                   continue
               assert path.stat().st_size <= 12 * 1024 * 1024
               data = json.loads(path.read_text())
@@ -530,6 +549,10 @@ jobs:
               if name in ("decision-preview.json", "metadata-preview.json"):
                   assert data.get("approvedCount") == 0
                   assert all(r.get("approved") is False and r.get("publicationAllowed") is False for r in data["records"])
+              if name == "repair-preview.json":
+                  assert data.get("approvedCount") == 0
+                  assert all(r.get("approved") is False and r.get("publicationAllowed") is False for r in data["records"])
+                  assert all(h.get("broadcasterVerified") is False and h.get("technicalVerified") is False and h.get("publicationAllowed") is False and "url" not in h for r in data["records"] for h in r["hints"])
               if name == "maintenance-preview.json":
                   assert data.get("approvedCount") == 0
                   assert all(r.get("approved") is False and r.get("publicationAllowed") is False for r in data["records"])
