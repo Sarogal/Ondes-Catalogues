@@ -417,7 +417,10 @@ EXTRACTOR_FILES = (
     "automation/concerts/first_party_tec_event.py",
     "automation/concerts/triage.py",
 )
+_MISSING_ADDRESS_REPLAY = (
+    "publisher_recheck: Unlisted official source: no unique exact first-party MusicEvent: venue_address_missing")
 _EXTRACTION_REASONS = frozenset({
+    _MISSING_ADDRESS_REPLAY,
     "official_event_content: Source admission: unique first-party music event not found: named_bill_missing_or_ambiguous",
     "official_event_content: Source admission: unique first-party music event not found: relevant_artist_or_event_genre_missing",
 })
@@ -448,12 +451,18 @@ def _retry_memory(prior, selected):
               if row[3].get("source") != "agenda_officiel_openagenda"}
     history = prior.get("extractionRetryMemory")
     if isinstance(history, dict):
-        return {key: revision for key, revision in
-                list(history.items())[-MAX_REVIEW_MEMORY:]
-                if key in active and (revision == "legacy" or _valid_revision(revision))}
-    if "extractionRetryMemory" in prior:
+        result = {key: revision for key, revision in
+                  list(history.items())[-MAX_REVIEW_MEMORY:]
+                  if key in active and (revision == "legacy" or _valid_revision(revision))}
+        # The previous release did not remember this diagnostic. Recover it
+        # from the last exact correlated window, without resetting other holds.
+        migration_reasons = {_MISSING_ADDRESS_REPLAY}
+    elif "extractionRetryMemory" in prior:
         return {}
-    # Upgrade legacy reports using only uniquely correlated exact identities.
+    else:
+        result = {}
+        migration_reasons = _EXTRACTION_REASONS
+    # Upgrade reports using only uniquely correlated exact identities.
     # Older reports contain only the last window's failure reasons.
     index = defaultdict(list)
     for row in selected:
@@ -463,22 +472,21 @@ def _retry_memory(prior, selected):
             index[identity].append(key)
     checks = prior.get("candidateChecks")
     if not isinstance(checks, list):
-        return {}
-    result = {}
+        return result
     revision = prior.get("extractorRevision")
     revision = revision if _valid_revision(revision) else "legacy"
     for check in checks[-MAX_REVIEW_CHECKS:]:
         if (not isinstance(check, dict)
                 or check.get("state") != "held_event_or_source_not_verified"
                 or not isinstance(check.get("reason"), str)
-                or check["reason"] not in _EXTRACTION_REASONS):
+                or check["reason"] not in migration_reasons):
             continue
         identity = (check.get("candidateId"), check.get("date"), check.get("venueId"))
         if not all(isinstance(part, str) for part in identity):
             continue
         matches = index.get(identity, [])
         if len(matches) == 1:
-            result[matches[0]] = revision
+            result.setdefault(matches[0], revision)
     return result
 
 
