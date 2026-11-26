@@ -15,6 +15,7 @@ from dns_pinned_https import DNSPinnedHTTPSConnection, fetch_public_html, safe_p
 from national_openagenda_research import _safe_city_hint, _valid_professional_hints, REGIONS
 from national_professional_profile_discovery import ticket_variants, ALLOWED_WEBSITE_ROLES
 from national_professional_official_detail import examine, MAX_SITES, MAX_PAGES
+from grossesondes_venue_reciprocal_edition import safe_link
 from source_qualification import classify, normalized
 
 HOST = "tabular-api.data.gouv.fr"
@@ -22,6 +23,10 @@ ENDPOINT = "/api/resources/4bd1a20e-4dfd-40ff-bd4d-c714f7085de8/data/"
 PAGE_SIZE = 25
 MAX_BYTES = 1_500_000
 MAX_PAGES_AVAILABLE = 100
+# Registry fields may mix actual venue websites with social/media profiles.
+# These are not independent first-party event detail roots.
+PROFILE_DOMAINS = frozenset(("twitter.com", "x.com", "facebook.com", "instagram.com",
+    "tiktok.com", "youtube.com", "youtu.be", "linkedin.com", "linktr.ee"))
 
 
 def registry_path(city, region, page=1):
@@ -98,10 +103,27 @@ def sites_from_rows(rows, city, region):
                 continue
             if classify(url) not in ALLOWED_WEBSITE_ROLES:
                 continue
-            root = "https://" + urlsplit(url).hostname + "/"
+            parts = urlsplit(url)
+            host = parts.hostname
+            if any(host == domain or host.endswith("." + domain)
+                   for domain in PROFILE_DOMAINS):
+                continue
+            root = "https://" + host + "/"
             if safe_public_url(root) != root:
                 continue
-            ranked[root] = min(rank, ranked.get(root, rank))
+            # Keep a canonical venue subpage explicitly supplied by the
+            # public registry. A municipal/cultural multi-venue homepage
+            # may never link to that particular venue in its first pages.
+            # Do not accept query strings, fragments or encoded traversal.
+            if parts.path not in ("", "/"):
+                selector = safe_link(url, root, root)
+                if selector is None:
+                    continue
+            elif parts.query or parts.fragment:
+                continue
+            else:
+                selector = root
+            ranked[selector] = min(rank, ranked.get(selector, rank))
     return sorted(ranked, key=lambda u: (ranked[u], u))
 
 
