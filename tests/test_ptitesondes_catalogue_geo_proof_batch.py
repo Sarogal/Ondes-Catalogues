@@ -212,6 +212,39 @@ class CatalogueGeoProofTests(unittest.TestCase):
         self.assertFalse(administrative_unit_matches(g, "75056", "77001", reader))
 
 
+    def test_directory_code_fallback_uses_verified_code_not_exact_display_name(self):
+        from ptitesondes_catalogue_geo_proof_batch import directory_for_verified_code
+        from test_ptitesondes_dila_municipal_domains import mairie, payload
+        from ptitesondes_dila_municipal_domains import municipal_site_hosts
+        g = dict(city="Paris", department="Paris (75)")
+        row = mairie(city="Paris", site="https://www.paris.fr/", insee="75056")
+        row["nom"] = "Mairie - Paris - Hôtel-de-Ville"
+        self.assertFalse(municipal_site_hosts("Paris", payload(row)))
+        resolved = directory_for_verified_code(g, "75056", payload(row))
+        self.assertEqual(municipal_site_hosts("Paris", resolved), {"www.paris.fr"})
+        for bad in (dict(row, code_insee_commune="75120"),
+                    dict(row, nom="Mairie - Autre-ville"),
+                    dict(row, statut_de_diffusion="false"),
+                    dict(row, pivot="[]"), dict(row, adresse="[]")):
+            self.assertFalse(municipal_site_hosts("Paris",
+                directory_for_verified_code(g, "75056", payload(bad))))
+        self.assertFalse(municipal_site_hosts("Paris",
+            directory_for_verified_code(g, "75056", payload(row, row))))
+
+    def test_historical_research_uses_exact_code_to_disambiguate_directory(self):
+        from test_ptitesondes_dila_municipal_domains import mairie, payload
+        g = group(department="Aveyron (12)")
+        row = directory()["results"][0]
+        code = row["code_insee_commune"]
+        reader = Mock(return_value=payload(row))
+        result = research_group(g, DAY, directory_get=lambda _: {},
+            commune_get=lambda _: [dict(nom=g["city"], code=code, codeDepartement="12")],
+            directory_code_get=reader, html_get=lambda _: html(), ign_get=lambda _: ban())
+        reader.assert_called_once_with(code)
+        self.assertEqual(result["provider_diagnostics"]["dila"], {"calls": 2, "errors": 0})
+        self.assertEqual(result["status"], "independent_venue_point_found")
+        self.assertFalse(result["publication_ready"])
+
     def test_provider_diagnostics_distinguish_transport_failure_from_no_match(self):
         group = dict(city="Ville", venue="Salle", department="Test (01)",
                      active_ids=["a"], missing_ids=["a"], source_urls=[])
