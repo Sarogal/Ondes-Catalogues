@@ -22,9 +22,11 @@ class CatalogueGeoProofTests(unittest.TestCase):
         self.assertFalse(result["publication_ready"])
         self.assertEqual(result["venue_point"]["lat"], 44.5)
 
-    def test_no_fetch_on_unverified_domain(self):
+    def test_no_fetch_on_unverified_agenda_platform(self):
         read = Mock(side_effect=AssertionError("unexpected HTML read"))
-        result = research_group(group(), DAY, directory_get=lambda _: {},
+        g = group()
+        g["source_urls"] = ["https://openagenda.com/example/events/123_demo"]
+        result = research_group(g, DAY, directory_get=lambda _: {},
                                 html_get=read, ign_get=Mock())
         self.assertEqual(result["status"], "municipality_not_independently_identified")
         read.assert_not_called()
@@ -68,6 +70,51 @@ class CatalogueGeoProofTests(unittest.TestCase):
             html_get=lambda _: unnumbered.html(),
             osm_get=lambda _: unnumbered.osm(duplicate=True))
         self.assertNotIn("venue_point", result)
+
+    def test_municipal_event_address_without_postcode_reuses_ban(self):
+        import test_ptitesondes_municipal_event_venue_ban as event
+        g = dict(event.GROUP, active_ids=["event"], missing_ids=["event"],
+                 source_urls=[event.URL])
+        result = research_group(g, DAY, directory_get=lambda _: event.directory(),
+                                html_get=lambda _: event.municipal(),
+                                ign_get=lambda _: event.ban())
+        self.assertEqual(result["status"], "independent_venue_point_found")
+        self.assertIn("Municipal event venue", result["venue_point"]["geo_source"])
+        self.assertFalse(result["publication_ready"])
+
+    def test_external_source_needs_exact_address_and_independent_named_osm_host(self):
+        from copy import deepcopy
+        g = group()
+        url = "https://independent-theatre.example/programme"
+        g["source_urls"] = [url]
+        response = ban()
+        response["features"][0]["properties"].update(street="Rue des Chênes", citycode="12345")
+        osm = {"elements": [{"type": "node", "id": 1, "lat": 44.5, "lon": 2.25,
+                             "tags": {"name": GROUP["venue"], "addr:city": GROUP["city"],
+                                      "addr:postcode": "12345",
+                                      "website": "https://independent-theatre.example/"}}]}
+        def check(data, page=None, geo=None):
+            return research_group(g, DAY, directory_get=lambda _: {},
+                                  html_get=lambda _: html() if page is None else page,
+                                  ign_get=lambda _: response if geo is None else geo,
+                                  osm_get=lambda _: data)
+        result = check(osm)
+        self.assertEqual(result["status"], "independent_venue_point_found")
+        self.assertEqual(result["venue_point"]["official"], url)
+        self.assertFalse(result["publication_ready"])
+        for field, value in (("website", "https://another.example/"),
+                             ("name", "Autre lieu"), ("addr:postcode", "99999"),
+                             ("addr:city", "Autre ville")):
+            bad = deepcopy(osm)
+            bad["elements"][0]["tags"][field] = value
+            self.assertNotIn("venue_point", check(bad))
+        duplicate = deepcopy(osm)
+        duplicate["elements"].append(dict(duplicate["elements"][0], id=2))
+        self.assertNotIn("venue_point", check(duplicate))
+        self.assertNotIn("venue_point", check(osm, page=html("Autre lieu")))
+        street = deepcopy(response)
+        street["features"][0]["properties"]["type"] = "street"
+        self.assertNotIn("venue_point", check(osm, geo=street))
 
     def test_batch_bound_and_rotation(self):
         doc = dict(events=[dict(id=str(i), city="Ville", venue="Salle "+str(i),

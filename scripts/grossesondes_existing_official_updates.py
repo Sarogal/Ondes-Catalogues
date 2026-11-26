@@ -264,8 +264,12 @@ def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
         title = _EditionTitle()
         title.feed(html)
         title.close()
+        # Some CMS append the identical site identity to a title that
+        # already contains it. Accept only a verbatim repeated suffix,
+        # never a second municipality or an arbitrary trailing string.
         match = re.fullmatch(
-            r".{8,180}\s+[-–—]\s+(.{2,80}?),\s*site officiel de la mairie",
+            r".{8,180}?\s+[-–—]\s+(.{2,80}?),\s*site officiel de la mairie"
+            r"(?:\s+\1,\s*site officiel de la mairie)?",
             " ".join(" ".join(title.parts).split()), re.I)
         if match is None or not municipal_selector(match.group(1)):
             return None

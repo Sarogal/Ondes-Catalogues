@@ -1243,6 +1243,14 @@ class MunicipalVenueCityTests(unittest.TestCase):
                                  "source": self.site, "venue_source": self.venue})
         self.assertEqual(calls, [self.venue])
 
+    def test_cms_repeats_identical_municipal_title_suffix(self):
+        repeated = self.html.replace(
+            "site officiel de la Mairie</title>",
+            "site officiel de la Mairie     Ville-Test, site officiel de la Mairie</title>")
+        self.assertIsNotNone(self.prove(html=repeated)[0])
+        self.assertIsNone(self.prove(html=repeated.replace(
+            "     Ville-Test,", "     Autre-Ville,"))[0])
+
     def test_municipal_title_is_not_event_location(self):
         self.assertIsNone(self.prove(html=self.html.replace(
             "au Salle des Musiques", "en tournée"))[0])
