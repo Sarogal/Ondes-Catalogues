@@ -97,6 +97,11 @@ jobs:
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Rattrapage Pages des corrections historiques déjà inscrites dans Git
+        id: history_pages
+        # Compare the committed checkout BEFORE preparing any fresh change.
+        # Only exact reviewed Momo or ledger-bound GPS corrections qualify.
+        run: python scripts/ptitesondes_pages_release_gate.py
       - name: Prévalidation publique indépendante des lieux permanents
         id: place_release
         env:
@@ -119,12 +124,6 @@ jobs:
           # Read-only OpenAgenda verification for unknown venue candidates.
           OPENAGENDA_READ_KEY: ${{ secrets.OPENAGENDA_READ_KEY }}
         run: python scripts/run_cloud_sync.py
-      - name: Rattrapage Pages limité à l'horaire scolaire Momo déjà corrigé
-        id: history_pages
-        # The public Pages JSON alone decides whether this single approved
-        # correction still needs publishing. No new cron or direct push.
-        run: python scripts/ptitesondes_pages_release_gate.py
-
       - name: Calculer la permission de déploiement
         id: decision
         env:
