@@ -1,0 +1,46 @@
+{
+  "schema": "ptitesondes.official_reconciliation.v1",
+  "checked_on": "2026-11-26",
+  "slot": 3,
+  "source_series_checked": 30,
+  "total_source_series": 171,
+  "before_count": 1065,
+  "after_count": 1069,
+  "source_summary": {
+    "official_new_session_admitted": 1,
+    "official_unchanged": 29
+  },
+  "catalogue_before_sha256": "c864cca96b387b5d5dd16b74227ee492023d75cb969cd5eb98e45805385b35d7",
+  "catalogue_after_sha256": "bf3edd615f70629cbf8efc45d7fe2a043573285f421a12c9d6e38b2562f6096d",
+  "operations": [
+    {
+      "id": "openagenda-83759251-2027-01-27",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/villeurbanne2022/events/83759251_spectacle-mobile-homes-au-tnp",
+      "new_event_sha256": "33330a5033540172041aa7578b23bfef14155ea55c2bcef7df358ac8e138f769"
+    },
+    {
+      "id": "openagenda-83759251-2027-01-28",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/villeurbanne2022/events/83759251_spectacle-mobile-homes-au-tnp",
+      "new_event_sha256": "020cd8d53618b087571ddea9516d2c51031adf6f318115c0a295865b6e2e6d67"
+    },
+    {
+      "id": "openagenda-83759251-2027-01-29",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/villeurbanne2022/events/83759251_spectacle-mobile-homes-au-tnp",
+      "new_event_sha256": "78babd60f7e1579c16365ca93b5e2962ba21bd10bedde863c0cf1acfb7a2365b"
+    },
+    {
+      "id": "openagenda-83759251-2027-01-30",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/villeurbanne2022/events/83759251_spectacle-mobile-homes-au-tnp",
+      "new_event_sha256": "c2ba11a83903daa33072e0774857291e5bcbdf13b2750fd78d059695bd7023d0"
+    }
+  ],
+  "unrelated_public_records_preserved": true
+}
