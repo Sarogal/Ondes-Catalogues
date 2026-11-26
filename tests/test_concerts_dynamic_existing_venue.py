@@ -729,6 +729,52 @@ class UnlistedExistingVenueTests(unittest.TestCase):
             if wrong != EVENT:
                 self.assertNotIn(wrong, reads)
 
+    def test_visible_official_artist_link_requires_exact_artist_section_and_profile(self):
+        from automation.concerts import dynamic_first_party_venue_proposals as proposals
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        target = "https://unknown-musician.example.org/bio"
+        title = " + ".join(NAMES)
+        section = ("<h1>" + title + "</h1><h2>" + NAMES[-1]
+                   + "</h2><p><a href='" + target + "'>Site officiel</a></p>")
+        primary = page(EVENT, genres=False).replace("<h1>Nouvel événement</h1>", section)
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+        def make_fetch(body, name=NAMES[-1], genre="Black Metal"):
+            def fetch(url, cache):
+                if url == target:
+                    return ('<script type="application/ld+json">' +
+                            json.dumps({"@type": "MusicGroup", "name": name,
+                                        "genre": genre}) + '</script>')
+                return fake_fetch({"primary": body})(url, cache)
+            return fetch
+        fetch = make_fetch(primary)
+        self.assertEqual(proposals._individual_event(
+            primary, EVENT, signed["event"]["date"], venue,
+            accept_generic=True, fetch=fetch, cache={}), (NAMES, ["Black Metal"]))
+        self.assertTrue(dynamic.validate(signed, venues, artists, TODAY, fetch=fetch))
+        with mock.patch.object(dynamic, "safe_fetch", side_effect=fetch):
+            published, counts = publisher.merge(BASE, BASE,
+                {"schema": publisher.SCHEMA, "approvals": [signed]}, TODAY)
+            self.assertEqual(counts["newEvents"], 1)
+        for invalid in (
+            primary.replace("Site officiel", "Billetterie"),
+            primary.replace("<h2>" + NAMES[-1], "<h2>Other artist"),
+            primary.replace("<h2>" + NAMES[-1], "<h2>Related events</h2><h2>" + NAMES[-1]),
+            primary.replace("<p><a", "<p hidden><a"),
+            primary.replace("<p><a", "<footer><p><a").replace("</a></p>", "</a></p></footer>"),
+            primary.replace("</a></p>", "</a><a href='https://other.example.org/'>Site officiel</a></p>"),
+            primary.replace("<h2>" + NAMES[-1], "<h2>" + NAMES[-1] + "</h2><h2>" + NAMES[-1]),
+        ):
+            with self.subTest(invalid=invalid[:100]), self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY, fetch=make_fetch(invalid))
+        for name, genre in (("Another artist", "Black Metal"), (NAMES[-1], "Jazz")):
+            with self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY, fetch=make_fetch(primary, name, genre))
+
     def test_later_linked_artist_window_replays_on_signed_review_day(self):
         from automation.concerts import dynamic_first_party_venue_proposals as proposals
         signed = signed_approval()

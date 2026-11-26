@@ -620,6 +620,97 @@ def visible_named_bill(html, title):
     return valid[0] if len(valid) == 1 else None
 
 
+def _visible_official_artist_links(html, title, names, event_url):
+    """Exact named artist section + explicitly labelled official website.
+
+    Only the authenticated canonical event can delegate this evidence.
+    Never use a global link list, venue footer, recommendation or hidden
+    markup. The caller independently rechecks the named artist profile.
+    """
+    from urllib.parse import urljoin
+    import official_html_evidence as visible
+
+    if not isinstance(html, str) or not 0 < len(html) <= probe.MAX_BYTES:
+        return {}
+
+    class ArtistLinks(visible.VisibleBlocks):
+        def __init__(self):
+            super().__init__()
+            self.anchor = None
+            self.invalid_anchor = False
+
+        def handle_starttag(self, tag, attrs):
+            values = dict(attrs)
+            if not self.ignored and tag not in visible.VOID and (
+                    tag == "template" or "hidden" in values
+                    or normal(values.get("aria-hidden")) == "true"
+                    or re.search(r"display\s*:\s*none|visibility\s*:\s*hidden",
+                                 values.get("style") or "", re.I)):
+                if self.anchor is not None:
+                    self.invalid_anchor = True
+                self.ignored = 1
+                return
+            if not self.ignored and tag == "a":
+                self.anchor = [values.get("href"), []]
+                self.invalid_anchor = any(frame[0].startswith("h") for frame in self.frames)
+            super().handle_starttag(tag, attrs)
+
+        def handle_data(self, data):
+            if self.anchor is not None and not self.ignored:
+                self.anchor[1].append(data)
+            super().handle_data(data)
+
+        def handle_endtag(self, tag):
+            if tag == "a" and not self.ignored and self.anchor is not None:
+                href, parts = self.anchor
+                if (not self.invalid_anchor and isinstance(href, str)
+                        and normal(" ".join(parts)) in {"site officiel", "official website",
+                            "official site", "site web officiel"}):
+                    self.blocks.append(("official-artist-link", href))
+                self.anchor = None
+            super().handle_endtag(tag)
+
+    parsed = ArtistLinks()
+    try:
+        parsed.feed(html)
+        parsed.close()
+    except (ValueError, TypeError, RecursionError):
+        return {}
+    headings = [i for i, (tag, _) in enumerate(parsed.blocks) if tag == "h1"]
+    if len(headings) != 1 or normal(parsed.blocks[headings[0]][1]) != normal(title):
+        return {}
+    known = {normal(n): n for n in names}
+    active = None
+    seen = {}
+    links = {}
+    for tag, value in parsed.blocks[headings[0]+1:]:
+        if tag != "official-artist-link" and normal(value) in visible.END_SECTION | {
+                "vous devriez aimer", "nous vous recommandons egalement", "we also recommend",
+                "autres evenements"}:
+            break
+        if tag.startswith("h"):
+            active = normal(value) if tag in {"h2", "h3", "h4"} and normal(value) in known else None
+            if active:
+                seen[active] = seen.get(active, 0) + 1
+        elif tag == "official-artist-link" and active:
+            # Keep all labelled destinations, even invalid ones, so a second
+            # competing link cannot silently be discarded as if unambiguous.
+            links.setdefault(active, set()).add(value)
+    result = {}
+    for key, targets in links.items():
+        if seen.get(key) != 1 or len(targets) != 1:
+            continue
+        try:
+            target = urljoin(event_url, next(iter(targets)))
+            parts = urlsplit(target)
+            if (intake.valid_https(target) and not parts.query and not parts.fragment
+                    and target.rstrip("/") != event_url.rstrip("/")):
+                result[known[key]] = target
+        except (ValueError, TypeError):
+            continue
+    return result
+
+
 def event_genres(raw, official_url, *, fetch=None, cache=None, html=None,
                  profile_scan_day=None):
     """Replay a venue-attributed performer identity, never a name-only match.
@@ -648,6 +739,9 @@ def event_genres(raw, official_url, *, fetch=None, cache=None, html=None,
     # no artist URL or external directory. Structured genre conflicts cannot
     # be replaced by prose. All fields are replayed by the Publisher.
     linked = []
+    visible_linked = []
+    visible_links = (_visible_official_artist_links(html, raw.get("name"), names, official_url)
+                     if raw.get("url") == official_url else {})
     for person in people:
         if not isinstance(person, dict):
             continue
@@ -664,6 +758,9 @@ def event_genres(raw, official_url, *, fetch=None, cache=None, html=None,
         if "MusicEvent" not in bridge._event_types(raw.get("@type")):
             continue  # External profile navigation retains its original scope.
         target = person.get("url")
+        from_visible = target in (None, "") and name.strip() in visible_links
+        if from_visible:
+            target = visible_links[name.strip()]
         host = intake.valid_https(target)
         if not host:
             continue
@@ -680,7 +777,8 @@ def event_genres(raw, official_url, *, fetch=None, cache=None, html=None,
                     continue
         except (ValueError, TypeError):
             continue
-        linked.append((name.strip(), target))
+        (visible_linked if from_visible else linked).append((name.strip(), target))
+    linked.extend(visible_linked)  # Preserve prior signed structured-profile order.
     # Bound requests, not lineup size. Unlinked performers do not consume
     # the budget; an eligible act can be anywhere on the official bill.
     shared = cache if cache is not None else {}
