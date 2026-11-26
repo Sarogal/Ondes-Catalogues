@@ -83,5 +83,64 @@ class EditorialExclusionContractTests(unittest.TestCase):
             contract.prepare(current, current, ledger, today, fetch=fetch)
 
 
+    def test_republication_by_different_id_or_alternate_openagenda_slug_blocked(self):
+        base, current, ledger, today, fetch = self.setup_case()
+        _, plans = contract.prepare(base, current, ledger, today, fetch=fetch)
+        original = ledger["approvals"][0]
+        alias = copy.deepcopy(original)
+        alias["event"]["id"] = "different-id"
+        self.assertTrue(contract.matches_excluded(alias, plans))
+        alias["event"]["officialUrl"] = "https://openagenda.com/other/events/alternate-slug"
+        self.assertTrue(contract.matches_excluded(alias, plans))
+        alias["officialEvidence"][-1]["officialOpenAgendaEventUid"] = "42"
+        self.assertFalse(contract.matches_excluded(alias, plans))
+        alias["event"]["date"] = "2028-01-01"
+        self.assertFalse(contract.matches_excluded(alias, plans))
+
+    def test_actual_publisher_and_preflight_exclude_only_the_bound_event(self):
+        from unittest import mock
+        from automation.concerts import editorial_correction_preflight as preflight
+        from scripts import concerts_cloud_sync as sync
+        from scripts import concert_published_lineup_contract as lineup
+        from test_concerts_openagenda_new_site_publisher import geo_fixture, existing
+
+        _, small, ledger, today, _ = self.setup_case()
+        record, venue, event, approval = fixture.EditorialGenreReconciliationTests().setup_case()
+        # Use the real 127-event historical fixture, not a mocked merge.
+        original_geo = sync.NEW_REFERENCE_GEO_SOURCES.pop(existing.VENUE_ID, None)
+        self.addCleanup(lambda: sync.NEW_REFERENCE_GEO_SOURCES.__setitem__(
+            existing.VENUE_ID, original_geo))
+        base = geo_fixture.test_catalogue()
+        anchor = next(v for v in base["venues"] if v["id"] not in
+                      set(sync.NEW_REFERENCE_GEO_SOURCES) |
+                      {sync.SECRET_PLACE_VENUE_ID, sync.REX_VENUE_ID})
+        anchor.update({k: v for k, v in venue.items() if k != "id"})
+        event["venueId"] = anchor["id"]
+        event["artistIds"] = [base["artists"][0]["id"]]
+        # Bind the synthetic published snapshot and original approval.
+        approval["event"] = copy.deepcopy(event)
+        current = copy.deepcopy(base)
+        current["events"].append(event)
+        before = {"schema": sync.SCHEMA, "approvals": [approval], "venueApprovals": []}
+        def fetch(url):
+            return json.dumps({"total": 1, "events": [record]})
+        with mock.patch.object(lineup, "network_fetch", side_effect=fetch):
+            proposed, report = preflight.select(before, base, current, today, fetch=fetch)
+            self.assertTrue(report["validatedByPublisher"], report)
+            self.assertEqual(proposed["approvals"], before["approvals"])
+            result, counts = sync.merge(base, current, proposed, today)
+        self.assertEqual(counts["editorialExclusions"], 1)
+        self.assertEqual(result["events"], base["events"])
+        self.assertEqual(result["artists"], base["artists"])
+        self.assertEqual(result["venues"], base["venues"])
+        with mock.patch.object(lineup, "network_fetch",
+                               side_effect=AssertionError("no historical fetch")):
+            replay, stats = sync.merge(base, result, proposed, today)
+        self.assertEqual(replay, result)
+        self.assertEqual(stats["editorialExclusions"], 0)
+        with self.assertRaises(ValueError):
+            sync.merge(base, result, before, today)
+
+
 if __name__ == "__main__":
     unittest.main()
