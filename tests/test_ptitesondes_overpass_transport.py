@@ -79,3 +79,14 @@ class TransportTests(unittest.TestCase):
         with patch.object(osm, "build_opener", return_value=opener), patch.object(osm, "monotonic", return_value=61):
             self.assertEqual(osm.fetch_overpass((43.0, 3.0)), {"elements": []})
         self.assertEqual(osm.osm_transport_diagnostics(), {"nearby.lz4.success": 1})
+
+    def test_acceslibre_has_distinct_transport_counter(self):
+        opener = MagicMock()
+        def opened(req, timeout):
+            reply = response(b'{"elements":[]}')
+            reply.geturl.return_value = req.full_url
+            return reply
+        opener.open.side_effect = opened
+        with patch.object(osm, "build_opener", return_value=opener):
+            self.assertEqual(osm.fetch_acceslibre_osm((43.0, 3.0)), {"elements": []})
+        self.assertEqual(osm.osm_transport_diagnostics(), {"acceslibre.lz4.success": 1})
