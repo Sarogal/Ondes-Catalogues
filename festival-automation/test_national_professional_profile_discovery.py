@@ -86,7 +86,8 @@ class ProfessionalProfileDiscoveryTests(unittest.TestCase):
         calls = []
         def fetch(url):
             calls.append(url)
-            if "billetterie.fr" in url:
+            from urllib.parse import urlsplit
+            if urlsplit(url).hostname == "billetterie.fr":
                 raise OfficialHTTPStatusError(429)
             return "<h1>Autre événement</h1>"
         result = discover(HINTS, TITLE, 2027, fetch=fetch,
