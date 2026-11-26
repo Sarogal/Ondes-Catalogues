@@ -152,6 +152,7 @@ def build_promotional(catalogue, approved, today, *, fetch=probe.safe_fetch, lim
     events are skipped; future runs retry an unproven candidate.
     """
     from automation.concerts import openagenda_official_concert as oa
+    from scripts import concert_openagenda_bill_identity as identity
     require(isinstance(approved, dict)
             and approved.get("schema") == "grossesondes.concert.approvals.v1"
             and isinstance(approved.get("approvals"), list)
@@ -172,6 +173,7 @@ def build_promotional(catalogue, approved, today, *, fetch=probe.safe_fetch, lim
                 or current.get("artistIds") != event.get("artistIds")
                 or current.get("title") != event.get("title")
                 or not any(oa.promotional_artist_candidate(known.get(aid, {}).get("name"))
+                           or identity.possible(known.get(aid, {}).get("name"))
                            for aid in current.get("artistIds", []))):
             continue
         if len(proposals) + len(held) >= limit:
@@ -182,8 +184,13 @@ def build_promotional(catalogue, approved, today, *, fetch=probe.safe_fetch, lim
                         ("id", "date", "venueId", "officialUrl", "genres",
                          "status", "sourceType")),
                     "published event identity differs from original approval")
-            names = contract.recheck_promotional(
-                original, catalogue, fetch=lambda url: fetch(url, cache))
+            repaired = any(identity.possible(known.get(aid, {}).get("name"))
+                           for aid in current["artistIds"])
+            if repaired:
+                names = identity.recheck(original, catalogue, fetch=lambda url: fetch(url, cache))
+            else:
+                names = contract.recheck_promotional(
+                    original, catalogue, fetch=lambda url: fetch(url, cache))
             pending = {}
             ids = [_identity(name, known, pending) for name in names]
             row = {
@@ -195,7 +202,7 @@ def build_promotional(catalogue, approved, today, *, fetch=probe.safe_fetch, lim
                 "oldArtistIds": list(event["artistIds"]), "artistIds": ids,
                 "title": " + ".join(names), "newArtists": list(pending.values()),
                 "officialEvidence": [{
-                    "url": event["officialUrl"], "proofType": contract.PROMOTIONAL_PROOF,
+                    "url": event["officialUrl"], "proofType": identity.PROOF if repaired else contract.PROMOTIONAL_PROOF,
                     "checkedAt": today.isoformat(),
                     "checkedFields": ["artists", "date", "venue"],
                     "confirmedArtists": names,
