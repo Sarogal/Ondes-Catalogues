@@ -6124,10 +6124,10 @@
       "lineup": [],
       "showOnMap": true,
       "officialSite": "https://laguerreduson.fr/",
-      "department": null,
+      "department": "25",
       "status": "Annoncé",
       "lon": 6.4855,
-      "region": null,
+      "region": "Bourgogne-Franche-Comté",
       "auditSources": [
         "https://laguerreduson.fr/"
       ],
