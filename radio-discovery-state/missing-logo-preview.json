@@ -17,7 +17,7 @@
   "publicationAllowed": false,
   "records": [
     {
-      "analyzerVersion": 5,
+      "analyzerVersion": 6,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000017",
@@ -32,7 +32,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 5,
+      "analyzerVersion": 6,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000020",
@@ -92,7 +92,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 4,
+      "analyzerVersion": 6,
       "catalogueStatus": "quarantined",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000085",
@@ -212,7 +212,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 4,
+      "analyzerVersion": 6,
       "catalogueStatus": "quarantined",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000129",
@@ -272,7 +272,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 4,
+      "analyzerVersion": 6,
       "catalogueStatus": "quarantined",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000180",
@@ -422,7 +422,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 4,
+      "analyzerVersion": 6,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000283",
@@ -437,7 +437,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 4,
+      "analyzerVersion": 6,
       "catalogueStatus": "active",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000293",
@@ -452,7 +452,7 @@
       "sourceSha256": null
     },
     {
-      "analyzerVersion": 4,
+      "analyzerVersion": 6,
       "catalogueStatus": "quarantined",
       "confirmationStatus": "no_current_image",
       "goStationId": "go-station-000314",

@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 32,
-  "attemptedCount": 2,
+  "dueNameCount": 31,
+  "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "athena",
+  "retryAfterKey": "bad buka",
   "entries": {
     "2000 fm": {
       "status": "not_found",
