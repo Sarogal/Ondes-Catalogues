@@ -7895,6 +7895,11 @@ def merge(reference, current, approvals, today):
             isinstance(approvals.get("approvals"), list),
             "Approbations privées non conformes")
     from scripts import concert_existing_venue_geo_contract as geo_contract
+    from scripts import concert_retired_artist_identity as retired_contract
+    authorized_retirements = retired_contract.selected(approvals, today)
+    current, retired_ids = retired_contract.restore(reference, current, approvals, today)
+    require(retired_ids.issubset(authorized_retirements),
+            "Retired artist receipt lacks private authorization")
     # Restore only exact signed old/new states before the original historical
     # guards, including the original approval for post-reference venues.
     current, geo_plans = geo_contract.prepare(current, approvals, today, defer_unavailable=True)
@@ -8183,6 +8188,8 @@ def merge(reference, current, approvals, today):
                 counts["deferredUnprocessed"] += 1
                 continue
             evt, new_artists = validate_approval(entry, venues, artists, today)
+            require(not retired_ids.intersection(evt["artistIds"]),
+                    "Approval references an independently retired erroneous artist identity")
             # Aucune collision non déclarée sur le même lieu, jour et artiste.
             clash = next((other["id"] for other in result["events"]
                           if other["date"] == evt["date"] and
@@ -8240,7 +8247,11 @@ def merge(reference, current, approvals, today):
             "Trop de nouveaux concerts en une seule synchronisation")
     require(counts["newVenues"] <= MAX_NEW_VENUES_PER_SYNC,
             "Trop de nouvelles salles en une seule synchronisation")
-    if (counts["newEvents"] or counts["newVenues"] or counts["correctedEvents"] or counts["correctedVenues"]):
+    result, artist_retirements = retired_contract.apply_signed(
+        reference, result, approvals, today, retired_ids)
+    if authorized_retirements:
+        counts["retiredArtists"] = artist_retirements
+    if (counts["newEvents"] or counts["newVenues"] or counts["correctedEvents"] or counts["correctedVenues"] or artist_retirements):
         result["updatedAt"] = today.isoformat()
         result["edition"] = "v0.6+cloud — vérifications officielles"
     protect_reference(reference, geo_contract.restore_originals(result, geo_plans))
@@ -8272,7 +8283,7 @@ def main():
         json.dumps(stats, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (out / "concerts-candidat.json").write_text(
         json.dumps(candidate, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    if args.mode == "publish" and (stats["newEvents"] or stats["newVenues"] or stats["correctedEvents"] or stats["correctedVenues"]):
+    if args.mode == "publish" and (stats["newEvents"] or stats["newVenues"] or stats["correctedEvents"] or stats["correctedVenues"] or stats.get("retiredArtists", 0)):
         require(bool(token), "Interdiction de publier sans accès aux validations privées")
         CATALOGUE.write_text(
             json.dumps(candidate, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
