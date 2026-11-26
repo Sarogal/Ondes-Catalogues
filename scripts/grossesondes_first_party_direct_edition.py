@@ -125,10 +125,15 @@ def official_city_on_current_date(html, title, dates):
         for block in " ".join(parser.parts).split(VisibleParagraphs.SEP):
             if not 0 < len(block) <= 900:
                 continue
+            # Preserve original city spelling and offsets while normalizing
+            # accented months and the French first-day ordinal for parsing.
+            calendar_text = re.sub(r"(?<!\d)1er\b", "1  ", fold(block))
+            if len(calendar_text) != len(block):
+                continue
             printed = [
                 (offset, finish)
                 for offset, finish, a, b
-                in explicit_ranges(block, start.year)
+                in explicit_ranges(calendar_text, start.year)
                 if (a, b) == (start, end)
             ]
             if not printed:
@@ -240,12 +245,13 @@ def _programme_ticket_dates(site, html, title, year, today, target, fetch):
         prefix = visible[max(0, match.start()-55):match.start()]
         if target in bounds and not re.search(
                 r"\b(?:pass|prevente|vente|ouverture|reservation)\b", prefix):
-            return tuple(x.isoformat() for x in target)
+            dates = tuple(x.isoformat() for x in target)
+            return dates, official_city_on_current_date(page, title, dates)
     return None
 
 
 def verify_first_party_claims(site, title, today, fetch=fetch_public_html):
-    """Read official current-edition dates and optional city in ONE download."""
+    """Read current dates and optional city from bounded official pages."""
     if safe_root(site) is None:
         return None
     try:
@@ -253,12 +259,15 @@ def verify_first_party_claims(site, title, today, fetch=fetch_public_html):
         if not branded_official_site(site, title, html):
             return None
         year = int(title.rsplit(" ", 1)[-1])
+        ticket_city = None
         dates = verify_official_site_pages(
             site, html, title, year, today, fetch=fetch)
         if dates is None:
             daily, target = _daily_programme(html, year)
             if daily:
-                dates = _programme_ticket_dates(site, html, title, year, today, target, fetch)
+                programme = _programme_ticket_dates(site, html, title, year, today, target, fetch)
+                if programme is not None:
+                    dates, ticket_city = programme
             else:
                 dates = first_party_hero_hint(html, title, today)
         if dates is None:
@@ -268,7 +277,9 @@ def verify_first_party_claims(site, title, today, fetch=fetch_public_html):
                 or end.year != year or start > end
                 or (end - start).days > 7):
             return None
-        return tuple(dates), official_city_on_current_date(html, title, dates)
+        home_city = official_city_on_current_date(html, title, dates)
+        city = None if home_city and ticket_city and normalized(home_city) != normalized(ticket_city) else (home_city or ticket_city)
+        return tuple(dates), city
     except (OSError, ValueError, TypeError, UnicodeError, KeyError):
         return None
 
