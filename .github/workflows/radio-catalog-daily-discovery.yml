@@ -121,6 +121,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_durable_chain.py"
       - "radio-catalog-lab/tools/test_radio_daily_durable_operations.py"
       - "radio-catalog-lab/tools/radio_daily_live_durable_replay.py"
+      - "radio-catalog-lab/tools/radio_daily_public_https_reader.py"
+      - "radio-catalog-lab/tools/test_radio_daily_public_https_reader.py"
       - "radio-catalog-lab/tools/radio_daily_restore_preview.py"
       - "radio-catalog-lab/tools/test_radio_daily_restore_preview.py"
       - "radio-catalog-lab/tools/radio_daily_baseline_selection.py"
