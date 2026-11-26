@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 33,
-  "distinctArtistHints": 46,
+  "stationsWithArtistHints": 35,
+  "distinctArtistHints": 51,
   "attemptedHlsCount": 1,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -290,6 +290,54 @@
           "date": "2026-11-26",
           "artistHint": "Jason Derulo; Nicki Minaj; Ty Dolla $ign",
           "titleSha256": "81950a233a7d75d2ff4eee5b8e7e1d561476a5bbe42c30c1472137df0ef68174"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "193ce893-b2f4-11e8-afe1-52543be04c81",
+      "streamSha256": "aab7170bbb95784cb4255057e432c00d8e6bb90c5fc0cc04dd0aa77af0deba82",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "JOURNEY",
+          "titleSha256": "197f602e26773859dfdd23052cc0e4c7fff26ef44eb0eecec241e6efe1e84d5b"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "1c6dcd6f-88c6-4fd4-8191-078435168e85",
+      "streamSha256": "d8920caf1b7dfb954476c237a6f7007a3801a376f5e7357e1015c054b6bed0c8",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "hls_no_parseable_id3",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
+    },
+    {
+      "stationuuid": "1e27d1d8-7720-46b7-ab9e-f456a432420a",
+      "streamSha256": "51fad199b6a5e50e2afe7496aae847bee2699886efa0148caa836c1f858f8dc3",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "shopify.com",
+          "titleSha256": "2d36510b4d1effc8f6e0550ca7aafb89d8cbf8186a79b4f68e7f2e753e669315"
         }
       ],
       "alternativeVersion": 0,
@@ -674,7 +722,7 @@
     {
       "stationuuid": "59a3411a-e5bc-4ff9-9341-bb949f09a230",
       "streamSha256": "2b7014e394f5e7e21cb764adc4b6896a54ebf7af9ca9bc47b89d423d49f1bee9",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -684,13 +732,20 @@
           "date": "2026-11-25",
           "artistHint": "Aisyk",
           "titleSha256": "84f4d6ba50f01f9c1812e8ec1e03df432c85e8d2c54f810469e6c29bccec22e5"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "Womb",
+          "titleSha256": "9d1e6d0dd46cc7ee94a8824e7f8cb06b56e8cd3176ba75bc309a2766bede2f55"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "5c8f8628-58bd-433b-b3a2-9bdd63e64cef",
       "streamSha256": "3e297cdb425f47ba6944c96fb68ece4e35db6e95374c581fabde0dc8e7164ea4",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -700,8 +755,15 @@
           "date": "2026-11-25",
           "artistHint": "Poison",
           "titleSha256": "6750fb1cd0060333c9ac4fc56329fc7901a202f3ad56d6c0c4574da001337a3d"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "Ratt",
+          "titleSha256": "346dd7d6c276e845e06ddcdf030ce0e1069f941fc6aacd3411238d1a8a48867c"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "5e9f7c0a-a1ef-4739-b115-dad73cfbf404",
@@ -729,7 +791,7 @@
     {
       "stationuuid": "62ef2552-35e9-433a-b747-efdae52bfe4f",
       "streamSha256": "ed7da234ceab2923c1e84a6e7772716502e28ea3d6684d4b2027145fe61de218",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -739,8 +801,15 @@
           "date": "2026-11-25",
           "artistHint": "The Who",
           "titleSha256": "416534c8e29e53f3e6c7e9b7ebafadd91469e72aa2b68c940f55b7334b0e2b56"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "U2",
+          "titleSha256": "da2348e8889f055a2ff5223632b77b11dfc520ad014373bde42ca9c7fb32e60a"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "652a2fa1-d3fe-4724-a3eb-3d6b7fb1e687",

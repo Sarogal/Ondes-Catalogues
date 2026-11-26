@@ -3,11 +3,11 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 46,
-  "dueNameCount": 32,
-  "attemptedCount": 3,
+  "observedNameCount": 51,
+  "dueNameCount": 35,
+  "attemptedCount": 5,
   "serviceFailure": "http_503",
-  "retryAfterKey": "kornkob95",
+  "retryAfterKey": "megadeth",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -114,6 +114,46 @@
     "klaxons": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Klaxons",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "krasnaja plesen'": {
+      "status": "not_found",
+      "artistName": "Krasnaja Plesen'",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "la pulqueria": {
+      "status": "not_found",
+      "artistName": "La Pulqueria",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "lars frederiksen and the bastards": {
+      "status": "name_hypothesis",
+      "mbid": "f3a090bf-6173-42d7-86f5-7fcdeaabfc58",
+      "genres": [],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/f3a090bf-6173-42d7-86f5-7fcdeaabfc58",
+      "artistName": "Lars Frederiksen And The Bastards",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "marc freak": {
+      "status": "name_hypothesis",
+      "mbid": "28e649ec-7c82-4202-a534-121d0883b6fc",
+      "genres": [],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/28e649ec-7c82-4202-a534-121d0883b6fc",
+      "artistName": "Marc Freak",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "identityVerified": false,

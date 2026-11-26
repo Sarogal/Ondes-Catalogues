@@ -9,20 +9,21 @@
   "counts": {
     "advanced_candidate": 3,
     "already_known": 82,
-    "editorial_review": 157,
+    "editorial_review": 156,
     "identity_review": 29,
-    "source_recheck": 2
+    "source_recheck": 2,
+    "technical_review": 1
   },
   "blockingReasonCounts": {
-    "bind_broadcaster_to_stream": 156,
-    "confirm_station_level_programme_scope": 162,
-    "obtain_current_continuity_evidence": 49,
-    "obtain_station_bound_editorial_evidence": 149,
+    "bind_broadcaster_to_stream": 155,
+    "confirm_station_level_programme_scope": 161,
+    "obtain_current_continuity_evidence": 48,
+    "obtain_station_bound_editorial_evidence": 146,
     "refresh_current_reconciliation": 2,
-    "repeat_continuity_on_distinct_days": 111,
+    "repeat_continuity_on_distinct_days": 112,
     "resolve_duplicate_or_legacy_identity": 29,
     "resolve_mixed_or_electronic_format": 37,
-    "resolve_recent_negative_technical_observation": 35
+    "resolve_recent_negative_technical_observation": 36
   },
   "records": [
     {
@@ -160,7 +161,7 @@
       "name": "Punk Rock Demonstration",
       "decision": "editorial_review",
       "streamSha256": "bf1810018392cb47db73befc7e7017085f55a36af5b1605d6407cce9112ec745",
-      "editorialMatch": false,
+      "editorialMatch": true,
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
@@ -170,7 +171,6 @@
       ],
       "logoDecodedHint": false,
       "blockingReasons": [
-        "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
         "repeat_continuity_on_distinct_days"
@@ -2327,7 +2327,7 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": true,
+      "continuityIndication": false,
       "positiveContinuityDays": [
         "2026-11-26"
       ],
@@ -2336,7 +2336,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "obtain_current_continuity_evidence",
+        "resolve_recent_negative_technical_observation"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2569,7 +2570,7 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": true,
+      "continuityIndication": false,
       "positiveContinuityDays": [
         "2026-11-26"
       ],
@@ -2578,7 +2579,8 @@
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
         "resolve_mixed_or_electronic_format",
-        "repeat_continuity_on_distinct_days"
+        "obtain_current_continuity_evidence",
+        "resolve_recent_negative_technical_observation"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2855,7 +2857,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "obtain_current_continuity_evidence",
+        "resolve_recent_negative_technical_observation"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3058,14 +3061,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-26"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3079,15 +3084,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-26"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence",
-        "resolve_recent_negative_technical_observation"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3120,7 +3126,9 @@
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "positiveContinuityDays": [
+        "2026-11-26"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
@@ -4549,15 +4557,16 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-26"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence",
-        "resolve_recent_negative_technical_observation"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4830,15 +4839,14 @@
       "name": "Radio Flo",
       "decision": "editorial_review",
       "streamSha256": "aa7c7e38a04f1760f2038349b6f5c378c59e14bc94afff626dc7ed8123efc292",
-      "editorialMatch": false,
+      "editorialMatch": true,
       "broadcasterStreamLink": false,
-      "structuredProgrammeEvidence": false,
+      "structuredProgrammeEvidence": true,
       "programmeScopeEvidence": false,
       "continuityIndication": false,
       "positiveContinuityDays": [],
       "logoDecodedHint": false,
       "blockingReasons": [
-        "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
         "resolve_mixed_or_electronic_format",
@@ -4889,19 +4897,18 @@
     {
       "stationuuid": "dccda812-d94d-4619-89d5-81ec9f5d75d0",
       "name": "PUNK FM",
-      "decision": "editorial_review",
+      "decision": "technical_review",
       "streamSha256": "6a2c83e2f2c0b94ad3c13cde63eaccaf93dc6c35c5f08cdaa97409ba9892a8b5",
-      "editorialMatch": false,
-      "broadcasterStreamLink": false,
-      "structuredProgrammeEvidence": false,
-      "programmeScopeEvidence": false,
+      "editorialMatch": true,
+      "broadcasterStreamLink": true,
+      "structuredProgrammeEvidence": true,
+      "programmeScopeEvidence": true,
       "continuityIndication": false,
-      "positiveContinuityDays": [],
+      "positiveContinuityDays": [
+        "2026-11-26"
+      ],
       "logoDecodedHint": false,
       "blockingReasons": [
-        "obtain_station_bound_editorial_evidence",
-        "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope",
         "obtain_current_continuity_evidence",
         "resolve_recent_negative_technical_observation"
       ],

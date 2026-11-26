@@ -4,12 +4,12 @@
   "publicationAllowed": false,
   "editoriallyApprovedCount": 0,
   "attemptedPageCount": 8,
-  "linkedPagesFetched": 3,
-  "htmlObservedCount": 88,
-  "identityTargetCount": 13,
-  "structuredProgrammeCount": 3,
-  "programmeScopeCount": 0,
-  "declaredStreamLinkedCount": 6,
+  "linkedPagesFetched": 6,
+  "htmlObservedCount": 95,
+  "identityTargetCount": 16,
+  "structuredProgrammeCount": 5,
+  "programmeScopeCount": 1,
+  "declaredStreamLinkedCount": 7,
   "records": [
     {
       "stationuuid": "01707580-90b4-47cd-9a46-2954e457ea8f",
@@ -114,6 +114,54 @@
         "cfeb2e7fb5481114319a3a8216b452578dd8137395854b06926a946b4152ba05"
       ],
       "linkedPageEvidence": []
+    },
+    {
+      "stationuuid": "05412426-3d22-4e8e-bee0-92b71dac20ff",
+      "homepageSha256": "a366db0f416aca8c168c18f5071c7989b92d45bdac4387d36a4452d824c6c697",
+      "identityNameSha256": "66d7c619c6bbf8901f1a4a78665eba2d4f5911381546f8826512b1a24dbc7a6d",
+      "reportedHost": "www.punkrockdemo.com",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "bf1810018392cb47db73befc7e7017085f55a36af5b1605d6407cce9112ec745",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": true,
+      "signal": "identity_and_target_indication",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [
+        "punk rock"
+      ],
+      "visibleTargetTerms": [
+        "punk",
+        "punk rock"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "b4dc1b74c59da9ef25034a347b39e782d8adfc2d181ec96feed4a7fd152ec898",
+      "finalPageSha256": "a366db0f416aca8c168c18f5071c7989b92d45bdac4387d36a4452d824c6c697",
+      "imageHintSha256": [
+        "b22606235d3171a2f2e7e848bc4577d0611578aa020c67138e234c1ecc3fd8ce"
+      ],
+      "linkedPageEvidence": [
+        {
+          "pageSha256": "af6db6e48eb568d9611f8114b34aa81ec48338d56484487b06d3692ea608e6be",
+          "finalPageSha256": "5b1d21e61fd554c5fa088c998292f290cb3ce3f657e8bcc5cd4d57a35909435d",
+          "programmeScopeEvidence": false,
+          "declaredStreamLinked": false
+        },
+        {
+          "pageSha256": "188a610c3ec85b3315e28672988073ada13dc6df221cb8771d3c6b6358072eb3",
+          "finalPageSha256": "43ee266672fff9a29f5787ddb8f7516df0e239b4dce5542be4e87d02a6774a69",
+          "programmeScopeEvidence": false,
+          "declaredStreamLinked": false
+        }
+      ]
     },
     {
       "stationuuid": "0abce032-b825-46fb-96a4-016d75420ade",
@@ -963,6 +1011,71 @@
       "linkedPageEvidence": []
     },
     {
+      "stationuuid": "3e3087e8-1da2-11ea-a955-52543be04c81",
+      "homepageSha256": "bc006151b3133cc4f25634c4f289b48fec1c29000c0b07cdacd293b09849ee1d",
+      "identityNameSha256": "88032ccb91c58ce77db35623e77993fddb8e3d31e57bb76b1abda3c3b2c80595",
+      "reportedHost": "www.radiobob.de",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "704d7dbaf099638b3acbb34ab3c83ae3ce6f69472f31d69e42a3dcd2419e9bf2",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": false,
+      "signal": "unbound_target_indication",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [
+        "metal"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "cce35f632d7d20c0008f26f1d70ab2d2c979dbbda59a8d6eeb1afcfee293be96",
+      "finalPageSha256": "bc006151b3133cc4f25634c4f289b48fec1c29000c0b07cdacd293b09849ee1d",
+      "imageHintSha256": [],
+      "linkedPageEvidence": []
+    },
+    {
+      "stationuuid": "3e416d41-3433-4f74-bb32-c224bda34016",
+      "homepageSha256": "79e9325b41a82da994e9e29c0c60449c74969d8f59f7089b5b0579c97f94ee89",
+      "identityNameSha256": "15c90358b68ecaa1fc7a9ecd0d4df77ac7ef5e8f90010fe6f7df79aa0cd4e9b1",
+      "reportedHost": "www.radio-paranoid.net",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "600f26605e986226e5d5cddc48f3d2e4ac950ad2ba5bf70a13b26a80af00924c",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": true,
+      "signal": "unbound_target_indication",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [
+        "hard rock",
+        "heavy metal",
+        "metal",
+        "thrash metal"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "7ab3dc2539c28582cbd4f7aa982d558b30efe27248956c05e82b81e7737ec56e",
+      "finalPageSha256": "79e9325b41a82da994e9e29c0c60449c74969d8f59f7089b5b0579c97f94ee89",
+      "imageHintSha256": [
+        "6228aa37e888faed3533645f46908b5fdf00ecc6cb8cf5d39b3d75ee932927e1"
+      ],
+      "linkedPageEvidence": []
+    },
+    {
       "stationuuid": "418b964f-a3df-4b72-a2ff-173ec7e1c1ff",
       "homepageSha256": "37b87f48bd2155be951827b9e4113d840f9ea6d2275c0a6af89b7cd1a11a3a58",
       "identityNameSha256": "8f36a92df5baab8b60698ec1759627f0abd648d8180fffafc058600ff39f975c",
@@ -1114,6 +1227,36 @@
       "linkedPageEvidence": []
     },
     {
+      "stationuuid": "4dc166c7-acde-405e-b134-eba17c514215",
+      "homepageSha256": "bc006151b3133cc4f25634c4f289b48fec1c29000c0b07cdacd293b09849ee1d",
+      "identityNameSha256": "4d26c6d854007eac545e59577dba4729f6d9a9c6a85dd1634b757911597a51b8",
+      "reportedHost": "www.radiobob.de",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "ed9f16fcecbd39636a9f18524ff556d98568a52cfc40d5792e8f30cfcb47d1ec",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": false,
+      "signal": "unbound_target_indication",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [
+        "metal"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "cce35f632d7d20c0008f26f1d70ab2d2c979dbbda59a8d6eeb1afcfee293be96",
+      "finalPageSha256": "bc006151b3133cc4f25634c4f289b48fec1c29000c0b07cdacd293b09849ee1d",
+      "imageHintSha256": [],
+      "linkedPageEvidence": []
+    },
+    {
       "stationuuid": "4e3c3bc3-7d48-4a20-84cc-509d3e2cea14",
       "homepageSha256": "b23ce959f97b8605fc15ab285b3a092cc563885597d863aec6788b46940858c8",
       "identityNameSha256": "9de41bbc69fe6a8eca86cb77f021601c70844d7541dd3db85e7c5439e8ece081",
@@ -1184,6 +1327,19 @@
           "declaredStreamLinked": false
         }
       ]
+    },
+    {
+      "stationuuid": "53cf8dd0-be8f-4186-96d2-767e751459a4",
+      "homepageSha256": "43d1fd1a4e3d54bf1fa03218c7d976ed0f83d18e88cb2b7db52442977887d47b",
+      "identityNameSha256": "9982f7650c77dc1fe590c10b2b2c5e4601357d22895247eb28ac9e1b70b0912d",
+      "reportedHost": "www.punk4punks.com",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "retrieval": "failed_review",
+      "analyzerVersion": 4,
+      "streamSha256": "0c2be1d8943747a4af28b3709105cefa09ca3067759a809221d21d98bed0c6a1",
+      "editorialApproved": false,
+      "publicationAllowed": false
     },
     {
       "stationuuid": "53f8aadb-cb61-4132-9240-dac5b76e0095",
@@ -1675,6 +1831,54 @@
         "d1996a6a6049d13dba5c5410dd5ccf8bcd427160c8797858506e2adbcd9f7879"
       ],
       "linkedPageEvidence": []
+    },
+    {
+      "stationuuid": "7bb4134f-99c9-4b72-ad72-5a03380d1270",
+      "homepageSha256": "165d1daba1e71bd48457892fbaf42b5b1420c3089dc7ed23547c0625370fe77c",
+      "identityNameSha256": "2e4bace61ee95e4d5a8a62e982fde4b41264b0127115d19d92a708c93b83701e",
+      "reportedHost": "www.radiodellaconcia-rock.it",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "5cf0d299349864b9cd81061b34baec0700d2857f2b35db479e72788cb7614ef8",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": true,
+      "signal": "unbound_target_indication",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [
+        "nu metal",
+        "punk"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "4f3612bb2a421709d9834e1f532f526ae041aff09a44dc454a6fbc7e0d0c4f75",
+      "finalPageSha256": "165d1daba1e71bd48457892fbaf42b5b1420c3089dc7ed23547c0625370fe77c",
+      "imageHintSha256": [
+        "39872583f76bfaf15ef7151a93dd924db5e68684d36710b5fd493523e16d0803",
+        "a638bc542f3d9d8dfcb5f2f963e20e7b1412ee4009ec99f4eebb1ce157bc5ad2",
+        "ee0dfde6c0ca1162c03da25602acd1e92d4c922d2a1a2916b82e01fc3c8670c9"
+      ],
+      "linkedPageEvidence": [
+        {
+          "pageSha256": "a5725a64aa59ecd595c984056cc18813c58eeff36ef4362eedafabc773fc98d2",
+          "finalPageSha256": "9847643ed837df9e37d44678ff1f367e4f1b96374fabb096f27723803916ae5b",
+          "programmeScopeEvidence": false,
+          "declaredStreamLinked": false
+        },
+        {
+          "pageSha256": "6ecdfc0260008b649816cea7e744fefcea3528d32ccb9258a61873622423e391",
+          "finalPageSha256": "6c95f4013adc2afc2ca4fdea62e72acd804e86f51a1adf8ef6f24bf2f6f0e05a",
+          "programmeScopeEvidence": false,
+          "declaredStreamLinked": false
+        }
+      ]
     },
     {
       "stationuuid": "7fb7fbd4-c5f7-11e9-8502-52543be04c81",
@@ -2199,6 +2403,19 @@
         "e338ee75161967dfd822604df4626511c6d42663546d42d2eec437a15a286e7f"
       ],
       "linkedPageEvidence": []
+    },
+    {
+      "stationuuid": "b4d40bd6-311f-42cf-b8db-595e4b64053f",
+      "homepageSha256": "b7e366e9124320c4af59adcb1c0869331581c0799a7f23ec3c7f30fefc169b2b",
+      "identityNameSha256": "9ef1d5e6d4211b299b27200ad4d507aa3dceb7b49d67fa36278d45f0100cff62",
+      "reportedHost": "www.nrj.fr",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "retrieval": "failed_review",
+      "analyzerVersion": 4,
+      "streamSha256": "461ae75dc6e089eb805352a1f03e6efd9a22d1f4c0cd8fc4e8a3cbb74a0ce8f4",
+      "editorialApproved": false,
+      "publicationAllowed": false
     },
     {
       "stationuuid": "bb38c058-7757-48e7-a73e-ccdc4fad7d2e",
@@ -2824,6 +3041,43 @@
       "linkedPageEvidence": []
     },
     {
+      "stationuuid": "da1715de-c1b0-4dd5-a469-c944c30bc2c7",
+      "homepageSha256": "8cd58f0522bc4bbfe0a4fc16672fc098b4dd3d2785db50b0456d4533462e3fb4",
+      "identityNameSha256": "fabbfb6c54531ccc2e7dcd22e3af8a1c4c51c840f99ce6ba34ad0895b5b3d229",
+      "reportedHost": "www.radioflo.it",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "aa7c7e38a04f1760f2038349b6f5c378c59e14bc94afff626dc7ed8123efc292",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": true,
+      "signal": "identity_and_target_indication",
+      "structuredProgrammeEvidence": true,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [
+        "indie"
+      ],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [
+        "punk"
+      ],
+      "visibleTargetTerms": [],
+      "primaryElectronicTerms": [],
+      "pageSha256": "606e472803365700cc2e0e277e5d47f91a5f4562ffb8c1d723d73144988abb3d",
+      "finalPageSha256": "8cd58f0522bc4bbfe0a4fc16672fc098b4dd3d2785db50b0456d4533462e3fb4",
+      "imageHintSha256": [
+        "18d3a5692f75aa16c2b18ac0382c602eb91e2f8405687cebdf3c4ab597f3f82d",
+        "2c538674fc86ef50ac9666a4a8030596ac5642236563897ef29d099a330aa281",
+        "3a42448968e76b3a56e23c4b60bae19f5f4fae2ff93c1cbfb4015a3081eb0877",
+        "a1c6baf6a9d4fafd8edd55d87421999be90523176dbf47d43fcd13fe0b0ce991"
+      ],
+      "linkedPageEvidence": []
+    },
+    {
       "stationuuid": "da7d7480-3616-4ba6-bf43-e086deb71d1a",
       "homepageSha256": "404dca0bb831d3ed4ddf89e996a42db30d89304677712427e218a5321499f3ae",
       "identityNameSha256": "4db5fbd07b4c9f2155cfaa5979c0f1c270618af08e5712e08d092d825388183d",
@@ -2835,6 +3089,49 @@
       "streamSha256": "22e144939d311cfe487d1bbba6ad5afa7caa71afd05f568a9b06cdc806d23ce9",
       "editorialApproved": false,
       "publicationAllowed": false
+    },
+    {
+      "stationuuid": "dccda812-d94d-4619-89d5-81ec9f5d75d0",
+      "homepageSha256": "247253f1ccc5991374335818cb84b4bcea5ae25b8fca04a010e63dbf6b4467ed",
+      "identityNameSha256": "1a55e2a9ecaf3ab76e79569de14c8b98358bf2e54af11d4d287b0093d2e1114d",
+      "reportedHost": "www.punkfm.ee",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "6a2c83e2f2c0b94ad3c13cde63eaccaf93dc6c35c5f08cdaa97409ba9892a8b5",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": true,
+      "signal": "identity_and_target_indication",
+      "structuredProgrammeEvidence": true,
+      "programmeScopeEvidence": true,
+      "programmeScopeSources": [
+        "explicit_html_station_scope",
+        "typed_station_genre"
+      ],
+      "programmeScopeTerms": [
+        "punk",
+        "punk rock"
+      ],
+      "otherFormatTerms": [],
+      "declaredStreamLinked": true,
+      "primaryTargetTerms": [
+        "punk",
+        "punk rock"
+      ],
+      "visibleTargetTerms": [
+        "punk"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "b5f24543186c2748983d05010d27ca1b9e68a8a036254881aae811bbdfaf4fe4",
+      "finalPageSha256": "247253f1ccc5991374335818cb84b4bcea5ae25b8fca04a010e63dbf6b4467ed",
+      "imageHintSha256": [
+        "0a2a1b522cb10dfbbeb0a3ce66a7048b8b19dc4530ffebbaf6c2dfc6d299d7f8",
+        "2a4163d302afbff8fa081fd231c2d91ff584801f16d407a3d44e1f55896376b1",
+        "990d7d912881556ed0210b157a6aa57f47813c3fee7a98f25ef4b6889d1b3986"
+      ],
+      "linkedPageEvidence": []
     },
     {
       "stationuuid": "dfd8fd13-bc8c-4f89-96c3-2c13a1e72b6e",

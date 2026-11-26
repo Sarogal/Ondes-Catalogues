@@ -4,11 +4,11 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "freshnessDays": 30,
-  "stationCount": 48,
+  "stationCount": 51,
   "stationsWithWikidataHints": 5,
   "stationsWithSourceConflicts": 0,
   "stationsWithReportedHistory": 0,
-  "stationsWithMultipleObservationDays": 13,
+  "stationsWithMultipleObservationDays": 16,
   "stationsWithGenreHints": 5,
   "verifiedArtistCount": 0,
   "records": [
@@ -612,6 +612,101 @@
       "publicationAllowed": false
     },
     {
+      "stationuuid": "193ce893-b2f4-11e8-afe1-52543be04c81",
+      "streamSha256": "aab7170bbb95784cb4255057e432c00d8e6bb90c5fc0cc04dd0aa77af0deba82",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 1,
+      "distinctArtistTitleHints": 1,
+      "distinctTitleHashes": 1,
+      "observationDates": [
+        "2026-11-26"
+      ],
+      "reportedBroadcastDates": [],
+      "distinctHistoricalArtistTitleHints": 0,
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "1c6dcd6f-88c6-4fd4-8191-078435168e85",
+      "streamSha256": "d8920caf1b7dfb954476c237a6f7007a3801a376f5e7357e1015c054b6bed0c8",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 0,
+      "distinctArtistTitleHints": 0,
+      "distinctTitleHashes": 0,
+      "observationDates": [],
+      "reportedBroadcastDates": [],
+      "distinctHistoricalArtistTitleHints": 0,
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "sourceHintCounts": {},
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "1e27d1d8-7720-46b7-ab9e-f456a432420a",
+      "streamSha256": "51fad199b6a5e50e2afe7496aae847bee2699886efa0148caa836c1f858f8dc3",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 1,
+      "distinctArtistTitleHints": 1,
+      "distinctTitleHashes": 1,
+      "observationDates": [
+        "2026-11-26"
+      ],
+      "reportedBroadcastDates": [],
+      "distinctHistoricalArtistTitleHints": 0,
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
       "stationuuid": "25de583d-8165-4a5f-8ba5-39861a77f943",
       "streamSha256": "fcab32b81f3023cc0712a2ea56a31ca7f8c19afe57d5435849e35e665dd04f19",
       "matchesDecisionStream": true,
@@ -639,7 +734,8 @@
         "unclassified_hint": 2
       },
       "sourceHintCounts": {
-        "no_usable_source": 2
+        "musicbrainz_only": 1,
+        "no_usable_source": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -1221,7 +1317,8 @@
         "unclassified_hint": 2
       },
       "sourceHintCounts": {
-        "no_usable_source": 2
+        "musicbrainz_only": 1,
+        "no_usable_source": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -1295,11 +1392,12 @@
       "streamSha256": "2b7014e394f5e7e21cb764adc4b6896a54ebf7af9ca9bc47b89d423d49f1bee9",
       "matchesDecisionStream": true,
       "observedInScan": true,
-      "distinctArtistHints": 1,
-      "distinctArtistTitleHints": 1,
-      "distinctTitleHashes": 1,
+      "distinctArtistHints": 2,
+      "distinctArtistTitleHints": 2,
+      "distinctTitleHashes": 2,
       "observationDates": [
-        "2026-11-25"
+        "2026-11-25",
+        "2026-11-26"
       ],
       "reportedBroadcastDates": [],
       "distinctHistoricalArtistTitleHints": 0,
@@ -1308,16 +1406,16 @@
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 1
+        "unclassified_hint": 2
       },
       "artistTitleHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 1
+        "unclassified_hint": 2
       },
       "sourceHintCounts": {
-        "no_usable_source": 1
+        "no_usable_source": 2
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -1328,11 +1426,12 @@
       "streamSha256": "3e297cdb425f47ba6944c96fb68ece4e35db6e95374c581fabde0dc8e7164ea4",
       "matchesDecisionStream": true,
       "observedInScan": true,
-      "distinctArtistHints": 1,
-      "distinctArtistTitleHints": 1,
-      "distinctTitleHashes": 1,
+      "distinctArtistHints": 2,
+      "distinctArtistTitleHints": 2,
+      "distinctTitleHashes": 2,
       "observationDates": [
-        "2026-11-25"
+        "2026-11-25",
+        "2026-11-26"
       ],
       "reportedBroadcastDates": [],
       "distinctHistoricalArtistTitleHints": 0,
@@ -1341,16 +1440,16 @@
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 1
+        "unclassified_hint": 2
       },
       "artistTitleHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 1
+        "unclassified_hint": 2
       },
       "sourceHintCounts": {
-        "no_usable_source": 1
+        "no_usable_source": 2
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -1395,11 +1494,12 @@
       "streamSha256": "ed7da234ceab2923c1e84a6e7772716502e28ea3d6684d4b2027145fe61de218",
       "matchesDecisionStream": true,
       "observedInScan": true,
-      "distinctArtistHints": 1,
-      "distinctArtistTitleHints": 1,
-      "distinctTitleHashes": 1,
+      "distinctArtistHints": 2,
+      "distinctArtistTitleHints": 2,
+      "distinctTitleHashes": 2,
       "observationDates": [
-        "2026-11-25"
+        "2026-11-25",
+        "2026-11-26"
       ],
       "reportedBroadcastDates": [],
       "distinctHistoricalArtistTitleHints": 0,
@@ -1408,16 +1508,17 @@
         "target_hint": 1,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 0
+        "unclassified_hint": 1
       },
       "artistTitleHintCounts": {
         "target_hint": 1,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 0
+        "unclassified_hint": 1
       },
       "sourceHintCounts": {
-        "musicbrainz_only": 1
+        "musicbrainz_only": 1,
+        "no_usable_source": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,
