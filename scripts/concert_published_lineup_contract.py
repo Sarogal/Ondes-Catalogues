@@ -15,6 +15,7 @@ import sys
 import unicodedata
 from pathlib import Path
 from urllib.parse import urlsplit
+from scripts import concert_openagenda_bill_identity as bill_identity
 
 ROOT = Path(__file__).resolve().parents[1]
 FIELDS = frozenset({
@@ -176,7 +177,8 @@ def plan(row, signed_original, current, today):
             "official named-bill proof absent")
     proof = proofs[0]
     promotional = proof["proofType"] == PROMOTIONAL_PROOF
-    require(promotional or proof["proofType"] == ADDITIVE_PROOF,
+    repaired_bill = proof["proofType"] == bill_identity.PROOF
+    require(promotional or repaired_bill or proof["proofType"] == ADDITIVE_PROOF,
             "unsupported correction proof")
     new_ids = row["artistIds"]
     require(isinstance(new_ids, list)
@@ -192,6 +194,10 @@ def plan(row, signed_original, current, today):
                 base["artistIds"], new_ids, source["originalNames"], source["names"]):
             require((old_id == new_id) == (normal(old_name) == normal(name)),
                     "non-promotional identity changed or promotional identity retained")
+    elif repaired_bill:
+        source = bill_identity.source(signed_original, current)
+        require(bool(new_ids) and new_ids != base["artistIds"],
+                "bill repair must change the defective artist set")
     else:
         require(len(new_ids) > len(base["artistIds"])
                 and all(i in new_ids for i in base["artistIds"]),
@@ -232,7 +238,7 @@ def plan(row, signed_original, current, today):
             and all(isinstance(n, str) and 2 <= len(n.strip()) <= 120
                     for n in proof["confirmedArtists"]),
             "proof does not bind all named artists, date and place")
-    if promotional:
+    if promotional or repaired_bill:
         require(list(map(normal, proof["confirmedArtists"])) ==
                 list(map(normal, source["names"])),
                 "correction does not match the signed promotional mapping")
@@ -248,8 +254,8 @@ def plan(row, signed_original, current, today):
             "artistIds": list(new_ids), "title": row["title"],
             "officialNames": list(proof["confirmedArtists"]),
             "newArtists": list(fresh.values()),
-            "promotional": promotional,
-            "historyChange": PROMOTIONAL_HISTORY if promotional else ADDITIVE_HISTORY}
+            "promotional": promotional, "repairedBill": repaired_bill,
+            "historyChange": PROMOTIONAL_HISTORY if (promotional or repaired_bill) else ADDITIVE_HISTORY}
 
 
 def expected(event, plan_row):
@@ -301,6 +307,10 @@ def apply(row, signed_original, catalogue, today, *, fetch=None):
         names = recheck_promotional(signed_original, result, fetch=source)
         require(list(map(normal, names)) == list(map(normal, signed["officialNames"])),
                 "fresh export disagrees with signed identities")
+    elif signed["repairedBill"]:
+        names = bill_identity.recheck(signed_original, result, fetch=source)
+        require(list(map(normal, names)) == list(map(normal, signed["officialNames"])),
+                "fresh export disagrees with signed repaired bill")
     else:
         bill = official_bill(source(row["officialUrl"]), old, venue_rows[0],
                              result["artists"])
