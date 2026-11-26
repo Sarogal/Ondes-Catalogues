@@ -616,6 +616,8 @@ jobs:
           if ! python public/automation/concerts/open_world_artist_genre.py \
               --registry confidential/automation/concerts/intake/registry.json \
               --out confidential/automation/concerts/intake/artist-genre-open-world.json \
+              --musicbrainz confidential/automation/concerts/intake/musicbrainz-research.json \
+              --wikidata confidential/automation/concerts/intake/wikidata-research.json \
               --scan-slot "$SCAN_SLOT" --max-sources 18 \
               > "$RUNNER_TEMP/concerts-private-logs/open-world-artist-genre.log" 2>&1; then
             echo "::warning::Recherche musicale ouverte indisponible ; aucune admission."
