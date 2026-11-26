@@ -1,17 +1,16 @@
 {
   "approvedLogoCount": 0,
-  "attemptedCount": 8,
+  "attemptedCount": 3,
   "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
   "catalogChanged": false,
   "counts": {
-    "awaiting_check": 3,
     "changed_image_review": 1,
     "missing_logo": 32,
     "query_source_held": 10,
     "source_unavailable_review": 1,
-    "unchanged": 249
+    "unchanged": 252
   },
-  "observedSourceCount": 176,
+  "observedSourceCount": 179,
   "publicationAllowed": false,
   "records": [
     {
@@ -1279,11 +1278,11 @@
       "changedDates": [],
       "expectedImageSha256": "3fd9fb9446c04653d01199044a6442a4941a65004e67d9ac47e3ae360cfdb645",
       "goStationId": "go-station-000116",
-      "lastObservationDate": null,
+      "lastObservationDate": "2026-11-26",
       "logoApproved": false,
-      "observedImageSha256": null,
+      "observedImageSha256": "3fd9fb9446c04653d01199044a6442a4941a65004e67d9ac47e3ae360cfdb645",
       "publicationAllowed": false,
-      "reviewStatus": "awaiting_check",
+      "reviewStatus": "unchanged",
       "sourceSha256": "fe0e3455845653b1de42b949fa9806208062ef0b9860235ca596134a6796d32b"
     },
     {
@@ -1963,11 +1962,11 @@
       "changedDates": [],
       "expectedImageSha256": "6b1ba56064beeeafba44fd7fff7170cea9739b995eed94edabd7b89823006206",
       "goStationId": "go-station-000181",
-      "lastObservationDate": null,
+      "lastObservationDate": "2026-11-26",
       "logoApproved": false,
-      "observedImageSha256": null,
+      "observedImageSha256": "6b1ba56064beeeafba44fd7fff7170cea9739b995eed94edabd7b89823006206",
       "publicationAllowed": false,
-      "reviewStatus": "awaiting_check",
+      "reviewStatus": "unchanged",
       "sourceSha256": "fde89baaf3afebed574837c40a06efbe75849bbb669b76a8f4918cbf0f34a4ee"
     },
     {
@@ -1975,11 +1974,11 @@
       "changedDates": [],
       "expectedImageSha256": "d3e58ad1b5f89b9357aebac434e041f79da5efbf237f4ea9458d967889e35e78",
       "goStationId": "go-station-000182",
-      "lastObservationDate": null,
+      "lastObservationDate": "2026-11-26",
       "logoApproved": false,
-      "observedImageSha256": null,
+      "observedImageSha256": "d3e58ad1b5f89b9357aebac434e041f79da5efbf237f4ea9458d967889e35e78",
       "publicationAllowed": false,
-      "reviewStatus": "awaiting_check",
+      "reviewStatus": "unchanged",
       "sourceSha256": "fc7656414cef0832aec3441c84854e0cedd8192fd629604e8e61567db47931cc"
     },
     {
@@ -6609,17 +6608,53 @@
       "sourceSha256": "fab91e03cd48c45bad1d5702b0d7985f41038bef00e1904b51292d9304d75718"
     },
     {
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 177781,
+            "height": 477,
+            "imageSha256": "d3e58ad1b5f89b9357aebac434e041f79da5efbf237f4ea9458d967889e35e78",
+            "mime": "image/png",
+            "width": 3840
+          },
+          "retrieval": "decoded"
+        }
+      ],
       "publicationAllowed": false,
       "sourceSha256": "fc7656414cef0832aec3441c84854e0cedd8192fd629604e8e61567db47931cc"
     },
     {
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 126389,
+            "height": 600,
+            "imageSha256": "6b1ba56064beeeafba44fd7fff7170cea9739b995eed94edabd7b89823006206",
+            "mime": "image/png",
+            "width": 600
+          },
+          "retrieval": "decoded"
+        }
+      ],
       "publicationAllowed": false,
       "sourceSha256": "fde89baaf3afebed574837c40a06efbe75849bbb669b76a8f4918cbf0f34a4ee"
     },
     {
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "image": {
+            "byteLength": 34492,
+            "height": 600,
+            "imageSha256": "3fd9fb9446c04653d01199044a6442a4941a65004e67d9ac47e3ae360cfdb645",
+            "mime": "image/webp",
+            "width": 600
+          },
+          "retrieval": "decoded"
+        }
+      ],
       "publicationAllowed": false,
       "sourceSha256": "fe0e3455845653b1de42b949fa9806208062ef0b9860235ca596134a6796d32b"
     }

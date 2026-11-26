@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 74,
-  "attemptedCount": 2,
+  "dueNameCount": 73,
+  "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "the war on drugs",
+  "retryAfterKey": "u2",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
