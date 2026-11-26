@@ -3,11 +3,11 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 41,
-  "dueNameCount": 27,
-  "attemptedCount": 1,
-  "serviceFailure": "timeout",
-  "retryAfterKey": "iced earth",
+  "observedNameCount": 46,
+  "dueNameCount": 32,
+  "attemptedCount": 3,
+  "serviceFailure": "http_503",
+  "retryAfterKey": "kornkob95",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -87,6 +87,14 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "jason derulo; nicki minaj; ty dolla $ign": {
+      "status": "not_found",
+      "artistName": "Jason Derulo; Nicki Minaj; Ty Dolla $ign",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "johnny hates jazz": {
       "status": "name_hypothesis",
       "mbid": "1cf1db8f-06bc-4c02-a608-4fc7980bbfcc",
@@ -100,6 +108,14 @@
       "artistName": "Johnny Hates Jazz",
       "source": "musicbrainz",
       "checkedAt": "2026-11-25",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "klaxons": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Klaxons",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
       "identityVerified": false,
       "publicationAllowed": false
     },

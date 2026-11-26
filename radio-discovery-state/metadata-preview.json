@@ -4,9 +4,9 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 31,
-  "distinctArtistHints": 41,
-  "attemptedHlsCount": 0,
+  "stationsWithArtistHints": 33,
+  "distinctArtistHints": 46,
+  "attemptedHlsCount": 1,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
   "stationsWithAlternativeHints": 0,
@@ -96,6 +96,18 @@
       "publicationAllowed": false,
       "verdict": "metadata_no_parseable_title",
       "observations": []
+    },
+    {
+      "stationuuid": "0cd363a2-d26f-4957-bc69-9b1f85b5f173",
+      "streamSha256": "0e61f2ea0afc5d375fa933b4e03084c37d10bacb40505709ffa8e2d9d5eb7a51",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "hls_no_parseable_id3",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "10d01aca-f5de-4591-b4e0-441ce8e1ddfe",
@@ -246,6 +258,42 @@
       "observations": [],
       "alternativeVersion": 3,
       "alternativeAttempted": true
+    },
+    {
+      "stationuuid": "165c260d-de4a-4728-a1dc-2ae56cad10ec",
+      "streamSha256": "f0511ad93702fc6c07690cc286b7c7f37bb83504237315021030be72353c859b",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Heaven Shall Burn",
+          "titleSha256": "84edb6a537368a4a0780cec78d34024a543475f97ee66f1f14f8a04562608697"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "1914384c-d876-46c7-a6cf-a4ec4853bb2f",
+      "streamSha256": "4084285d863d803af403506daf599e1f15e619c4ce538c65a42b6f6de0ace648",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Jason Derulo; Nicki Minaj; Ty Dolla $ign",
+          "titleSha256": "81950a233a7d75d2ff4eee5b8e7e1d561476a5bbe42c30c1472137df0ef68174"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "25de583d-8165-4a5f-8ba5-39861a77f943",
@@ -547,7 +595,7 @@
     {
       "stationuuid": "517b189e-46eb-4156-bf93-905f7934c838",
       "streamSha256": "a0723ce1b5898b068d2a1d2a5b4c171b1e8aaad5a8fe0e7a45ce2701ac011733",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -557,13 +605,20 @@
           "date": "2026-11-25",
           "artistHint": "Klaxons",
           "titleSha256": "7b178cc8fef84c3b3c0cafce6526ee9997c6762b9d043ec6d971b05d395dff65"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "Skip the Use",
+          "titleSha256": "2cb897c4b842cc5518913b5f55871124fbdb74e34b6703f07b76921638872e6e"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "53cf8dd0-be8f-4186-96d2-767e751459a4",
       "streamSha256": "0c2be1d8943747a4af28b3709105cefa09ca3067759a809221d21d98bed0c6a1",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -573,13 +628,20 @@
           "date": "2026-11-25",
           "artistHint": "Lars Frederiksen And The Bastards",
           "titleSha256": "565d8d7337ed0051e62a099d777db6ca1355cbcabc6c94447a2518410f94a169"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "Suicide Machines",
+          "titleSha256": "786f69ee2a802bb8392e83be2260ee35d1f4bd027436ee26785e92735d3dbbac"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "53f8aadb-cb61-4132-9240-dac5b76e0095",
       "streamSha256": "73883f4c1fc1d4fa0cf0f47d95cc86c697b9e90f40f75081c8570373d4439337",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -589,8 +651,15 @@
           "date": "2026-11-25",
           "artistHint": "Норвежская Сказка: Читает Воронмрак (Улан-Удэ)",
           "titleSha256": "7f9b8ec0584663e10d5a7d6314236416056ced9f5ef49a8ef9ad3786a895e784"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "тима гранж (Томск)",
+          "titleSha256": "36d9484c01f4c9c6bc6a83fe1f54f35c511cefe164e79dd1caf3b4ac42016c1f"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "575c08a2-4325-4173-8373-b922c7438436",
