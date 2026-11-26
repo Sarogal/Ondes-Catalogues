@@ -34,6 +34,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_v9_generator.py"
       - "radio-catalog-lab/tools/radio_daily_baseline_verify.py"
       - "radio-catalog-lab/tools/test_radio_daily_baseline_verify.py"
+      - "radio-catalog-lab/tools/radio_daily_alternative_metadata.py"
+      - "radio-catalog-lab/tools/test_radio_daily_alternative_metadata.py"
       - "radio-catalog-lab/tools/radio_daily_metadata_preview.py"
       - "radio-catalog-lab/tools/test_radio_daily_metadata_preview.py"
       - "radio-catalog-lab/tools/radio_daily_artist_research.py"
@@ -345,7 +347,7 @@ jobs:
           python radio-catalog-lab/tools/radio_daily_decision_preview.py \
             --discovery "$root/candidates.json" --dossiers "$root/qualification-dossiers.json" \
             --baseline-sha256 "$BASELINE_SHA256" --output "$root/decision-preview.json"
-      - name: Observe bounded ICY artist hints (no editorial approval)
+      - name: Observe bounded ICY and alternative artist hints (no editorial approval)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
         shell: bash
         run: |
