@@ -36,6 +36,28 @@ def lookup(path, params):
 
 
 class MusicBrainzResearchTests(unittest.TestCase):
+    def test_large_explicit_roster_is_not_truncated_by_network_budget(self):
+        reg = registry()
+        names = [f"Unknown Act {i:03d}" for i in range(65)]
+        reg["items"]["lead"]["candidate"].update(
+            officialArtistNames=names, leadArtist=names[0])
+        tasks = mb.candidate_tasks(reg, DAY)
+        self.assertEqual(len(tasks), 65)
+        self.assertEqual({task[0] for task in tasks.values()}, {0})
+        self.assertEqual({task[2] for task in tasks.values()}, set(names))
+        calls = []
+        def request(path, params):
+            calls.append(params["query"])
+            return {"count": 0, "artists": []}
+        previous = None
+        for _ in range(6):
+            previous = mb.build(reg, DAY, prior=previous, request=request)
+            self.assertLessEqual(previous["namesChecked"], mb.MAX_NAMES)
+            self.assertFalse(previous["publicationAllowed"])
+        self.assertEqual(len(calls), 65)
+        self.assertEqual(len(set(calls)), 65)
+        self.assertEqual(len(previous["entries"]), 65)
+
     def test_unknown_name_without_website(self):
         result = mb.build(registry(), DAY, request=lookup)
         entry = result["entries"][mb.exact(NAME)]
