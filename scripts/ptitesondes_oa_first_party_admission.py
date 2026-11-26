@@ -135,7 +135,7 @@ def explicit_programme_category(title, description):
     if (re.search(r"^(?:marionnettes?|mime|magie)(?: (?:et )?(?:marionnettes?|mime|magie)){1,3}\b", body)
             and re.search(r"\b(?:marionnettes?|mime)\b", body)
             and re.search(r"\b(?:jeune public|spectacles?|comedien(?:ne)?s?|compagnie|cie|interprete)\b", name + " " + body)):
-        return "spectacle-jeunesse", "Spectacle jeunesse"
+        return "spectacle-jeunesse", "Spectacle jeune public"
     if re.search(r"\bpetits et grands (?:prenez part|participez|embarquez|partez) "
                  r"(?:a|dans|pour) (?:l |une )aventure musicale\b", body):
         return "spectacle-musical", "Spectacle musical"
