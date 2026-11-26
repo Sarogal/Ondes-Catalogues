@@ -4,12 +4,16 @@ on:
   pull_request:
     paths:
       - 'festival-automation/national_openagenda_research.py'
+      - 'festival-automation/national_brand_domain_research.py'
+      - 'festival-automation/test_national_brand_domain_research.py'
       - 'festival-automation/test_national_openagenda_research.py'
       - '.github/workflows/grossesondes-festivals-openagenda-public-smoke.yml'
   push:
     branches: [main]
     paths:
       - 'festival-automation/national_openagenda_research.py'
+      - 'festival-automation/national_brand_domain_research.py'
+      - 'festival-automation/test_national_brand_domain_research.py'
       - '.github/workflows/grossesondes-festivals-openagenda-public-smoke.yml'
   workflow_dispatch:
 
@@ -59,4 +63,19 @@ jobs:
                 'éditions déjà publiées écartées:',
                 result['already_published_leads_count'])
           print('Aucune donnée privée, aucune approbation, aucune publication.')
+          from national_brand_domain_research import research_brand_domain, brand_domain_candidate
+          # Derive candidates only from the public scan, no configured domains.
+          leads = [lead for lead in result['leads']
+                   if brand_domain_candidate(lead.get('name_hint'),
+                                             lead.get('edition_year_hint'))]
+          leads.sort(key=lambda lead: (
+              (lead.get('calendar_hint_review_only') or {}).get('start_date', '9999'),
+              lead['name_hint']))
+          for lead in leads[:4]:
+              title, _ = brand_domain_candidate(lead['name_hint'], lead['edition_year_hint'])
+              review = research_brand_domain(lead, title, lead['edition_year_hint'], today)
+              assert review['publication_authorized'] is False
+              print('Brand domain:', title, review['status'],
+                    'official dates:', review['dates_review_only'])
+          print('Brand-domain eligible:', len(leads), 'checked:', min(4, len(leads)))
           PY
