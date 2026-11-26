@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "festival-automatio
 from grossesondes_official_poster_ocr import (
     MAX_BYTES, qualified_url, parse_tsv, read_official_poster,
     load_ocr_cache, save_ocr_cache, recognize_poster, poster_review_claims,
-    _choose_ocr_pass, poster_known_artist_candidates,
+    _choose_ocr_pass, poster_known_artist_candidates, structured_poster_candidates,
 )
 from dns_pinned_https import OfficialHTTPStatusError
 
@@ -186,6 +186,39 @@ class PosterOCRTests(unittest.TestCase):
                  "Omega", "Rival", "RIVAL"]
         self.assertEqual(poster_known_artist_candidates(reading, known), ["Alpha Beta"])
         self.assertEqual(poster_known_artist_candidates(dict(reading, review_only=False), known), [])
+
+    def test_structured_fields_require_exact_edition_and_high_confidence(self):
+        row = {"name": "Festival Exemple 2027", "startDate": "2027-08-13",
+               "endDate": "2027-08-15"}
+        def reading(lines, confidence=98):
+            words = []
+            for y, line in enumerate(lines):
+                x = 20
+                for token in line.split():
+                    width = len(token) * 10
+                    words.append({"text": token, "confidence": confidence,
+                                  "box": [x, 40*y, width, 25], "review_only": True})
+                    x += width + 8
+            return {"status": "review_only", "review_only": True, "words": words}
+        base = ["FESTIVAL EXEMPLE", "13 au 15 août 2027"]
+        lines = base + ["Artistes : Alpha, New Artist", "Pass 3 jours : 75,50 €",
+                        "Pass 1J : 30 EUR", "Pass 4J : 99 €",
+                        "Sponsor Gamma", "45 €"]
+        result = structured_poster_candidates(row, reading(lines))
+        self.assertEqual(result["artists"], ["Alpha", "New Artist"])
+        self.assertEqual(result["passes"], {"1": "30", "3": "75,50"})
+        self.assertFalse(result["publication_authorized"])
+        conflict = structured_poster_candidates(
+            row, reading(lines + ["Pass 3J : 90 €", "Artistes : Rival"]))
+        self.assertEqual(conflict["artists"], [])
+        self.assertEqual(conflict["passes"], {"1": "30"})
+        for altered, confidence in ((lines + ["Archives 2026"], 98),
+                                    (lines, 90),
+                                    (base + ["Artistes : Alpha, Sponsor Gamma",
+                                             "Pass 3J : 75 € en vente"], 98)):
+            result = structured_poster_candidates(row, reading(altered, confidence))
+            self.assertEqual(result["artists"], [])
+            self.assertEqual(result["passes"], {})
 
     def test_failed_recognition_not_cached(self):
         cache = {}
