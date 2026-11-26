@@ -125,6 +125,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_public_https_reader.py"
       - "radio-catalog-lab/tools/radio_daily_github_transfer_contract.py"
       - "radio-catalog-lab/tools/test_radio_daily_github_transfer_contract.py"
+      - "radio-catalog-lab/tools/radio_daily_github_readback.py"
+      - "radio-catalog-lab/tools/test_radio_daily_github_readback.py"
       - "radio-catalog-lab/tools/radio_daily_restore_preview.py"
       - "radio-catalog-lab/tools/test_radio_daily_restore_preview.py"
       - "radio-catalog-lab/tools/radio_daily_baseline_selection.py"
