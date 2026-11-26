@@ -42,6 +42,18 @@ class ProfessionalProfileDiscoveryTests(unittest.TestCase):
                 {FEST: page, PROFILE: PROFILE_PAGE}[url])
             self.assertEqual(result["websites"], [])
 
+    def test_provider_pass_heading_has_generic_festival_suffix(self):
+        page = EVENT_PAGE.replace("Festival des Rives</h1>",
+            "Ombres du Nord Festival 2027 - 4j Pass (4-Events)</h1>")
+        result = discover(HINTS, "Ombres du Nord 2027", 2027,
+                          fetch=lambda url: {FEST: page, PROFILE: PROFILE_PAGE}[url])
+        self.assertEqual(result["status"], "PROFESSIONAL_WEBSITE_HINTS")
+        self.assertEqual(result["websites"][0]["website_url"], SITE)
+        wrong = page.replace("Ombres du Nord", "Ombres du Sud")
+        result = discover(HINTS, "Ombres du Nord 2027", 2027,
+                          fetch=lambda url: {FEST: wrong, PROFILE: PROFILE_PAGE}[url])
+        self.assertEqual(result["websites"], [])
+
     def test_wrong_event_and_hidden_profile_do_not_trigger_fetch(self):
         for html in (EVENT_PAGE.replace("Festival des Rives", "Festival du Nord"),
                      EVENT_PAGE.replace("<a ", "<a hidden ")):
