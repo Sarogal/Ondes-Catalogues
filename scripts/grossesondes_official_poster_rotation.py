@@ -17,7 +17,7 @@ from grossesondes_existing_official_updates import (
 from grossesondes_official_html_edition import visible_official_edition, fold
 from grossesondes_official_poster_ocr import (
     read_official_poster, poster_review_claims, load_ocr_cache, save_ocr_cache,
-    qualified_url, MIN_REVIEW_CONFIDENCE,
+    qualified_url, MIN_REVIEW_CONFIDENCE, poster_known_artist_candidates,
 )
 
 MAX_HOSTS = 8
@@ -68,6 +68,10 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
         raise ValueError("Invalid poster host budget")
     if cache is None:
         cache = {}
+    public_rows = catalogue.get("festivals", []) if isinstance(catalogue, dict) else catalogue
+    artist_names = {name for entry in public_rows if isinstance(entry, dict)
+                    for name in (entry.get("lineup") if isinstance(entry.get("lineup"), list) else [])
+                    if isinstance(name, str)}
     selected = signed_rotation(catalogue, today, limit, tick)
     if slug is not None:
         # Manual diagnostic selects an existing catalogue slug, not a URL.
@@ -85,7 +89,7 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
     report = {"review_only": True, "publication_authorized": False,
               "checked_hosts": 0, "images_read": 0, "edition_matches": 0,
               "budget_exhausted": False, "browser_hosts": 0,
-              "contextual_edition_matches": 0, "rows": []}
+              "contextual_edition_matches": 0, "known_artist_hint_count": 0, "rows": []}
     deadline = monotonic() + MAX_RUN_SECONDS
     for site, rows in selected:
         if monotonic() >= deadline:
@@ -153,11 +157,14 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
                 report["edition_matches"] += int(matched)
                 contextual = contextual_poster_match(site, url, row, page_date_match, reading, result)
                 report["contextual_edition_matches"] += int(contextual)
+                hints = poster_known_artist_candidates(reading, artist_names) if matched or contextual else []
+                report["known_artist_hint_count"] += len(hints)
                 # No recognized text, image bytes, or URL in public logs.
                 diagnostic["images"].append({
                     "status": reading.get("status"),
                     "qualification": result["status"],
                     "contextual_edition_match": contextual,
+                    "known_artist_hint_count": len(hints),
                     "qualification_diagnostics": result.get("diagnostics", {}),
                     "claim_types": sorted(result["claims"]),
                     "sha256": reading.get("sha256"),
