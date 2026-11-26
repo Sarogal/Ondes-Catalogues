@@ -29,7 +29,8 @@ def validate_candidate(prior_pointer, prior_body, candidate, *, expected_sha,
     tombstones = {t["go_station_id"]: t for t in new["tombstones"]}
     if any(tombstones.get(t["go_station_id"]) != t for t in old["tombstones"]):
         raise ValueError("historical redirect changed")
-    issues = validate_catalog(new, mode="publish", previous=old)
+    # Only the exact authenticated predecessor may confer legacy continuity.
+    issues = validate_catalog(new, mode="publish", previous=old, authenticated_legacy=True)
     if issues:
         raise ValueError("publication guard refused: " + "; ".join(issues[:8]))
     if any(stream["state"] == "candidate_verified"

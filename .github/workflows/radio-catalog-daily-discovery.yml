@@ -79,6 +79,7 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_combined_release_validation.py"
       - "radio-catalog-lab/tools/radio_daily_lab_signing.py"
       - "radio-catalog-lab/tools/test_radio_daily_lab_signing.py"
+      - "radio-catalog-lab/tools/test_radio_daily_legacy_preservation.py"
       - "radio-catalog-lab/tools/radio_daily_publication_simulator.py"
       - "radio-catalog-lab/tools/test_radio_daily_publication_simulator.py"
       - "radio-catalog-lab/tools/radio_daily_restore_preview.py"
