@@ -32,7 +32,12 @@ def audit_correction(previous, proposed, reference, current, today):
     be identical. This preserves the pending batch rather than bypassing it.
     """
     published_ids = {e["id"] for e in current["events"]}
-    if all(a["event"]["id"] in published_ids for a in previous["approvals"]):
+    # An exclusion or artist retirement can be signed but not yet deployed.
+    # The ordinary append-only preview cannot model those independent deltas.
+    maintenance = (previous.get("editorialCorrections") or
+                   previous.get("artistIdentityRetirements"))
+    if not maintenance and all(a["event"]["id"] in published_ids
+                               for a in previous["approvals"]):
         return preview.audit(previous, proposed, reference, current, today)
     fresh, statuses = preview.approved_delta(previous, proposed, current)
     added = proposed.get("lineupCorrections", [])[len(previous.get("lineupCorrections", [])):]
@@ -49,8 +54,12 @@ def audit_correction(previous, proposed, reference, current, today):
     expected_events = [contract.expected(e, plan) if e["id"] == old["id"] else e
                        for e in before["events"]]
     # Publisher applies lineup corrections before admitting pending events.
-    n = len(current["artists"])
-    preview.require(before["artists"][:n] == current["artists"],
+    # The real baseline can remove separately authorized orphan IDs.
+    # Only its exact receipts may explain missing historical identities.
+    retired = set(before.get("retiredArtistIds", []))
+    old_artists = [a for a in current["artists"] if a["id"] not in retired]
+    n = len(old_artists)
+    preview.require(before["artists"][:n] == old_artists,
                     "Pending batch modifies historical artist identities")
     expected_artists = (before["artists"][:n] + plan["newArtists"] +
                         before["artists"][n:])
@@ -130,8 +139,11 @@ def select(previous, report, reference, current, today, *, audit=audit_correctio
             # checks historical protections and the exact event/artist delta.
             if audit(previous, proposed, reference, current, today) != 1:
                 raise ValueError("Unexpected private correction preview delta")
-        except (ValueError, TypeError, KeyError, OSError, TimeoutError):
+        except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
             result["held"] += 1
+            # Private-only diagnostic; no HTML, URLs or proof payloads.
+            result.setdefault("heldDiagnostics", []).append({
+                "eventId": eid, "reason": str(exc).split("\n", 1)[0][:160]})
             continue
         result["status"] = "validated"
         result["validatedByPublisher"] = True
