@@ -26,6 +26,7 @@ from dns_pinned_https import fetch_public_html
 from national_openagenda_research import (SOURCE as OPENAGENDA_DATASET,
                                           validated_leads as validated_openagenda_leads)
 from national_professional_profile_discovery import discover as discover_professional_profiles
+from national_professional_official_detail import examine as examine_professional_details
 from national_generic_primary_domain_preflight import (
     _edition_name, _published, QUEUE_SCHEMA,
 )
@@ -235,6 +236,9 @@ def examine(state, queue, catalogue, today, *, event_fetch=None,
         if dates is None and current_hints.get(url) is not None:
             row["professional_research_review_only"] = discover_professional_profiles(
                 current_hints[url], source["title"], source["year"], fetch=read_site)
+            row["professional_official_detail_review_only"] = examine_professional_details(
+                row["professional_research_review_only"], source["title"],
+                source["year"], today, fetch=read_site)
         if url not in observed:
             observed[url] = {"lastChecked": today}
         output.append(row)
