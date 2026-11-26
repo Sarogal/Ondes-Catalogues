@@ -10,7 +10,7 @@ provides evidence of an actual event or permission to publish.
 import re
 
 from proof import norm
-from ptitesondes_primary_editorial import primary_out_of_scope
+from ptitesondes_primary_editorial import primary_out_of_scope, audience_text
 from ptitesondes_family_national_scope import FAMILY_TYPES
 
 # Deliberately narrow: the product remains an app for children's radio.
@@ -89,7 +89,7 @@ def propose_family_activity(title, description):
     if ADULT_ONLY.search(body):
         outcome["decision"] = "adult_only_or_contradictory_audience"
         return outcome
-    if not AUDIENCE.search(body):
+    if not AUDIENCE.search(audience_text(title, description)):
         outcome["decision"] = "no_explicit_family_audience_cue"
         return outcome
     if MUSICAL.search(name):
