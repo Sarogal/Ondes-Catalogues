@@ -21,12 +21,14 @@ REASONS = frozenset(("school_support_primary",
                      "non_performance_gathering_primary",
                      "evergreen_commercial_studio_availability",
                      "adult_audience_official", "market_gathering_primary",
-                     "mixed_umbrella_programme_primary"))
+                     "mixed_umbrella_programme_primary", "park_visit_programme_primary"))
 EVENT_ID = re.compile(r"openagenda-[1-9][0-9]{0,11}-20[0-9]{2}-[0-9]{2}-[0-9]{2}\Z")
 TITLE_CLUES = {
     # For the adult-audience reason the exact source-reviewed record,
     # official municipal evidence URL and concert category are checked below.
     "adult_audience_official": re.compile(r"\S"),
+    # Exact reviewed incident, not an editorial whitelist or venue filter.
+    "park_visit_programme_primary": re.compile(r"^Le Hameau Enchanté$", re.I),
     "mixed_umbrella_programme_primary": re.compile(r"^Les Journées polyglottes$", re.I),
     "market_gathering_primary": re.compile(
         r"^\s*march[ée]\s+de\s+(?:no[ëe]l|saint[- ]nicolas)\b", re.I),
@@ -127,6 +129,14 @@ def reviewed_retraction(document, manifest):
                        "/que-faire-a-nantes/agenda/" + eid.split("-")[1] + "_")
                    and urlsplit(expected["source_url"]).path.split("/")[-1].startswith(eid.split("-")[1] + "_"),
                    "invalid_official_mixed_programme_evidence")
+        if row["reason_code"] == "park_visit_programme_primary":
+            reject(manifest["reviewed_on"] == "2026-11-25"
+                   and eid.startswith("openagenda-23913876-")
+                   and expected.get("category") == "concert"
+                   and expected.get("time") == "09:30"
+                   and row["evidence_url"] == "https://www.duboeuf.com/fr/le-parc/le-hameau-enchante/"
+                   and expected["source_url"] == "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/23913876_le-hameau-enchante",
+                   "invalid_official_park_visit_evidence")
         targets[eid] = row
     original = {e["id"]: e for e in events}
     present = [eid for eid in targets if eid in original]
