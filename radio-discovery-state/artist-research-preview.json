@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 49,
-  "attemptedCount": 3,
+  "dueNameCount": 47,
+  "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "judas priest",
+  "retryAfterKey": "kayo dot",
   "entries": {
     "2000 fm": {
       "status": "not_found",
