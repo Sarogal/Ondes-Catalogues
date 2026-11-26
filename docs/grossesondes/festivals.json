@@ -6334,28 +6334,43 @@
       ]
     },
     {
-      "lat": null,
+      "lat": 48.8064,
       "endDate": "2026-11-28",
       "price": null,
       "dateRangeIsContinuous": false,
       "verificationStatus": "Site et édition revérifiés indépendamment",
       "source": "https://www.saintcyr78.fr/evenement/cyrcus-metal-fest-3/",
       "officialSite": "https://www.saintcyr78.fr/evenement/cyrcus-metal-fest-3/",
-      "lon": null,
+      "lon": 2.0657,
       "name": "Cyrcus Métal Fest 2026",
       "region": null,
-      "showOnMap": false,
+      "showOnMap": true,
       "department": null,
       "startDate": "2026-11-28",
       "status": "Annoncé",
       "sourceConfidence": "Agenda municipal officiel (Geo/DILA et fiche revérifiés)",
       "notes": "Dates et genre revérifiés sur une fiche municipale officielle ; lieu précis, artistes et GPS à confirmer.",
-      "city": null,
-      "lastVerified": "2026-11-25",
+      "city": "Saint-Cyr-l'École",
+      "lastVerified": "2026-11-26",
       "slug": "cyrcus-metal-fest-2026",
       "bands": 0,
       "lineup": [],
-      "venue": null
+      "venue": null,
+      "geoCity": "Saint-Cyr-l'École",
+      "geoPrecision": "commune",
+      "geoInsee": "78545",
+      "geoSource": "https://geo.api.gouv.fr/communes?nom=Saint-Cyr-L%27%C3%89cole&fields=nom%2Ccode%2CcodeDepartement%2Cdepartement%2Ccentre&format=geojson&geometry=centre&zone=metro%2Cdrom%2Ccom",
+      "geoVerification": {
+        "proofMode": "current-edition-commune-direct-official.v1",
+        "firstObserved": "2026-11-26",
+        "verifiedAt": "2026-11-26",
+        "officialSite": "https://www.saintcyr78.fr/evenement/cyrcus-metal-fest-3/",
+        "markerMeaning": "centre_indicatif_de_commune"
+      },
+      "auditSources": [
+        "https://www.saintcyr78.fr/evenement/cyrcus-metal-fest-3/",
+        "https://www.saintcyr78.fr/loisirs/case/"
+      ]
     }
   ]
 }
