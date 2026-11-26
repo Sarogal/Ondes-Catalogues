@@ -115,7 +115,7 @@ def candidate_tasks(registry, today):
         except (TypeError, ValueError):
             continue
         explicit = lead.get("officialArtistNames")
-        named = isinstance(explicit, list) and 0 < len(explicit) <= 32
+        named = isinstance(explicit, list) and bool(explicit)
         for name in frontier.observed_artists(lead):
             if not named and frontier.normalized(name) in FALLBACK_SUPPORT_LABELS:
                 continue

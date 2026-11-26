@@ -51,7 +51,7 @@ def identity(kind, *parts):
 def observed_artists(candidate):
     """Names are investigation leads, never automatic genre/identity proof."""
     named = candidate.get("officialArtistNames")
-    if isinstance(named, list) and 0 < len(named) <= 32:
+    if isinstance(named, list) and named:
         names = named
     else:
         lead = candidate.get("leadArtist")
@@ -59,7 +59,9 @@ def observed_artists(candidate):
             return []
         names = re.split(r"\s+\+\s+", lead)
     output, seen = [], set()
-    for name in names[:32]:
+    # Preserve the complete named bill; only downstream research requests
+    # have a bounded budget. No lineup-length gate or truncated lead list.
+    for name in names:
         clean = readable_name(name)
         if clean and normalized(clean) not in seen:
             seen.add(normalized(clean))
