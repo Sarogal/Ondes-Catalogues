@@ -29,6 +29,7 @@ from national_openagenda_research import (SOURCE as OPENAGENDA_DATASET,
 from national_professional_profile_discovery import discover as discover_professional_profiles
 from national_professional_official_detail import examine as examine_professional_details
 from national_cultural_venue_discovery import cultural_detail
+from national_brand_domain_research import research_brand_domain
 from national_generic_primary_domain_preflight import (
     _edition_name, _published, QUEUE_SCHEMA,
 )
@@ -262,6 +263,9 @@ def examine(state, queue, catalogue, today, *, event_fetch=None,
                                                source["year"], today, fetch=read_site)
                     if fallback["registry_requests"]:
                         row["professional_official_detail_review_only"] = fallback
+        if dates is None and site is None and url in current_leads:
+            row["brand_domain_research_review_only"] = research_brand_domain(
+                current_leads[url], source["title"], source["year"], today, fetch=read_site)
         if url not in observed:
             observed[url] = {"lastChecked": today}
         serial += 1
