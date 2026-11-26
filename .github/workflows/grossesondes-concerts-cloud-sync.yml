@@ -192,24 +192,37 @@ jobs:
           # must not make publication fail on a simple non-fast-forward. Never
           # rebase across a newer concert catalog, baseline, publisher code or
           # its security tests: those require a FRESH preflight and workflow run.
-          git fetch --no-tags origin main
-          REMOTE_HEAD="$(git rev-parse FETCH_HEAD)"
-          if ! git merge-base --is-ancestor "$CHECKED_BASE" "$REMOTE_HEAD"; then
-            echo "::error::Main a été réécrit : publication interrompue"
-            exit 1
-          fi
-          if ! git diff --quiet "$CHECKED_BASE" "$REMOTE_HEAD" -- \
-            scripts/ \
-            automation/concerts/ \
-            .github/workflows/grossesondes-concerts-cloud-sync.yml \
-            tests/test_concerts_cloud_sync.py \
-            docs/grossesondes/concerts.json \
-            docs/grossesondes/concerts-reference.json; then
-            echo "::error::Le catalogue ou ses garde-fous ont changé : relancer la revue sur main"
-            exit 1
-          fi
-          git rebase "$REMOTE_HEAD"
-          git push origin HEAD:main
+          # A second writer can win even between fetch/rebase and push.
+          # Retry only against a freshly fetched, independently guarded base.
+          # Never force push or reuse a candidate across protected changes.
+          for attempt in 1 2 3 4 5; do
+            git fetch --no-tags origin main
+            REMOTE_HEAD="$(git rev-parse FETCH_HEAD)"
+            if ! git merge-base --is-ancestor "$CHECKED_BASE" "$REMOTE_HEAD"; then
+              echo "::error::Main a été réécrit : publication interrompue"
+              exit 1
+            fi
+            if ! git diff --quiet "$CHECKED_BASE" "$REMOTE_HEAD" -- \
+              scripts/ \
+              automation/concerts/ \
+              .github/workflows/grossesondes-concerts-cloud-sync.yml \
+              tests/test_concerts_cloud_sync.py \
+              docs/grossesondes/concerts.json \
+              docs/grossesondes/concerts-reference.json; then
+              echo "::error::Le catalogue ou ses garde-fous ont changé : relancer la revue sur main"
+              exit 1
+            fi
+            git rebase "$REMOTE_HEAD"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 5 ]; then
+              echo "::warning::Publication concurrente ou push indisponible ; nouvelle vérification de main."
+              sleep "$attempt"
+            fi
+          done
+          echo "::error::Publication non confirmée après cinq tentatives ; prochaine exécution requise"
+          exit 1
 
       - name: Préparer GitHub Pages (tous les catalogues existants préservés)
         if: ${{ steps.decision.outputs.deploy == 'true' }}
