@@ -100,7 +100,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install public verification dependencies
-        run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0"
+        run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
       - name: Validate candidate engine without network
         run: |
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_daily*.py" -v
@@ -121,7 +121,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install public verification dependencies
-        run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0"
+        run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
       - name: Read durable discovery state
         uses: actions/checkout@v4
         with:
@@ -305,7 +305,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check "Pillow==11.3.0"
           root="$RUNNER_TEMP/go-radio-discovery"
           previous=()
           if [[ -f "$RUNNER_TEMP/go-radio-previous/logo-preview.json" ]]; then
