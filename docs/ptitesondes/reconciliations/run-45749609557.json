@@ -1,0 +1,40 @@
+{
+  "schema": "ptitesondes.official_reconciliation.v1",
+  "checked_on": "2026-11-26",
+  "slot": 0,
+  "source_series_checked": 30,
+  "total_source_series": 148,
+  "before_count": 1080,
+  "after_count": 1083,
+  "source_summary": {
+    "official_new_session_admitted": 2,
+    "official_new_session_held": 1,
+    "official_unchanged": 28
+  },
+  "catalogue_before_sha256": "8f4e1f59fb5cf99aadf114d4b0f838a3e9d440d15f48bbecb7775e819e0b7008",
+  "catalogue_after_sha256": "b44a4ae9a77de940f1aa55d9ab74c9a8e4a7e7188f7e1b799f1bfe8870295eb1",
+  "operations": [
+    {
+      "id": "openagenda-13037030-2026-12-21",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/13037030_les-ateliers-en-famille-familybulle-automnehiver-2026",
+      "new_event_sha256": "2cabd9f1f7a7bf40ee96b1eaa125d40d0da724d1db6fb3ef004036be9e3f3e69"
+    },
+    {
+      "id": "openagenda-13037030-2026-12-22",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/13037030_les-ateliers-en-famille-familybulle-automnehiver-2026",
+      "new_event_sha256": "b819b72b6ef5a3a47716caf5e719d58a58d64fb14f17405c65c0225b1677f29c"
+    },
+    {
+      "id": "openagenda-19463150-2027-03-24",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/grand-chatellerault/events/19463150_historiettes-et-cabanette-bebes-lecteurs-4094509",
+      "new_event_sha256": "db255637b92b499c85813140470bbbce4f4e3575cae5b6133db1f6098ae236a5"
+    }
+  ],
+  "unrelated_public_records_preserved": true
+}

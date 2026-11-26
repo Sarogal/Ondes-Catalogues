@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-26T02:49:12+01:00",
+  "updated_at": "2026-11-26T04:33:31+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -22243,6 +22243,66 @@
       "geo_precision": "venue",
       "lat": 45.768033,
       "lng": 4.887698
+    },
+    {
+      "id": "openagenda-13037030-2026-12-21",
+      "title": "Les ateliers en famille \" Family'bulle \" Automne/Hiver 2026",
+      "category": "lecture-jeunesse",
+      "category_label": "Lecture jeunesse",
+      "date_start": "2026-12-21",
+      "date_end": "2026-12-21",
+      "time": "15:00",
+      "city": "Pouilly-en-Auxois",
+      "department": "Côte-d'Or",
+      "region": "Bourgogne-Franche-Comté",
+      "venue": "espace Jean Claude Patriarche",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/13037030_les-ateliers-en-famille-familybulle-automnehiver-2026",
+      "source_label": "DataTourisme - Région Bourgogne Franche-Comté — Licence Ouverte 2.0 — données mises à jour le 10/11/2026",
+      "verified_at": "2026-11-26",
+      "geo_verified_at": "2026-11-26",
+      "geo_precision": "venue",
+      "lat": 47.262495,
+      "lng": 4.556286
+    },
+    {
+      "id": "openagenda-13037030-2026-12-22",
+      "title": "Les ateliers en famille \" Family'bulle \" Automne/Hiver 2026",
+      "category": "lecture-jeunesse",
+      "category_label": "Lecture jeunesse",
+      "date_start": "2026-12-22",
+      "date_end": "2026-12-22",
+      "time": "10:00 ; 10:45",
+      "city": "Pouilly-en-Auxois",
+      "department": "Côte-d'Or",
+      "region": "Bourgogne-Franche-Comté",
+      "venue": "espace Jean Claude Patriarche",
+      "source_url": "https://openagenda.com/datatourisme-region-bourgogne-franche-comte/events/13037030_les-ateliers-en-famille-familybulle-automnehiver-2026",
+      "source_label": "DataTourisme - Région Bourgogne Franche-Comté — Licence Ouverte 2.0 — données mises à jour le 10/11/2026",
+      "verified_at": "2026-11-26",
+      "geo_verified_at": "2026-11-26",
+      "geo_precision": "venue",
+      "lat": 47.262495,
+      "lng": 4.556286
+    },
+    {
+      "id": "openagenda-19463150-2027-03-24",
+      "title": "Historiettes et Cabanette : bébés lecteurs",
+      "category": "lecture-jeunesse",
+      "category_label": "Lecture jeunesse",
+      "date_start": "2027-03-24",
+      "date_end": "2027-03-24",
+      "time": "10:30",
+      "city": "Châtellerault",
+      "department": "Vienne",
+      "region": "Nouvelle-Aquitaine",
+      "venue": "La Cabane du Lac",
+      "source_url": "https://openagenda.com/grand-chatellerault/events/19463150_historiettes-et-cabanette-bebes-lecteurs-4094509",
+      "source_label": "Médiathèques de Grand Châtellerault — Licence Ouverte 2.0 — données mises à jour le 21/11/2026",
+      "verified_at": "2026-11-26",
+      "geo_verified_at": "2026-11-26",
+      "geo_precision": "venue",
+      "lat": 46.800676,
+      "lng": 0.527157
     }
   ]
 }
