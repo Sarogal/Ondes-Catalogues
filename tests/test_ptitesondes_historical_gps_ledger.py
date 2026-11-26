@@ -61,3 +61,35 @@ class HistoricalGPSLedgerTests(unittest.TestCase):
         public["events"].append(public["events"][0])
         with self.assertRaisesRegex(ValueError, "duplicate_id"):
             reconcile(self.ref, public, self.ledger)
+
+
+    def test_record_validated_repair_and_idempotent_reconciliation(self):
+        from test_ptitesondes_catalogue_geo_correction_preview import page
+        from ptitesondes_historical_gps_apply_guard import prepare_corrections
+        from ptitesondes_historical_gps_ledger import record_validated_repairs
+        doc, state, proof = fixture()
+        corrected, audit, count = prepare_corrections(doc, doc, DAY, state,
+            researcher=lambda *_: proof, source_reader=lambda _: page())
+        self.assertEqual(count, 1)
+        old_ledger = empty_ledger()
+        ledger = record_validated_repairs(doc, doc, corrected, old_ledger, audit, DAY)
+        self.assertEqual(old_ledger, empty_ledger())
+        self.assertEqual(reconcile(doc, corrected, ledger), corrected)
+        unchanged, second, count = prepare_corrections(corrected, corrected, DAY, state,
+            researcher=lambda *_: self.fail("valid point rechecked"))
+        self.assertEqual(count, 0)
+        self.assertEqual(record_validated_repairs(doc, corrected, unchanged,
+                         ledger, second, DAY), ledger)
+
+    def test_record_refuses_forged_non_geo_mutation(self):
+        from test_ptitesondes_catalogue_geo_correction_preview import page
+        from ptitesondes_historical_gps_apply_guard import prepare_corrections
+        from ptitesondes_historical_gps_ledger import record_validated_repairs
+        doc, state, proof = fixture()
+        corrected, audit, _ = prepare_corrections(doc, doc, DAY, state,
+            researcher=lambda *_: proof, source_reader=lambda _: page())
+        corrected["events"][0]["title"] = "Other"
+        audit["after_sha256"] = digest(corrected)
+        audit["proposals"][0]["after_sha256"] = digest(corrected["events"][0])
+        with self.assertRaisesRegex(ValueError, "non_geo_change"):
+            record_validated_repairs(doc, doc, corrected, empty_ledger(), audit, DAY)
