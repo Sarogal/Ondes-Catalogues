@@ -399,6 +399,126 @@ def _review_memory(prior, selected):
     return list(dict.fromkeys(result))[-MAX_REVIEW_MEMORY:]
 
 
+# Fingerprint only the event extraction and proof modules that can repair
+# these specific failures. Unrelated radio/festival/catalogue commits do
+# not invalidate this memory. No GitHub network request or SHA lookup.
+EXTRACTOR_FILES = (
+    "scripts/concert_dynamic_existing_venue.py",
+    "automation/concerts/dynamic_first_party_venue_proposals.py",
+    "automation/concerts/event_site_pair_recheck.py",
+    "automation/concerts/event_site_microdata.py",
+    "automation/concerts/discover.py",
+    "automation/concerts/official_rss_jsonld_bridge.py",
+    "automation/concerts/official_html_evidence.py",
+    "automation/concerts/open_world_visible_cards.py",
+    "automation/concerts/official_visible_tour_bill.py",
+    "automation/concerts/open_world_artist_genre.py",
+    "automation/concerts/artist_official_bio.py",
+)
+_EXTRACTION_REASONS = frozenset({
+    "official_event_content: Source admission: unique first-party music event not found: named_bill_missing_or_ambiguous",
+    "official_event_content: Source admission: unique first-party music event not found: relevant_artist_or_event_genre_missing",
+})
+
+
+def _extractor_revision():
+    digest = hashlib.sha256()
+    try:
+        for path in EXTRACTOR_FILES:
+            digest.update(path.encode("utf-8") + b"\0")
+            digest.update(hashlib.sha256((ROOT / path).read_bytes()).digest())
+    except OSError:
+        return None  # No inferred version if the deployed code is incomplete.
+    return digest.hexdigest()
+
+
+def _valid_revision(value):
+    return isinstance(value, str) and bool(re.fullmatch(r"[a-f0-9]{64}", value))
+
+
+def _retry_memory(prior, selected):
+    """Private scheduling state only; an old failure never grants trust."""
+    if (not isinstance(prior, dict) or prior.get("schema") != SCHEMA
+            or prior.get("publicationAllowed") is not False
+            or prior.get("privateApprovalApplied") is not False):
+        return {}
+    active = {_review_key(row) for row in selected
+              if row[3].get("source") != "agenda_officiel_openagenda"}
+    history = prior.get("extractionRetryMemory")
+    if isinstance(history, dict):
+        return {key: revision for key, revision in
+                list(history.items())[-MAX_REVIEW_MEMORY:]
+                if key in active and (revision == "legacy" or _valid_revision(revision))}
+    if "extractionRetryMemory" in prior:
+        return {}
+    # Upgrade legacy reports using only uniquely correlated exact identities.
+    # Older reports contain only the last window's failure reasons.
+    index = defaultdict(list)
+    for row in selected:
+        key = _review_key(row)
+        if key in active:
+            identity = (str(row[3].get("candidateId", ""))[:120], row[1], row[2])
+            index[identity].append(key)
+    checks = prior.get("candidateChecks")
+    if not isinstance(checks, list):
+        return {}
+    result = {}
+    revision = prior.get("extractorRevision")
+    revision = revision if _valid_revision(revision) else "legacy"
+    for check in checks[-MAX_REVIEW_CHECKS:]:
+        if (not isinstance(check, dict)
+                or check.get("state") != "held_event_or_source_not_verified"
+                or not isinstance(check.get("reason"), str)
+                or check["reason"] not in _EXTRACTION_REASONS):
+            continue
+        identity = (check.get("candidateId"), check.get("date"), check.get("venueId"))
+        if not all(isinstance(part, str) for part in identity):
+            continue
+        matches = index.get(identity, [])
+        if len(matches) == 1:
+            result[matches[0]] = revision
+    return result
+
+
+def _prioritize_extraction_retries(window, selected, failures, revision, limit):
+    """Use at most one quarter of the budget on changed-code retries.
+
+    Replace only rows from the SAME non-OpenAgenda lane; preserve its
+    allocation and at least one ordinary rotation pick. Never retry a
+    failure with unchanged extraction code merely because it was tagged.
+    """
+    if not _valid_revision(revision):
+        return window, set(), 0
+    stale = {key for key, previous in failures.items() if previous != revision}
+    pending = len(stale)
+    budget = min(8, limit // 4)
+    if not stale or not budget:
+        return window, set(), pending
+    picked = {_review_key(row) for row in window}
+    window = list(window)
+    prioritized = set()
+    for row in selected:
+        key = _review_key(row)
+        if len(prioritized) >= budget:
+            break
+        if key not in stale or key in picked:
+            continue
+        # Both genre-tagged and unknown queues retain their existing shares.
+        lane = row[3].get("reviewBucket") == "genre_tag_review"
+        replaceable = [i for i, current in enumerate(window)
+                       if current[3].get("source") != "agenda_officiel_openagenda"
+                       and (current[3].get("reviewBucket") == "genre_tag_review") == lane
+                       and _review_key(current) not in stale]
+        if len(replaceable) < 2:
+            continue  # Preserve at least one ordinary pick in each lane.
+        i = replaceable[-1]
+        picked.remove(_review_key(window[i]))
+        window[i] = row
+        picked.add(key)
+        prioritized.add(key)
+    return window, prioritized, pending
+
+
 def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
           fetch=verified.safe_fetch, prior=None):
     require(type(slot) is int and slot in (0, 1, 2)
@@ -506,6 +626,10 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
             if key not in picked:
                 window.append(row)
                 picked.add(key)
+    revision = _extractor_revision()
+    retry_memory = _retry_memory(prior, selected)
+    window, prioritized, pending_retries = _prioritize_extraction_retries(
+        window, selected, retry_memory, revision, limit)
     output = copy.deepcopy(before)
     working = copy.deepcopy(catalogue)
     known = {row["event"]["id"] for row in output["approvals"]
@@ -519,6 +643,11 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         identifier = str(candidate.get("candidateId", ""))[:120]
         check = {"candidateId": identifier, "date": row[1],
                  "venueId": row[2]}
+        key = _review_key(row)
+        # Re-evaluation consumes the pending retry regardless of outcome.
+        # The unchanged code must not repeatedly get priority for one failure.
+        if _valid_revision(revision):
+            retry_memory.pop(key, None)
         try:
             approval = propose(row, working, today, fetch=fetch)
             require(approval["event"]["id"] not in known,
@@ -543,12 +672,22 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
             check.update(state="held_event_or_source_not_verified",
                          reason=reason)
             reason_counts[reason] += 1
+            if (reason in _EXTRACTION_REASONS and _valid_revision(revision)
+                    and candidate.get("source") != "agenda_officiel_openagenda"):
+                retry_memory[key] = revision
         checks.append(check)
     checked_keys = [_review_key(row) for row in window]
     checked_set = set(checked_keys)
     next_memory = [k for k in memory if k not in checked_set] + checked_keys
     return output, {
         "schema": SCHEMA,
+        "extractorRevision": revision,
+        "extractionRetryMemory": dict(list(retry_memory.items())[-MAX_REVIEW_MEMORY:]),
+        "changedExtractorRetryPendingBefore": pending_retries,
+        "changedExtractorPriorityChecks": len(prioritized),
+        "changedExtractorRetryPendingAfter": sum(
+            previous != revision for previous in retry_memory.values())
+            if _valid_revision(revision) else 0,
         "recentReviewKeys": next_memory[-MAX_REVIEW_MEMORY:],
         "previouslyReviewed": sum(k in recency for k in checked_keys),
         "firstReviewInMemory": sum(k not in recency for k in checked_keys),
