@@ -10,7 +10,8 @@ from merge_policy import valid, PUBLISHABLE_CHILD_ARTS
 from official_organizer_proof import canonical_event_title
 from proof import norm
 from ptitesondes_primary_editorial import primary_out_of_scope, audience_text
-from ptitesondes_oa_evergreen_on_demand import ambiguous_on_demand_studio_series
+from ptitesondes_oa_evergreen_on_demand import (ambiguous_on_demand_studio_series,
+                                               ambiguous_itinerant_availability)
 from ptitesondes_candidate_promotion import category_for
 from ptitesondes_family_activity_classification import propose_family_activity
 from ptitesondes_openagenda_national_event_research import _french_text
@@ -238,6 +239,8 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published,
     }
     if ambiguous_on_demand_studio_series(event, source_days):
         return fail("oa_direct_evergreen_on_demand_review")
+    if ambiguous_itinerant_availability(event, day):
+        return fail("oa_direct_itinerant_availability_review")
     # A recurring UID may have several days: each observed exact day is
     # separately eligible, and duplicate day IDs remain guarded by Publisher.
     age = event.get("age")
