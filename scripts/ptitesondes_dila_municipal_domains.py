@@ -113,7 +113,7 @@ def municipal_site_hosts(city, response):
             or not isinstance(response.get("results"), list)
             or type(response.get("total_count")) is not int
             or not 0 <= response["total_count"] <= MAX_RECORDS
-            or len(response["results"]) > MAX_RECORDS):
+            or len(response["results"]) != response["total_count"]):
         return frozenset()
     matching = []
     for row in response["results"]:
@@ -140,7 +140,8 @@ def municipal_site_hosts(city, response):
         if pivots is None or addresses is None:
             continue
         code = str(row.get("code_insee_commune") or "")
-        if not re.fullmatch(r"[0-9]{5}", code):
+        # Corsica has official 2A/2B commune codes, not five digits.
+        if not re.fullmatch(r"(?:[0-9]{5}|2[AB][0-9]{3})", code):
             continue
         if not any(
                 isinstance(item, dict)

@@ -117,6 +117,25 @@ class DILAMunicipalDomainsTests(unittest.TestCase):
         too_many["total_count"] = 31
         self.assertFalse(municipal_site_hosts(CITY, too_many))
 
+    def test_corsican_insee_codes_keep_same_independent_identity_checks(self):
+        for code in ("2A004", "2B033", "97203", "97422"):
+            row = mairie(insee=code)
+            self.assertEqual(municipal_site_hosts(CITY, payload(row)),
+                             frozenset({"www.ville-les-bois.fr"}))
+            row["pivot"] = json.dumps([{"type_service_local": "mairie",
+                                       "code_insee_commune": ["99999"]}])
+            self.assertFalse(municipal_site_hosts(CITY, payload(row)))
+        for code in ("2C004", "2A04", "ABCDE", "2B0330"):
+            self.assertFalse(municipal_site_hosts(CITY, payload(mairie(insee=code))))
+
+    def test_partial_dila_response_never_hides_homonymous_municipality(self):
+        data = payload(mairie())
+        data["total_count"] = 2
+        self.assertFalse(municipal_site_hosts(CITY, data))
+        self.assertIsNone(approved_municipal_page_host(PAGE, CITY, data))
+        data["total_count"] = 0
+        self.assertFalse(municipal_site_hosts(CITY, data))
+
     def test_untrusted_shared_and_social_hosts_rejected(self):
         for url in ("https://facebook.com/mairie", "https://www.wordpress.com",
                     "http://www.ville-les-bois.fr/",
