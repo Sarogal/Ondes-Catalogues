@@ -204,6 +204,37 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
         ):
             self.assertFalse(explicit_minimum_child_audience(description, conditions))
 
+    def test_publish_explicit_minimum_only_with_supported_public_fields(self):
+        reference = base()
+        reference["events"][0].update(category="concert", age_min=4, age_label="Dès 4 ans")
+        title = "Concert familial"
+        event = dict(oa_event(), title={"fr": title},
+                     description={"fr": "Tous les styles musicaux."},
+                     conditions={"fr": "À partir de 5 ans."}, age=None)
+        candidate, status = admit_live_openagenda(
+            dict(lead(), title=title), DAY.isoformat(), AGENDA,
+            event, reference, reference, TODAY)
+        self.assertEqual(status, "oa_direct_live_source_accepted")
+        self.assertEqual(candidate["age_min"], 5)
+        self.assertEqual(candidate["age_label"], "Dès 5 ans")
+        self.assertNotIn("age_max", candidate)
+
+    def test_publishable_minimum_does_not_guess_conflicting_or_biographical_ages(self):
+        from ptitesondes_oa_first_party_admission import publishable_minimum_age
+        for description, conditions, age in (
+            ("Elle joue du piano dès 5 ans.", "", None),
+            ("Accessible dès 4 ans.", "Dès 6 ans.", None),
+            ("Accessible dès 5 ans.", "", {"min": 6}),
+            ("Accessible dès 5 ans.", "", {"max": 4}),
+            ("Accessible dès 5 ans.", "Interdit aux enfants.", None),
+            ("Accessible dès 5 ans.", "Dès 18 ans.", None),
+            ("Sans âge annoncé.", "", None),
+        ):
+            with self.subTest(description=description, conditions=conditions, age=age):
+                self.assertIsNone(publishable_minimum_age(description, conditions, age))
+        self.assertEqual(publishable_minimum_age(
+            "Accessible dès 5 ans.", "Dès 5 ans.", {"min": 5, "max": 12}), 5)
+
     def test_minimum_age_label_unlocks_family_performance_not_adult_concert(self):
         reference = base()
         reference["events"][0]["category"] = "spectacle-musical"
