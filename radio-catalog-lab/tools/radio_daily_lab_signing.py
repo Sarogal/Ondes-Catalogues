@@ -143,6 +143,10 @@ class EphemeralLabSigner:
                                  public_key=self.public_key, key_id=self.key_id, day=day,
                                  logo_evidence=logo_evidence, repair_evidence=repair_evidence, status_evidence=status_evidence,
                                  merge_evidence=merge_evidence, combined_evidence=combined_evidence)
+        return self._sign_validated_candidate(new, candidate, expected_candidate_sha, day)
+
+    def _sign_validated_candidate(self, new, candidate, expected_candidate_sha, day):
+        """Internal helper; callers must independently validate the exact delta."""
         pointer = dict(schema_version=1, catalog_id="grosses-ondes-radio",
                        release_sequence=new["release_sequence"], published_at=day+"T00:00:00Z",
                        content_sha256=expected_candidate_sha, content_length=len(candidate),
@@ -157,3 +161,27 @@ class EphemeralLabSigner:
                         expected_sequence=new["release_sequence"],
                         public_key=self.public_key, key_id=self.key_id)
         return result
+
+    def sign_logo_recovery(self, store, candidate, *, expected_current_sha,
+                           expected_current_sequence, historical_sequence,
+                           station_ids, day):
+        """Sign only an exact rebuild from authenticated, activated lab history."""
+        from radio_daily_logo_recovery_plan import build_logo_recovery
+        from radio_daily_durable_lab_store import DurableLabStore
+        if not isinstance(store, DurableLabStore):
+            raise ValueError("durable laboratory store required")
+        if (store.public_key, store.key_id) != (self.public_key, self.key_id):
+            raise ValueError("recovery signer identity mismatch")
+        prior, _ = store.historical(expected_current_sequence)
+        if store.current() != prior:
+            raise ValueError("current recovery anchor changed")
+        rebuilt, report = build_logo_recovery(store,
+            expected_current_sha=expected_current_sha,
+            expected_current_sequence=expected_current_sequence,
+            historical_sequence=historical_sequence, station_ids=station_ids, day=day)
+        if candidate != rebuilt:
+            raise ValueError("unauthorized recovery delta")
+        if store.current() != prior:
+            raise ValueError("current recovery anchor changed")
+        return self._sign_validated_candidate(strict_json(rebuilt), rebuilt,
+                                              report["candidateSha256"], day)

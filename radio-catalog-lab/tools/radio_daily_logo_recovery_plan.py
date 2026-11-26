@@ -11,21 +11,19 @@ from radio_daily_v9_generator import digest, encode
 from radio_stream_recheck_ledger import parse_day
 
 
-def plan_logo_recovery(store, *, expected_current_sha, historical_sequence, station_ids, day):
+def build_logo_recovery(store, *, expected_current_sha, expected_current_sequence,
+                        historical_sequence, station_ids, day):
     day = parse_day(day)
     if (not isinstance(station_ids, (list, tuple)) or not station_ids
             or not all(isinstance(x, str) and x for x in station_ids)
             or len(set(station_ids)) != len(station_ids)):
         raise ValueError("explicit distinct recovery station IDs required")
-    pointer = store.current()
+    pointer, current_body = store.historical(expected_current_sequence)
     p = strict_json(pointer)
     if p["content_sha256"] != expected_current_sha:
         raise ValueError("current recovery anchor changed")
     if type(historical_sequence) is not int or not 8 <= historical_sequence < p["release_sequence"]:
         raise ValueError("strictly older activated sequence required")
-    current_pointer, current_body = store.historical(p["release_sequence"])
-    if current_pointer != pointer:
-        raise ValueError("current recovery anchor changed")
     prior_pointer, prior_body = store.historical(historical_sequence)
     hp = strict_json(prior_pointer)
     anchor = dict(public_key=store.public_key, key_id=store.key_id)
@@ -57,10 +55,19 @@ def plan_logo_recovery(store, *, expected_current_sha, historical_sequence, stat
                               authenticated_legacy=True, legacy_reference=result)
     if issues:
         raise ValueError("recovery contract refused: " + "; ".join(issues[:8]))
-    if store.current() != pointer:
-        raise ValueError("current recovery anchor changed")
     body = encode(result)
     return body, dict(schemaVersion=1, publicationAllowed=False, signed=False,
                       currentSha256=expected_current_sha, sourceSha256=hp["content_sha256"],
                       sourceSequence=historical_sequence, candidateSequence=result["release_sequence"],
                       candidateSha256=digest(body), stationIds=sorted(station_ids))
+
+def plan_logo_recovery(store, *, expected_current_sha, historical_sequence, station_ids, day):
+    """Plan only against the currently activated pointer, without changing it."""
+    pointer = store.current()
+    sequence = strict_json(pointer)["release_sequence"]
+    result = build_logo_recovery(store, expected_current_sha=expected_current_sha,
+        expected_current_sequence=sequence, historical_sequence=historical_sequence,
+        station_ids=station_ids, day=day)
+    if store.current() != pointer:
+        raise ValueError("current recovery anchor changed")
+    return result
