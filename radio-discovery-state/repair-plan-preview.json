@@ -1,0 +1,27 @@
+{
+  "approvedCount": 0,
+  "candidateCatalogueWritten": false,
+  "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
+  "deferred": [
+    {
+      "goStationId": "go-station-000009",
+      "reason": "broadcaster_unlinked"
+    },
+    {
+      "goStationId": "go-station-000034",
+      "reason": "broadcaster_unlinked"
+    }
+  ],
+  "deferredCounts": {
+    "broadcaster_unlinked": 2
+  },
+  "proposalCount": 0,
+  "proposals": [],
+  "publicationAllowed": false,
+  "scanDate": "2026-11-26",
+  "schemaVersion": 1,
+  "signed": false,
+  "stationCount": 296,
+  "statusReviewCounts": {},
+  "statusReviews": []
+}

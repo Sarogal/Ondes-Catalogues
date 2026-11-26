@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 73,
-  "distinctArtistHints": 91,
+  "stationsWithArtistHints": 76,
+  "distinctArtistHints": 93,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -1633,6 +1633,96 @@
       ],
       "alternativeVersion": 0,
       "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "b3d7cfa7-8860-4bac-9626-e4eeafece502",
+      "streamSha256": "a5cfdd1839cf48dcb14fd73b07d2bfa218002b210771bf470101b12538201dd0",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
+    },
+    {
+      "stationuuid": "b3fc8944-1a27-46ec-a446-ca960d88a13a",
+      "streamSha256": "9decc2a2462c5aabd762209c719df5d3f535ce2b78a1f2e3ce0bd92647f3f534",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "AC/DC",
+          "titleSha256": "a6605fcba2401b17cfa6ac52851801c44771ccb59c0a06768e5e0fc73e051b25"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "b4d40bd6-311f-42cf-b8db-595e4b64053f",
+      "streamSha256": "461ae75dc6e089eb805352a1f03e6efd9a22d1f4c0cd8fc4e8a3cbb74a0ce8f4",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
+    },
+    {
+      "stationuuid": "b6b231d4-bd2f-4127-995f-670ce4b3178a",
+      "streamSha256": "d7b4669f97b6987ac697a397a9622cdbf85cdf4545d343db356ea80e0180057f",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Epica",
+          "titleSha256": "dfb4c0a9f2dae92312598d55d93ded92eb1b2c384818f1f96565cd532202bc68"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "b980ea76-8772-43af-8e4a-06eb2e8dfd75",
+      "streamSha256": "045d1b9a2f44548b895ae224a459ce73e62b011a7fabf5a5c0d6868920950309",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Inminente",
+          "titleSha256": "4c12490005b6203e506e280ae82c96917443f0e7dda06cdea769daa99c4192e2"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "bb38c058-7757-48e7-a73e-ccdc4fad7d2e",
+      "streamSha256": "88e44fba7fce43675a6ec7aadad5240840cb07aeea2af19a42c03bcbe8643586",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "c123bef5-256a-427f-a942-570ae9836f68",

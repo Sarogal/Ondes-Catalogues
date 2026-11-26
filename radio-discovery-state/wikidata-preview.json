@@ -3,8 +3,8 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 91,
-  "dueNameCount": 11,
+  "observedNameCount": 93,
+  "dueNameCount": 7,
   "attemptedCount": 6,
   "serviceFailure": null,
   "retryAfterKey": null,
@@ -186,6 +186,24 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "epica": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Epica",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "foreigner": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Foreigner",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "fuzz kill radio": {
       "status": "not_found",
       "artistName": "Fuzz Kill Radio",
@@ -207,6 +225,15 @@
     "good charlotte": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Good Charlotte",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "hanson brothers": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Hanson Brothers",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
@@ -244,6 +271,15 @@
     "iced earth": {
       "status": "ambiguous_or_incomplete",
       "artistName": "ICED EARTH",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "inminente": {
+      "status": "not_found",
+      "artistName": "Inminente",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
@@ -384,6 +420,15 @@
     "lars frederiksen and the bastards": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Lars Frederiksen And The Bastards",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "latter day exploits": {
+      "status": "not_found",
+      "artistName": "Latter Day Exploits",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
@@ -754,6 +799,15 @@
     "the misfits": {
       "status": "ambiguous_or_incomplete",
       "artistName": "The Misfits",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "the rolling stones": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "The Rolling Stones",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
