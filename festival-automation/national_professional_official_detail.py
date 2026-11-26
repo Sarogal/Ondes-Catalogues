@@ -52,7 +52,7 @@ def _detail_dates(html, page, title, year, today, ticket):
     return verify_primary(html, title, year, today)
 
 
-def _links(html, page, root, title):
+def _links(html, page, root, title, year):
     brand = normalized(title.rsplit(" ", 1)[0])
     exact, indexes = set(), set()
     for href, label, _ in anchor_rows(html):
@@ -60,6 +60,13 @@ def _links(html, page, root, title):
         if link is None:
             continue
         words = normalized(label)
+        # Historical edition navigation is not a conflicting current detail.
+        # Ignore only explicit links naming a different year; mixed years
+        # are still examined and can veto a contradictory current claim.
+        descriptor = words + " " + normalized(urlsplit(link).path)
+        years = {int(x) for x in re.findall(r"\b20[2-4][0-9]\b", descriptor)}
+        if years and year not in years:
+            continue
         if re.search(r"(?<![a-z0-9])" + re.escape(brand) + r"(?![a-z0-9])", words):
             exact.add(link)
         elif re.search(r"\b(?:agenda|calendrier|programmation|concerts|events|programme)\b", words):
@@ -132,7 +139,7 @@ def examine(research, title, year, today, *, fetch=fetch_public_html):
                     proofs.append((page, tuple(dates)))
                 elif rank == 0 and page != site:
                     unresolved = True
-                exact, indexes = _links(html, page, root, title)
+                exact, indexes = _links(html, page, root, title, year)
                 pending.extend((0, x) for x in exact if x not in seen)
                 if not proofs and rank != 1:
                     pending.extend((1, x) for x in indexes[:2] if x not in seen)

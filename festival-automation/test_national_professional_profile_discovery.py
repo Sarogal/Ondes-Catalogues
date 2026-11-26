@@ -26,6 +26,22 @@ class ProfessionalProfileDiscoveryTests(unittest.TestCase):
         self.assertFalse(result["publication_authorized"])
         self.assertNotIn(SITE, calls)
 
+    def test_inclusive_french_profile_counts_are_not_identity(self):
+        for count in ("84 abonné·e·s 5 évènements", "1 abonné 1 évènement",
+                      "12 abonnés 2 événements"):
+            with self.subTest(count=count):
+                page = EVENT_PAGE.replace("27 followers 3 events", count)
+                result = discover(HINTS, TITLE, 2027, fetch=lambda url:
+                    {FEST: page, PROFILE: PROFILE_PAGE}[url])
+                self.assertEqual(result["status"], "PROFESSIONAL_WEBSITE_HINTS")
+                self.assertEqual(result["websites"][0]["website_url"], SITE)
+        for suffix in ("84 abonné·e·s 5 évènements autre organisateur",
+                       "Autre production 84 abonné·e·s"):
+            page = EVENT_PAGE.replace("27 followers 3 events", suffix)
+            result = discover(HINTS, TITLE, 2027, fetch=lambda url:
+                {FEST: page, PROFILE: PROFILE_PAGE}[url])
+            self.assertEqual(result["websites"], [])
+
     def test_wrong_event_and_hidden_profile_do_not_trigger_fetch(self):
         for html in (EVENT_PAGE.replace("Festival des Rives", "Festival du Nord"),
                      EVENT_PAGE.replace("<a ", "<a hidden ")):

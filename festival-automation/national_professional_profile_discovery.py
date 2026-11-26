@@ -124,7 +124,7 @@ def _profile_websites(html, profile, label, ticket, diagnostic=None):
     identity = headings[0]
     # A card can append follower/event counts to the displayed profile name.
     if not identity or not (label == identity or re.fullmatch(
-            re.escape(identity) + r" \d[0-9 ]*(?:followers|abonnes)(?: \d[0-9 ]*(?:events|evenements))?", label)):
+            re.escape(identity) + r" \d[0-9 ]*(?:followers|abonne(?:s| e s| es)?)(?: \d[0-9 ]*(?:events?|evenements?))?", label)):
         diagnostic['outcome'] = 'PROFILE_IDENTITY_MISMATCH'
         return []
     event_identity = _path_identity(ticket)
