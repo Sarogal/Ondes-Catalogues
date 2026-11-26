@@ -19,7 +19,7 @@ from urllib.request import Request, build_opener
 from proof import norm
 from ptitesondes_editorial_refusal_memory import (
     digest, deferred, remember_refusal, fresh_memory, load_memory,
-    MAX_QUEUE_RECHECKS, attempt_key, retain_active_attempts, mark_attempt,
+    MAX_QUEUE_RECHECKS, attempt_key, retain_active_attempts, mark_attempt, identity_key,
 )
 from ptitesondes_national_backlog_bridge import _atomic_json
 from ptitesondes_openagenda_national_event_research import _french_text
@@ -42,6 +42,7 @@ MAX_ATTEMPTS = 24  # network budget, never an editorial whitelist
 # These are only untrusted leads; the Publisher still re-reads each live UID.
 URGENT_WINDOW_DAYS = 3
 URGENT_CYCLE_BUDGET = 8
+RECONSIDER_CYCLE_BUDGET = 8
 MAX_RESPONSE = 120_000
 MAX_TIMINGS = 800
 MAX_EVERGREEN_RECHECKS = 8  # live UID reads per saturated cycle, not a session limit
@@ -336,6 +337,12 @@ def persistent_backlog_batch(identities, today, memory, clues):
     ordinary = [row for row in ordered if row[2] > threshold]
     urgent_count = min(URGENT_CYCLE_BUDGET, len(urgent))
     chosen = urgent[:urgent_count]
+    reconsider = set(memory.get("reconsider", []))
+    priority = [row for row in ordinary if identity_key(row) in reconsider]
+    reserved = priority[:min(RECONSIDER_CYCLE_BUDGET, MAX_ATTEMPTS - len(chosen))]
+    chosen.extend(reserved)
+    selected = set(reserved)
+    ordinary = [row for row in ordinary if row not in selected]
     chosen.extend(ordinary[:MAX_ATTEMPTS - len(chosen)])
     chosen.extend(urgent[urgent_count:urgent_count + MAX_ATTEMPTS - len(chosen)])
     return chosen
@@ -472,6 +479,8 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
         refreshed = fresh_memory(refusal_memory, now)
         refusal_memory.clear()
         refusal_memory.update(refreshed)
+        refusal_memory["reconsider"] = sorted(set(refusal_memory.get("reconsider", []))
+            & {identity_key(identity) for identity in clues})
         retain_active_attempts(refusal_memory, {
             attempt_key(identity, fingerprint) for identity, fingerprint in clues.items()})
         queue, cached_queue, confirmed_queue, queue_reads = reclaim_editorial_queue(
@@ -530,6 +539,8 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
             continue
         if refusal_memory is not None:
             mark_attempt(refusal_memory, attempt_key(identity, clues[identity]))
+            if identity_key(identity) in refusal_memory["reconsider"]:
+                refusal_memory["reconsider"].remove(identity_key(identity))
         try:
             if slug not in cache:
                 cache[slug] = agenda_reader(slug, key)

@@ -717,3 +717,40 @@ class CycleReadCacheTests(unittest.TestCase):
         next_cycle = cycle_cached_reader(source, counters, "event")
         self.assertTrue(next_cycle(1, 2, "key")["changed"])
         self.assertEqual(counters, {"event_requests": 3, "event_reused": 1})
+
+
+class EditorialPolicyReconsiderationTests(unittest.TestCase):
+    def test_policy_change_revokes_refusal_but_preserves_recheck_priority(self):
+        from ptitesondes_editorial_refusal_memory import empty_memory, fresh_memory, identity_key
+        from ptitesondes_openagenda_backlog_private_dossiers import persistent_backlog_batch
+        now = datetime(2026, 11, 26, 10, tzinfo=timezone.utc)
+        identities = [("agenda", n, "2026-12-10", "Conte") for n in range(1, 61)]
+        old = empty_memory()
+        old["policy"] = "0"*64
+        target = identity_key(identities[-1])
+        old["entries"][target] = dict(reason="oa_direct_out_of_editorial_scope",
+            checked_at=now.isoformat(), clue_sha256="a"*64, source_sha256="b"*64)
+        memory = fresh_memory(old, now)
+        self.assertEqual(memory["entries"], {})
+        self.assertEqual(memory["reconsider"], [target])
+        self.assertEqual(fresh_memory(memory, now)["reconsider"], [target])
+        chosen = persistent_backlog_batch(identities, now.date(), memory,
+                                          {row: "a"*64 for row in identities})
+        self.assertIn(identities[-1], chosen)
+        self.assertEqual(len(chosen), MAX_ATTEMPTS)
+
+    def test_priority_reserves_capacity_for_urgent_and_ordinary_candidates(self):
+        from ptitesondes_editorial_refusal_memory import empty_memory, identity_key
+        from ptitesondes_openagenda_backlog_private_dossiers import persistent_backlog_batch
+        today = TODAY
+        urgent = [("a", n, today.isoformat(), "Conte") for n in range(1, 21)]
+        ordinary = [("b", n, (today+timedelta(days=10)).isoformat(), "Conte")
+                    for n in range(1, 41)]
+        memory = empty_memory()
+        memory["reconsider"] = [identity_key(row) for row in ordinary[20:]]
+        chosen = persistent_backlog_batch(urgent+ordinary, today, memory,
+            {row: "a"*64 for row in urgent+ordinary})
+        self.assertEqual(len(chosen), MAX_ATTEMPTS)
+        self.assertEqual(sum(row in urgent for row in chosen), 8)
+        self.assertEqual(sum(row in ordinary[:20] for row in chosen), 8)
+        self.assertEqual(sum(row in ordinary[20:] for row in chosen), 8)
