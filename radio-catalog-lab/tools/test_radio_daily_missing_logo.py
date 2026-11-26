@@ -1,7 +1,7 @@
 import hashlib
 import json
 import unittest
-from radio_daily_missing_logo import build
+from radio_daily_missing_logo import build, candidates
 from radio_daily_v9_generator import encode
 from test_radio_daily_repair_plan import fixture,PAGE
 
@@ -96,6 +96,39 @@ class MissingLogoTests(unittest.TestCase):
         r["records"][0]["image"]["width"]=0
         with self.assertRaises(ValueError):
             run(typed(),prior=r)
+
+    def html_logo(self, *, alt="Iron Radio logo", title="Iron Radio", player=None, extra="", src="/logo.png"):
+        raw,_=setup()
+        station=json.loads(raw)["stations"][0]
+        url=player or station["streams"][0]["url"]
+        body=('<title>'+title+'</title><img alt="'+alt+'" src="'+src+'">'
+              +'<audio src="'+url+'"></audio>'+extra).encode()
+        return station,body
+
+    def test_named_visible_logo_and_registered_player(self):
+        station,body=self.html_logo()
+        self.assertEqual(candidates(station,PAGE,body),
+                         {"https://radio.example.org/logo.png":"named_player_html_logo"})
+        r=run(body)
+        self.assertEqual(r["records"][0]["confirmationStatus"],"await_distinct_day")
+        r=run(body,prior=r,day="2026-11-27")
+        self.assertEqual(r["records"][0]["confirmationStatus"],"stable_typed_logo_review")
+
+    def test_html_logo_rejects_unbound_player_or_generic_label(self):
+        for kwargs in ({"alt":"logo"},{"title":"Network"},{"player":"https://unrelated.example.org/live"},
+                       {"extra":'<audio src="https://other.example.org/live"></audio>'},
+                       {"src":"https://cdn.example.org/logo.png"}):
+            station,body=self.html_logo(**kwargs)
+            self.assertEqual(candidates(station,PAGE,body),{})
+
+    def test_html_logo_ambiguous_multiple_images(self):
+        station,body=self.html_logo(extra='<img alt="Iron Radio logo" src="/other.png">')
+        self.assertEqual(len(candidates(station,PAGE,body)),2)
+        self.assertEqual(run(body,fetch_image=lambda u,h:self.fail("ambiguous"))["counts"],{"ambiguous_images":1})
+
+    def test_html_logo_ignored_template(self):
+        station,body=self.html_logo(alt="generic",extra='<template><img alt="Iron Radio logo" src="/hidden.png"></template>')
+        self.assertEqual(candidates(station,PAGE,body),{})
 
 if __name__=="__main__":
     unittest.main()

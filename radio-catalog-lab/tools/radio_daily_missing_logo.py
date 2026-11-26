@@ -24,7 +24,8 @@ from radio_stream_recheck_ledger import parse_day,SHA256_RE
 
 MAX_STATIONS=4
 MAX_IMAGES=2
-KINDS={"typed_station_logo","typed_station_image","named_page_og_image"}
+LOGO_KINDS={"typed_station_logo","named_player_html_logo"}
+KINDS=LOGO_KINDS|{"typed_station_image","named_page_og_image"}
 STATUSES={"page_held","no_bound_image","ambiguous_images","image_held","decoded_review"}
 GENERIC={"radio","metal","punk","hard rock"}
 
@@ -35,6 +36,7 @@ class ArtworkPage(Page):
         self.og_images=[]
         self.visible_identity=[]
         self.identity_tag=None
+        self.logo_images=[]
     def handle_starttag(self,tag,attrs):
         if tag=="meta" and not self.ignored:
             a=dict(attrs)
@@ -44,6 +46,13 @@ class ArtworkPage(Page):
                 self.og_titles.append(v)
             if k in ("og:image","og:image:secure_url") and len(self.og_images)<8:
                 self.og_images.append(v)
+        if tag=="img" and not self.ignored and len(self.logo_images)<32:
+            a=dict(attrs)
+            src=a.get("src") or ""
+            alt=a.get("alt") or ""
+            # Explicit named logo, not an arbitrary image, favicon or banner.
+            if src and alt and not any(k in a for k in ("hidden","aria-hidden","srcset","data-src")):
+                self.logo_images.append((src,alt))
         if tag in ("title","h1") and not self.ignored:
             self.identity_tag=tag
             self.visible_identity.append("")
@@ -92,6 +101,19 @@ def candidates(station,final,body):
         # Prefer explicit logos to illustrations, but preserve conflicts
         # between multiple declared logo addresses.
         return {u:k for u,k in typed.items() if k=="typed_station_logo"} or typed
+    # A visible station logo on a named page with one actual catalogue
+    # player provides a second, station-specific proof independent of JSON-LD.
+    # Shared broadcaster/network pages and generic or unbound HTML are held.
+    if (not nodes and len(name)>=5 and any(name_key(t)==name for t in p.visible_identity)):
+        players={urljoin(final,u) for u in p.audio_urls}
+        known={v["url"] for v in station.get("streams",[])}
+        if len(players)==1 and players<=known:
+            labels={name+" logo","logo "+name}
+            found={urljoin(final,src):"named_player_html_logo" for src,alt in p.logo_images
+                   if name_key(alt) in labels}
+            # Named HTML is kept same-host; CDN support requires typed proof.
+            if found and all(related_host(u,final) for u in found):
+                return found
     if (not nodes and p.og_titles and all(name_key(t)==name for t in p.og_titles)
             and any(name_key(t)==name for t in p.visible_identity)):
         # No favicon fallback; OG image is a lower-confidence hypothesis.
@@ -101,7 +123,7 @@ def candidates(station,final,body):
 def confirmation_status(row,dates):
     if row.get("reviewStatus")!="decoded_review":
         return "no_current_image"
-    if row.get("sourceKind")!="typed_station_logo":
+    if row.get("sourceKind") not in LOGO_KINDS:
         return "illustration_review_only"
     return "stable_typed_logo_review" if len(dates)==2 else "await_distinct_day"
 
@@ -140,7 +162,7 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch_page=fetch_html,
             dates=row.get("logoEvidenceDates",[])
             if (not isinstance(dates,list) or len(dates)>2 or dates!=sorted(set(dates))
                     or any(parse_day(d)>day for d in dates)
-                    or (dates and (status!="decoded_review" or row.get("sourceKind")!="typed_station_logo" or dates[-1]!=date))):
+                    or (dates and (status!="decoded_review" or row.get("sourceKind") not in LOGO_KINDS or dates[-1]!=date))):
                 raise ValueError("invalid artwork confirmation dates")
             if "confirmationStatus" in row and row["confirmationStatus"] != confirmation_status(row,dates):
                 raise ValueError("invalid artwork confirmation status")
@@ -164,7 +186,7 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch_page=fetch_html,
                 rows[sid][k]=old[sid].get(k)
             previous=old[sid]
             dates=previous.get("logoEvidenceDates",[])
-            if "logoEvidenceDates" not in previous and previous.get("sourceKind")=="typed_station_logo":
+            if "logoEvidenceDates" not in previous and previous.get("sourceKind") in LOGO_KINDS:
                 dates=[previous["observedDate"]]
             rows[sid]["logoEvidenceDates"]=dates
             rows[sid]["confirmationStatus"]=confirmation_status(rows[sid],dates)
@@ -230,7 +252,7 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch_page=fetch_html,
                        pageSha256=hashlib.sha256(body).hexdigest(),image=images[url])
             previous=old.get(sid,{})
             dates=[]
-            if kind=="typed_station_logo":
+            if kind in LOGO_KINDS:
                 if (previous.get("reviewStatus")=="decoded_review" and previous.get("sourceKind")==kind
                         and previous.get("sourceSha256")==row["sourceSha256"] and previous.get("image")==row["image"]):
                     dates=previous.get("logoEvidenceDates",[previous["observedDate"]])

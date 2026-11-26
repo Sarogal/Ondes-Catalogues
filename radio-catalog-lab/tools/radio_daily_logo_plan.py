@@ -9,7 +9,7 @@ from radio_daily_v9_generator import BASELINE, digest, encode
 from radio_daily_baseline_verify import strict_json
 from radio_daily_maintenance_preview import age, digest as url_digest
 from radio_daily_logo_maintenance import build as maintenance_build, MAX_SOURCES, valid_metadata, source_policy, source_reference
-from radio_daily_missing_logo import build as missing_build, MAX_STATIONS, MAX_IMAGES, candidates
+from radio_daily_missing_logo import build as missing_build, MAX_STATIONS, MAX_IMAGES, candidates, LOGO_KINDS
 from radio_daily_editorial_preview import homepage_url, related_host
 from radio_daily_repair_preview import page_key
 from radio_catalog_logo_pilot_probe import decode_image, MAX_LOGO_BYTES
@@ -76,7 +76,8 @@ def stage(station, proposal, material, *, decode=decode_image):
             or page_key(final)!=page_key(page) or not isinstance(body,bytes)
             or not 0<len(body)<=256*1024 or source_policy(source)!="eligible"
             or url_digest(source)!=proposal["sourceSha256"]
-            or candidates(station,final,body)!={source:"typed_station_logo"}):
+            or len(found:=candidates(station,final,body))!=1
+            or found.get(source) not in LOGO_KINDS):
         raise ValueError("artwork source not station bound")
     if proposal["pageSha256"] and digest(body)!=proposal["pageSha256"]:
         raise ValueError("artwork page changed")

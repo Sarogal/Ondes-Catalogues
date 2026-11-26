@@ -88,5 +88,22 @@ class LogoPlanTests(unittest.TestCase):
         p,_=plan(raw,DAY,m,n,expected=sha)
         self.assertEqual(p,[])
 
+    def test_visible_logo_requires_named_registered_player_at_staging(self):
+        raw,sha,m,n=reports()
+        station=json.loads(raw)["stations"][0]
+        stream=station["streams"][0]["url"]
+        body=('<title>Iron Radio</title><img alt="Iron Radio logo" src="'+URL+'">'
+              +'<audio src="'+stream+'"></audio>').encode()
+        n=None
+        for day in (DAY1,DAY):
+            n=missing(raw,day,expected=sha,prior=n,limit=4,
+                fetch_page=lambda u:(PAGE,body),fetch_image=lambda u,h:(DATA,"image/png"))
+        p,_=plan(raw,DAY,m,n,expected=sha)
+        self.assertEqual(len(p),1)
+        desc,_,_=stage(station,p[0],dict(material(),pageBytes=body))
+        self.assertEqual(desc["sha256"],digest(DATA))
+        with self.assertRaises(ValueError):
+            stage(station,p[0],dict(material(),pageBytes=body.replace(stream.encode(),b"https://other.example.org/live")))
+
 if __name__=="__main__":
     unittest.main()

@@ -4,7 +4,7 @@ from urllib.parse import urlsplit
 from radio_daily_v9_generator import BASELINE, digest
 from radio_daily_baseline_verify import strict_json
 from radio_daily_logo_plan import plan, stage
-from radio_daily_missing_logo import candidates
+from radio_daily_missing_logo import candidates, LOGO_KINDS
 from radio_daily_logo_maintenance import source_policy
 from radio_daily_editorial_preview import homepage_url, related_host, fetch_html
 from radio_daily_repair_preview import page_key
@@ -41,7 +41,7 @@ def recover(raw,day,maintenance,missing,*,expected=BASELINE,fetch_page=fetch_htm
             if len(found)!=1:
                 raise ValueError("ambiguous image")
             source,kind=next(iter(found.items()))
-            if kind!="typed_station_logo" or source_policy(source)!="eligible" or url_digest(source)!=p["sourceSha256"]:
+            if kind not in LOGO_KINDS or source_policy(source)!="eligible" or url_digest(source)!=p["sourceSha256"]:
                 raise ValueError("source not confirmed")
             reason="artwork_object_unconfirmed"
             if source not in cache:
