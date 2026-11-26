@@ -606,6 +606,68 @@ class UnlistedExistingVenueTests(unittest.TestCase):
                 dynamic.validate(signed, venues, artists, TODAY,
                                  fetch=fake_fetch({"primary": changed}))
 
+    def test_later_linked_artist_window_replays_on_signed_review_day(self):
+        from automation.concerts import dynamic_first_party_venue_proposals as proposals
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        node = next(dynamic.discover.read_ld(page(EVENT, genres=False)))
+        urls = [f"https://artist-{i}.example.org/" for i in range(len(NAMES))]
+        for person, url in zip(node["performer"], urls):
+            person["url"] = url
+        primary = '<script type="application/ld+json">' + json.dumps(node) + '</script>'
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+        reads = []
+        def fetch(url, cache):
+            if url in urls:
+                reads.append(url)
+                index = urls.index(url)
+                return ('<script type="application/ld+json">' +
+                        json.dumps({"@type": "MusicGroup", "name": NAMES[index],
+                                    "genre": "Black Metal" if index == 7 else "Jazz"}) +
+                        '</script>')
+            return fake_fetch({"primary": primary})(url, cache)
+        with self.assertRaises(ValueError):
+            proposals._individual_event(primary, EVENT, signed["event"]["date"],
+                                        venue, accept_generic=True, fetch=fetch)
+        self.assertEqual(reads, urls[:4])
+        reads.clear()
+        self.assertEqual(proposals._individual_event(
+            primary, EVENT, signed["event"]["date"], venue, accept_generic=True,
+            fetch=fetch, profile_scan_day=TODAY), (NAMES, ["Black Metal"]))
+        producer_reads = list(reads)
+        self.assertIn(urls[7], producer_reads)
+        self.assertLessEqual(len(producer_reads), 8)
+        reads.clear()
+        self.assertTrue(dynamic.validate(signed, venues, artists,
+                         TODAY + dt.timedelta(days=1), fetch=fetch))
+        self.assertEqual(reads, producer_reads)
+
+    def test_later_linked_profile_windows_reach_all_positions_with_bounded_reads(self):
+        names = [f"Act {i:03}" for i in range(23)]
+        urls = [f"https://artist-{i}.example.org/" for i in range(len(names))]
+        raw = {"@type": "MusicEvent", "name": " + ".join(names),
+               "performer": [{"@type": "MusicGroup", "name": n, "url": u}
+                             for n, u in zip(names, urls)]}
+        all_reads = set()
+        for day in range(19):
+            reads = []
+            def fetch(url, cache):
+                reads.append(url)
+                return ('<script type="application/ld+json">' +
+                        json.dumps({"@type": "MusicGroup",
+                                    "name": names[urls.index(url)], "genre": "Jazz"}) +
+                        '</script>')
+            dynamic.event_genres(raw, EVENT, fetch=fetch,
+                                profile_scan_day=TODAY + dt.timedelta(days=day))
+            self.assertEqual(len(reads), 8)
+            self.assertEqual(len(set(reads)), 8)
+            all_reads.update(reads)
+        self.assertEqual(all_reads, set(urls))
+
     def test_venue_linked_biography_reaches_publisher_without_structured_genre(self):
         from automation.concerts import dynamic_first_party_venue_proposals as proposals
         signed = signed_approval()

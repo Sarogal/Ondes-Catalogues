@@ -584,7 +584,8 @@ def visible_named_bill(html, title):
     return valid[0] if len(valid) == 1 else None
 
 
-def event_genres(raw, official_url, *, fetch=None, cache=None, html=None):
+def event_genres(raw, official_url, *, fetch=None, cache=None, html=None,
+                 profile_scan_day=None):
     """Replay a venue-attributed performer identity, never a name-only match.
 
     The authenticated individual MusicEvent may describe its named performer
@@ -638,7 +639,16 @@ def event_genres(raw, official_url, *, fetch=None, cache=None, html=None):
     # Bound requests, not lineup size. Unlinked performers do not consume
     # the budget; an eligible act can be anywhere on the official bill.
     shared = cache if cache is not None else {}
-    for name, target in list(dict.fromkeys(linked))[:4]:
+    unique_links = list(dict.fromkeys(linked))
+    # Preserve the original first four checks for existing signed approvals.
+    # An additional bounded window reaches later linked performers, with the
+    # producer and independent Publisher using the same signed review day.
+    selected_links = unique_links[:4]
+    tail = unique_links[4:]
+    if tail and type(profile_scan_day) is dt.date:
+        offset = profile_scan_day.toordinal() % len(tail)
+        selected_links += (tail[offset:] + tail[:offset])[:4]
+    for name, target in selected_links:
         try:
             html = fetch(target, shared)
             try:
@@ -834,7 +844,8 @@ def _replay_reason(exc):
 
 
 def _event(raw, event, venue, artists, *, accept_generic=False,
-           fetch=None, cache=None, html=None, allow_visible_address=False):
+           fetch=None, cache=None, html=None, allow_visible_address=False,
+           profile_scan_day=None):
     """Verify one complete first-party concert event; never join evidence."""
     types = bridge._event_types(raw.get("@type")) if isinstance(raw, dict) else set()
     require("MusicEvent" in types or (accept_generic and "Event" in types),
@@ -882,7 +893,7 @@ def _event(raw, event, venue, artists, *, accept_generic=False,
                     "official street conflicts with published venue")
     genres, scope = event_genres(raw, event["officialUrl"],
                                  fetch=fetch if accept_generic else None,
-                                 cache=cache, html=html)
+                                 cache=cache, html=html, profile_scan_day=profile_scan_day)
     require(bool(triage.genre_evidence({
         "classification": genres,
         "genreEvidenceScope": scope,
@@ -1071,7 +1082,8 @@ def validate(approval, venues, artists, today, *, fetch=None):
             valid.append(_event(raw, event, venue, resolved,
                                 accept_generic=(is_single_osm or is_address or is_official),
                                 fetch=fetch, cache=cache, html=html,
-                                allow_visible_address=len(events) == 1))
+                                allow_visible_address=len(events) == 1,
+                                profile_scan_day=checked))
         except (ValueError, KeyError, TypeError) as exc:
             rejected.add(_replay_reason(exc))
             continue

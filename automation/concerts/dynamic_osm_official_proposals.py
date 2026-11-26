@@ -260,7 +260,7 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
         else:
             names, genres = official._individual_event(
                 body, url, date, venue, accept_generic=True,
-                fetch=fetch, cache=cache)
+                fetch=fetch, cache=cache, profile_scan_day=today)
     except (ValueError, TypeError, KeyError) as exc:
         raise ValueError("official_event_content: " + str(exc)) from exc
     lead = candidate.get("leadArtist")
