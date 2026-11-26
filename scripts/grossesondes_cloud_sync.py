@@ -32,6 +32,7 @@ from grossesondes_preview import (
 from grossesondes_stage import official_text, stage, PROOF_MODE, norm
 from grossesondes_official_status import CANCELLED, POSTPONED, valid_status_delta
 from grossesondes_admin_marker import valid_commune_marker_identity
+from grossesondes_admin_metadata import apply as apply_admin_metadata, fetch_metadata
 from grossesondes_future_geo_publisher import (
     apply_independently_verified_geo, private_geo_report,
 )
@@ -579,7 +580,7 @@ def build_candidate(snapshot, published, patch, official_sources, today, trusted
                     city_fetcher=None, city_admin_reader=None,
                     official_update_fetcher=None, official_update_tick=None,
                     official_update_limit=8, official_update_browser_fetcher=None,
-                    official_update_browser_sites=()):
+                    official_update_browser_sites=(), admin_metadata_reader=None):
     proven,report=stage(
         snapshot["festivals.json"],snapshot["festival-history.json"],
         patch,official_sources,today,
@@ -701,6 +702,17 @@ def build_candidate(snapshot, published, patch, official_sources, today, trusted
         # Keep the original three-argument contract for existing security
         # instrumentation and all no-new-update situations.
         changed = safe_target(reference, target, published["festivals.json"])
+    # Keep the independent administrative enrichment AFTER both existing
+    # publication guards. It is not authority for any other field or stage.
+    if trusted_published and admin_metadata_reader is not None:
+        target, admin_report = apply_admin_metadata(
+            target, published["festivals.json"], today, reader=admin_metadata_reader)
+        report["accepted_updates"].extend(
+            {"slug": item["slug"], "fields": list(item["fields"])}
+            for item in admin_report["accepted"])
+        report["source_proofs"].extend(item["source"] for item in admin_report["accepted"])
+        report["administrative_metadata"] = admin_report
+        changed = changed or bool(admin_report["accepted"])
     report["candidate_total"] = len(target["festivals"])
     report["future_map_coverage"] = future_map_coverage(target, today)
     if not changed:
@@ -1466,6 +1478,7 @@ def main():
     out,report=build_candidate(
         snapshot,published,patch,sources,today.isoformat(),
         trusted_published=True, geo_review=geo_review,
+        admin_metadata_reader=fetch_metadata,
         city_review=city_review,
         official_update_fetcher=fetch_public_html,
         official_update_browser_fetcher=isolated_browser_fetch,
