@@ -18,6 +18,7 @@ from grossesondes_official_html_edition import visible_official_edition, fold
 from grossesondes_official_poster_ocr import (
     read_official_poster, poster_review_claims, load_ocr_cache, save_ocr_cache,
     qualified_url, MIN_REVIEW_CONFIDENCE, poster_known_artist_candidates,
+    structured_poster_candidates,
 )
 
 MAX_HOSTS = 8
@@ -89,7 +90,8 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
     report = {"review_only": True, "publication_authorized": False,
               "checked_hosts": 0, "images_read": 0, "edition_matches": 0,
               "budget_exhausted": False, "browser_hosts": 0,
-              "contextual_edition_matches": 0, "known_artist_hint_count": 0, "rows": []}
+              "contextual_edition_matches": 0, "known_artist_hint_count": 0,
+              "structured_artist_count": 0, "structured_pass_count": 0, "rows": []}
     deadline = monotonic() + MAX_RUN_SECONDS
     for site, rows in selected:
         if monotonic() >= deadline:
@@ -159,12 +161,17 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
                 report["contextual_edition_matches"] += int(contextual)
                 hints = poster_known_artist_candidates(reading, artist_names) if matched or contextual else []
                 report["known_artist_hint_count"] += len(hints)
+                typed = structured_poster_candidates(row, reading)
+                report["structured_artist_count"] += len(typed["artists"])
+                report["structured_pass_count"] += len(typed["passes"])
                 # No recognized text, image bytes, or URL in public logs.
                 diagnostic["images"].append({
                     "status": reading.get("status"),
                     "qualification": result["status"],
                     "contextual_edition_match": contextual,
                     "known_artist_hint_count": len(hints),
+                    "structured_artist_count": len(typed["artists"]),
+                    "structured_pass_count": len(typed["passes"]),
                     "qualification_diagnostics": result.get("diagnostics", {}),
                     "claim_types": sorted(result["claims"]),
                     "sha256": reading.get("sha256"),
