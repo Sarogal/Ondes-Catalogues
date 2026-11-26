@@ -125,8 +125,8 @@ class EphemeralLabSigner:
         """
         verify_baseline(pointer, body, **anchor)
         p = strict_json(pointer)
-        message = ("GO-RADIO-CATALOG-POINTER-V1\\n" +
-                   "".join(str(p[k])+"\\n" for k in FIELDS)+self.key_id+"\\n").encode()
+        message = ("GO-RADIO-CATALOG-POINTER-V1\n" +
+                   "".join(str(p[k])+"\n" for k in FIELDS)+self.key_id+"\n").encode()
         p["signature"] = dict(algorithm="Ed25519", key_id=self.key_id,
                               signature_base64=base64.b64encode(self._key.sign(message)).decode("ascii"))
         result = encode(p)
