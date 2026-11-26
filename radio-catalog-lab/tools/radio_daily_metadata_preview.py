@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from radio_daily_continuity_preview import observe_url
-from radio_daily_alternative_metadata import observe_alternative
+from radio_daily_alternative_metadata import observe_alternative, ALTERNATIVE_METHODS
 from radio_daily_qualification_dossiers import index, safe_digest
 from radio_stream_recheck_ledger import parse_day, SHA256_RE
 from radio_stream_technical_probe import validate_endpoint
@@ -15,7 +15,7 @@ from radio_stream_technical_probe import validate_endpoint
 MAX_STATIONS = 6
 MAX_INPUT = 12 * 1024 * 1024
 MAX_HINTS = 90
-ALTERNATIVE_METHODS = {"icecast_json", "shoutcast_json", "station_jsonld"}
+ALTERNATIVE_VERSION = 2
 
 def valid_hint(h):
     return (isinstance(h,dict) and isinstance(h.get("artistHint"),str)
@@ -92,7 +92,9 @@ def collect(discovery, reconciliation, continuity, decisions, *, previous=None, 
         prior=old.get(uid)
         if prior and prior["streamSha256"]==sha:
             retained[uid]=dict(prior,observedInScan=True)
-            if prior["observedDate"]==day:
+            if prior["observedDate"]==day and not (
+                    alternative is not None and not prior["observations"]
+                    and prior.get("alternativeVersion", 0) != ALTERNATIVE_VERSION):
                 continue
         c,d=cont.get(uid,{}),dec.get(uid,{})
         if (c.get("streamSha256")!=sha or c.get("verdict")!="continuous_icy_frame_indication"
@@ -113,7 +115,8 @@ def collect(discovery, reconciliation, continuity, decisions, *, previous=None, 
             evidence=observe(url)
         except Exception:
             evidence={"verdict":"metadata_connection_review","titleHints":[]}
-        if alternative is not None and not any(valid_hint(h) for h in evidence.get("titleHints",[])):
+        attempted_alternative = alternative is not None and not any(valid_hint(h) for h in evidence.get("titleHints",[]))
+        if attempted_alternative:
             try:
                 fallback=[h for h in alternative(url,current[uid]) if valid_hint(h) and h.get("method") in ALTERNATIVE_METHODS]
             except Exception:
@@ -136,7 +139,9 @@ def collect(discovery, reconciliation, continuity, decisions, *, previous=None, 
                            "playlist_requires_separate_validation"}:
             verdict="metadata_connection_review"
         return uid,{"stationuuid":uid,"streamSha256":sha,"observedDate":day,"observedInScan":True,
-                    "approved":False,"publicationAllowed":False,"verdict":verdict,"observations":hints}, [
+                    "approved":False,"publicationAllowed":False,"verdict":verdict,"observations":hints,
+                    "alternativeVersion": ALTERNATIVE_VERSION if attempted_alternative else 0,
+                    "alternativeAttempted": attempted_alternative}, [
                     {"stationuuid":uid,"streamSha256":sha,"artistHint":h["artistHint"],
                      "titleSha256":h["titleSha256"],"titleHint":h["titleHint"]}
                     for h in evidence.get("titleHints",[])[:3]
@@ -151,6 +156,7 @@ def collect(discovery, reconciliation, continuity, decisions, *, previous=None, 
     return {"schemaVersion":1,"scanDate":day,"publicationAllowed":False,"approvedCount":0,
             "attemptedCount":len(selected),"stationsWithArtistHints":sum(bool(r["observations"]) for r in records),
             "distinctArtistHints":len({h["artistHint"].casefold() for r in records for h in r["observations"]}),
+            "stationsWithAlternativeHints":sum(any(h.get("method") in ALTERNATIVE_METHODS for h in r["observations"]) for r in records),
             "records":records}
 
 def main():
