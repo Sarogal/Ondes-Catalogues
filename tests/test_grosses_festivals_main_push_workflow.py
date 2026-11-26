@@ -26,7 +26,9 @@ class FestivalTrustedPushTests(unittest.TestCase):
         finish = workflow.index("      - name: Enregistrer exclusivement", start)
         step = workflow[start:finish]
         self.assertIn("continue-on-error: true", step)
-        self.assertIn("timeout-minutes: 4", step)
+        self.assertIn("timeout-minutes: 5", step)
+        self.assertIn("timeout 195s /usr/bin/python3", step)
+        self.assertIn("timeout 75s sudo apt-get install", step)
         self.assertIn("--limit 4 --private-cache", step)
         self.assertIn("intake/automation-intake/grossesondes/official-poster-ocr-cache.json", step)
         self.assertIn("report['publication_authorized'] is False", step)
