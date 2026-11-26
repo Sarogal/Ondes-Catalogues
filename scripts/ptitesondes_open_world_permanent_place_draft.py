@@ -12,7 +12,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, build_opener, HTTPRedirectHandler
 
 from ptitesondes_family_national_source_preflight import _Visibility, norm_text
-from ptitesondes_open_world_permanent_place_evidence import corroborate_place
+from ptitesondes_open_world_permanent_place_evidence import corroborate_place, mapped_place_kind
 from ptitesondes_places import validate, norm
 
 GEO_API = "https://geo.api.gouv.fr/communes"
@@ -28,6 +28,10 @@ ACTIVITIES = (
     (r"\b(?:contes pour enfants|heure du conte)\b", "contes"),
     (r"\beveil musical\b", "éveil musical"),
     (r"\bateliers (?:pour les )?enfants\b", "ateliers pour enfants"),
+    (r"\b(?:spectacles?|theatre) (?:pour (?:les )?enfants|jeune public)\b", "spectacles jeune public"),
+    (r"\b(?:expositions?|parcours) (?:interactifs?|interactives?) (?:pour les enfants|jeune public)\b", "expositions interactives pour enfants"),
+    (r"\beveil artistique\b", "éveil artistique"),
+    (r"\b(?:ateliers?|espaces?) sensoriel(?:s|les)? (?:pour les enfants|pour les tout petits)\b", "éveil sensoriel"),
 )
 ACCESS = (
     (r"\bconsultation sur place libre et gratuite\b", "consultation sur place libre et gratuite"),
@@ -45,6 +49,42 @@ RESTRICTED = re.compile(r"\b(?:non ouvert(?:e)?|pas ouvert(?:e)?|fermeture tempo
                         r"(?:pas de|aucun(?:e)?|sans) (?:jeux|jouets|espace jeunesse|"
                         r"section jeunesse|ateliers? (?:pour les )?enfants|lecture jeunesse)|"
                         r"interdit aux enfants)\b")
+
+
+# The general cultural facility's category is insufficient: require an
+# explicit statement in its own visible main content of a dedicated
+# permanent youth vocation, not just a one-off event or family discount.
+DEDICATED = {
+    "museum": (
+        r"\b(?:musee (?:entierement )?(?:dedie|consacre|destine) "
+        r"(?:aux enfants|au jeune public)|musee (?:pour les enfants|des enfants))\b",
+        "musee-enfants", "Musée pour enfants",
+    ),
+    "theatre": (
+        r"\b(?:theatre (?:entierement )?(?:dedie|consacre|destine) "
+        r"(?:aux enfants|au jeune public)|theatre jeune public)\b",
+        "theatre-jeune-public", "Théâtre jeune public",
+    ),
+    "arts_centre": (
+        r"\b(?:centre d eveil artistique|centre d art (?:entierement )?"
+        r"(?:dedie|consacre|destine) (?:aux enfants|au jeune public))\b",
+        "centre-eveil-artistique", "Centre d'éveil artistique",
+    ),
+}
+
+
+def place_category(tags, blocks):
+    kind = mapped_place_kind(tags)
+    if kind == "toy_library":
+        return "ludotheque", "Ludothèque"
+    if kind == "library":
+        return "mediatheque-jeunesse", "Bibliothèque / médiathèque jeunesse"
+    if kind not in DEDICATED:
+        return None
+    pattern, category, label = DEDICATED[kind]
+    if any(re.search(pattern, b) for b in blocks):
+        return category, label
+    return None
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -164,11 +204,12 @@ def build_draft(city, venue, postcode, url, html, osm, admin, today):
                           if any(re.search(pattern, b) for b in blocks)), None)
         if not acts or admission is None:
             return None
-        toy = tags["amenity"] == "toy_library"
+        category = place_category(tags, blocks)
+        if category is None:
+            return None
         result = {
             "id": "osm-node-" + str(node_id), "name": venue, "kind": "lieu-permanent",
-            "category": "ludotheque" if toy else "mediatheque-jeunesse",
-            "category_label": "Ludothèque" if toy else "Bibliothèque / médiathèque jeunesse",
+            "category": category[0], "category_label": category[1],
             "city": city, "department": ident[0], "region": ident[1],
             "postal_code": postcode, "address": address + ", " + postcode + " " + city,
             "lat": proof["lat"], "lng": proof["lng"], "geo_precision": "lieu",

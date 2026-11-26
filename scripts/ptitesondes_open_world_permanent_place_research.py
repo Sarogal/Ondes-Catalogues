@@ -16,7 +16,7 @@ from ptitesondes_generic_venue_osm_preflight import fetch_osm_query, MAX_ELEMENT
 from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
 from ptitesondes_delegated_source_authority import _url_host, _same_host
 from ptitesondes_independent_venue_site_proof import _osm_website_host
-from ptitesondes_open_world_permanent_place_evidence import corroborate_place
+from ptitesondes_open_world_permanent_place_evidence import corroborate_place, mapped_place_kind
 
 SCHEMA = "ptitesondes.private_open_world_place_research.v1"
 DEFAULT_BATCH = 6
@@ -110,8 +110,7 @@ def _inspect(row, osm_fetch, page_read):
             return "map_identity_missing_or_ambiguous", None
         obj = matches[0]
         tags = obj["tags"]
-        if (obj.get("type") != "node" or tags.get("amenity") not in
-                ("library", "toy_library")
+        if (obj.get("type") != "node" or mapped_place_kind(tags) is None
                 or norm_text(tags.get("addr:city")) != norm_text(city)):
             return "map_feature_requires_other_proof", None
         postcode = tags.get("addr:postcode")
