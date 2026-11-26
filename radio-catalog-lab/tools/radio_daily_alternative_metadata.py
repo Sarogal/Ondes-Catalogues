@@ -1,6 +1,6 @@
 """Generic station-bound metadata fallback, experimental hints only.
 
-Only explicitly advertised JSON endpoints or scoped station JSON-LD.
+Only explicitly advertised JSON endpoints or scoped inert HTML/JSON.
 No guessed paths, scripts, credentials, redirects, or catalogue changes.
 """
 import http.client
@@ -10,6 +10,7 @@ import socket
 import ssl
 import time
 from urllib.parse import urljoin, urlsplit, urlunsplit
+from html.parser import HTMLParser
 
 from radio_daily_editorial_preview import Page, fetch_html, homepage_url, normalize, station_nodes
 from radio_daily_qualification_dossiers import safe_digest
@@ -17,6 +18,10 @@ from radio_stream_technical_probe import validate_endpoint, public_resolved_ips
 
 MAX_BYTES = 128 * 1024
 MAX_ENDPOINTS = 2
+MAX_DOCUMENTS = 12
+MAX_NODES = 256
+ALTERNATIVE_METHODS = frozenset({"icecast_json", "shoutcast_json", "station_jsonld",
+                                "station_now_playing_json", "station_embedded_json", "station_html"})
 
 
 def origin(url):
@@ -46,6 +51,9 @@ def combined(value, method, source):
 
 def json_hints(data, stream, source):
     """Icecast source or Shoutcast stats must explicitly name the exact stream."""
+    generic = now_playing_hints(data, stream, source, "station_now_playing_json")
+    if generic:
+        return generic
     if not isinstance(data, dict):
         return []
     stats = data.get("icestats")
@@ -66,6 +74,115 @@ def json_hints(data, stream, source):
     else:
         return []
     return [h] if h else []
+
+
+
+def now_playing_hints(data, stream, source, method):
+    """Common public Now Playing shapes, including AzuraCast.
+
+    Traverse bounded structural containers only. A track must be a child of
+    the very record declaring the exact stream; never join sibling stations.
+    Multiple matching stations or contradictory tracks are ambiguous.
+    """
+    pending = [(data, 0)]
+    matched = []
+    count = 0
+    while pending:
+        row, depth = pending.pop()
+        count += 1
+        if count > MAX_NODES:
+            return []
+        if depth > 8:
+            continue
+        if isinstance(row, list):
+            if len(row) > 64:
+                return []
+            pending.extend((x, depth + 1) for x in row)
+            continue
+        if not isinstance(row, dict):
+            continue
+        station = row.get("station")
+        if not isinstance(station, dict):
+            station = row
+        urls = [station[k] for k in ("listen_url", "listenUrl", "streamUrl", "stream_url", "contentUrl")
+                if isinstance(station.get(k), str)]
+        if stream in urls:
+            tracks = [row[k] for k in ("now_playing", "nowPlaying", "currentTrack", "current_track")
+                      if k in row]
+            if len(tracks) != 1 or not isinstance(tracks[0], dict):
+                matched.append(None)
+                continue
+            track = tracks[0].get("song", tracks[0])
+            if not isinstance(track, dict):
+                matched.append(None)
+                continue
+            artist = track.get("artist", track.get("byArtist"))
+            if isinstance(artist, dict):
+                artist = artist.get("name")
+            matched.append(hint(artist, track.get("title", track.get("name")), method, source))
+            continue
+        for key in ("stations", "data", "radios", "channels", "players", "props", "pageProps"):
+            if key in row:
+                pending.append((row[key], depth + 1))
+    return [matched[0]] if len(matched) == 1 and matched[0] else []
+
+
+class MetadataPage(HTMLParser):
+    """Read inert JSON and explicitly scoped HTML metadata, never execute JS."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.documents = []
+        self.script = None
+        self.blocks = []
+        self.ignored = None
+
+    def handle_starttag(self, tag, attrs):
+        if self.ignored:
+            return
+        a = dict(attrs)
+        if tag in ("script", "style", "template", "noscript"):
+            self.ignored = tag
+            if tag == "script" and (a.get("type") or "").lower().strip() == "application/json":
+                self.script = []
+            return
+        if tag in ("div", "section", "article", "audio") and a.get("data-stream-url"):
+            if len(self.blocks) < 64:
+                self.blocks.append((a["data-stream-url"], a.get("data-now-playing-artist"),
+                                    a.get("data-now-playing-title")))
+
+    def handle_data(self, data):
+        if self.script is not None:
+            self.script.append(data)
+
+    def handle_endtag(self, tag):
+        if tag != self.ignored:
+            return
+        if self.script is not None:
+            raw = "".join(self.script)
+            if len(raw) <= MAX_BYTES and len(self.documents) < MAX_DOCUMENTS:
+                try:
+                    self.documents.append(json.loads(raw))
+                except (ValueError, RecursionError):
+                    pass
+            self.script = None
+        self.ignored = None
+
+
+def embedded_hints(body, stream, source):
+    p = MetadataPage()
+    p.feed(body.decode("utf-8", errors="replace"))
+    # Treat each JSON document as a separate source declaration. No union
+    # across records, and conflicting observations are not silently picked.
+    candidates = []
+    for data in p.documents:
+        candidates.extend(now_playing_hints(data, stream, source, "station_embedded_json"))
+    for url, artist, title in p.blocks:
+        if urljoin(source, url) == stream:
+            h = hint(artist, title, "station_html", source)
+            if h:
+                candidates.append(h)
+    identities = {(h["artistHint"], h["titleSha256"]) for h in candidates}
+    return candidates[:1] if len(identities) == 1 else []
 
 
 def page_hints(page, name, stream, source):
@@ -90,16 +207,16 @@ def page_hints(page, name, stream, source):
 
 
 def advertised_endpoints(page, source, stream):
-    """Follow only visible links to recognized public JSON formats on stream origin."""
+    """Follow visible links to public JSON on the station or stream origin."""
     found = set()
     for href, label in page.links:
         try:
             url = urljoin(source, href)
             p = validate_endpoint(url)
-            if p.scheme != "https" or origin(url) != origin(stream):
+            if p.scheme != "https" or origin(url) not in {origin(stream), origin(source)}:
                 continue
             path = p.path.rsplit("/", 1)[-1].lower()
-            if path not in {"status-json.xsl", "stats", "statistics", "stats.json"} and not path.endswith(".json"):
+            if path not in {"status-json.xsl", "stats", "statistics", "stats.json", "nowplaying", "now-playing", "now_playing"} and not path.endswith(".json") and not re.search(r"/(?:nowplaying|now-playing|now_playing)/[^/]+$", p.path, re.I):
                 continue
             if p.query and not re.fullmatch(r"(?:sid=[1-9][0-9]{0,3}&json=1|json=1&sid=[1-9][0-9]{0,3}|json=1)", p.query):
                 continue
@@ -160,6 +277,9 @@ def observe_alternative(stream, station, *, fetch_page=fetch_html, fetch_api=fet
         page = Page()
         page.feed(body.decode("utf-8", errors="replace"))
         hints = page_hints(page, station.get("name"), stream, final)
+        if hints:
+            return hints
+        hints = embedded_hints(body, stream, final)
         if hints:
             return hints
         for endpoint in advertised_endpoints(page, final, stream):
