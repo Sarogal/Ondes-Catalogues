@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 124,
   "dueNameCount": 61,
-  "attemptedCount": 1,
+  "attemptedCount": 4,
   "serviceFailure": "http_503",
-  "retryAfterKey": "bad buka",
+  "retryAfterKey": "brigadnyj podrjad",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -101,6 +101,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "behemoth": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Behemoth",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "billy squier": {
       "status": "name_hypothesis",
       "mbid": "3792dcb3-036e-45d6-8ee2-ff8d12c6c6c9",
@@ -135,6 +144,32 @@
       "genreSource": "musicbrainz-community",
       "sourceUrl": "https://musicbrainz.org/artist/5182c1d9-c7d2-4dad-afa0-ccfeada921a8",
       "artistName": "Black Sabbath",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "blightbeast": {
+      "status": "name_hypothesis",
+      "mbid": "4fb3f6ad-2cfe-419c-b086-9c2988f93986",
+      "genres": [],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/4fb3f6ad-2cfe-419c-b086-9c2988f93986",
+      "artistName": "Blightbeast",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "blodwen": {
+      "status": "name_hypothesis",
+      "mbid": "6b35e88c-d20f-485c-9c51-5b270421ce39",
+      "genres": [],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/6b35e88c-d20f-485c-9c51-5b270421ce39",
+      "artistName": "Blodwen",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,

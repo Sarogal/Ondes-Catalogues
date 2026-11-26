@@ -3115,7 +3115,7 @@
         "unclassified_hint": 0
       },
       "sourceHintCounts": {
-        "no_usable_source": 1
+        "musicbrainz_only": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -5216,7 +5216,7 @@
         "unclassified_hint": 0
       },
       "sourceHintCounts": {
-        "no_usable_source": 1
+        "musicbrainz_only": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,
