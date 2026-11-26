@@ -104,6 +104,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_publication_simulator.py"
       - "radio-catalog-lab/tools/radio_daily_durable_lab_store.py"
       - "radio-catalog-lab/tools/test_radio_daily_durable_lab_store.py"
+      - "radio-catalog-lab/tools/radio_daily_durable_lab_signer.py"
+      - "radio-catalog-lab/tools/test_radio_daily_durable_lab_signer.py"
       - "radio-catalog-lab/tools/radio_daily_restore_preview.py"
       - "radio-catalog-lab/tools/test_radio_daily_restore_preview.py"
       - "radio-catalog-lab/tools/radio_daily_baseline_selection.py"
