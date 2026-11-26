@@ -23,7 +23,10 @@ def request(params):
         "claims": {"P31": [statement({"id": "Q215380"})],
                    "P136": [statement({"id": "Q1"})],
                    "P856": [statement(URL), statement("http://insecure.example/"),
-                            statement("https://127.0.0.1/")]}}}}
+                            statement("https://127.0.0.1/"),
+                            statement("https://host.internal/"),
+                            statement("https://unsafe.example.org:443/"),
+                            statement("https://[::1]/")]}}}}
 
 
 class WikidataResearchTests(unittest.TestCase):
@@ -31,6 +34,7 @@ class WikidataResearchTests(unittest.TestCase):
         result = wd.build(registry(), DAY, request=request)
         entry = result["entries"][NAME.casefold()]
         self.assertEqual(entry["qid"], "Q123")
+        self.assertEqual(entry["homepageHints"], [URL])
         self.assertNotIn("genres", entry)
         self.assertFalse(entry["identityVerified"])
         self.assertFalse(result["publicationAllowed"])

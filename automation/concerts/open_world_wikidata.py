@@ -18,6 +18,7 @@ from urllib.request import build_opener, ProxyHandler, Request
 from zoneinfo import ZoneInfo
 
 import open_world_musicbrainz as mb
+import source_admission_intake as intake
 
 SCHEMA = "grossesondes.concert.wikidata-research.v1"
 BASE = "https://www.wikidata.org/w/api.php"
@@ -139,10 +140,9 @@ def research(name, request):
     for value in claims(entity, "P856"):
         if not isinstance(value, str) or len(value) > 1000:
             continue
-        parsed = urlsplit(value)
-        if (parsed.scheme != "https" or not parsed.hostname or parsed.username
-                or parsed.password or parsed.fragment):
+        if "\r" in value or "\n" in value or not intake.valid_https(value):
             continue
+        parsed = urlsplit(value)
         links.add(parsed._replace(path=parsed.path or "/").geturl())
     return {"status": "hypothesis", "qid": qid, "homepageHints": sorted(links)}
 
