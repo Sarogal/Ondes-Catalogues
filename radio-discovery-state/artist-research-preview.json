@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 124,
   "dueNameCount": 73,
-  "attemptedCount": 1,
-  "serviceFailure": "http_503",
-  "retryAfterKey": "u2",
+  "attemptedCount": 8,
+  "serviceFailure": null,
+  "retryAfterKey": null,
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -711,11 +711,118 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "upload": {
+      "status": "not_found",
+      "artistName": "Upload",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "vertical67": {
+      "status": "name_hypothesis",
+      "mbid": "425474cf-3afd-4f9f-a083-90fd3cc40cdc",
+      "genres": [],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/425474cf-3afd-4f9f-a083-90fd3cc40cdc",
+      "artistName": "VERTICAL67",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "vinnie moore": {
+      "status": "name_hypothesis",
+      "mbid": "097c1b97-8a50-41b2-89c4-f1ec12d497d2",
+      "genres": [
+        "hard rock",
+        "heavy metal",
+        "metal",
+        "neoclassical metal",
+        "rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/097c1b97-8a50-41b2-89c4-f1ec12d497d2",
+      "artistName": "Vinnie Moore",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "vixen": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Vixen",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "wdk": {
       "status": "ambiguous_or_incomplete",
       "artistName": "WDK",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "wizo": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "WIZO",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "womb": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Womb",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "zeal & ardor": {
+      "status": "name_hypothesis",
+      "mbid": "5e90193b-5183-406b-9f3a-b66bb66daccb",
+      "genres": [
+        "avant-garde metal",
+        "black metal",
+        "blues",
+        "experimental",
+        "progressive metal"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/5e90193b-5183-406b-9f3a-b66bb66daccb",
+      "artistName": "Zeal & Ardor",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "zz top": {
+      "status": "name_hypothesis",
+      "mbid": "a81259a0-a2f5-464b-866e-71220f2739f1",
+      "genres": [
+        "blues rock",
+        "boogie rock",
+        "classic rock",
+        "hard rock",
+        "rock",
+        "southern rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/a81259a0-a2f5-464b-866e-71220f2739f1",
+      "artistName": "ZZ Top",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     }
