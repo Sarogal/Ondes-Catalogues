@@ -16,8 +16,9 @@ from grossesondes_generic_directory_edition import Heading, verify_primary, ROCK
 from grossesondes_venue_reciprocal_edition import safe_root, safe_link, anchor_rows, visible_content
 from source_qualification import normalized, classify
 
-MAX_PAGES = 6
+MAX_PAGES = 12
 MAX_SITES = 4
+MAX_PAGES_PER_SITE = 4
 
 
 def _ticket_backlink(html, page, ticket):
@@ -93,6 +94,9 @@ def examine(research, title, year, today, *, fetch=fetch_public_html):
         except (OSError, ValueError, TypeError, UnicodeError, KeyError, RecursionError):
             cache[url] = None
         return cache[url]
+    # Reserve an equal share of network reads for every nominated site.
+    # A large producer calendar must not starve a co-organizing venue.
+    site_budget = min(MAX_PAGES_PER_SITE, MAX_PAGES // len(research["websites"]))
     for item in research["websites"]:
         if (not isinstance(item, dict) or item.get("verified") is not False
                 or item.get("publication_authorized") is not False):
@@ -108,11 +112,13 @@ def examine(research, title, year, today, *, fetch=fetch_public_html):
         if site != root:
             pending.append((1, root))
         seen, proofs, unresolved = set(), [], False
+        site_requests_start = result["requests"]
         while pending:
             rank, page = pending.pop(0)
             if page in seen:
                 continue
-            if page not in cache and result["requests"] >= MAX_PAGES:
+            if page not in cache and (result["requests"] >= MAX_PAGES
+                    or result["requests"] - site_requests_start >= site_budget):
                 unresolved = unresolved or rank == 0
                 break
             seen.add(page)
