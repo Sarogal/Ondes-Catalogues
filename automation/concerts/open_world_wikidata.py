@@ -18,12 +18,17 @@ from urllib.request import build_opener, ProxyHandler, Request
 from zoneinfo import ZoneInfo
 
 import open_world_musicbrainz as mb
+import source_admission_intake as intake
 
 SCHEMA = "grossesondes.concert.wikidata-research.v1"
 BASE = "https://www.wikidata.org/w/api.php"
 MAX_NAMES = 12
 MAX_BYTES = 600_000
 SEARCH_LIMIT = 20
+MAX_EXACT_MATCHES = 6
+# Only explicit non-performer classes can eliminate an exact-name collision.
+# Unknown types, humans without musical claims, and incomplete data stay held.
+NON_PERFORMER_TYPES = frozenset({"Q4167410", "Q11424", "Q482994", "Q7366"})
 
 
 def valid_id(value):
@@ -93,36 +98,51 @@ def research(name, request):
                 if not valid_id(row.get("id")):
                     raise ValueError("Malformed identity")
                 matches.add(row["id"])
-    if len(matches) != 1:
-        return {"status": "ambiguous_or_incomplete" if matches else "not_found"}
-    qid = next(iter(matches))
-    data = request({"action": "wbgetentities", "ids": qid,
+    if not matches:
+        return {"status": "not_found"}
+    if len(matches) > MAX_EXACT_MATCHES:
+        return {"status": "ambiguous_or_incomplete"}
+    data = request({"action": "wbgetentities", "ids": "|".join(sorted(matches)),
                     "props": "labels|aliases|claims", "languages": "fr|en"})
-    entity = (data.get("entities") or {}).get(qid)
-    if not isinstance(entity, dict) or entity.get("id") != qid:
+    entities = data.get("entities")
+    if not isinstance(entities, dict):
         return {"status": "identity_held"}
-    labels = [v.get("value") for v in entity.get("labels", {}).values()
-              if isinstance(v, dict)]
-    for rows in entity.get("aliases", {}).values():
-        if isinstance(rows, list):
-            labels.extend(v.get("value") for v in rows if isinstance(v, dict))
-    if mb.exact(name) not in {mb.exact(v) for v in labels}:
-        return {"status": "identity_held"}
-    # Taxonomy is a directory filter only: group or human with musical
-    # occupation or genre. It never becomes a verified musical identity.
-    kinds = ids(entity, "P31")
-    if not ("Q215380" in kinds or ("Q5" in kinds and
-            (ids(entity, "P106") & {"Q639669", "Q177220", "Q488205", "Q753110"}
-             or ids(entity, "P136")))):
-        return {"status": "identity_held"}
+    musicians = []
+    unresolved = False
+    for qid in sorted(matches):
+        entity = entities.get(qid)
+        if not isinstance(entity, dict) or entity.get("id") != qid:
+            unresolved = True
+            continue
+        labels = [v.get("value") for v in entity.get("labels", {}).values()
+                  if isinstance(v, dict)]
+        for rows in entity.get("aliases", {}).values():
+            if isinstance(rows, list):
+                labels.extend(v.get("value") for v in rows if isinstance(v, dict))
+        if mb.exact(name) not in {mb.exact(v) for v in labels}:
+            unresolved = True
+            continue
+        kinds = ids(entity, "P31")
+        musical = ("Q215380" in kinds or ("Q5" in kinds and
+                   (ids(entity, "P106") & {"Q639669", "Q177220", "Q488205", "Q753110"}
+                    or ids(entity, "P136"))))
+        if musical:
+            musicians.append((qid, entity))
+        elif not kinds or not kinds <= NON_PERFORMER_TYPES:
+            # A sparse or unfamiliar taxonomy is NOT negative evidence.
+            unresolved = True
+    if len(musicians) != 1 or unresolved:
+        return {"status": "ambiguous_or_incomplete" if len(matches) > 1 else "identity_held"}
+    qid, entity = musicians[0]
+    # This is still just an unverified navigation hint; no artist identity
+    # or event genre is authenticated by filtering directory homonyms.
     links = set()
     for value in claims(entity, "P856"):
         if not isinstance(value, str) or len(value) > 1000:
             continue
-        parsed = urlsplit(value)
-        if (parsed.scheme != "https" or not parsed.hostname or parsed.username
-                or parsed.password or parsed.fragment):
+        if "\r" in value or "\n" in value or not intake.valid_https(value):
             continue
+        parsed = urlsplit(value)
         links.add(parsed._replace(path=parsed.path or "/").geturl())
     return {"status": "hypothesis", "qid": qid, "homepageHints": sorted(links)}
 
