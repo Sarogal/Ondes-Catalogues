@@ -6,6 +6,8 @@ on:
       - feature/radio-daily-discovery-lab-20261120
     paths:
       - "radio-catalog-lab/tools/radio_daily_discovery.py"
+      - "radio-catalog-lab/tools/radio_daily_discovery_retry.py"
+      - "radio-catalog-lab/tools/test_radio_daily_discovery_retry.py"
       - "radio-catalog-lab/tools/test_radio_daily_discovery.py"
       - "radio-catalog-lab/tools/radio_daily_candidate_ledger.py"
       - "radio-catalog-lab/tools/test_radio_daily_candidate_ledger.py"
@@ -255,6 +257,8 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/go-radio-discovery"
           git -C go-radio-state-checkout rev-parse HEAD > "$RUNNER_TEMP/go-radio-discovery/state-parent.txt"
+          retry="$RUNNER_TEMP/go-radio-discovery/discovery-retry.json"
+          prior_retry=go-radio-state-checkout/radio-discovery-state/discovery-retry.json
           # On branch pushes, only a tiny real-network sample is used.
           # Scheduled/manual runs explore many music tags and rotated pages.
           if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
@@ -262,6 +266,7 @@ jobs:
               --tags "metal,punk,hard rock,black metal,thrash metal,trash metal,pagan metal,nu metal" \
               --names "metal,punk,hard rock,nu metal" \
               --page-size 50 --max-pages 1 --crawl-delay 0.3 \
+              --retry-state "$prior_retry" --retry-output "$retry" \
               --output "$RUNNER_TEMP/go-radio-discovery/candidates.json"
           else
             # Previous review-only tags are allowed to extend the taxonomy,
@@ -273,6 +278,7 @@ jobs:
             python radio-catalog-lab/tools/radio_daily_discovery.py \
               --page-size 100 --max-pages 3 --crawl-delay 0.3 \
               "${prior[@]}" \
+              --retry-state "$prior_retry" --retry-output "$retry" \
               --output "$RUNNER_TEMP/go-radio-discovery/candidates.json"
           fi
       - name: Select signed bootstrap and reconcile candidates (read-only)
@@ -811,6 +817,32 @@ jobs:
                   assert data.get("approvedCount") == 0
                   assert all(r.get("approved") is False and r.get("publicationAllowed") is False for r in data["records"])
               (dst / name).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+          # Persist only bounded query identities and retry dates, never raw URLs.
+          retry = src / "discovery-retry.json"
+          if retry.exists():
+              import datetime as dt
+              assert retry.stat().st_size <= 512*1024
+              queue = json.loads(retry.read_bytes())
+              assert set(queue) == {"schemaVersion","publicationAllowed","scanDate","pending"}
+              assert queue["schemaVersion"] == 1 and queue["publicationAllowed"] is False
+              day = dt.date.fromisoformat(queue["scanDate"])
+              assert day.isoformat() == queue["scanDate"] and day <= dt.datetime.now(dt.timezone.utc).date()
+              assert isinstance(queue["pending"],list) and len(queue["pending"]) <= 512
+              seen = set()
+              for row in queue["pending"]:
+                  assert set(row) == {"field","term","offset","pageSize","firstFailureDate","lastAttemptDate","attemptCount","nextAttemptDate"}
+                  term,size,offset = row["term"],row["pageSize"],row["offset"]
+                  assert row["field"] in ("tag","name") and isinstance(term,str) and 1 <= len(term) <= 60
+                  assert term == term.strip() and re.fullmatch(r"[\w !&+/\-]+",term,re.UNICODE)
+                  assert type(size) is int and 1 <= size <= 250
+                  assert type(offset) is int and 0 <= offset <= 35000 and offset % size == 0
+                  key = (row["field"],term,offset,size)
+                  assert key not in seen
+                  seen.add(key)
+                  first,last,next_day = [dt.date.fromisoformat(row[k]) for k in ("firstFailureDate","lastAttemptDate","nextAttemptDate")]
+                  assert first <= last <= day and last < next_day <= last+dt.timedelta(days=7)
+                  assert type(row["attemptCount"]) is int and 1 <= row["attemptCount"] <= 20
+              (dst / "discovery-retry.json").write_text(json.dumps(queue,ensure_ascii=False,indent=2)+"\n")
           # Only exact objects named by the pinned authenticated v8 may be
           # retained. Never copy an arbitrary artifact subtree into Git.
           cache_report = src / "inherited-artwork-cache.json"

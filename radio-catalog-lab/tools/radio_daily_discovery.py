@@ -413,53 +413,87 @@ def page_offsets(day: dt.date, page_size: int, max_pages: int) -> list[int]:
 
 def discover(*, fetch, tags: list[str], names: list[str],
              day: dt.date, page_size: int, max_pages: int,
-             known_ids: set[str], sleep_seconds: float = 0.0) -> dict:
+             known_ids: set[str], sleep_seconds: float = 0.0, retry_state=None) -> dict:
     queries = [("tag", x) for x in tags] + [("name", x) for x in names]
     if not queries or len(queries) > 40 or any(not q[1].strip() for q in queries):
         raise ValueError("Discovery query list must be bounded, nonempty and valid")
     if not 0 <= sleep_seconds <= 3:
         raise ValueError("Invalid crawl delay")
     offsets = page_offsets(day, page_size, max_pages)
+    from radio_daily_discovery_retry import load, failed, due, report as retry_report
+    pending = load(retry_state, day)
+    attempted = set()
     observed: dict[str, dict] = {}
     scan_log = []
-    # Only a positively retrieved page supplies evidence. A failed page
-    # is not an empty response: retain successful pages and mark the gap.
-    # An entirely unavailable source still fails closed.
     successful_pages = 0
     failed_queries = 0
+    def observe(records):
+        if not isinstance(records, list):
+            raise ValueError("Bad discovery page")
+        for raw in records:
+            row = candidate(raw, known_ids)
+            if row is None:
+                continue
+            uid = row["stationuuid"]
+            previous = observed.get(uid)
+            if previous is None or (
+                previous["status"] == "needs_stream_check"
+                and row["status"] == "candidate_requires_qualification"
+            ):
+                observed[uid] = row
+    def retrieve(k):
+        attempted.add(k)
+        try:
+            records = fetch(*k)
+        except DiscoveryQueryUnavailable:
+            failed(pending,k,day)
+            return None
+        observe(records)
+        pending.pop(k,None)
+        return records
+    # Reserve a small extra lane for due pages, before the regular rotation.
+    # No failed page is represented as an empty successful response.
+    retry_log = []
+    for k in due(pending,day,attempted):
+        records=retrieve(k)
+        if records is not None:
+            successful_pages += 1
+        retry_log.append(dict(field=k[0],term=k[1],offset=k[2],pageSize=k[3],
+                              status="unavailable" if records is None else "complete"))
+    # Reuse the retry result if the same page is in today's primary scan.
+    retry_results={(r["field"],r["term"],r["offset"],r["pageSize"]):r["status"]
+                   for r in retry_log}
+    # A successful short retry page still needs its row count for pagination.
+    # Store it only in memory, not in the retry queue.
     for field, term in queries:
         seen_pages = 0
         failed_offset = None
         for offset in offsets:
-            try:
-                records = fetch(field, term, offset, page_size)
-            except DiscoveryQueryUnavailable:
-                failed_offset = offset
-                failed_queries += 1
-                break
-            if not isinstance(records, list):
-                raise ValueError("Bad discovery page")
-            seen_pages += 1
-            successful_pages += 1
-            for raw in records:
-                row = candidate(raw, known_ids)
-                if row is None:
+            k=(field,term,offset,page_size)
+            if k in retry_results:
+                # A retry already observed the rows. Continue deeper pages
+                # conservatively on success; no second request for this key.
+                if retry_results[k]=="unavailable":
+                    records=None
+                else:
+                    seen_pages+=1
                     continue
-                uid = row["stationuuid"]
-                previous = observed.get(uid)
-                if previous is None or (
-                    previous["status"] == "needs_stream_check"
-                    and row["status"] == "candidate_requires_qualification"
-                ):
-                    observed[uid] = row
-            if len(records) < page_size:
+            else:
+                records=retrieve(k)
+            if records is None:
+                failed_offset=offset
+                failed_queries+=1
+                break
+            seen_pages+=1
+            successful_pages+=1
+            if len(records)<page_size:
                 break
             if sleep_seconds:
                 time.sleep(sleep_seconds)
-        entry = {"field": field, "term": term, "pagesRead": seen_pages,
-                 "status": "complete" if failed_offset is None else "unavailable"}
+        entry={"field":field,"term":term,"pagesRead":seen_pages,
+               "status":"complete" if failed_offset is None else "unavailable"}
         if failed_offset is not None:
-            entry["failedOffset"] = failed_offset
+            entry["failedOffset"]=failed_offset
         scan_log.append(entry)
     if successful_pages == 0:
         raise DiscoveryQueryUnavailable("Radio Browser unavailable for all discovery pages")
@@ -476,7 +510,10 @@ def discover(*, fetch, tags: list[str], names: list[str],
         "knownUuidInputCount": len(known_ids),
         "observedUniqueUuidCount": len(rows),
         "unrecognizedCandidateCount": len(new),
-        "scanComplete": failed_queries == 0,
+        "scanComplete": failed_queries == 0 and all(r["status"]=="complete" for r in retry_log),
+        "retryQueries": retry_log,
+        "pendingRetryCount": len(pending),
+        "retryState": retry_report(pending,day),
         "successfulPageCount": successful_pages,
         "failedQueryCount": failed_queries,
         "queries": scan_log,
@@ -493,6 +530,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--names", help="Explicit diagnostic name override; no rotation")
     parser.add_argument("--previous-report", type=Path,
                         help="Optional last candidate report for emerging genre tags")
+    parser.add_argument("--retry-state", type=Path)
+    parser.add_argument("--retry-output", type=Path)
     parser.add_argument("--page-size", type=int, default=100)
     parser.add_argument("--max-pages", type=int, default=3)
     parser.add_argument("--crawl-delay", type=float, default=0.15)
@@ -506,14 +545,24 @@ def main(argv: list[str] | None = None) -> int:
     else:
         selected_tags = [x.strip() for x in (args.tags or "").split(",") if x.strip()]
         selected_names = [x.strip() for x in (args.names or "").split(",") if x.strip()]
+    retry_state = None
+    if args.retry_state and args.retry_state.is_file():
+        if args.retry_state.stat().st_size > 512 * 1024:
+            raise ValueError("oversized retry state")
+        retry_state = json.loads(args.retry_state.read_text())
     hosts = resolve_api_mirrors()
     def remote(field: str, term: str, offset: int, limit: int) -> list[dict]:
         return fetch_page(hosts, field, term, offset, limit)
     report = discover(
         fetch=remote, tags=selected_tags, names=selected_names,
         day=day, page_size=args.page_size, max_pages=args.max_pages,
-        known_ids=known, sleep_seconds=args.crawl_delay,
+        known_ids=known, sleep_seconds=args.crawl_delay, retry_state=retry_state,
     )
+    state = report.pop("retryState")
+    if args.retry_output:
+        with args.retry_output.open("x", encoding="utf-8") as target:
+            json.dump(state,target,ensure_ascii=False,indent=2)
+            target.write("\n")
     report["configuredGenreQueries"] = len(DEFAULT_TAGS) + len(DEFAULT_NAMES)
     report["selectedDailyQueries"] = len(selected_tags) + len(selected_names)
     report["coreQueries"] = len(CORE_TAGS) + len(CORE_NAMES)
