@@ -44,6 +44,7 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_recording_preview.py"
       - "radio-catalog-lab/tools/radio_daily_wikidata_preview.py"
       - "radio-catalog-lab/tools/test_radio_daily_wikidata_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_cross_source_preview.py"
       - "radio-catalog-lab/schemas/radio_catalog_v1.schema.json"
       - ".github/workflows/radio-catalog-daily-discovery.yml"
   workflow_dispatch:
@@ -407,7 +408,8 @@ jobs:
           root="$RUNNER_TEMP/go-radio-discovery"
           python radio-catalog-lab/tools/radio_daily_programme_preview.py \
             --metadata "$root/metadata-preview.json" --research "$root/artist-research-preview.json" \
-            --decisions "$root/decision-preview.json" --output "$root/programme-preview.json"
+            --decisions "$root/decision-preview.json" --wikidata "$root/wikidata-preview.json" \
+            --recordings "$root/recording-preview.json" --output "$root/programme-preview.json"
       - name: Generate unsigned additive v9 candidate (artifact only)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
         shell: bash

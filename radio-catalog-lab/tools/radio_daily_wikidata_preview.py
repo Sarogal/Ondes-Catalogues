@@ -20,6 +20,8 @@ MAX_BYTES=12*1024*1024
 MAX_RESPONSE=1_000_000
 MAX_NAMES=6
 SEARCH_LIMIT=20
+MAX_PAGES=2
+RESEARCH_VERSION=2
 
 def qid(v):
     return isinstance(v,str) and bool(re.fullmatch(r"Q[1-9][0-9]{0,15}",v))
@@ -70,20 +72,33 @@ def labels(entity):
 def research(name,request):
     matches=set()
     for lang in ("en","fr"):
-        data=request({"action":"wbsearchentities","search":name,"language":lang,
-                      "type":"item","limit":SEARCH_LIMIT})
-        rows=data.get("search")
-        if "search-continue" in data or "continue" in data or not isinstance(rows,list) or len(rows)>=SEARCH_LIMIT:
+        cursor=None
+        for _ in range(MAX_PAGES):
+            params={"action":"wbsearchentities","search":name,"language":lang,
+                    "type":"item","limit":SEARCH_LIMIT}
+            if cursor is not None:
+                params["continue"]=cursor
+            data=request(params)
+            rows=data.get("search")
+            if not isinstance(rows,list) or len(rows)>SEARCH_LIMIT:
+                raise ValueError("invalid directory search")
+            for row in rows:
+                if not isinstance(row,dict):
+                    continue
+                match=row.get("match") or {}
+                candidates=[row.get("label"),match.get("text") if isinstance(match,dict) else None]
+                if any(isinstance(v,str) and key(v)==key(name) for v in candidates):
+                    if not qid(row.get("id")):
+                        raise ValueError("invalid directory id")
+                    matches.add(row["id"])
+            nxt=data.get("search-continue")
+            if nxt is None and "continue" not in data:
+                break
+            if type(nxt) is not int or not 0<nxt<=MAX_PAGES*SEARCH_LIMIT or nxt==cursor:
+                return {"status":"ambiguous_or_incomplete"}
+            cursor=nxt
+        else:
             return {"status":"ambiguous_or_incomplete"}
-        for row in rows:
-            if not isinstance(row,dict):
-                continue
-            match=row.get("match") or {}
-            candidates=[row.get("label"),match.get("text") if isinstance(match,dict) else None]
-            if any(isinstance(v,str) and key(v)==key(name) for v in candidates):
-                if not qid(row.get("id")):
-                    raise ValueError("invalid directory id")
-                matches.add(row["id"])
     if len(matches)!=1:
         return {"status":"ambiguous_or_incomplete" if matches else "not_found"}
     ident=next(iter(matches))
@@ -166,7 +181,8 @@ def build(metadata,*,prior=None,limit=0,request=None):
             continue
         e=entries.get(k)
         age=(today-dt.date.fromisoformat(e["checkedAt"])).days if e else 999999
-        if age >= (30 if e and e.get("genresById") else 7):
+        needs_upgrade=bool(e and e.get("researchVersion")!=RESEARCH_VERSION and e.get("status")=="ambiguous_or_incomplete")
+        if needs_upgrade or age >= (30 if e and e.get("genresById") else 7):
             tasks.append((-age,k,next(iter(n))))
     tasks.sort()
     cursor=prior.get("retryAfterKey") if prior else None
@@ -186,7 +202,7 @@ def build(metadata,*,prior=None,limit=0,request=None):
             failure="http_"+str(exc.code) if isinstance(exc,HTTPError) else "service_or_response_held"
             retry=k
             break
-        entries[k]=dict(result,artistName=n,checkedAt=day,source="wikidata",
+        entries[k]=dict(result,artistName=n,checkedAt=day,source="wikidata",researchVersion=RESEARCH_VERSION,
                         identityVerified=False,publicationAllowed=False)
     return {"schemaVersion":1,"scanDate":day,"publicationAllowed":False,"approvedCount":0,
             "observedNameCount":len(names),"dueNameCount":len(tasks),"attemptedCount":attempted,

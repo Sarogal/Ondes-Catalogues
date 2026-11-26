@@ -45,5 +45,15 @@ class WikidataTests(unittest.TestCase):
         prior["entries"]["iron band"]["sourceUrl"]="https://example.org"
         with self.assertRaises(ValueError):
             build(report(),prior=prior)
+    def test_bounded_pagination_reaches_exact_match(self):
+        def paged(p):
+            if p["action"]=="wbsearchentities" and "continue" not in p:
+                return {"search":[{"id":"Q999","label":"Unrelated"}],"search-continue":20}
+            return request(p)
+        self.assertEqual(research("Iron Band",paged)["qid"],"Q123")
+    def test_old_ambiguity_reexamined_after_upgrade(self):
+        prior=build(report(),limit=1,request=lambda p:{"search":[],"search-continue":20})
+        prior["entries"]["iron band"].pop("researchVersion")
+        self.assertEqual(build(report(),prior=prior,limit=1,request=request)["entries"]["iron band"]["qid"],"Q123")
 if __name__=="__main__":
     unittest.main()
