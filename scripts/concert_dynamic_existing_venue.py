@@ -832,9 +832,24 @@ def _missing_address_from_own_visible_event(raw, event, venue, html):
         return False
     lines = [(tag, line.strip()) for tag, text in detail
              for line in text.split("\u241e") if line.strip()]
+    def named_parent_location(line):
+        if geo_evidence._named_location(line, venue):
+            return True
+        # A single authenticated physical venue can label its internal
+        # room after the exact parent name. Only explicit separators and
+        # ordinary internal-space labels qualify, never arbitrary suffixes.
+        parts = re.split(r"\s+[-–—]\s+", line.strip())
+        return (len(parts) == 2
+                and geo_evidence._named_location(parts[0], venue)
+                and normal(parts[1]) in {
+                    "club", "le club", "grande salle", "la grande salle",
+                    "petite salle", "la petite salle",
+                    "main room", "small room",
+                })
+
     observed = set()
     for i, (_, line) in enumerate(lines):
-        if not geo_evidence._named_location(line, venue):
+        if not named_parent_location(line):
             continue
         for tag, candidate in lines[i+1:i+4]:
             if tag.startswith("h") or geo_evidence.NONVENUE.search(normal(candidate)):

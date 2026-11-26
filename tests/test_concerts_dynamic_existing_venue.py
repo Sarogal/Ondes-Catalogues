@@ -308,6 +308,41 @@ class UnlistedExistingVenueTests(unittest.TestCase):
             dynamic.validate(signed, venues, artists, TODAY,
                 fetch=fake_fetch({"primary": body(), "osm": osm(website="https://autre.fr")}))
 
+    def test_missing_address_replay_accepts_explicit_internal_room_at_exact_parent_address(self):
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        node = next(dynamic.discover.read_ld(page(EVENT)))
+        node["location"].pop("address")
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+        exact = " ".join(venue[k] for k in ("address", "postalCode", "city"))
+
+        def body(label, address=exact):
+            return ("<main><h1>" + node["name"] + "</h1><p>5 mars 2027</p>"
+                    "<script type='application/ld+json'>" + json.dumps(node)
+                    + "</script><p>" + label + "<br/>" + address + "</p></main>")
+
+        for room in (" – Le Club", " - Grande salle", " — petite salle"):
+            with self.subTest(room=room):
+                self.assertTrue(dynamic.validate(signed, venues, artists, TODAY,
+                    fetch=fake_fetch({"primary": body(venue["name"] + room)})))
+        for label in ("Autre Salle – Le Club", venue["name"] + " – Autre Salle",
+                      venue["name"] + " – Parking", venue["name"] + " Club"):
+            with self.subTest(label=label), self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY,
+                    fetch=fake_fetch({"primary": body(label)}))
+        with self.assertRaises(ValueError):
+            dynamic.validate(signed, venues, artists, TODAY, fetch=fake_fetch(
+                {"primary": body(venue["name"] + " – Le Club",
+                                 "12 rue Autre 31520 " + venue["city"])}))
+        with self.assertRaises(ValueError):
+            dynamic.validate(signed, venues, artists, TODAY, fetch=fake_fetch(
+                {"primary": body(venue["name"] + " – Le Club"),
+                 "osm": osm(website="https://autre.fr")}))
+
     def test_missing_address_replay_ignores_only_distinct_canonical_recommendations(self):
         signed = signed_approval()
         proof = signed["officialEvidence"][0]
