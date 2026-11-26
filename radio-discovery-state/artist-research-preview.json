@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 124,
-  "dueNameCount": 24,
-  "attemptedCount": 2,
+  "dueNameCount": 23,
+  "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "the war on drugs",
+  "retryAfterKey": "u2",
   "entries": {
     "2000 fm": {
       "status": "not_found",
