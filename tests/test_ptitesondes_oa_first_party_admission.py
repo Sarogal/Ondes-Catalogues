@@ -186,6 +186,43 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
             with self.subTest(negative=negative):
                 self.assertFalse(explicit_child_age_text(negative))
 
+    def test_explicit_minimum_age_audience_is_not_artist_biography(self):
+        from ptitesondes_oa_first_party_admission import explicit_minimum_child_audience
+        for description, conditions in (
+            ("Spectacle musical.", "Dès 3 ans."),
+            ("Accessible à partir de 5 ans.", ""),
+            ("Un concert.", "Tout public à partir de 6 ans"),
+            ("Une histoire chantée. À partir de 4 ans.", ""),
+        ):
+            self.assertTrue(explicit_minimum_child_audience(description, conditions))
+        for description, conditions in (
+            ("Elle joue du piano dès 5 ans.", ""),
+            ("Il chante à partir de 8 ans.", ""),
+            ("Public à partir de 18 ans.", ""),
+            ("Non accessible à partir de 4 ans.", ""),
+            ("Concert pour adultes uniquement.", "Dès 0 ans."),
+        ):
+            self.assertFalse(explicit_minimum_child_audience(description, conditions))
+
+    def test_minimum_age_label_unlocks_family_performance_not_adult_concert(self):
+        reference = base()
+        reference["events"][0]["category"] = "spectacle-musical"
+        title = "Les saisons"
+        event = dict(oa_event(), title={"fr": title},
+                     description={"fr": "Un spectacle musical, dansé et raconté."},
+                     conditions={"fr": "Dès 3 ans."}, age=None)
+        candidate, status = admit_live_openagenda(
+            dict(lead(), title=title), DAY.isoformat(), AGENDA,
+            event, reference, reference, TODAY)
+        self.assertEqual(status, "oa_direct_live_source_accepted")
+        self.assertEqual(candidate["category"], "spectacle-musical")
+        event["description"] = {"fr": "Un spectacle musical réservé aux adultes."}
+        candidate, status = admit_live_openagenda(
+            dict(lead(), title=title), DAY.isoformat(), AGENDA,
+            event, reference, reference, TODAY)
+        self.assertIsNone(candidate)
+        self.assertEqual(status, "oa_direct_restricted_access")
+
     def test_overseas_french_first_party_youth_workshop_without_age_field(self):
         """Generic Martinique/MQ contract, based on a real wording from OA.
 

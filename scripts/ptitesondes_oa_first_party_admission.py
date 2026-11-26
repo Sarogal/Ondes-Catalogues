@@ -72,6 +72,43 @@ AGE_RANGE_TEXT = re.compile(
 )
 
 
+# Minimum ages are audience evidence only when stated as a participation
+# condition, a standalone age label, or explicitly attached to the public.
+# A musician starting an instrument at age five is not an audience claim.
+AGE_MINIMUM_LABEL = re.compile(
+    r"^(?:(?:tout public|public|age|ages|accessible|spectacle|concert|atelier)"
+    r"(?: a tous)? )?(?:des|a partir de) (\d{1,2}) ans(?: et plus)?$"
+)
+AGE_MINIMUM_CONTEXT = re.compile(
+    r"\b(?:public|accessible|ouvert(?:e)?|adapte(?:e)?|"
+    r"recommande(?:e)?|conseille(?:e)?|participation|inscription)"
+    r"(?: a tous)? (?:des|a partir de) (\d{1,2}) ans\b"
+)
+AGE_NEGATIVE = re.compile(
+    r"\b(?:non accessible|pas accessible|interdit|deconseille|"
+    r"reserve aux adultes|adultes uniquement|sans enfants)\b"
+)
+
+
+def explicit_minimum_child_audience(description, conditions):
+    # Parse explicit source fields separately, not concatenated artist bios.
+    for raw in (conditions, description):
+        if not isinstance(raw, str):
+            continue
+        text = _norm(raw)
+        if AGE_NEGATIVE.search(text) or EXCLUSIVELY_ADULT.search(text):
+            continue
+        for match in AGE_MINIMUM_CONTEXT.finditer(text):
+            if 1 <= int(match[1]) <= 17:
+                return True
+        # Split only on strong sentence/line boundaries, not commas.
+        for clause in re.split(r"[.!?;\n\r]+", raw):
+            match = AGE_MINIMUM_LABEL.fullmatch(_norm(clause))
+            if match and 1 <= int(match[1]) <= 17:
+                return True
+    return False
+
+
 def explicit_child_age_text(value):
     if not isinstance(value, str):
         return False
@@ -284,7 +321,9 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published,
     if EXCLUSIVELY_ADULT.search(audience) or NOT_PUBLIC_ACCESS.search(audience):
         return fail("oa_direct_restricted_access")
     child_age = isinstance(age, dict) and type(age.get("max")) is int and age["max"] <= 17
+    minimum_child_audience = explicit_minimum_child_audience(description, conditions)
     if (not CHILD.search(audience) and not child_age
+            and not minimum_child_audience
             and not explicit_child_age_text(source_text)
             and not CONCERT_AUDIENCE.search(audience)):
         return fail("oa_direct_child_audience_missing")
@@ -301,6 +340,7 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published,
     if category is None:
         return fail("oa_direct_out_of_editorial_scope")
     if (category[0] == "concert" and not child_age
+            and not minimum_child_audience
             and not explicit_child_age_text(source_text)
             and not CONCERT_AUDIENCE.search(audience)):
         return fail("oa_direct_child_audience_missing")
