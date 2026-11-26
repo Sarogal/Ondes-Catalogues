@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "festival-automatio
 
 from grossesondes_official_poster_ocr import (
     MAX_BYTES, qualified_url, parse_tsv, read_official_poster,
-    load_ocr_cache, save_ocr_cache, recognize_poster,
+    load_ocr_cache, save_ocr_cache, recognize_poster, poster_review_claims,
 )
 from dns_pinned_https import OfficialHTTPStatusError
 
@@ -112,6 +112,36 @@ class PosterOCRTests(unittest.TestCase):
         for expected in ("FESTIVAL", "EXEMPLE", "2027", "45"):
             self.assertIn(expected, text)
         self.assertTrue(all(word["review_only"] for word in words))
+
+    def test_poster_claims_bind_exact_edition_and_explicit_fields(self):
+        row = {"name": "Festival Exemple 2027", "startDate": "2027-08-13",
+               "endDate": "2027-08-15"}
+        def reading(lines, confidence=96):
+            words = []
+            for y, line in enumerate(lines):
+                x = 20
+                for token in line.split():
+                    width = len(token) * 10
+                    words.append({"text": token, "confidence": confidence,
+                                  "box": [x, 40*y, width, 25], "review_only": True})
+                    x += width + 8
+            return {"status": "review_only", "review_only": True, "words": words}
+        lines = ["FESTIVAL EXEMPLE", "13 au 15 août 2027", "Artistes : Alpha, Beta",
+                 "Ville : Exempleville", "Pass : 45 €", "Sponsor Gamma"]
+        result = poster_review_claims(row, reading(lines))
+        self.assertEqual(result["status"], "edition_matches_review_only")
+        self.assertEqual(result["claims"]["artist_labels"], ["Artistes : Alpha, Beta"])
+        self.assertEqual(result["claims"]["location_labels"], ["Ville : Exempleville"])
+        self.assertEqual(result["claims"]["price_labels"], ["Pass : 45 €"])
+        self.assertFalse(result["publication_authorized"])
+        for changed in (["FESTIVAL AUTRE"] + lines[1:],
+                        lines[:1] + ["13 au 16 août 2027"] + lines[2:],
+                        lines + ["Archives 2026"], lines + ["Annulé"],
+                        lines + ["14 au 16 août 2027"]):
+            self.assertEqual(poster_review_claims(row, reading(changed))["claims"], {})
+        self.assertEqual(poster_review_claims(row, reading(lines, confidence=40))["claims"], {})
+        result = poster_review_claims(row, reading(lines[:2] + ["ALPHA BETA", "45 €"]))
+        self.assertEqual(set(result["claims"]), {"dates"})
 
     def test_failed_recognition_not_cached(self):
         cache = {}

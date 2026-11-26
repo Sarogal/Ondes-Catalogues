@@ -6,6 +6,7 @@ on that page. Never turn these tokens directly into catalogue fields.
 from __future__ import annotations
 
 import csv
+from datetime import date
 from hashlib import sha256
 import io
 import json
@@ -30,6 +31,7 @@ MAX_TSV = 256_000
 MAX_WORDS = 1500
 MAX_CACHE = 64
 MAX_CACHE_BYTES = 8 * 1024 * 1024
+MIN_REVIEW_CONFIDENCE = 85
 OCR_PROFILE = "tesseract-fra-eng-psm11-v1"
 MIME_FORMAT = {"image/jpeg": "JPEG", "image/png": "PNG", "image/webp": "WEBP"}
 
@@ -250,4 +252,100 @@ def read_official_poster(site, url, *, cache, fetch=None, recognize=None):
     except (ImportError, OSError, ValueError, TypeError, UnicodeError,
             subprocess.SubprocessError, Warning):
         out["status"] = "image_or_ocr_unavailable"
+    return out
+
+
+def poster_review_claims(row, reading):
+    """Edition-bound diagnostic claims; no publication authority.
+
+    Reuse only exact signed dates and name. Preserve line geometry and reject
+    ambiguous rows rather than concatenating text from separate poster blocks.
+    Unlabelled logos are not artist proof. No new date or coordinate is emitted.
+    """
+    from grossesondes_official_html_edition import explicit_ranges, fold, CANCEL
+    out = {"status": "edition_unproven", "review_only": True,
+           "publication_authorized": False, "claims": {}}
+    if not isinstance(row, dict) or not isinstance(reading, dict):
+        return out
+    words = reading.get("words")
+    if (reading.get("status") != "review_only" or reading.get("review_only") is not True
+            or not _valid_cached_words(words) or not words):
+        return out
+    try:
+        start, end = date.fromisoformat(row["startDate"]), date.fromisoformat(row["endDate"])
+        brand = re.sub(r"\b20[2-4]\d\b", "", fold(row["name"]))
+    except (KeyError, TypeError, ValueError):
+        return out
+    def tokens(value):
+        return re.findall(r"[a-z0-9]+", fold(value))
+    brand_words = [w for w in tokens(brand) if w not in ("festival", "fest")]
+    if not brand_words or len("".join(brand_words)) < 3 or start.year != end.year:
+        return out
+    lines = []
+    # Group vertically overlapping words conservatively, without merging
+    # across unusually large horizontal gaps (e.g. sponsor columns).
+    for word in sorted(words, key=lambda w: (w["box"][1] + w["box"][3]/2, w["box"][0])):
+        x, y, width, height = word["box"]
+        if width <= 0 or height <= 0:
+            continue
+        center = y + height/2
+        choices = [line for line in lines
+                   if abs(center - line["center"]) <= .30 * min(height, line["height"])]
+        if len(choices) == 1:
+            choices[0]["words"].append(word)
+        elif not choices:
+            lines.append({"center": center, "height": height, "words": [word]})
+        else:
+            return out
+    texts = []
+    for line in lines:
+        ordered = sorted(line["words"], key=lambda w: w["box"][0])
+        current = []
+        previous = None
+        for word in ordered:
+            x, y, width, height = word["box"]
+            if previous is not None:
+                px, py, pw, ph = previous["box"]
+                if x - px - pw > 2.5 * max(height, ph) or x < px + pw - min(width, pw)*.2:
+                    if current:
+                        texts.append(current)
+                    current = []
+            current.append(word)
+            previous = word
+        if current:
+            texts.append(current)
+    all_text = " ".join(w["text"] for w in words)
+    years = set(re.findall(r"(?<!\d)20[2-4]\d(?!\d)", all_text))
+    if years != {str(start.year)} or CANCEL.search(fold(all_text)):
+        out["status"] = "edition_conflict_or_year_missing"
+        return out
+    strong = [" ".join(w["text"] for w in line) for line in texts
+              if all(w["confidence"] >= MIN_REVIEW_CONFIDENCE for w in line)]
+    name_pattern = " " + " ".join(brand_words) + " "
+    brand_ok = any(name_pattern in " " + " ".join(tokens(line)) + " " for line in strong)
+    ranges = {(a,b) for line in strong for _,_,a,b in explicit_ranges(fold(line), start.year)}
+    all_ranges = {(a,b) for line in texts for _,_,a,b in
+                  explicit_ranges(fold(" ".join(w["text"] for w in line)), start.year)}
+    if not brand_ok or ranges != {(start,end)} or all_ranges != {(start,end)}:
+        out["status"] = "edition_identity_or_dates_unproven"
+        return out
+    out["status"] = "edition_matches_review_only"
+    out["claims"]["dates"] = {"start": start.isoformat(), "end": end.isoformat()}
+    # Explicit labels only. A logo, sponsor, bare amount, or unrelated place
+    # must not silently become a field. Keep original text for later checks.
+    patterns = {
+        "artist_labels": r"^(?:artistes?|groupes?|line[\s-]?up)\s*:\s*(.{2,150})$",
+        "location_labels": r"^(?:lieu|ville|commune|venue)\s*:\s*(.{2,150})$",
+        "price_labels": r"^(?:tarifs?|pass(?:\s+\d\s*(?:j|jours?))?|billets?)\s*:\s*(.{2,100})$",
+    }
+    for key, pattern in patterns.items():
+        claims = []
+        for line in strong:
+            match = re.fullmatch(pattern, line, re.I)
+            if match and line not in claims:
+                if key == "price_labels" and not re.search(r"\d+(?:[,.]\d{2})?\s*(?:€|euros?|EUR)\b|\d+\s*€", line, re.I):
+                    continue
+                claims.append(line)
+        if claims:
+            out["claims"][key] = claims
     return out
