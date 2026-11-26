@@ -331,6 +331,44 @@ class DailyDiscoveryTests(unittest.TestCase):
             plan_daily_queries(self.day, DEFAULT_TAGS, DEFAULT_NAMES,
                                max_queries=500)
 
+    def near_ready(self):
+        return {"schemaVersion":1,"policyVersion":2,"scanDate":"2026-11-19",
+                "publicationAllowed":False,"approvedCount":0,"records":[{
+                    "stationuuid":ID_A,"name":"New Metal Radio","decision":"advanced_candidate",
+                    "blockingReasons":["repeat_continuity_on_distinct_days"],
+                    "approved":False,"publicationAllowed":False}]}
+
+    def test_rotated_candidate_revisited_by_current_exact_uuid(self):
+        def fetch(field,term,offset,limit):
+            return [station(ID_A),station(ID_B)] if term=="New Metal Radio" else []
+        report=discover(fetch=fetch,tags=["metal"],names=[],day=self.day,page_size=2,
+                        max_pages=1,known_ids=set(),prior_decisions=self.near_ready())
+        self.assertEqual([x["stationuuid"] for x in report["candidates"]],[ID_A])
+        self.assertEqual(report["candidateFollowups"],[{"stationuuid":ID_A,"status":"observed"}])
+        self.assertFalse(report["publicationAllowed"])
+
+    def test_followup_failure_does_not_fake_observation(self):
+        def fetch(field,term,offset,limit):
+            if field=="name":
+                raise DiscoveryQueryUnavailable("unavailable")
+            return []
+        report=discover(fetch=fetch,tags=["metal"],names=[],day=self.day,page_size=2,
+                        max_pages=1,known_ids=set(),prior_decisions=self.near_ready())
+        self.assertEqual(report["candidates"],[])
+        self.assertEqual(report["candidateFollowups"][0]["status"],"unavailable")
+
+    def test_stale_or_already_seen_followups_do_not_fetch(self):
+        for stale in (True,False):
+            prior=self.near_ready()
+            if stale:
+                prior["scanDate"]="2026-11-01"
+            def fetch(field,term,offset,limit):
+                self.assertEqual(field,"tag")
+                return [] if stale else [station(ID_A)]
+            report=discover(fetch=fetch,tags=["metal"],names=[],day=self.day,page_size=2,
+                            max_pages=1,known_ids=set(),prior_decisions=prior)
+            self.assertEqual(report["candidateFollowups"],[])
+
     def test_bad_api_host_not_followed(self):
         with self.assertRaises(RuntimeError):
             fetch_page(["attacker.example"], "tag", "metal", 0, 2)

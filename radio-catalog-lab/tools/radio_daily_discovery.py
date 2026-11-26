@@ -411,9 +411,39 @@ def page_offsets(day: dt.date, page_size: int, max_pages: int) -> list[int]:
                   for i in range(max_pages - 1)]
 
 
+MAX_FOLLOWUP = 4
+
+def followup_candidates(report, day):
+    """Revisit only recent, almost-qualified candidates; never trust old URLs."""
+    if report is None:
+        return []
+    if (report.get("schemaVersion")!=1 or report.get("policyVersion")!=2
+            or report.get("publicationAllowed") is not False or report.get("approvedCount")!=0
+            or not isinstance(report.get("records"),list) or len(report["records"])>20000):
+        raise ValueError("invalid prior decision report")
+    age=(day-dt.date.fromisoformat(report["scanDate"])).days
+    if age<0:
+        raise ValueError("future decision report")
+    if age>7:
+        return []
+    result={}
+    for row in report["records"]:
+        if (row.get("decision")!="advanced_candidate"
+                or row.get("blockingReasons")!=["repeat_continuity_on_distinct_days"]
+                or row.get("approved") is not False or row.get("publicationAllowed") is not False):
+            continue
+        uid=row.get("stationuuid")
+        name=row.get("name")
+        if (_uuid(uid)!=uid or not isinstance(name,str) or not 1<=len(name)<=240
+                or any(ord(ch)<32 for ch in name) or "://" in name):
+            continue
+        result[uid]=name
+    return sorted(result.items())[:MAX_FOLLOWUP]
+
+
 def discover(*, fetch, tags: list[str], names: list[str],
              day: dt.date, page_size: int, max_pages: int,
-             known_ids: set[str], sleep_seconds: float = 0.0, retry_state=None) -> dict:
+             known_ids: set[str], sleep_seconds: float = 0.0, retry_state=None, prior_decisions=None) -> dict:
     queries = [("tag", x) for x in tags] + [("name", x) for x in names]
     if not queries or len(queries) > 40 or any(not q[1].strip() for q in queries):
         raise ValueError("Discovery query list must be bounded, nonempty and valid")
@@ -489,6 +519,24 @@ def discover(*, fetch, tags: list[str], names: list[str],
         scan_log.append(entry)
     if successful_pages == 0:
         raise DiscoveryQueryUnavailable("Radio Browser unavailable for all discovery pages")
+    # A rotated page can omit an advanced candidate. Query its current
+    # public name separately and retain only the exact returned UUID.
+    followups=[]
+    for uid,name in followup_candidates(prior_decisions,day):
+        if uid in observed or uid in known_ids:
+            continue
+        status="not_found"
+        try:
+            records=fetch("name",name,0,50)
+            if not isinstance(records,list):
+                raise ValueError("invalid followup page")
+            exact=[raw for raw in records if isinstance(raw,dict) and _uuid(raw.get("stationuuid"))==uid]
+            observe(exact)
+            if uid in observed:
+                status="observed"
+        except DiscoveryQueryUnavailable:
+            status="unavailable"
+        followups.append({"stationuuid":uid,"status":status})
     rows = sorted(observed.values(), key=lambda row: row["stationuuid"])
     annotate_duplicate_risks(rows)
     new = [r for r in rows if r["status"] != "already_known"]
@@ -504,6 +552,7 @@ def discover(*, fetch, tags: list[str], names: list[str],
         "unrecognizedCandidateCount": len(new),
         "scanComplete": failed_queries == 0 and all(r["status"]=="complete" for r in retry_log),
         "retryQueries": retry_log,
+        "candidateFollowups": followups,
         "pendingRetryCount": len(pending),
         "retryState": retry_report(pending,day),
         "successfulPageCount": successful_pages,
@@ -523,6 +572,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--previous-report", type=Path,
                         help="Optional last candidate report for emerging genre tags")
     parser.add_argument("--retry-state", type=Path)
+    parser.add_argument("--prior-decisions", type=Path)
     parser.add_argument("--retry-output", type=Path)
     parser.add_argument("--page-size", type=int, default=100)
     parser.add_argument("--max-pages", type=int, default=3)
@@ -542,6 +592,11 @@ def main(argv: list[str] | None = None) -> int:
         if args.retry_state.stat().st_size > 512 * 1024:
             raise ValueError("oversized retry state")
         retry_state = json.loads(args.retry_state.read_text())
+    prior_decisions=None
+    if args.prior_decisions and args.prior_decisions.is_file():
+        if args.prior_decisions.stat().st_size>12*1024*1024:
+            raise ValueError("oversized prior decisions")
+        prior_decisions=json.loads(args.prior_decisions.read_text())
     hosts = resolve_api_mirrors()
     def remote(field: str, term: str, offset: int, limit: int) -> list[dict]:
         return fetch_page(hosts, field, term, offset, limit)
@@ -549,6 +604,7 @@ def main(argv: list[str] | None = None) -> int:
         fetch=remote, tags=selected_tags, names=selected_names,
         day=day, page_size=args.page_size, max_pages=args.max_pages,
         known_ids=known, sleep_seconds=args.crawl_delay, retry_state=retry_state,
+        prior_decisions=prior_decisions,
     )
     state = report.pop("retryState")
     if args.retry_output:
