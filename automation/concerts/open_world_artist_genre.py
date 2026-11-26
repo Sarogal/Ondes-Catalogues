@@ -192,6 +192,69 @@ def _memory(prior):
                 and v.get("publicationAllowed") is False)}
 
 
+# Fresh profiles need not be downloaded three times a day. Failed profiles
+# remain due the next day; neither result is a publication qualification.
+PROFILE_REFRESH_DAYS = 14
+PROFILE_RETRY_DAYS = 1
+
+
+def _source_key(source):
+    return hashlib.sha256(
+        (source["identityKey"] + "|" + source["url"]).encode("utf-8")).hexdigest()[:24]
+
+
+def _attempt_memory(prior, sources, facts, today):
+    active = {_source_key(source) for source in sources}
+    saved = prior.get("profileAttempts") if isinstance(prior, dict) else None
+    attempts = {}
+    if isinstance(saved, dict):
+        for key in active:
+            row = saved.get(key)
+            if not isinstance(row, dict) or row.get("status") not in ("read", "held"):
+                continue
+            try:
+                day = dt.date.fromisoformat(row.get("checkedAt"))
+            except (TypeError, ValueError):
+                continue
+            if day <= today:
+                attempts[key] = {"checkedAt": day.isoformat(), "status": row["status"]}
+    elif saved is None:
+        # Legacy migration: only a previously read exact profile can seed
+        # scheduling. No genre, identity or authority is inferred from this.
+        for key in active:
+            fact = facts.get(key)
+            if not isinstance(fact, dict):
+                continue
+            try:
+                day = dt.date.fromisoformat(fact.get("lastVerifiedAt"))
+            except (TypeError, ValueError):
+                continue
+            if day <= today:
+                attempts[key] = {"checkedAt": day.isoformat(), "status": "read"}
+    return attempts
+
+
+def _due_sources(sources, attempts, today, slot, limit):
+    if not sources:
+        return [], 0
+    offset = ((today.toordinal() * 3 + slot) * limit) % len(sources)
+    rotated = sources[offset:] + sources[:offset]
+    due = []
+    for source in rotated:
+        attempt = attempts.get(_source_key(source))
+        if attempt is None:
+            due.append((-1, source))
+            continue
+        day = dt.date.fromisoformat(attempt["checkedAt"])
+        refresh = PROFILE_REFRESH_DAYS if attempt["status"] == "read" else PROFILE_RETRY_DAYS
+        if (today - day).days >= refresh:
+            due.append((day.toordinal(), source))
+    # Never-visited sources first, then least recently attempted. Rotation
+    # breaks ties without favoring specific artist names or official sites.
+    due.sort(key=lambda row: row[0])
+    return [source for _, source in due[:limit]], len(due)
+
+
 def build(registry, today, *, prior=None, slot=0, limit=18,
           fetch=probe.safe_fetch, musicbrainz=None, wikidata=None):
     if (slot not in (0, 1, 2) or type(limit) is not int
@@ -199,15 +262,13 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
         raise ValueError("Invalid bounded artist research cohort")
     sources, ambiguous = candidate_sources(registry, today, musicbrainz=musicbrainz, wikidata=wikidata)
     facts = _memory(prior)
-    if sources:
-        offset = ((today.toordinal() * 3 + slot) * limit) % len(sources)
-        selection = [sources[(offset + i) % len(sources)]
-                     for i in range(min(limit, len(sources)))]
-    else:
-        selection = []
+    attempts = _attempt_memory(prior, sources, facts, today)
+    selection, due_count = _due_sources(sources, attempts, today, slot, limit)
     counters, cache, refreshed = Counter(), {}, 0
     for source in selection:
         url = source["url"]
+        fact_key = _source_key(source)
+        attempts[fact_key] = {"checkedAt": today.isoformat(), "status": "held"}
         try:
             # safe_fetch independently re-resolves every hostname, pins TLS,
             # validates ALL public DNS IPs, obeys robots and rejects redirects.
@@ -242,8 +303,6 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
                     genres = bio.direct_artist_description(html, source["name"])
                     genre_url = url
                     evidence_kind = "unverified-origin-artist-visible-direct-description"
-            fact_key = hashlib.sha256(
-                (identity_key + "|" + url).encode("utf-8")).hexdigest()[:24]
             previous = facts.get(fact_key, {})
             facts[fact_key] = {
                 "identityKey": identity_key,
@@ -259,6 +318,7 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
                 "eventDateLocationAndLineupProved": False,
                 "publicationAllowed": False,
             }
+            attempts[fact_key]["status"] = "read"
             counters["selfDeclaredProfileRead"] += 1
             refreshed += 1
         except (ValueError, TypeError, KeyError, OSError, TimeoutError,
@@ -273,6 +333,9 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
         "directoryHintSourcesChecked": sum(s["discoveryKind"] == "directory-hint" for s in selection),
         "ambiguousArtistSourcesHeld": ambiguous,
         "sourcesChecked": len(selection),
+        "dueArtistSources": due_count,
+        "profileSourcesInCooldown": len(sources) - due_count,
+        "profileAttempts": dict(sorted(attempts.items())),
         "profilesRefreshed": refreshed,
         "memoryFactCount": len(facts),
         "reasonCounts": dict(sorted(counters.items())),
