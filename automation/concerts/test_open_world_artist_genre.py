@@ -120,6 +120,8 @@ class OpenWorldArtistGenreTests(unittest.TestCase):
             "<title>Other Act</title><p>New Act is a death metal band.</p>",
             "<title>New Act</title><footer><p>New Act is a death metal band.</p></footer>",
             "<title>New Act</title><p>New Act is a hardcore techno group.</p>",
+            "<title>New Act</title><p>New Act is a metal band tribute act.</p>",
+            "<title>New Act</title><p>New Act est un groupe de metal symphonique électronique.</p>",
             PROFILE.replace('"Death Metal"', '"Jazz"') +
                 "<title>New Act</title><p>New Act is a death metal band.</p>",
         ):
