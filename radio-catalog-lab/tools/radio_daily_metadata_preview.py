@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from radio_daily_continuity_preview import observe_url
+from radio_daily_alternative_metadata import observe_alternative
 from radio_daily_qualification_dossiers import index, safe_digest
 from radio_stream_recheck_ledger import parse_day, SHA256_RE
 from radio_stream_technical_probe import validate_endpoint
@@ -14,13 +15,17 @@ from radio_stream_technical_probe import validate_endpoint
 MAX_STATIONS = 6
 MAX_INPUT = 12 * 1024 * 1024
 MAX_HINTS = 90
+ALTERNATIVE_METHODS = {"icecast_json", "shoutcast_json", "station_jsonld"}
 
 def valid_hint(h):
     return (isinstance(h,dict) and isinstance(h.get("artistHint"),str)
             and 2 <= len(h["artistHint"]) <= 100
             and not any(ord(c)<32 for c in h["artistHint"])
             and not re.search(r"https?://|www\.|@|[?=]",h["artistHint"],re.I)
-            and isinstance(h.get("titleSha256"),str) and SHA256_RE.fullmatch(h["titleSha256"]))
+            and isinstance(h.get("titleSha256"),str) and SHA256_RE.fullmatch(h["titleSha256"])
+            and (("method" not in h and "sourceSha256" not in h) or
+                 (h.get("method") in ALTERNATIVE_METHODS and isinstance(h.get("sourceSha256"),str)
+                  and SHA256_RE.fullmatch(h["sourceSha256"]))))
 
 def select_queue(queue, retained, limit):
     """Reserve capacity for advanced, old and new streams; no UUID starvation."""
@@ -45,7 +50,9 @@ def select_queue(queue, retained, limit):
                 used.add(item[2])
     return selected
 
-def collect(discovery, reconciliation, continuity, decisions, *, previous=None, limit=0, observe=None, transient_titles=None):
+def collect(discovery, reconciliation, continuity, decisions, *, previous=None, limit=0, observe=None, transient_titles=None, alternative=None):
+    if observe is None and alternative is None:
+        alternative=observe_alternative
     if observe is None:
         observe=lambda url: observe_url(url, metadata=True, include_title=transient_titles is not None)
     day=parse_day(discovery["scanDate"])
@@ -106,16 +113,25 @@ def collect(discovery, reconciliation, continuity, decisions, *, previous=None, 
             evidence=observe(url)
         except Exception:
             evidence={"verdict":"metadata_connection_review","titleHints":[]}
+        if alternative is not None and not any(valid_hint(h) for h in evidence.get("titleHints",[])):
+            try:
+                fallback=[h for h in alternative(url,current[uid]) if valid_hint(h) and h.get("method") in ALTERNATIVE_METHODS]
+            except Exception:
+                fallback=[]
+            if fallback:
+                evidence={"verdict":"alternative_artist_title_hint","titleHints":fallback[:3]}
         prior=retained.get(uid,{})
         hints=[dict(h) for h in prior.get("observations",[]) if prior.get("streamSha256")==sha]
         for h in evidence.get("titleHints",[])[:3]:
             if valid_hint(h):
                 observation={"date":day,"artistHint":h["artistHint"],"titleSha256":h["titleSha256"]}
+                if h.get("method") in ALTERNATIVE_METHODS:
+                    observation.update(method=h["method"],sourceSha256=h["sourceSha256"])
                 if observation not in hints:
                     hints.append(observation)
         hints=sorted(hints,key=lambda x:(x["date"],x["artistHint"],x["titleSha256"]))[-MAX_HINTS:]
         verdict=evidence.get("verdict")
-        if verdict not in {"icy_artist_title_hint","metadata_not_advertised","metadata_interval_out_of_budget",
+        if verdict not in {"icy_artist_title_hint","alternative_artist_title_hint","metadata_not_advertised","metadata_interval_out_of_budget",
                            "metadata_no_parseable_title","metadata_non_live_response","metadata_connection_review",
                            "playlist_requires_separate_validation"}:
             verdict="metadata_connection_review"
