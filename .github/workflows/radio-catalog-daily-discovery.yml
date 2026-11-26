@@ -52,6 +52,8 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_merge_plan.py"
       - "radio-catalog-lab/tools/radio_daily_repair_material.py"
       - "radio-catalog-lab/tools/test_radio_daily_repair_material.py"
+      - "radio-catalog-lab/tools/radio_daily_logo_material.py"
+      - "radio-catalog-lab/tools/test_radio_daily_logo_material.py"
       - "radio-catalog-lab/tools/radio_daily_unified_generator.py"
       - "radio-catalog-lab/tools/test_radio_daily_unified_generator.py"
       - "radio-catalog-lab/tools/radio_daily_v9_generator.py"
@@ -566,7 +568,7 @@ jobs:
             --repair "$root/repair-preview.json" --confirmation "$root/repair-confirmation-preview.json" \
             --repair-report "$root/repair-plan-preview.json" --status-report "$root/status-transition-preview.json" \
             --logo-maintenance "$root/logo-maintenance-preview.json" --missing-logo "$root/missing-logo-preview.json" \
-            --allow-repair-material-network --output-dir "$root/v9-preview"
+            --allow-repair-material-network --allow-logo-material-network --output-dir "$root/v9-preview"
       - name: Prepare safe durable genre hints
         shell: bash
         run: |

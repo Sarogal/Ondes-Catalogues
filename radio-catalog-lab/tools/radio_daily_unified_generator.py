@@ -15,6 +15,7 @@ from radio_daily_status_preview import build as status_build, MAX_CHECKS
 from radio_daily_logo_plan import plan as logo_plan, stage as logo_stage
 from radio_daily_merge_plan import plan as merge_plan, apply as merge_apply, undo as merge_undo
 from radio_daily_repair_material import live_recover
+from radio_daily_logo_material import recover as recover_artwork
 
 
 def stream_urls(station):
@@ -23,7 +24,9 @@ def stream_urls(station):
 
 def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation,
           repair_report, status_report=None, logo_maintenance=None, missing_logo=None, *,
-          urls=None, artwork=None, expected=BASELINE):
+          urls=None, artwork=None, object_output=None, expected=BASELINE):
+    if object_output is not None and object_output:
+        raise ValueError("fresh object output required")
     old = strict_json(raw)
     validate_shape(old)
     if digest(raw) != expected:
@@ -178,6 +181,8 @@ def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation
     check_catalog(output, previous=old)
     payload = encode(output)
     report.update(candidateSequence=output["release_sequence"], candidateSha256=digest(payload))
+    if object_output is not None:
+        object_output.update(objects)
     return payload, report
 
 
@@ -188,6 +193,7 @@ def main():
     for name in names:
         p.add_argument("--" + name, type=Path, required=True)
     p.add_argument("--allow-repair-material-network", action="store_true")
+    p.add_argument("--allow-logo-material-network", action="store_true")
     a = p.parse_args()
     if a.output_dir.exists():
         raise ValueError("fresh output directory required")
@@ -198,11 +204,24 @@ def main():
     urls, held = ({}, [])
     if a.allow_repair_material_network:
         urls, held = live_recover(raw, *evidence[3:7])
-    payload, report = build(raw, *evidence, urls=urls)
+    artwork, artwork_held, objects = {}, [], {}
+    if a.allow_logo_material_network:
+        artwork, artwork_held = recover_artwork(raw,evidence[2]["scanDate"],*evidence[8:10])
+    payload, report = build(raw, *evidence, urls=urls, artwork=artwork, object_output=objects)
+    report["logoMaterialDeferred"] = artwork_held
+    report["logoMaterialRecoveredCount"] = len(artwork)
     report["repairMaterialDeferred"] = held
     report["repairMaterialRecoveredCount"] = len(urls)
     a.output_dir.mkdir(parents=True)
     if payload is not None:
+        if objects:
+            target=a.output_dir / "objects" / "sha256"
+            target.mkdir(parents=True)
+            for name,data in sorted(objects.items()):
+                if digest(data)!=name.split(".")[0]:
+                    raise ValueError("object output digest mismatch")
+                with (target/name).open("xb") as f:
+                    f.write(data)
         (a.output_dir / "unsigned-candidate-v9.json").write_bytes(payload)
     (a.output_dir / "generation-report.json").write_bytes(encode(report))
     print("UNIFIED_UNSIGNED_CATALOG_PREVIEW", encode(report).decode())
