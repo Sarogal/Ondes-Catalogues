@@ -3,11 +3,11 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 79,
-  "dueNameCount": 52,
-  "attemptedCount": 1,
+  "observedNameCount": 85,
+  "dueNameCount": 58,
+  "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "heaven shall burn",
+  "retryAfterKey": "iced earth",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -133,6 +133,15 @@
       "artistName": "Fuzz Kill Radio",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "howard jones": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Howard Jones",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },

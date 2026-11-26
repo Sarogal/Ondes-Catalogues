@@ -3,12 +3,21 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 79,
+  "observedNameCount": 85,
   "dueNameCount": 6,
-  "attemptedCount": 6,
-  "serviceFailure": null,
-  "retryAfterKey": null,
+  "attemptedCount": 2,
+  "serviceFailure": "service_or_response_held",
+  "retryAfterKey": "latter day exploits",
   "entries": {
+    "2000 fm": {
+      "status": "identity_held",
+      "artistName": "2000 FM",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "3 doors down": {
       "status": "ambiguous_or_incomplete",
       "artistName": "3 Doors Down",

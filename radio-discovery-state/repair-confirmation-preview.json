@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "scanDate": "2026-11-26",
+  "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
+  "approvedCount": 0,
+  "publicationAllowed": false,
+  "attemptedCount": 1,
+  "candidateCount": 1,
+  "counts": {
+    "broadcaster_unlinked": 1
+  },
+  "records": [
+    {
+      "goStationId": "go-station-000009",
+      "stationuuid": "ef38194d-10d6-403f-acf7-b5e268037fae",
+      "streamSha256": "e81a17ccfa37a2b166c219b50922934d17ad063550aa561302907c4bfbdb9e3d",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "status": "broadcaster_unlinked",
+          "declaration": null,
+          "pageSha256": null
+        }
+      ],
+      "positiveDates": [],
+      "reviewStatus": "broadcaster_unlinked",
+      "approved": false,
+      "publicationAllowed": false
+    }
+  ]
+}

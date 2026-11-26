@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 61,
-  "distinctArtistHints": 79,
+  "stationsWithArtistHints": 67,
+  "distinctArtistHints": 85,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -1413,6 +1413,114 @@
           "date": "2026-11-26",
           "artistHint": "Blightbeast",
           "titleSha256": "ef3b444826dbb2e89695d9791edf1158e87bbe524e3c80e93c70bc45f7c32911"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "9628a108-0601-11e8-ae97-52543be04c81",
+      "streamSha256": "728d8a9c5da25b798772fe7765b2b6b6b3b8944dd557e34f3115eeb469ba2607",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "2000 FM",
+          "titleSha256": "e8dddbb7f115cd2de287c59bf62c05b482c3a56e56107925547e868fe578a2e6"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "962caa2a-0601-11e8-ae97-52543be04c81",
+      "streamSha256": "3fb5100820dbce72c63887681d35b8d9e63ac9a346d7a990d49cf7c6d3d3cb63",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Latter Day Exploits",
+          "titleSha256": "0b8ac33442bdbed0ed836b8c53d5b0b75c72f958f387a9aca878c339aa29f0ac"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "962e7288-0601-11e8-ae97-52543be04c81",
+      "streamSha256": "62854e8c3394f3d5e47d72673765b2c2b78ea7052acc30f133292aef5c56714d",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "ssshhhiiittt!",
+          "titleSha256": "cef599f6940f412aa7b3bcef4330926d886c45940fe2c46efe3e279b2bcb5494"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "981237b0-253c-4be9-81ce-6fcb86006733",
+      "streamSha256": "c73342d4af203f124e3209b0b1f19dc58d3aa6441959a24a97a50a97b0db7857",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Tears for Fears",
+          "titleSha256": "786649fe89a3e308a5dea81184d5e66ab8892739fdd1beea22e9f8f5d359a0f5"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "98e39928-1801-414c-b6e7-dd7b58614dd6",
+      "streamSha256": "4566531dbd4311deaf0cac5b8c4b1848f5232820ffe9ead59ca6a58b9208aff2",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Saxon",
+          "titleSha256": "e1d2cd1d08470ea5550bc7d6506dfe64c807c3b231e89c7e208d3cf74a564f9c"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "9c634ba6-a5f2-47e5-858b-d4deff8071b8",
+      "streamSha256": "3aa0ad7bdd1da97b23357424f97f458c1ec7df16543dc61b9825a4124e84d481",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "The Rolling Stones",
+          "titleSha256": "548ab0b248bd11f36381755faceff7674a9eb65c7d3cf6cd2e13f82ed525a4e7"
         }
       ],
       "alternativeVersion": 0,
