@@ -353,6 +353,52 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertTrue(out["festivals"][0]["showOnMap"])
         self.assertIn("les-gueules-de-bois-2027", report["accepted"])
 
+    def test_direct_edition_daily_programme_can_gain_commune_marker(self):
+        from grossesondes_first_party_direct_edition import PUBLISHED_CONFIDENCE
+        site = "https://nocturnesauvage.fr/"
+        ticket = site + "tickets/"
+        row = festival("nocturne-sauvage-2026", site,
+                       dates=("2026-12-01", "2026-12-06"))
+        row.update(name="Nocturne Sauvage 2026", city="Toulouse",
+                   department=None, sourceConfidence=PUBLISHED_CONFIDENCE)
+        home = ("<h1>Festival Nocturne Sauvage</h1><p>Festival gothique</p>"
+                "<a href='/tickets/'>Billetterie</a>"
+                "<h2>mardi 1er décembre</h2><p>Expo le 1er décembre 2026</p>"
+                "<h2>mercredi 2 décembre</h2><p>Concerts</p>"
+                "<h2>jeudi 3 décembre</h2><p>Concerts</p>"
+                "<h2>vendredi 4 décembre</h2><p>Concerts</p>"
+                "<h2>samedi 5 décembre</h2><p>Concerts</p>"
+                "<h2>dimanche 6 décembre</h2><p>Cinéma</p>")
+        info = ("<h1>Billetteries – Tickets</h1>"
+                "<p>Du 1er au 6 décembre 2026 - Toulouse</p>"
+                "<footer>Nocturne Sauvage</footer>")
+        admin_calls = []
+        def admin(city, department):
+            admin_calls.append((city, department))
+            return {"city": city, "lat": 43.6, "lon": 1.44,
+                    "codeInsee": "31555",
+                    "geoSource": "https://geo.api.gouv.fr/communes?nom=Toulouse"}
+        original = doc(row)
+        out, report = apply_independently_verified_updates(
+            original, original, "2026-11-26", limit=1, tick=0,
+            fetch=lambda url: {site: home, ticket: info}[url],
+            commune_resolver=admin)
+        self.assertEqual(admin_calls, [("Toulouse", None)])
+        self.assertTrue(out["festivals"][0]["showOnMap"])
+        self.assertEqual(out["festivals"][0]["geoPrecision"], "commune")
+        self.assertIn(row["slug"], report["accepted"])
+        self.assertTrue(_verified_official_update_delta(row, out["festivals"][0]))
+        for bad in (info.replace("1er au 6", "2 au 5"),
+                    info.replace("Toulouse", "Bordeaux"),
+                    info + "<p>Festival annulé</p>"):
+            admin_calls.clear()
+            out, _ = apply_independently_verified_updates(
+                original, original, "2026-11-26", limit=1, tick=0,
+                fetch=lambda url: {site: home, ticket: bad}[url],
+                commune_resolver=admin)
+            self.assertFalse(out["festivals"][0]["showOnMap"])
+            self.assertEqual(admin_calls, [])
+
     def test_year_before_dates_title_and_visible_current_locality_map(self):
         from future_city_preflight import exact_edition_city
         site = "https://festival-exemple.fr/"
