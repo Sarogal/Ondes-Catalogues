@@ -6,6 +6,8 @@
   "duePairCount": 3,
   "attemptedCount": 0,
   "genreLookupAttemptedCount": 0,
+  "dueGenreRetryCount": 0,
+  "genreRetryAttemptedCount": 0,
   "creditGenreEvidenceCount": 0,
   "heldByArtistService": true,
   "serviceFailure": null,

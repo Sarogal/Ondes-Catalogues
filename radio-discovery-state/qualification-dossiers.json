@@ -9117,7 +9117,37 @@
       },
       "editorialSignal": "mixed_genre_review",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "zeno.fm",
+        "homepageSha256": "0071604e8bca7c22fb18ab4b2c3980593a3d7f9c86ec53b166eff77114c0d38f",
+        "identityNameSha256": "5517f65091d83b7c7c2e407ebc2536b769f24a803640932d9176c5fbfe077387",
+        "observedDate": "2026-11-26",
+        "retrieval": "html_observed",
+        "identityNameMatch": false,
+        "signal": "no_format_evidence",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [],
+        "primaryElectronicTerms": [],
+        "pageSha256": "e04eb8486c4734df07510a8de89e6e8a1a2f8ccd18843fdfb58972ff76feb9b6",
+        "finalPageSha256": "0071604e8bca7c22fb18ab4b2c3980593a3d7f9c86ec53b166eff77114c0d38f",
+        "imageHintSha256": [
+          "6be9f5b2bf07c1556bbb3985109ddb54398e102933401ece01bbcff5bc8a2efc",
+          "820e9f4d8157e2929576fe5eaa6fac1f35b59159e21ec04653bdcefdc5fccd2e",
+          "d719c13c493d33f80a92b8f959fdec10db87d078f2163d8cbaf871714fbb6d86",
+          "e489d9714d48ecac52e1f2afcdf7579c185120e68bd363a5dc1eb2a67cfcff5c",
+          "ff93c0992600f9cdb0462deee7fdd6678993498d8446dad0fa0ac3675b10243a"
+        ],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": false,
+        "programmeScopeEvidence": false,
+        "programmeScopeSources": [],
+        "programmeScopeTerms": [],
+        "otherFormatTerms": [
+          "news"
+        ],
+        "declaredStreamLinked": false,
+        "streamSha256": "d4533161a11fed9e2f4e982f99d3d385c7ff3c2f87f8ed161777ea7ed1d96ca8"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -15872,7 +15902,21 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "968c00372141bcc0709a1e790877ad784319584ef1c80d340c9b6bfe6a95123a",
+        "observedDate": "2026-11-26",
+        "verdict": "continuous_frames_unbound",
+        "positiveObservationDates": [],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4000,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": false,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
         "sourceSha256": null,
@@ -16261,7 +16305,21 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "d7c204720669b4d845a2d9184f010776e2d60d305c433bbc84f856be85bbf9c7",
+        "observedDate": "2026-11-26",
+        "verdict": "insufficient_continuity_evidence",
+        "positiveObservationDates": [],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4001,
+        "coherentWindowCount": 0,
+        "distinctWindowCount": 3,
+        "frameCodec": null,
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "missing_source",
         "sourceSha256": null,
@@ -16538,7 +16596,21 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "db62f4cd849d5c3e64a0bcdd6f9b3f4f86cde55a2ed671454e54dc5bb0ad2383",
+        "observedDate": "2026-11-26",
+        "verdict": "continuous_frames_unbound",
+        "positiveObservationDates": [],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4000,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": false,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "missing_source",
         "sourceSha256": null,
@@ -16732,7 +16804,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "aa7c7e38a04f1760f2038349b6f5c378c59e14bc94afff626dc7ed8123efc292",
+        "observedDate": "2026-11-26",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-26"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4009,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "aac_adts",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "same_reported_host",
         "sourceSha256": "18d3a5692f75aa16c2b18ac0382c602eb91e2f8405687cebdf3c4ab597f3f82d",
@@ -17609,7 +17697,23 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "e0e0b5c722113931a32cee518640f4b4a816bf62695ad15a0e25546dd5a3fbd0",
+        "observedDate": "2026-11-26",
+        "verdict": "continuous_icy_frame_indication",
+        "positiveObservationDates": [
+          "2026-11-26"
+        ],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4119,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "mpeg_layer3",
+        "finiteResponse": false,
+        "icyHeaderPresent": true,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
         "sourceSha256": null,
@@ -17836,7 +17940,31 @@
       },
       "editorialSignal": "target_genre_indication",
       "editorialVerified": false,
-      "homepageEvidence": null,
+      "homepageEvidence": {
+        "reportedHost": "zerockradio.com",
+        "homepageSha256": "48266d25fff91abddf578055f02f335526311935f4ccaf362942260dca54a0d3",
+        "identityNameSha256": "4fa5434d31e45e6b50a13072990f431f26368d24fdbd57d7d0758b3850452898",
+        "observedDate": "2026-11-26",
+        "retrieval": "html_observed",
+        "identityNameMatch": false,
+        "signal": "no_format_evidence",
+        "primaryTargetTerms": [],
+        "visibleTargetTerms": [],
+        "primaryElectronicTerms": [],
+        "pageSha256": "f6bc516f5404ff894e887bd0e1aecccca8a4629a08f06c5a6e3450974f80c4fe",
+        "finalPageSha256": "48266d25fff91abddf578055f02f335526311935f4ccaf362942260dca54a0d3",
+        "imageHintSha256": [
+          "e5a7b53c1dee633df432891ca618f6313b9f04891d81a3c2a1d0459f72802c20"
+        ],
+        "analyzerVersion": 4,
+        "structuredProgrammeEvidence": false,
+        "programmeScopeEvidence": false,
+        "programmeScopeSources": [],
+        "programmeScopeTerms": [],
+        "otherFormatTerms": [],
+        "declaredStreamLinked": false,
+        "streamSha256": "a81547bf21b56ece1d95d90f0750019a2988fc21d2104bf10f1278a1b623fcd4"
+      },
       "officialHomepageVerified": false,
       "duplicateRisk": false,
       "streamEvidence": {
@@ -18262,7 +18390,21 @@
       },
       "streamEvidenceMatchesCurrentSource": true,
       "hlsEvidence": null,
-      "continuityEvidence": null,
+      "continuityEvidence": {
+        "streamSha256": "b602c08ee4e9a2ebb2e393188be84a461c2220bd917ca9609a7cc8f76a21d829",
+        "observedDate": "2026-11-26",
+        "verdict": "continuous_frames_unbound",
+        "positiveObservationDates": [],
+        "windowCount": 3,
+        "sampleBytes": 12288,
+        "elapsedMs": 4352,
+        "coherentWindowCount": 3,
+        "distinctWindowCount": 3,
+        "frameCodec": "aac_adts",
+        "finiteResponse": false,
+        "icyHeaderPresent": false,
+        "earlyEnd": false
+      },
       "logoEvidence": {
         "sourceClass": "external_image_host_review",
         "sourceSha256": null,

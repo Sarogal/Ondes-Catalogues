@@ -4,9 +4,9 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 39,
-  "distinctArtistHints": 58,
-  "attemptedHlsCount": 1,
+  "stationsWithArtistHints": 42,
+  "distinctArtistHints": 61,
+  "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
   "stationsWithAlternativeHints": 0,
@@ -188,7 +188,7 @@
       "publicationAllowed": false,
       "verdict": "metadata_no_parseable_title",
       "observations": [],
-      "alternativeVersion": 2,
+      "alternativeVersion": 3,
       "alternativeAttempted": true
     },
     {
@@ -441,6 +441,24 @@
       ]
     },
     {
+      "stationuuid": "2d8f653c-0709-42b0-bc76-71434a8d31b7",
+      "streamSha256": "d1acc08808177d77aa6a3dc02df4f7c699172cf867d4579205efa763b5255f72",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "The Static Teeth",
+          "titleSha256": "0c662e2d788035ee4611e7af8064ad7628656414a56aaec771730468d489ba62"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
       "stationuuid": "2f76081c-dbf0-4b40-bb30-63987abe744e",
       "streamSha256": "1fd1278b4e3b5b760b2afa150d0059c6f3256a2d8f707505f0be8fc0767e0f2c",
       "observedDate": "2026-11-26",
@@ -478,6 +496,42 @@
       ]
     },
     {
+      "stationuuid": "32bac5f0-58bc-445a-8e54-8ce9ba7f48df",
+      "streamSha256": "f23a8e1f4bb89319570b09de588c24405c3ac0b594b2c2e001d9aab7bc8ff706",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Athena",
+          "titleSha256": "2603b122d65e53dd3209293c9f818f2fe253a3f48878199efc4d9d8158ca3640"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "341376c9-ce9e-4377-aaf8-a791d42cf567",
+      "streamSha256": "feff2157c56ec604328d7e33735cc579cd23580fe2a498a415a9e852e9df886c",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Vinnie Moore",
+          "titleSha256": "4ea332dfab0358056de56506b0529fdc3cce66e51557d925b684c40c408af943"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
       "stationuuid": "3446b04f-839f-4367-b119-b85842787b97",
       "streamSha256": "cf9456eb48746077c2743b972d475238f611c9da63a84c430c49892e8ed9f3d8",
       "observedDate": "2026-11-26",
@@ -485,7 +539,9 @@
       "approved": false,
       "publicationAllowed": false,
       "verdict": "metadata_no_parseable_title",
-      "observations": []
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "35080d89-d7b9-4e1e-af80-ae4a50420f67",
@@ -495,7 +551,9 @@
       "approved": false,
       "publicationAllowed": false,
       "verdict": "metadata_no_parseable_title",
-      "observations": []
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "3a40f5fc-8ba3-4177-a145-b1f90dfb06d5",

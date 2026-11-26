@@ -3,9 +3,9 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 58,
-  "dueNameCount": 6,
-  "attemptedCount": 6,
+  "observedNameCount": 61,
+  "dueNameCount": 3,
+  "attemptedCount": 3,
   "serviceFailure": null,
   "retryAfterKey": null,
   "entries": {
@@ -32,6 +32,15 @@
       "artistName": "Aisyk",
       "checkedAt": "2026-11-25",
       "source": "wikidata",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "athena": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Athena",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },
@@ -516,6 +525,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "the static teeth": {
+      "status": "not_found",
+      "artistName": "The Static Teeth",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "the who": {
       "status": "ambiguous_or_incomplete",
       "artistName": "The Who",
@@ -546,6 +564,15 @@
     "vertical67": {
       "status": "not_found",
       "artistName": "VERTICAL67",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "vinnie moore": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Vinnie Moore",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,

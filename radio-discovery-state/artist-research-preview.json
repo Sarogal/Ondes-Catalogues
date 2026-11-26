@@ -3,11 +3,11 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 58,
-  "dueNameCount": 34,
+  "observedNameCount": 61,
+  "dueNameCount": 37,
   "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "aisyk",
+  "retryAfterKey": "athena",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",

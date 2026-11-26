@@ -3,9 +3,9 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "editoriallyApprovedCount": 0,
-  "attemptedPageCount": 8,
-  "linkedPagesFetched": 2,
-  "htmlObservedCount": 110,
+  "attemptedPageCount": 2,
+  "linkedPagesFetched": 1,
+  "htmlObservedCount": 112,
   "identityTargetCount": 18,
   "structuredProgrammeCount": 6,
   "programmeScopeCount": 1,
@@ -1991,6 +1991,42 @@
       "linkedPageEvidence": []
     },
     {
+      "stationuuid": "76200b90-939a-46ad-9b37-069f32ba4366",
+      "homepageSha256": "0071604e8bca7c22fb18ab4b2c3980593a3d7f9c86ec53b166eff77114c0d38f",
+      "identityNameSha256": "5517f65091d83b7c7c2e407ebc2536b769f24a803640932d9176c5fbfe077387",
+      "reportedHost": "zeno.fm",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "d4533161a11fed9e2f4e982f99d3d385c7ff3c2f87f8ed161777ea7ed1d96ca8",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": false,
+      "signal": "no_format_evidence",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [
+        "news"
+      ],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [],
+      "primaryElectronicTerms": [],
+      "pageSha256": "e04eb8486c4734df07510a8de89e6e8a1a2f8ccd18843fdfb58972ff76feb9b6",
+      "finalPageSha256": "0071604e8bca7c22fb18ab4b2c3980593a3d7f9c86ec53b166eff77114c0d38f",
+      "imageHintSha256": [
+        "6be9f5b2bf07c1556bbb3985109ddb54398e102933401ece01bbcff5bc8a2efc",
+        "820e9f4d8157e2929576fe5eaa6fac1f35b59159e21ec04653bdcefdc5fccd2e",
+        "d719c13c493d33f80a92b8f959fdec10db87d078f2163d8cbaf871714fbb6d86",
+        "e489d9714d48ecac52e1f2afcdf7579c185120e68bd363a5dc1eb2a67cfcff5c",
+        "ff93c0992600f9cdb0462deee7fdd6678993498d8446dad0fa0ac3675b10243a"
+      ],
+      "linkedPageEvidence": []
+    },
+    {
       "stationuuid": "77337406-99c4-11e9-a605-52543be04c81",
       "homepageSha256": "299505eab26347b65d9a0c14a37686ee4eee3be13ce6f25e6de00e3c0b22c9db",
       "identityNameSha256": "47a276b530f35c2a6c34e550b98da9376047c9325a8ae3cd4229bfec72acc33f",
@@ -3769,6 +3805,36 @@
       "imageHintSha256": [
         "099e7fee68d817a70a1d0039659a5e0e4eb333af17480f0d965e0e3f34dedf05",
         "3b486ce4699c0b7a68ed53bc3743250c08f1a8863a6a2fc4e5e9f2eb60191f81"
+      ],
+      "linkedPageEvidence": []
+    },
+    {
+      "stationuuid": "e77ab056-eda4-4438-8e0f-6e8522e75343",
+      "homepageSha256": "48266d25fff91abddf578055f02f335526311935f4ccaf362942260dca54a0d3",
+      "identityNameSha256": "4fa5434d31e45e6b50a13072990f431f26368d24fdbd57d7d0758b3850452898",
+      "reportedHost": "zerockradio.com",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "a81547bf21b56ece1d95d90f0750019a2988fc21d2104bf10f1278a1b623fcd4",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": false,
+      "signal": "no_format_evidence",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [],
+      "primaryElectronicTerms": [],
+      "pageSha256": "f6bc516f5404ff894e887bd0e1aecccca8a4629a08f06c5a6e3450974f80c4fe",
+      "finalPageSha256": "48266d25fff91abddf578055f02f335526311935f4ccaf362942260dca54a0d3",
+      "imageHintSha256": [
+        "e5a7b53c1dee633df432891ca618f6313b9f04891d81a3c2a1d0459f72802c20"
       ],
       "linkedPageEvidence": []
     },
