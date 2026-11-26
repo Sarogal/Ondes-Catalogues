@@ -2,8 +2,8 @@ name: Grosses Ondes — moteur Festivals public, état privé protégé
 
 on:
   # React to validated source-engine changes on the trusted main branch.
-  # Publisher workflow_run deliberately ignores this event: this is a private
-  # evidence refresh, never an automatic publication approval.
+  # A trusted successful main-branch refresh wakes the independent Publisher.
+  # It remains private evidence, never automatic publication approval.
   push:
     branches: [main]
     paths:
@@ -17,6 +17,9 @@ on:
       - 'festival-automation/regional_festival_discovery.py'
       - 'festival-automation/national_openagenda_research.py'
       - 'festival-automation/national_openagenda_linked_primary_preflight.py'
+      - 'festival-automation/national_professional_profile_discovery.py'
+      - 'festival-automation/national_professional_official_detail.py'
+      - 'festival-automation/national_professional_publisher_provenance.py'
       - 'scripts/grossesondes_openagenda_linked_edition.py'
       - 'festival-automation/regional_source_diagnostics.py'
       - 'festival-automation/regional_festival_indexes.json'
