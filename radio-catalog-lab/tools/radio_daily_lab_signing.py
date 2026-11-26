@@ -9,7 +9,8 @@ from radio_stream_recheck_ledger import parse_day
 
 
 def validate_candidate(prior_pointer, prior_body, candidate, *, expected_sha,
-                       expected_sequence, expected_candidate_sha, public_key, key_id, day):
+                       expected_sequence, expected_candidate_sha, public_key, key_id, day,
+                       logo_evidence=None):
     """Revalidate exact bytes independently of the staging generator's assertions."""
     day = parse_day(day)
     old = verify_baseline(prior_pointer, prior_body, expected_sha=expected_sha,
@@ -29,8 +30,23 @@ def validate_candidate(prior_pointer, prior_body, candidate, *, expected_sha,
     tombstones = {t["go_station_id"]: t for t in new["tombstones"]}
     if any(tombstones.get(t["go_station_id"]) != t for t in old["tombstones"]):
         raise ValueError("historical redirect changed")
-    # Only the exact authenticated predecessor may confer legacy continuity.
-    issues = validate_catalog(new, mode="publish", previous=old, authenticated_legacy=True)
+    # A legacy row can change only through a dedicated evidence gate.
+    # This gate permits an exact logo-only successor; not a caller-supplied
+    # list of authorized rows or a generic waiver. All other fields survive.
+    reference = old
+    if logo_evidence is not None:
+        from radio_daily_logo_release_validation import expected_logo_release
+        if not isinstance(logo_evidence, dict) or set(logo_evidence) != {
+                "logo_maintenance", "missing_logo", "artwork", "objects"}:
+            raise ValueError("invalid logo evidence contract")
+        rebuilt = expected_logo_release(prior_body, expected_sha=expected_sha,
+            expected_sequence=expected_sequence, day=day, **logo_evidence)
+        if candidate != rebuilt:
+            raise ValueError("unauthorized catalogue delta")
+        reference = strict_json(rebuilt)
+        reference["release_sequence"] = old["release_sequence"]
+        reference["generated_at"] = old["generated_at"]
+    issues = validate_catalog(new, mode="publish", previous=reference, authenticated_legacy=True)
     if issues:
         raise ValueError("publication guard refused: " + "; ".join(issues[:8]))
     if any(stream["state"] == "candidate_verified"
@@ -48,11 +64,12 @@ class EphemeralLabSigner:
         self.key_id = "radio-lab-" + digest(raw)[:24]
 
     def sign_candidate(self, prior_pointer, prior_body, candidate, *, expected_sha,
-                       expected_sequence, expected_candidate_sha, day):
+                       expected_sequence, expected_candidate_sha, day, logo_evidence=None):
         new = validate_candidate(prior_pointer, prior_body, candidate,
                                  expected_sha=expected_sha, expected_sequence=expected_sequence,
                                  expected_candidate_sha=expected_candidate_sha,
-                                 public_key=self.public_key, key_id=self.key_id, day=day)
+                                 public_key=self.public_key, key_id=self.key_id, day=day,
+                                 logo_evidence=logo_evidence)
         pointer = dict(schema_version=1, catalog_id="grosses-ondes-radio",
                        release_sequence=new["release_sequence"], published_at=day+"T00:00:00Z",
                        content_sha256=expected_candidate_sha, content_length=len(candidate),

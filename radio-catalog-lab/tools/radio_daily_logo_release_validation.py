@@ -13,14 +13,14 @@ from radio_daily_publication_simulator import publish
 from radio_daily_v9_generator import digest, encode
 
 
-def validate_logo_release(prior_pointer, prior_body, candidate, *, anchor, day,
+def expected_logo_release(prior_body, *, expected_sha, expected_sequence, day,
                           logo_maintenance, missing_logo, artwork, objects):
-    new = validate_candidate(prior_pointer, prior_body, candidate,
-                             expected_candidate_sha=digest(candidate), day=day,
-                             **anchor)
+    """Rebuild the exact allowed logo-only successor, without invoking signer."""
+    if digest(prior_body) != expected_sha:
+        raise ValueError("artwork baseline mismatch")
     old = strict_json(prior_body)
     proposals, _ = plan(prior_body, day, logo_maintenance, missing_logo,
-                        expected=anchor["expected_sha"])
+                        expected=expected_sha)
     allowed = {p["goStationId"]: p for p in proposals}
     if not artwork or set(artwork) - set(allowed):
         raise ValueError("unqualified artwork material")
@@ -40,12 +40,20 @@ def validate_logo_release(prior_pointer, prior_body, candidate, *, anchor, day,
             ref for ref in row["editorial"]["evidence_refs"]
             if not ref.startswith(SOURCE_PREFIX)
         ] + [source_reference(descriptor, material["sourceUrl"])]
-    expected.update(release_sequence=anchor["expected_sequence"]+1,
+    expected.update(release_sequence=expected_sequence+1,
                     generated_at=day+"T00:00:00Z")
-    if new != expected or candidate != encode(expected):
-        raise ValueError("unauthorized catalogue delta")
     if objects != required:
         raise ValueError("artwork inventory mismatch")
+    return encode(expected)
+
+
+def validate_logo_release(prior_pointer, prior_body, candidate, *, anchor, day,
+                          logo_maintenance, missing_logo, artwork, objects):
+    evidence = dict(logo_maintenance=logo_maintenance, missing_logo=missing_logo,
+                    artwork=artwork, objects=objects)
+    validate_candidate(prior_pointer, prior_body, candidate,
+                       expected_candidate_sha=digest(candidate), day=day,
+                       logo_evidence=evidence, **anchor)
     return digest(candidate)
 
 
@@ -63,4 +71,5 @@ def publish_logo_release(store, signer, prior_pointer, prior_body, candidate, *,
     return publish(store, signer, prior_pointer, prior_body, candidate,
         expected_sha=expected_sha, expected_sequence=expected_sequence,
         expected_candidate_sha=verified, day=day, objects=objects,
-        checkpoint=checkpoint)
+        checkpoint=checkpoint, logo_evidence=dict(logo_maintenance=logo_maintenance,
+            missing_logo=missing_logo, artwork=artwork, objects=objects))
