@@ -66,6 +66,14 @@ def public_summary(report):
         extra += "".join(
             f"- {reason} : {count}\n"
             for reason, count in blockers.items())
+    gps = report.get("gps_research_counts", {})
+    if isinstance(gps, dict):
+        for name in ("checkpoint_missing", "candidate_groups", "examined_groups",
+                     "source_reads", "proposed_count", "fresh_proof_missing_or_changed",
+                     "event_identity_unconfirmed"):
+            count = gps.get(name)
+            if type(count) is int and 0 <= count <= 100000:
+                extra += f"- GPS {name} : {count}\n"
     if counts and counts.get("research_dossiers") == 0:
         extra += "- Aucun dossier national transmis au Publisher pour ce passage.\n"
     return (
@@ -115,14 +123,16 @@ def main():
         candidate,report=merge(effective_reference,current,patch,today)
     # A fresh historical correction is separate from private patch updates.
     # Failure of optional geographic research must not lose valid additions.
+    gps_counts={}
     try:
         corrected,new_ledger,count=prepare_cloud_repairs(
-            reference,candidate,ledger,today,secret)
+            reference,candidate,ledger,today,secret,diagnostics=gps_counts)
     except (OSError, ValueError, TypeError, KeyError, TimeoutError, RecursionError, OverflowError):
         corrected,new_ledger,count=candidate,ledger,0
         report["gps_research_deferred"]=True
     else:
         report["gps_research_deferred"]=False
+    report["gps_research_counts"]=gps_counts
     report["correction"]=count
     if count:
         candidate=corrected
