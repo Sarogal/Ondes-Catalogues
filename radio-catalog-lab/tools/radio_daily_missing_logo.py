@@ -11,6 +11,8 @@ from collections import Counter
 from pathlib import Path
 from urllib.parse import urljoin,urlsplit
 import http.client
+import socket
+import ssl
 
 from radio_daily_v9_generator import BASELINE,encode
 from radio_daily_baseline_verify import strict_json,validate_shape
@@ -24,7 +26,7 @@ from radio_stream_recheck_ledger import parse_day,SHA256_RE
 
 MAX_STATIONS=8
 MAX_IMAGES=2
-ANALYZER_VERSION=5
+ANALYZER_VERSION=6
 MAX_ALTERNATIVES=2
 # Navigation labels only locate pages; they never establish station identity.
 NAVIGATION_LABELS={"listen","listen live","radio stations","our stations","stations","radios",
@@ -213,6 +215,36 @@ def discover_page(station, fetch_page):
     return matches[0]
 
 
+def page_failure_code(exc):
+    """Fixed, non-sensitive codes: never persist or log exception text or URLs."""
+    if isinstance(exc,ssl.SSLError):
+        return "tls_failure"
+    if isinstance(exc,socket.gaierror):
+        return "dns_failure"
+    if isinstance(exc,TimeoutError):
+        return "timeout"
+    if isinstance(exc,http.client.HTTPException):
+        return "http_protocol_failure"
+    if isinstance(exc,OSError):
+        return "network_failure"
+    if isinstance(exc,ValueError):
+        return {"unsafe homepage hop":"redirect_or_endpoint_held",
+                "TLS downgrade":"redirect_or_endpoint_held",
+                "missing redirect":"redirect_or_endpoint_held",
+                "redirect budget":"redirect_or_endpoint_held",
+                "homepage HTTP 403":"http_forbidden",
+                "homepage HTTP 404":"http_not_found",
+                "homepage HTTP 429":"http_rate_limited",
+                "homepage HTTP 5xx":"http_server_failure",
+                "homepage HTTP status":"http_status_held",
+                "not HTML":"non_html",
+                "compressed response not supported":"encoding_held",
+                "empty HTML":"empty_html",
+                "unbound page":"unbound_page",
+                "conflicting station artwork pages":"conflicting_pages"}.get(str(exc),"validation_held")
+    return "invalid_page_result"
+
+
 def confirmation_status(row,dates):
     if row.get("reviewStatus")!="decoded_review":
         return "no_current_image"
@@ -221,7 +253,7 @@ def confirmation_status(row,dates):
     return "stable_typed_logo_review" if len(dates)==2 else "await_distinct_day"
 
 def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch_page=fetch_html,
-          fetch_image=fetch_strict_https,decode=decode_image):
+          fetch_image=fetch_strict_https,decode=decode_image,diagnostics=None):
     day=parse_day(day)
     catalogue_rows(raw,expected)
     doc=strict_json(raw)
@@ -300,10 +332,14 @@ def build(raw,day,*,expected=BASELINE,prior=None,limit=0,fetch_page=fetch_html,
                    logoEvidenceDates=[],confirmationStatus="no_current_image")
         page=homepage_url(s.get("homepage"))
         if not page:
+            if diagnostics is not None:
+                diagnostics[sid]="homepage_policy_held"
             continue
         try:
             final,body,found=discover_page(s,fetch_page)
-        except (OSError,ValueError,http.client.HTTPException,TypeError,AttributeError):
+        except (OSError,ValueError,http.client.HTTPException,TypeError,AttributeError) as exc:
+            if diagnostics is not None:
+                diagnostics[sid]=page_failure_code(exc)
             continue
         if not found:
             row["reviewStatus"]="no_bound_image"
@@ -382,8 +418,11 @@ def main():
         if path.stat().st_size>MAX_BYTES:
             raise ValueError("oversize missing artwork input")
         return path.read_bytes()
+    diagnostics={}
     report=build(read(a.baseline),dt.datetime.now(dt.timezone.utc).date().isoformat(),
-                 expected=a.baseline_sha256,prior=strict_json(read(a.previous)) if a.previous else None,limit=a.limit)
+                 expected=a.baseline_sha256,prior=strict_json(read(a.previous)) if a.previous else None,
+                 limit=a.limit,diagnostics=diagnostics)
+    print("RADIO_MISSING_LOGO_PAGE_FAILURES",dict(sorted(diagnostics.items())))
     payload=encode(report)
     if len(payload)>MAX_BYTES:
         raise ValueError("oversize missing artwork report")

@@ -1,7 +1,9 @@
 import hashlib
+import socket
+import ssl
 import json
 import unittest
-from radio_daily_missing_logo import build, candidates, discover_page, ANALYZER_VERSION
+from radio_daily_missing_logo import build, candidates, discover_page, ANALYZER_VERSION, page_failure_code
 from radio_daily_v9_generator import encode
 from test_radio_daily_repair_plan import fixture,PAGE
 
@@ -28,6 +30,31 @@ def run(body,prior=None,synthetic=False,fetch_image=lambda u,h:(DATA,"image/png"
                  fetch_image=fetch_image,decode=lambda b:("image/png",128,128))
 
 class MissingLogoTests(unittest.TestCase):
+    def test_page_failure_codes_are_fixed_and_redacted(self):
+        for exc,code in ((ssl.SSLError("secret"),"tls_failure"),
+                         (socket.gaierror("private"),"dns_failure"),
+                         (TimeoutError("url"),"timeout"),
+                         (ValueError("homepage HTTP 403"),"http_forbidden"),
+                         (ValueError("homepage HTTP 404"),"http_not_found"),
+                         (ValueError("homepage HTTP 429"),"http_rate_limited"),
+                         (ValueError("homepage HTTP 5xx"),"http_server_failure"),
+                         (ValueError("unsafe homepage hop"),"redirect_or_endpoint_held"),
+                         (ValueError("not HTML"),"non_html"),
+                         (ValueError("https://secret.example.org/?token=abc"),"validation_held")):
+            self.assertEqual(page_failure_code(exc),code)
+
+    def test_page_failure_diagnostics_do_not_change_evidence_schema(self):
+        raw,sha=setup()
+        diagnostics={}
+        def fetch(url):
+            raise ValueError("homepage HTTP 404")
+        r=build(raw,DAY,expected=sha,limit=1,fetch_page=fetch,diagnostics=diagnostics)
+        self.assertEqual(r["counts"],{"page_held":1})
+        self.assertEqual(diagnostics,{r["records"][0]["goStationId"]:"http_not_found"})
+        retained=build(raw,DAY,expected=sha,prior=r)
+        self.assertEqual(r["records"],retained["records"])
+        self.assertNotIn("http_not_found",json.dumps(r))
+
     def test_typed_station_cdn_digest_only(self):
         r=run(typed())
         self.assertEqual(r["counts"],{"decoded_review":1})

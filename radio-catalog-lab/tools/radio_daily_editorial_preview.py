@@ -89,7 +89,12 @@ def fetch_html(url):
                     raise ValueError("TLS downgrade")
                 url = target_url
                 continue
-            if response.status != 200 or (response.getheader("Content-Type") or "").split(";")[0].strip().lower() not in ("text/html", "application/xhtml+xml"):
+            if response.status != 200:
+                # Fixed HTTP categories allow downstream diagnostics without raw URLs.
+                code=(str(response.status) if response.status in (403,404,429)
+                      else "5xx" if 500<=response.status<=599 else "status")
+                raise ValueError("homepage HTTP "+code)
+            if (response.getheader("Content-Type") or "").split(";")[0].strip().lower() not in ("text/html", "application/xhtml+xml"):
                 raise ValueError("not HTML")
             if (response.getheader("Content-Encoding") or "identity").lower() != "identity":
                 raise ValueError("compressed response not supported")
