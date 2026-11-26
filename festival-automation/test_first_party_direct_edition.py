@@ -58,6 +58,62 @@ def queue(today):
 
 
 class FirstPartyDirectTests(TestCase):
+    def test_daily_programme_matches_full_period_on_official_ticket_page(self):
+        site = "https://nocturnesauvage.fr/"
+        title = "Nocturne Sauvage 2026"
+        today = "2026-11-26"
+        ticket = site + "tickets/"
+        home = ("<h1>Festival Nocturne Sauvage</h1><p>Festival gothique</p>"
+                "<a href='/tickets/'>Billetterie</a>"
+                "<h2>† mardi 1er décembre †</h2><p>Expo le 1er décembre 2026</p>"
+                "<h2>mercredi 2 décembre</h2><p>Concerts</p>"
+                "<h2>jeudi 3 décembre</h2><p>Concerts</p>"
+                "<h2>vendredi 4 décembre</h2><p>Concerts</p>"
+                "<h2>samedi 5 décembre</h2><p>Concerts</p>"
+                "<h2>dimanche 6 décembre</h2><p>Cinéma, billetterie hors festival</p>")
+        info = ("<h1>Billetteries – Tickets</h1><p>Du 1er au 6 décembre 2026</p>"
+                "<footer>Nocturne Sauvage</footer>")
+        calls = []
+        def fetch(url):
+            calls.append(url)
+            return {site: home, ticket: info}[url]
+        dates = ("2026-12-01", "2026-12-06")
+        self.assertEqual(verify_first_party_edition(site, title, today, fetch=fetch), dates)
+        self.assertIn(ticket, calls)
+        with_city = info.replace("6 décembre 2026", "6 décembre 2026 à Toulouse")
+        self.assertEqual(verify_first_party_claims(
+            site, title, today, fetch=lambda url: home if url == site else with_city),
+            (dates, "Toulouse"))
+        self.assertEqual(official_city_on_current_date(
+            "<p>Du 1er au 6 décembre 2026 à Saint-Étienne.</p>", title, dates),
+            "Saint-Étienne")
+        for separator in (" - ", " – ", " — "):
+            ticket_city = info.replace("6 décembre 2026", "6 décembre 2026" + separator + "Toulouse")
+            self.assertEqual(verify_first_party_claims(
+                site, title, today, fetch=lambda url: home if url == site else ticket_city),
+                (dates, "Toulouse"))
+        self.assertIsNone(official_city_on_current_date(
+            "<p>Du 1er au 6 décembre 2026 - Toulouse et ses alentours</p>", title, dates))
+        self.assertIsNone(official_city_on_current_date(
+            "<p>Du 2 au 5 décembre 2026 - Toulouse</p>", title, dates))
+        for invalid in (
+            info.replace("1er au 6", "2 au 5"),
+            info.replace("Du 1er", "Pass du 1er"),
+            info.replace("2026", "2027"),
+            info + "<p>Festival annulé</p>",
+            info.replace("Nocturne Sauvage", "Autre événement"),
+        ):
+            self.assertIsNone(verify_first_party_edition(
+                site, title, today, fetch=lambda url: home if url == site else invalid))
+        for invalid_home in (
+            home.replace("jeudi 3 décembre", "mercredi 3 décembre"),
+            home.replace("<h2>jeudi 3 décembre</h2>", ""),
+            home.replace("href='/tickets/'", "href='https://other.fr/tickets/'"),
+            home.replace("Expo le 1er décembre 2026", "Expo sans date"),
+        ):
+            self.assertIsNone(verify_first_party_edition(
+                site, title, today, fetch=lambda url: invalid_home if url == site else info))
+
     def test_branded_unknown_site_with_official_dates_is_sufficient(self):
         self.assertTrue(branded_official_site(SITE, TITLE, HOME))
         self.assertEqual(verify_first_party_edition(

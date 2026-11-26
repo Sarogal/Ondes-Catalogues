@@ -20,10 +20,14 @@ from grossesondes_generic_directory_edition import (
     verify_official_site_pages,
 )
 from grossesondes_venue_reciprocal_edition import (
-    safe_root, visible_content, first_party_hero_hint,
+    safe_root, visible_content, first_party_hero_hint, safe_link, anchor_rows,
     STYLE_WITHOUT_BRAND, BLOCKED_FAMILIES,
 )
-from grossesondes_official_html_edition import VisibleParagraphs, explicit_ranges
+from grossesondes_official_html_edition import (
+    VisibleParagraphs, explicit_ranges, _FestivalContent, fold, MONTHS, MONTH_WORD, CANCEL,
+)
+from grossesondes_structured_edition import no_same_edition_jsonld_contradiction
+from festival_event_kind import touring_concert_stop
 from grossesondes_institutional_edition import slug_for
 from grossesondes_structured_edition import ROW_KEYS, PRIVATE_KEYS
 from source_qualification import normalized, classify
@@ -50,6 +54,11 @@ CITY_AFTER_DATE = re.compile(
     r"(?:\b(?:à|au|in|at)\s+|[·•]\s*)"
     r"([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,55}"
     r"(?:\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,40}){0,2})")
+# A dash is accepted only as the immediate separator and the entire
+# remaining block must be a plausible commune label, not a sentence.
+CITY_DASH_SUFFIX = re.compile(
+    r"\s*[-–—]\s*([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,55}"
+    r"(?:\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,40}){0,2})\s*[.!]?\s*\Z")
 CITY_FORBIDDEN = frozenset(("Festival", "France", "Programmation",
                              "Billetterie", "Musique", "Concert",
                              "Rock", "Metal", "Punk"))
@@ -121,10 +130,15 @@ def official_city_on_current_date(html, title, dates):
         for block in " ".join(parser.parts).split(VisibleParagraphs.SEP):
             if not 0 < len(block) <= 900:
                 continue
+            # Preserve original city spelling and offsets while normalizing
+            # accented months and the French first-day ordinal for parsing.
+            calendar_text = re.sub(r"(?<!\d)1er\b", "1  ", fold(block))
+            if len(calendar_text) != len(block):
+                continue
             printed = [
                 (offset, finish)
                 for offset, finish, a, b
-                in explicit_ranges(block, start.year)
+                in explicit_ranges(calendar_text, start.year)
                 if (a, b) == (start, end)
             ]
             if not printed:
@@ -132,8 +146,12 @@ def official_city_on_current_date(html, title, dates):
             # Only use town names immediately AFTER current official dates,
             # not a previous edition, contact footer, or an unrelated venue.
             for _offset, finish in printed:
-                for matched in CITY_AFTER_DATE.finditer(
-                        block, finish, min(len(block), finish + 85)):
+                matches = list(CITY_AFTER_DATE.finditer(
+                    block, finish, min(len(block), finish + 85)))
+                suffix = CITY_DASH_SUFFIX.fullmatch(block[finish:])
+                if suffix is not None:
+                    matches.append(suffix)
+                for matched in matches:
                     city = matched.group(1).strip()
                     if (len(city) >= 3
                             and city not in CITY_FORBIDDEN
@@ -144,8 +162,105 @@ def official_city_on_current_date(html, title, dates):
         return None
 
 
+# Daily programmes can print the year once, then use weekday/month headings.
+_DAILY = re.compile(
+    r"(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+"
+    r"([0-3]?\d)(?:er)?\s+(" + MONTH_WORD + r")(?:\s+(20[2-4]\d))?")
+_WEEKDAYS = ("lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche")
+
+
+def _daily_programme(html, year):
+    """Return a visible contiguous sequence, not dates inferred from a pass."""
+    parser = _FestivalContent()
+    parser.feed(html)
+    parser.close()
+    days = []
+    for begin, end, _level in sorted(parser.heading_spans):
+        heading = fold(" ".join(parser.parts[begin:end]))
+        heading = " ".join(re.findall(r"[a-z0-9]+", heading))
+        match = _DAILY.fullmatch(heading)
+        if match is None:
+            continue
+        weekday, day, month, printed_year = match.groups()
+        if printed_year and int(printed_year) != year:
+            return True, None
+        try:
+            value = date(year, MONTHS[month], int(day))
+        except ValueError:
+            return True, None
+        if _WEEKDAYS[value.weekday()] != weekday:
+            return True, None
+        if value not in days:
+            days.append(value)
+    if len(days) < 2:
+        return False, None
+    if not 2 <= len(days) <= 8 or any(
+            (right - left).days != 1 for left, right in zip(days, days[1:])):
+        return True, None
+    return True, (days[0], days[-1])
+
+
+def _ordinal_text(text):
+    return re.sub(r"(?<!\d)1\s*er\b", "1", fold(text))
+
+
+def _programme_ticket_dates(site, html, title, year, today, target, fetch):
+    """Independently read one visible, same-origin ticket information page.
+
+    Require its explicit full period to match the entire daily programme.
+    A pass, isolated concert, guessed year or conflicting date cannot qualify.
+    Only the festival's own site is used, no professional platform.
+    """
+    if target is None or target[0] < date.fromisoformat(today):
+        return None
+    full = _ordinal_text(visible_content(html))
+    if CANCEL.search(full) or touring_concert_stop(html, *target):
+        return None
+    home_ranges = {(a, b) for _, _, a, b in explicit_ranges(full, year)}
+    if (not any(target[0] <= a <= b <= target[1] for a, b in home_ranges)
+            or any((a < b and (a, b) != target)
+                   or (b >= date.fromisoformat(today) and
+                       not target[0] <= a <= b <= target[1])
+                   for a, b in home_ranges)
+            or not no_same_edition_jsonld_contradiction(html, title, *target)):
+        return None
+    links = set()
+    for href, label, _ in anchor_rows(html):
+        if re.fullmatch(r"(?:billetteries?|tickets?)(?:\s+tickets?)?", normalized(label)):
+            link = safe_link(href, site, site)
+            if link:
+                links.add(link)
+    if len(links) != 1:
+        return None
+    page = fetch(next(iter(links)))
+    if not isinstance(page, str) or not 0 < len(page) <= MAX_OFFICIAL_HTML:
+        return None
+    visible = _ordinal_text(visible_content(page))
+    brand = normalized(title.rsplit(" ", 1)[0])
+    if (not re.search(r"(?<![a-z0-9])" + re.escape(brand) + r"(?![a-z0-9])",
+                      normalized(visible))
+            or CANCEL.search(visible) or touring_concert_stop(page, *target)
+            or not no_same_edition_jsonld_contradiction(page, title, *target)):
+        return None
+    ranges = {(a, b) for _, _, a, b in explicit_ranges(visible, year)}
+    if (target not in ranges or any((a, b) != target and
+            (a != b or not target[0] <= a <= target[1]) for a, b in ranges)):
+        return None
+    # Explicit "du ... au ..." interval, not an inferred span of sales dates.
+    for match in re.finditer(
+            r"\bdu\s+[0-3]?\d\s+au\s+[0-3]?\d\s+(?:" + MONTH_WORD +
+            r")\s+" + str(year) + r"\b", visible):
+        bounds = {(a, b) for _, _, a, b in explicit_ranges(match.group(), year)}
+        prefix = visible[max(0, match.start()-55):match.start()]
+        if target in bounds and not re.search(
+                r"\b(?:pass|prevente|vente|ouverture|reservation)\b", prefix):
+            dates = tuple(x.isoformat() for x in target)
+            return dates, official_city_on_current_date(page, title, dates)
+    return None
+
+
 def verify_first_party_claims(site, title, today, fetch=fetch_public_html):
-    """Read official current-edition dates and optional city in ONE download."""
+    """Read current dates and optional city from bounded official pages."""
     if safe_root(site) is None:
         return None
     try:
@@ -153,10 +268,17 @@ def verify_first_party_claims(site, title, today, fetch=fetch_public_html):
         if not branded_official_site(site, title, html):
             return None
         year = int(title.rsplit(" ", 1)[-1])
+        ticket_city = None
         dates = verify_official_site_pages(
             site, html, title, year, today, fetch=fetch)
         if dates is None:
-            dates = first_party_hero_hint(html, title, today)
+            daily, target = _daily_programme(html, year)
+            if daily:
+                programme = _programme_ticket_dates(site, html, title, year, today, target, fetch)
+                if programme is not None:
+                    dates, ticket_city = programme
+            else:
+                dates = first_party_hero_hint(html, title, today)
         if dates is None:
             return None
         start, end = (date.fromisoformat(x) for x in dates)
@@ -164,7 +286,9 @@ def verify_first_party_claims(site, title, today, fetch=fetch_public_html):
                 or end.year != year or start > end
                 or (end - start).days > 7):
             return None
-        return tuple(dates), official_city_on_current_date(html, title, dates)
+        home_city = official_city_on_current_date(html, title, dates)
+        city = None if home_city and ticket_city and normalized(home_city) != normalized(ticket_city) else (home_city or ticket_city)
+        return tuple(dates), city
     except (OSError, ValueError, TypeError, UnicodeError, KeyError):
         return None
 

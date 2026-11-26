@@ -50,7 +50,8 @@ MAX_VENUE_INDEXES = 3   # root + two visible agenda links
 MAX_EVENT_PAGES = 3     # at most 3 venue details; NO edition dates needed
 STYLE_WITHOUT_BRAND = re.compile(
     r"\b(?:metal|rock|punk|metalcore|deathcore|grindcore|"
-    r"stoner|doom|sludge|thrash)\b")
+    r"stoner|doom|sludge|thrash|deathrock|goth(?:ique|ic)?|"
+    r"cold[ -]?wave|dark[ -]?wave|post[ -]?punk)\b")
 
 MAX_ANCHORS = 500
 
