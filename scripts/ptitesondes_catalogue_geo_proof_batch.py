@@ -134,6 +134,44 @@ def fetch_commune(group):
     return json.loads(raw)
 
 
+def fetch_administrative_unit(code):
+    """Read the official parent relationship for one exact INSEE identifier."""
+    if not isinstance(code, str) or not INSEE_CODE.fullmatch(code):
+        raise ValueError("invalid_administrative_unit")
+    url = COMMUNE_API + "/" + code + "?" + urlencode({
+        "fields": "nom,code,codeDepartement,codeParent"})
+    req = Request(url, headers={"Accept": "application/json",
+                               "User-Agent": "PtitesOndesAdministrativeGeo/1.0"})
+    with build_opener(NoRedirect()).open(req, timeout=15) as response:
+        if response.status != 200 or response.geturl() != url:
+            raise ValueError("invalid_administrative_unit_response")
+        raw = response.read(MAX_COMMUNE_BYTES + 1)
+    if not raw or len(raw) > MAX_COMMUNE_BYTES:
+        raise ValueError("oversized_administrative_unit_response")
+    return json.loads(raw)
+
+
+def administrative_unit_matches(group, municipality_code, unit_code, unit_get):
+    """Exact code, or independently documented direct child of the commune.
+
+    Never infer parenthood by common prefixes, postal codes or a city list.
+    """
+    dep = _department_code(group)
+    if (dep is None or not isinstance(municipality_code, str)
+            or not isinstance(unit_code, str)
+            or not INSEE_CODE.fullmatch(municipality_code)
+            or not INSEE_CODE.fullmatch(unit_code)
+            or not municipality_code.startswith(dep) or not unit_code.startswith(dep)):
+        return False
+    if municipality_code == unit_code:
+        return True
+    unit = unit_get(unit_code)
+    return (isinstance(unit, dict) and unit.get("code") == unit_code
+            and unit.get("codeDepartement") == dep
+            and unit.get("codeParent") == municipality_code
+            and isinstance(unit.get("nom"), str) and bool(unit["nom"].strip()))
+
+
 def administrative_commune_code(group, response):
     """Match exact name and department; ambiguous or incomplete results fail."""
     dep = _department_code(group)
