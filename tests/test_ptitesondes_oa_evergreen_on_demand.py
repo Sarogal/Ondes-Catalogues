@@ -9,7 +9,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "tests"))
 
-from ptitesondes_oa_evergreen_on_demand import ambiguous_on_demand_studio_series
+from ptitesondes_oa_evergreen_on_demand import (ambiguous_on_demand_studio_series,
+                                               ambiguous_itinerant_availability)
 from ptitesondes_oa_first_party_admission import admit_live_openagenda
 from test_ptitesondes_open_world_release_rehearsal import (
     TODAY, DAY, AGENDA, lead, oa_event,
@@ -83,3 +84,50 @@ class EvergreenCommercialStudioTests(unittest.TestCase):
                 self.assertFalse(ambiguous_on_demand_studio_series(clone, days))
         self.assertFalse(ambiguous_on_demand_studio_series(
             record, dict(list(days.items())[:13])))
+
+
+class ItinerantAvailabilityTests(unittest.TestCase):
+    def record(self):
+        record = deepcopy(oa_event())
+        record["title"] = {"fr": "Contes musicaux pour bébés"}
+        record["description"] = {"fr": "Spectacle jeune public pour les tout-petits."}
+        record["conditions"] = {"fr": "Dispositif itinérant accueilli dans différentes structures. Renseignements auprès du musée."}
+        record["timings"] = [{"begin": DAY.isoformat() + "T08:00:00+01:00",
+                              "end": DAY.isoformat() + "T19:00:00+01:00"}]
+        return record
+
+    def test_touring_youth_offer_held_not_reclassified(self):
+        record = self.record()
+        self.assertTrue(ambiguous_itinerant_availability(record, DAY))
+        item = dict(lead(), title=record["title"]["fr"],
+                    explicit_source_session_intervals=record["timings"])
+        candidate, reason = admit_live_openagenda(
+            item, DAY.isoformat(), AGENDA, record, base(), base(), TODAY)
+        self.assertIsNone(candidate)
+        self.assertEqual(reason, "oa_direct_itinerant_availability_review")
+
+    def test_long_festival_or_tour_with_real_short_show_not_vetoed(self):
+        record = self.record()
+        for description, conditions in (
+            ("Festival de musique pour les enfants toute la journée.", "Entrée libre"),
+            ("Spectacle itinérant pour les enfants.", "Réservation conseillée"),
+            ("Spectacle pour enfants.", "Accueilli dans différentes structures"),
+        ):
+            clone = dict(record, description={"fr": description}, conditions={"fr": conditions})
+            self.assertFalse(ambiguous_itinerant_availability(clone, DAY))
+        record["timings"] = long_days(50)
+        self.assertFalse(ambiguous_itinerant_availability(record, DAY))
+        item = dict(lead(), title=record["title"]["fr"],
+                    explicit_source_session_intervals=record["timings"])
+        result, reason = admit_live_openagenda(
+            item, DAY.isoformat(), AGENDA, record, base(), base(), TODAY)
+        self.assertIsNotNone(result)
+        self.assertEqual(reason, "oa_direct_live_source_accepted")
+
+    def test_moving_monument_opening_hours_and_separate_day(self):
+        record = self.record()
+        record["description"] = {"fr": "Dispositif itinérant dans les monuments historiques. Horaires d'ouverture du monument."}
+        record["timings"] += [{"begin": (DAY + timedelta(days=1)).isoformat() + "T10:00:00+01:00",
+                               "end": (DAY + timedelta(days=1)).isoformat() + "T11:00:00+01:00"}]
+        self.assertTrue(ambiguous_itinerant_availability(record, DAY))
+        self.assertFalse(ambiguous_itinerant_availability(record, DAY + timedelta(days=1)))
