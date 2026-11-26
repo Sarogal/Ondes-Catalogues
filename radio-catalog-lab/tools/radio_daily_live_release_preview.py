@@ -1,4 +1,4 @@
-"""Recompute strict admission/repair evidence from live collectors; artifact only."""
+"""Recompute strict admission/repair/artwork evidence from live collectors; artifact only."""
 import argparse
 from pathlib import Path
 
@@ -11,9 +11,10 @@ from radio_daily_admission_release_validation import DIRECTORY_LIMIT
 from radio_daily_admission_release_validation import qualify_admission, validate_admission_release
 from radio_daily_repair_release_validation import qualify_repair, validate_repair_release
 from radio_daily_live_evidence import LiveEvidence, EvidenceDeferred
+from radio_daily_live_logo_preview import preview_logo
 
 
-def run(pointer, raw, *, anchor, day, discovery, dossiers, maintenance, repair, confirmation):
+def run(pointer, raw, *, anchor, day, discovery, dossiers, maintenance, repair, confirmation, logo_maintenance, missing_logo):
     verify_baseline(pointer, raw, **anchor)
     sha = anchor["expected_sha"]
     if any(r.get("scanDate") != day for r in (discovery, dossiers, maintenance, repair, confirmation)):
@@ -45,6 +46,8 @@ def run(pointer, raw, *, anchor, day, discovery, dossiers, maintenance, repair, 
                 result["outcome"] = "strict_gate_held"
             result["networkCalls"] = live.calls
         results[kind] = result
+    results["logo"] = preview_logo(pointer, raw, anchor=anchor, day=day,
+        logo_maintenance=logo_maintenance, missing_logo=missing_logo)
     return dict(schemaVersion=1, scanDate=day, catalogBaselineSha256=sha,
                 publicationAllowed=False, signed=False, operations=results)
 
@@ -64,7 +67,9 @@ def main():
                     public_key=PUBLIC_KEY, key_id=KEY_ID), day=discovery["scanDate"],
         discovery=discovery, dossiers=read("qualification-dossiers.json"),
         maintenance=read("maintenance-preview.json"), repair=read("repair-preview.json"),
-        confirmation=read("repair-confirmation-preview.json"))
+        confirmation=read("repair-confirmation-preview.json"),
+        logo_maintenance=read("logo-maintenance-preview.json"),
+        missing_logo=read("missing-logo-preview.json"))
     with (args.root / "strict-live-release-preview.json").open("xb") as target:
         target.write(encode(report))
     print("STRICT_LIVE_RELEASE_PREVIEW", encode(report).decode())

@@ -13,6 +13,7 @@ from radio_daily_editorial_preview import fetch_html
 from radio_stream_technical_probe import PinnedHttpTransport, probe_url
 from radio_daily_continuity_preview import observe_url
 from radio_daily_hls_preview import observe as observe_hls
+from radio_catalog_logo_pilot_probe import fetch_strict_https
 
 MAX_CALLS = 24
 MAX_SECONDS = 180
@@ -68,6 +69,9 @@ class LiveEvidence:
 
     def fetch(self, url):
         return self._invoke("html", url, fetch_html)
+
+    def image(self, url, host):
+        return self._invoke("image", (url, host), lambda pair: fetch_strict_https(*pair))
 
     def probe(self, url):
         return self._invoke("probe", url,

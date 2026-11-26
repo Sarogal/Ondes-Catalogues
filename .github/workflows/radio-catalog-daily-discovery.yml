@@ -67,6 +67,8 @@ on:
       - "radio-catalog-lab/tools/radio_daily_live_evidence.py"
       - "radio-catalog-lab/tools/test_radio_daily_live_evidence.py"
       - "radio-catalog-lab/tools/radio_daily_live_release_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_live_logo_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_live_logo_preview.py"
       - "radio-catalog-lab/tools/radio_daily_admission_release_validation.py"
       - "radio-catalog-lab/tools/test_radio_daily_admission_release_validation.py"
       - "radio-catalog-lab/tools/radio_daily_v9_generator.py"
@@ -628,7 +630,7 @@ jobs:
             --repair-report "$root/repair-plan-preview.json" --status-report "$root/status-transition-preview.json" \
             --logo-maintenance "$root/logo-maintenance-preview.json" --missing-logo "$root/missing-logo-preview.json" \
             --allow-repair-material-network --allow-logo-material-network --output-dir "$root/v9-preview"
-      - name: Recompute strict admission and repair with live evidence (artifact only)
+      - name: Recompute strict admission, repair and artwork with live evidence (artifact only)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
         shell: bash
         run: |
