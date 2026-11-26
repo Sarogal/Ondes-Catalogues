@@ -16,7 +16,7 @@ from radio_daily_live_maintenance_release_preview import preview_status, preview
 from radio_daily_live_combined_preview import combine_and_rehearse
 
 
-def run(pointer, raw, *, anchor, day, discovery, dossiers, maintenance, repair, confirmation, logo_maintenance, missing_logo, status):
+def run(pointer, raw, *, anchor, day, discovery, dossiers, maintenance, repair, confirmation, logo_maintenance, missing_logo, status, cache_dirs=None):
     verify_baseline(pointer, raw, **anchor)
     sha = anchor["expected_sha"]
     if any(r.get("scanDate") != day for r in (discovery, dossiers, maintenance, repair, confirmation)):
@@ -64,7 +64,7 @@ def run(pointer, raw, *, anchor, day, discovery, dossiers, maintenance, repair, 
             results[kind] = dict(outcome="strict_gate_held", candidateSha256=None)
     return dict(schemaVersion=1, scanDate=day, catalogBaselineSha256=sha,
                 publicationAllowed=False, signed=False, operations=results,
-                combined=combine_and_rehearse(pointer, raw, anchor=anchor, day=day, operations=operations,
+                combined=combine_and_rehearse(pointer, raw, anchor=anchor, day=day, operations=operations, cache_dirs=cache_dirs,
                     state=dict(maintenance=maintenance, logo=logo_maintenance, missing=missing_logo,
                                status=status, repair=repair, confirmation=confirmation)))
 
@@ -73,6 +73,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("pointer", "baseline", "root"):
         parser.add_argument("--"+name, type=Path, required=True)
+    parser.add_argument("--cache-dir", type=Path, action="append")
     parser.add_argument("--baseline-sha256", required=True)
     parser.add_argument("--baseline-sequence", type=int, required=True)
     args = parser.parse_args()
@@ -86,7 +87,8 @@ def main():
         maintenance=read("maintenance-preview.json"), repair=read("repair-preview.json"),
         confirmation=read("repair-confirmation-preview.json"),
         logo_maintenance=read("logo-maintenance-preview.json"),
-        missing_logo=read("missing-logo-preview.json"), status=read("status-transition-preview.json"))
+        missing_logo=read("missing-logo-preview.json"), status=read("status-transition-preview.json"),
+        cache_dirs=args.cache_dir)
     with (args.root / "strict-live-release-preview.json").open("xb") as target:
         target.write(encode(report))
     print("STRICT_LIVE_RELEASE_PREVIEW", encode(report).decode())

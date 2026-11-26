@@ -72,6 +72,8 @@ on:
       - "radio-catalog-lab/tools/radio_daily_lab_cycle.py"
       - "radio-catalog-lab/tools/test_radio_daily_lab_multiversion.py"
       - "radio-catalog-lab/tools/radio_daily_live_inherited_artwork.py"
+      - "radio-catalog-lab/tools/radio_daily_inherited_artwork_cache.py"
+      - "radio-catalog-lab/tools/test_radio_daily_inherited_artwork_cache.py"
       - "radio-catalog-lab/tools/test_radio_daily_live_inherited_artwork.py"
       - "radio-catalog-lab/tools/test_radio_daily_live_combined_preview.py"
       - "radio-catalog-lab/tools/radio_daily_live_logo_preview.py"
@@ -639,6 +641,20 @@ jobs:
             --repair-report "$root/repair-plan-preview.json" --status-report "$root/status-transition-preview.json" \
             --logo-maintenance "$root/logo-maintenance-preview.json" --missing-logo "$root/missing-logo-preview.json" \
             --allow-repair-material-network --allow-logo-material-network --output-dir "$root/v9-preview"
+      - name: Stage bounded verified inherited artwork cache (no catalogue writes)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          python radio-catalog-lab/tools/radio_daily_inherited_artwork_cache.py \
+            --pointer "$RUNNER_TEMP/go-radio-selected-pointer.json" \
+            --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" \
+            --baseline-sha256 "$BASELINE_SHA256" --baseline-sequence "$BASELINE_SEQUENCE" \
+            --day "$(date -u +%F)" \
+            --previous go-radio-state-checkout/radio-discovery-state/artwork-cache/sha256 \
+            --output "$root/inherited-artwork-cache" --report "$root/inherited-artwork-cache.json"
+          cp "$RUNNER_TEMP/go-radio-selected-baseline.json" "$root/inherited-artwork-baseline.json"
       - name: Recompute strict release previews with live evidence (artifact only)
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
         shell: bash
@@ -648,7 +664,9 @@ jobs:
             --pointer "$RUNNER_TEMP/go-radio-selected-pointer.json" \
             --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" \
             --baseline-sha256 "$BASELINE_SHA256" --baseline-sequence "$BASELINE_SEQUENCE" \
-            --root "$RUNNER_TEMP/go-radio-discovery"
+            --root "$RUNNER_TEMP/go-radio-discovery" \
+            --cache-dir go-radio-state-checkout/radio-discovery-state/artwork-cache/sha256 \
+            --cache-dir "$RUNNER_TEMP/go-radio-discovery/inherited-artwork-cache"
       - name: Prepare safe durable genre hints
         shell: bash
         run: |
@@ -791,6 +809,41 @@ jobs:
                   assert data.get("approvedCount") == 0
                   assert all(r.get("approved") is False and r.get("publicationAllowed") is False for r in data["records"])
               (dst / name).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+          # Only exact objects named by the pinned authenticated v8 may be
+          # retained. Never copy an arbitrary artifact subtree into Git.
+          cache_report = src / "inherited-artwork-cache.json"
+          if cache_report.exists():
+              import hashlib, stat
+              baseline = (src / "inherited-artwork-baseline.json").read_bytes()
+              sha = hashlib.sha256(baseline).hexdigest()
+              assert sha == pointer["content_sha256"]
+              doc = json.loads(baseline)
+              report = json.loads(cache_report.read_bytes())
+              assert report["catalogBaselineSha256"] == sha and report["publicationAllowed"] is False
+              allowed = {}
+              ext = {"image/png":"png", "image/jpeg":"jpg", "image/webp":"webp"}
+              for station in doc["stations"]:
+                  logo = station.get("logo")
+                  if logo:
+                      allowed[logo["sha256"]+"."+ext[logo["mime_type"]]] = logo
+              incoming = src / "inherited-artwork-cache"
+              files = list(incoming.iterdir()) if incoming.is_dir() else []
+              assert len(files) == report["recoveredCount"] <= 12
+              cache = dst / "artwork-cache" / "sha256"
+              cache.mkdir(parents=True, exist_ok=True)
+              assert not cache.is_symlink() and not cache.parent.is_symlink()
+              for item in files:
+                  assert item.name in allowed and stat.S_ISREG(item.lstat().st_mode)
+                  logo = allowed[item.name]
+                  assert item.stat().st_size == logo["byte_size"] <= 2*1024*1024
+                  data = item.read_bytes()
+                  assert hashlib.sha256(data).hexdigest() == logo["sha256"]
+                  target = cache / item.name
+                  if target.exists() or target.is_symlink():
+                      assert stat.S_ISREG(target.lstat().st_mode) and target.read_bytes() == data
+                  else:
+                      with target.open("xb") as f:
+                          f.write(data)
           # Persist the public signed reference with the evidence in one Git commit.
           (dst / "release-anchor.json").write_bytes(anchor.read_bytes())
           PY

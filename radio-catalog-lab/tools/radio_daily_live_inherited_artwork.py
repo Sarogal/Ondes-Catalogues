@@ -18,7 +18,7 @@ class ArtworkUnavailable(ValueError):
     """No safe, complete predecessor artwork snapshot."""
 
 
-def recover_inherited(old, new, *, fetch=fetch_strict_https, clock=time.monotonic):
+def recover_inherited(old, new, *, fetch=fetch_strict_https, clock=time.monotonic, cache_dirs=None):
     descriptors = {}
     for doc in (old, new):
         for logo, path in inventory(doc):
@@ -39,7 +39,14 @@ def recover_inherited(old, new, *, fetch=fetch_strict_https, clock=time.monotoni
     def load(item):
         url, (_, logo) = item
         try:
-            data, mime = fetch(url, urlsplit(url).hostname)
+            if cache_dirs is not None:
+                from radio_daily_inherited_artwork_cache import cached
+                data = cached(logo, cache_dirs)
+                if data is None:
+                    raise ArtworkUnavailable("inherited artwork cache incomplete")
+                mime = logo["mime_type"]
+            else:
+                data, mime = fetch(url, urlsplit(url).hostname)
             if mime != logo["mime_type"]:
                 raise ValueError("inherited MIME mismatch")
             check_logo(logo, data)

@@ -20,7 +20,7 @@ def inventory(operations):
     return operations.get("logo", {}).get("evidence", {}).get("objects", {})
 
 
-def combine_and_rehearse(pointer, raw, *, anchor, day, operations, state=None):
+def combine_and_rehearse(pointer, raw, *, anchor, day, operations, state=None, cache_dirs=None):
     old = verify_baseline(pointer, raw, **anchor)
     if set(operations) - set(ORDER):
         raise ValueError("unknown live combined operation")
@@ -79,7 +79,7 @@ def combine_and_rehearse(pointer, raw, *, anchor, day, operations, state=None):
     report.update(outcome="experimental_signature_verified", signed=True,
                   experimentalSignatureVerified=True, experimentalKeyId=signer.key_id)
     try:
-        inherited = recover_inherited(old, strict_json(body))
+        inherited = recover_inherited(old, strict_json(body), cache_dirs=cache_dirs)
     except ArtworkUnavailable:
         report["outcome"] = "inherited_artwork_held"
         return report
