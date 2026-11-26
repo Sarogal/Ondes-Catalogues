@@ -189,8 +189,13 @@ def pass_edition_title(name, year):
     brand = match["brand"].strip()
     if re.search(r"\b20[2-4][0-9]\b", brand):
         return None
-    # "Festival X" is a generic provider label on a ticket product.
-    brand = re.sub(r"^festival\s+", "", brand, flags=re.I).strip()
+    # Providers can place the generic ticket label before or after the
+    # brand. Strip at most ONE edge token, only on explicit pass titles.
+    # A genuine inner "Festival" word remains untouched.
+    if re.match(r"^festival\s+", brand, flags=re.I):
+        brand = re.sub(r"^festival\s+", "", brand, count=1, flags=re.I).strip()
+    else:
+        brand = re.sub(r"\s+festival$", "", brand, count=1, flags=re.I).strip()
     if len(normalized(brand)) < 7 or re.search(
             r"\b(?:pass|tickets?|billetterie|concert|warm[- ]?up)\b",
             normalized(brand)):
