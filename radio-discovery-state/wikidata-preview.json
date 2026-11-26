@@ -3,11 +3,11 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 107,
-  "dueNameCount": 10,
-  "attemptedCount": 1,
-  "serviceFailure": "service_or_response_held",
-  "retryAfterKey": "bad buka",
+  "observedNameCount": 112,
+  "dueNameCount": 15,
+  "attemptedCount": 6,
+  "serviceFailure": null,
+  "retryAfterKey": null,
   "entries": {
     "2000 fm": {
       "status": "identity_held",
@@ -160,6 +160,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "cats in space": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Cats in Space",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "copper hollow": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Copper Hollow",
@@ -189,6 +198,15 @@
     "downtown mystics": {
       "status": "not_found",
       "artistName": "Downtown Mystics",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "dvar": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Dvar",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
@@ -341,9 +359,27 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "jovian year": {
+      "status": "identity_held",
+      "artistName": "Jovian Year",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "joy division": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Joy Division",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "judas priest": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Judas Priest",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,
@@ -417,6 +453,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "lamb of god": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Lamb of God",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "lana del rey": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Lana Del Rey",
@@ -474,6 +519,15 @@
       "sourceUrl": "https://www.wikidata.org/wiki/Q2613632",
       "genreSource": "wikidata-P136",
       "artistName": "Local Natives",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "maluma": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Maluma",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,

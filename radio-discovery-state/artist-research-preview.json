@@ -3,11 +3,11 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 107,
-  "dueNameCount": 76,
-  "attemptedCount": 5,
+  "observedNameCount": 112,
+  "dueNameCount": 77,
+  "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "megadeth",
+  "retryAfterKey": "minor threat",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -324,6 +324,25 @@
       "artistName": "Marc Freak",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "metallica": {
+      "status": "name_hypothesis",
+      "mbid": "65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab",
+      "genres": [
+        "hard rock",
+        "heavy metal",
+        "metal",
+        "rock",
+        "thrash metal"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab",
+      "artistName": "Metallica",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },
