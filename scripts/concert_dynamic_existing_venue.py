@@ -495,6 +495,16 @@ def _visible_prose_bill(section, names):
         if kind != "p" or len(paragraph) > 1000:
             continue
         text = normal(paragraph)
+        # This is an announced lineup, not an arbitrary biography or prose
+        # mentioning artists. The caller has already checked source, date,
+        # exact event heading and venue independently.
+        if (not re.match(r"^(?:au programme\b|on the bill\b|line up\b|"
+                         r"(?:un|une|le|la) (?:concert|soiree|session)\b"
+                         r".{0,120}\bavec\b|(?:a|the) (?:concert|show)\b"
+                         r".{0,120}\b(?:with|featuring)\b)", text)
+                or triage.NONCONCERT.search(text)
+                or re.search(r"\b(?:rencontre|discussion|interview|projection)\b", text)):
+            continue
         # Reject comparisons, tribute/support descriptions and negation rather
         # than treating proximity to a musical keyword as positive evidence.
         if re.search(r"\b(?:not|no|never|pas|sans|ne|ni|tribute|hommage|"
@@ -526,23 +536,13 @@ def _visible_prose_bill(section, names):
     return next(iter(matches.values())) if len(matches) == 1 else None
 
 
-def visible_named_bill(html, title):
-    """Recover an absent bill from its exact H1 and individual credits.
-
-    Every title artist must be independently named in order, either by
-    exact headings or by one explicit musical roster paragraph. A trailing
-    unnamed guest is never published as an artist. No event genre inheritance.
-    """
-    if not isinstance(title, str):
-        return None
-    names = [s.strip() for s in re.split(r"\s+(?:\+|/)\s+", title)]
+def _recover_visible_bill(section, names):
     guest = names.pop() if names and bridge.is_unnamed_performer(names[-1]) else None
     keys = [normal(s) for s in names]
     if (not names or not all(2 <= len(s) <= 120 for s in names) or not all(keys)
             or len(set(keys)) != len(keys)
             or any(bridge.is_unnamed_performer(n) for n in names)):
         return None
-    section = _visible_artist_sections(html, title)
     matched = [normal(t) for k, t in section
                if k in ("h2", "h3", "h4") and normal(t) in keys]
     if matched == keys:
@@ -562,6 +562,26 @@ def visible_named_bill(html, title):
     if guest:
         people.append({"@type": "MusicGroup", "name": guest})
     return people if bridge.official_named_bill(people) else None
+
+
+def visible_named_bill(html, title):
+    """Recover an absent bill from its exact H1 and individual credits.
+
+    Every title artist must be independently named in order, either by
+    exact headings or by one explicit musical roster paragraph. A trailing
+    unnamed guest is never published as an artist. No event genre inheritance.
+    A slash may also be part of an artist name; never split it without
+    corroboration of each individual credit and reject competing readings.
+    """
+    if not isinstance(title, str):
+        return None
+    section = _visible_artist_sections(html, title)
+    legacy = [s.strip() for s in re.split(r"\s+\+\s+", title)]
+    slash = [s.strip() for s in re.split(r"\s+(?:\+|/)\s+", title)]
+    readings = [legacy] if slash == legacy else [legacy, slash]
+    recovered = [_recover_visible_bill(section, list(names)) for names in readings]
+    valid = [people for people in recovered if people is not None]
+    return valid[0] if len(valid) == 1 else None
 
 
 def event_genres(raw, official_url, *, fetch=None, cache=None, html=None):
