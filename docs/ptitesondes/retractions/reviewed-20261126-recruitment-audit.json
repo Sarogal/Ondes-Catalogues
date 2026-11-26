@@ -1,0 +1,17 @@
+{
+  "schema": "ptitesondes.reviewed_retraction_audit.v1",
+  "reviewed_on": "2026-11-26",
+  "applied_at": "2026-11-26T05:43:37+01:00",
+  "before_count": 1033,
+  "after_count": 1032,
+  "catalogue_before_sha256": "07fceed6b0ded46fb9aacc7577d42e056d9df5ae7d190a8a783f54c6ba6127ac",
+  "catalogue_after_sha256": "c9c2fc8cd2524391462d8afdf8a8270d268a3dc397ff4fd0b9706147d42cae0f",
+  "withdrawn": [
+    {
+      "id": "openagenda-21002913-2026-12-01",
+      "reason_code": "recruitment_gathering_primary",
+      "evidence_url": "https://openagenda.com/semaine-industrie-2026/events/21002913_industrie-fait-son-show-job-dating-et-spectacle-pour-changer-votre-regard-sur-lindustrie",
+      "original_source_url": "https://openagenda.com/semaine-industrie-2026/events/21002913_industrie-fait-son-show-job-dating-et-spectacle-pour-changer-votre-regard-sur-lindustrie"
+    }
+  ]
+}
