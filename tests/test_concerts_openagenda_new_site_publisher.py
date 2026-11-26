@@ -128,6 +128,29 @@ class OpenAgendaNewNamedSitePublisherTests(unittest.TestCase):
         self.assertEqual(published["events"][-1]["venueId"],
                          published["venues"][-1]["id"])
 
+    def test_composite_discovery_title_resolves_two_separately_named_acts(self):
+        base = geo_fixture.test_catalogue()
+        previous = geo_fixture.before()
+        title = "GAGNER DE L'ARGENT | WTAZZZ"
+        fetch, _ = official_get(changes={
+            "title": {"fr": title},
+            "keywords": {"fr": ["punk"]},
+            "longDescription": {"fr": "<h2>GAGNER DE L'ARGENT</h2><p>Collectif punk.</p><h2>WTAZZZ</h2><p>Un autre groupe.</p>"},
+        })
+        proposed, report = producer.build(
+            observation(name=title, leadArtist=title), base, previous, TODAY, fetch=fetch)
+        self.assertEqual(len(proposed["approvals"]), 1, report)
+        event = proposed["approvals"][0]
+        self.assertEqual(event["officialEvidence"][1]["officialArtistNames"],
+                         ["GAGNER DE L'ARGENT", "WTAZZZ"])
+        with mock.patch.object(signer.probe, "safe_fetch", side_effect=fetch):
+            self.assertEqual(len(approval_preflight.check_append_only(
+                previous, proposed, TODAY)), 1)
+            published, stats = publisher.merge(base, base, proposed, TODAY)
+        self.assertEqual(stats["newEvents"], 1, stats)
+        self.assertEqual(len(published["events"][-1]["artistIds"]), 2)
+        self.assertEqual(published["events"][-1]["artistIds"], event["event"]["artistIds"])
+
     def test_named_osm_site_without_optional_address_tags_reaches_publisher(self):
         # BAN independently proves the street and town. A unique, precisely
         # located, identically named OSM room is still a real place even if the
