@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 124,
   "dueNameCount": 77,
-  "attemptedCount": 1,
+  "attemptedCount": 4,
   "serviceFailure": "http_503",
-  "retryAfterKey": "the blamed",
+  "retryAfterKey": "the last dinner party",
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -619,6 +619,61 @@
       "genreSource": "musicbrainz-community",
       "sourceUrl": "https://musicbrainz.org/artist/3a787e76-2879-4306-bc04-66aa7373be72",
       "artistName": "Steamhammer",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "the chemical brothers": {
+      "status": "name_hypothesis",
+      "mbid": "1946a82a-f927-40c2-8235-38d64f50d043",
+      "genres": [
+        "big beat",
+        "breakbeat",
+        "dance",
+        "electronic",
+        "electronica",
+        "house",
+        "neo-psychedelia",
+        "progressive house",
+        "techno"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/1946a82a-f927-40c2-8235-38d64f50d043",
+      "artistName": "The Chemical Brothers",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "the futureheads": {
+      "status": "name_hypothesis",
+      "mbid": "0cf9d983-aecf-4d57-9e94-fde2beac014f",
+      "genres": [
+        "alternative rock",
+        "indie rock",
+        "new wave",
+        "post-punk revival",
+        "rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/0cf9d983-aecf-4d57-9e94-fde2beac014f",
+      "artistName": "The Futureheads",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "the gutter twins": {
+      "status": "name_hypothesis",
+      "mbid": "19a2a56f-fd53-4dea-8cec-88046efb0fd5",
+      "genres": [],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/19a2a56f-fd53-4dea-8cec-88046efb0fd5",
+      "artistName": "The Gutter Twins",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "researchVersion": 2,
