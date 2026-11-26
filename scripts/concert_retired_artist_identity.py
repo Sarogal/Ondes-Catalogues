@@ -12,6 +12,8 @@ import copy
 from scripts import concert_published_lineup_contract as lineup
 
 KEY = "retiredArtistIds"
+LEDGER = "artistIdentityRetirements"
+REVIEWER = "independent-official-verifier"
 
 
 def require(ok, reason):
@@ -82,6 +84,27 @@ def candidates(reference, catalogue, approvals, today, *, include_pending=True):
     return result
 
 
+def selected(approvals, today):
+    """Validate explicit private retirement authorizations, never a wildcard."""
+    import datetime as dt
+    rows = approvals.get(LEDGER, [])
+    require(isinstance(rows, list), "invalid private retirement ledger")
+    ids = set()
+    for row in rows:
+        require(isinstance(row, dict) and set(row) == {
+            "artistId", "reviewDecision", "reviewedBy", "reviewedAt"
+        } and isinstance(row.get("artistId"), str)
+                and row["artistId"] not in ids
+                and row.get("reviewDecision") == "approved"
+                and row.get("reviewedBy") == REVIEWER,
+                "invalid or duplicate private retirement authorization")
+        checked = dt.date.fromisoformat(row["reviewedAt"])
+        require(checked <= today and checked.isoformat() == row["reviewedAt"],
+                "invalid retirement chronology")
+        ids.add(row["artistId"])
+    return ids
+
+
 def restore(reference, catalogue, approvals, today):
     """Reconstruct exact retired artist records for internal historical guards.
 
@@ -123,3 +146,25 @@ def retire(reference, catalogue, approvals, today, already=()):
     result["artists"] = [a for a in result["artists"] if a["id"] not in retire_ids]
     result[KEY] = sorted(retire_ids)
     return result, len(retire_ids - set(already))
+
+
+def apply_signed(reference, catalogue, approvals, today, already=()):
+    """Publish only explicitly signed, still eligible identity retirements.
+
+    Ineligibility of a new request must never prevent unrelated publications.
+    Historic receipts must remain exact and permanently verifiable.
+    """
+    authorized = selected(approvals, today)
+    require(set(already).issubset(authorized), "retirement receipt lacks private authorization")
+    if not authorized:
+        return catalogue, 0
+    eligible = candidates(reference, catalogue, approvals, today)
+    historical = candidates(reference, catalogue, approvals, today, include_pending=False)
+    require(set(already).issubset(historical), "retired identity became referenced")
+    ids = set(already) | (authorized & set(eligible))
+    if not ids:
+        return catalogue, 0
+    result = copy.deepcopy(catalogue)
+    result["artists"] = [a for a in result["artists"] if a["id"] not in ids]
+    result[KEY] = sorted(ids)
+    return result, len(ids - set(already))
