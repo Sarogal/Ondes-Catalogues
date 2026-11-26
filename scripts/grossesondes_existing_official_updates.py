@@ -1398,8 +1398,9 @@ def multivenue_department_from_access(html, row, city, fetch):
     """Disambiguate a proven commune using a named participating venue.
 
     The signed professional event must prove its exact dates and same town
-    across multiple venues. Read only access links of this same HTTPS host.
-    Accept a postal address under the venue's own heading ONLY if the current
+    across multiple venues. Read the current event page and bounded access
+    links of this same HTTPS host. Accept a postal address under the venue's
+    own heading ONLY if the current
     event explicitly names that venue in its stages list. No generic organizer
     address, venue selection, guessed postal code or cross-host referral.
     The code is a metropolitan department selector, not geographic proof;
@@ -1419,10 +1420,25 @@ def multivenue_department_from_access(html, row, city, fetch):
             super().handle_starttag(tag, attrs)
 
     class VenueHeadings(VisibleInstitutionHeadings):
+        def __init__(self, same_event_page=False):
+            super().__init__()
+            self.same_event_page = same_event_page
+
         def handle_starttag(self, tag, attrs):
-            if tag in ("nav", "footer", "aside", "header"):
+            if tag in ("nav", "aside", "header") or (
+                    tag == "footer" and not self.same_event_page):
                 attrs = list(attrs) + [("hidden", None)]
+            # The actual participating venue often identifies its own
+            # address under an h3/h4 in the signed event's contact section.
+            # Do not extend this exception to unrelated access-page footers.
+            if self.same_event_page and tag in ("h3", "h4", "h5", "h6"):
+                tag = "h2"
             super().handle_starttag(tag, attrs)
+
+        def handle_endtag(self, tag):
+            if self.same_event_page and tag in ("h3", "h4", "h5", "h6"):
+                tag = "h2"
+            super().handle_endtag(tag)
 
     try:
         start, end = date.fromisoformat(row["startDate"]), date.fromisoformat(row["endDate"])
@@ -1448,14 +1464,15 @@ def multivenue_department_from_access(html, row, city, fetch):
         if not stage_lists:
             return None
         found = {}
-        # The discovery link is not evidence; both the event and address
-        # are independently reread from the same signed first-party origin.
-        for link in official_access_links(html, site):
+        # The already fetched signed event can itself carry the address
+        # under a participating venue's own heading. Also check the bounded
+        # access pages, so conflicting department evidence still vetoes.
+        for link in [site] + official_access_links(html, site):
             try:
-                access = fetch(link)
+                access = html if link == site else fetch(link)
                 if not isinstance(access, str) or not 0 < len(access) <= 650_000:
                     continue
-                parser = VenueHeadings()
+                parser = VenueHeadings(same_event_page=(link == site))
                 parser.feed(access)
                 parser.close()
                 for i, heading in enumerate(parser.headings):
