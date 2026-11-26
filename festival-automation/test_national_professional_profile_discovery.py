@@ -59,6 +59,27 @@ class ProfessionalProfileDiscoveryTests(unittest.TestCase):
         self.assertEqual(calls, [EVENT, FEST, PROFILE])
         self.assertEqual(result["status"], "PROFESSIONAL_WEBSITE_HINTS")
 
+    def test_diagnostics_distinguish_transport_heading_year_and_backlink(self):
+        from dns_pinned_https import OfficialHTTPStatusError
+        def fetch(url):
+            if url == EVENT:
+                raise OfficialHTTPStatusError(404)
+            return {FEST: EVENT_PAGE, PROFILE: PROFILE_PAGE.replace(
+                "festival-des-rives", "autre-festival")}[url]
+        result = discover(HINTS, TITLE, 2027, fetch=fetch)
+        self.assertEqual(result["diagnostics"], [
+            {"stage": "TICKET_EVENTS", "outcome": "HTTP_STATUS_REJECTED", "http_status": 404},
+            {"stage": "TICKET_FESTIVALS", "outcome": "PROFILES_FOUND", "profile_count": 1},
+            {"stage": "PROFILE", "outcome": "EXACT_EVENT_BACKLINK_ABSENT"}])
+        self.assertEqual(result["websites"], [])
+        for page, reason in (
+                (EVENT_PAGE.replace("Festival des Rives", "Autre festival"), "EVENT_HEADING_MISMATCH"),
+                (EVENT_PAGE.replace("2027", "2028"), "EVENT_YEAR_NOT_VISIBLE")):
+            result = discover(HINTS, TITLE, 2027, fetch=lambda _: page)
+            self.assertTrue(all(d["outcome"] == reason for d in result["diagnostics"]))
+            self.assertEqual(result["websites"], [])
+        self.assertLessEqual(len(result["diagnostics"]), 5)
+
     def test_total_budget_and_no_cross_host_profile(self):
         other = EVENT_PAGE.replace("/fr/venues/production-des-rives",
                                    "https://other.fr/venues/production-des-rives")
