@@ -1,6 +1,11 @@
 """Offline contracts for independent signed administrative metadata."""
 import unittest
 from copy import deepcopy
+from pathlib import Path
+import sys
+ROOT = Path(__file__).resolve().parents[1]
+for directory in (ROOT / 'scripts', ROOT / 'festival-automation'):
+    sys.path.insert(0, str(directory))
 from grossesondes_admin_metadata import apply, endpoint, validate_delta
 
 DAY = "2026-11-26"
