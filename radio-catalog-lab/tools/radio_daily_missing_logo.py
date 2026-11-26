@@ -24,8 +24,12 @@ from radio_stream_recheck_ledger import parse_day,SHA256_RE
 
 MAX_STATIONS=8
 MAX_IMAGES=2
-ANALYZER_VERSION=4
+ANALYZER_VERSION=5
 MAX_ALTERNATIVES=2
+# Navigation labels only locate pages; they never establish station identity.
+NAVIGATION_LABELS={"listen","listen live","radio stations","our stations","stations","radios",
+                   "ecouter","ecouter en direct","nos radios","web radios","webradios",
+                   "escuchar","emisoras","ascolta","ascolta live","sender","live horen"}
 LOGO_KINDS={"typed_station_logo","named_player_html_logo"}
 KINDS=LOGO_KINDS|{"typed_station_image","named_page_og_image"}
 STATUSES={"page_held","no_bound_image","ambiguous_images","image_held","decoded_review"}
@@ -155,7 +159,7 @@ def bound_page(station, requested, final, body):
 
 
 def discover_page(station, fetch_page):
-    """Follow at most two explicitly named station links from its declared site."""
+    """Follow bounded station links, then official listening navigation."""
     home=homepage_url(station.get("homepage"))
     if not home:
         raise ValueError("no homepage")
@@ -176,16 +180,24 @@ def discover_page(station, fetch_page):
     p.feed(body.decode("utf-8",errors="replace"))
     name=name_key(station["display_name"])
     links=set()
+    navigation=set()
     for href,label in p.links:
         try:
             url=urljoin(final,href)
-            if (len(name)>=5 and name_key(label)==name and homepage_url(url)==url
-                    and related_host(url,home) and page_key(url) not in {page_key(final),page_key(home)}):
+            if (homepage_url(url)!=url or not related_host(url,home)
+                    or page_key(url) in {page_key(final),page_key(home)}):
+                continue
+            key=name_key(label)
+            if len(name)>=5 and key==name:
                 links.add(url)
+            elif key in NAVIGATION_LABELS:
+                navigation.add(url)
         except (ValueError,TypeError):
             continue
     matches=[]
-    for url in sorted(links)[:MAX_ALTERNATIVES]:
+    # Named station links always take precedence. Generic listening pages
+    # still have to pass bound_page/candidates, including exact stream proof.
+    for url in (sorted(links)+sorted(navigation-links))[:MAX_ALTERNATIVES]:
         try:
             child,content=fetch_page(url)
             choices=bound_page(station,url,child,content)

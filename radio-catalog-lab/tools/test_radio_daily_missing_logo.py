@@ -226,6 +226,44 @@ class MissingLogoTests(unittest.TestCase):
               '<audio src="https://wrong.example.org/stream"></audio>').encode()
         self.assertEqual(candidates(station,child,body),{})
 
+    def test_official_listening_navigation_requires_station_and_stream(self):
+        station,_=self.html_logo()
+        child="https://radio.example.org/listen"
+        root=b'<a href="/listen">Listen</a>'
+        node={"@type":"RadioStation","name":"Iron Radio","logo":URL,
+              "streamUrl":station["streams"][0]["url"]}
+        def fetch(u):
+            body=('<script type="application/ld+json">'+json.dumps(node)+'</script>').encode()
+            return u,body if u==child else root
+        self.assertEqual(discover_page(station,fetch)[2],{URL:"typed_station_logo"})
+        node["streamUrl"]="https://other.example.org/live"
+        self.assertEqual(discover_page(station,fetch)[2],{})
+        node["streamUrl"]=station["streams"][0]["url"]
+        node["name"]="Other Station"
+        self.assertEqual(discover_page(station,fetch)[2],{})
+
+    def test_navigation_budget_prioritizes_named_station(self):
+        station,body=self.html_logo()
+        root=(b'<a href="/a">Listen</a><a href="/b">Stations</a>'
+              b'<a href="/z">Iron Radio</a><a href="https://other.example.org/listen">Listen</a>')
+        calls=[]
+        def fetch(u):
+            calls.append(u)
+            return u,root if u==PAGE else body if u.endswith("/z") else b""
+        self.assertEqual(discover_page(station,fetch)[2],{"https://radio.example.org/logo.png":"named_player_html_logo"})
+        self.assertEqual(calls,[PAGE,"https://radio.example.org/z","https://radio.example.org/a"])
+
+    def test_navigation_conflicting_station_logos_held(self):
+        station,_=self.html_logo()
+        root=b'<a href="/a">Listen</a><a href="/b">Stations</a>'
+        def fetch(u):
+            if u==PAGE:
+                return u,root
+            _,body=self.html_logo(src="/a.png" if u.endswith("/a") else "/b.png")
+            return u,body
+        with self.assertRaisesRegex(ValueError,"conflicting station artwork pages"):
+            discover_page(station,fetch)
+
     def test_external_link_not_followed(self):
         station,_=self.html_logo()
         root=b'<a href="https://other.example.org/station/iron">Iron Radio</a>'
