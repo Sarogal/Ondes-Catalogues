@@ -335,7 +335,8 @@ def _bill(event):
     title = event.get("name")
     if not isinstance(title, str) or not 3 <= len(title) <= 900:
         raise ValueError("OpenAgenda: missing named event title")
-    named = _performer_names(event.get("performer"))
+    named = [name for name in _performer_names(event.get("performer"))
+             if not bridge.is_unnamed_performer(name)]
     # A first-party title explicitly listing GROUP + GROUP is itself a named
     # complete bill, even when schema.org performer lists only the headliner.
     # Never generalize one headliner's genre to the support act; event.genre
@@ -344,7 +345,8 @@ def _bill(event):
     if len(parts) > 1:
         if any(not 2 <= len(part.strip()) <= 120 for part in parts):
             raise ValueError("OpenAgenda: malformed named lineup")
-        title_names = [" ".join(part.split()) for part in parts]
+        title_names = [" ".join(part.split()) for part in parts
+                       if not bridge.is_unnamed_performer(part)]
         known = {normalized(n) for n in title_names}
         if any(normalized(n) not in known for n in named):
             raise ValueError("OpenAgenda: structured performer contradicts title")
@@ -359,7 +361,8 @@ def _bill(event):
         names = [title]
     else:
         raise ValueError("OpenAgenda: no explicitly named performers")
-    if (len({normalized(s) for s in names}) != len(names)
+    names = [name for name in names if not bridge.is_unnamed_performer(name)]
+    if (not names or len({normalized(s) for s in names}) != len(names)
             or any(not normalized(s) for s in names)):
         raise ValueError("OpenAgenda: duplicate or malformed performers")
     return names
