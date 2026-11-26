@@ -454,38 +454,30 @@ def discover(*, fetch, tags: list[str], names: list[str],
     # Reserve a small extra lane for due pages, before the regular rotation.
     # No failed page is represented as an empty successful response.
     retry_log = []
+    retry_results = {}
     for k in due(pending,day,attempted):
         records=retrieve(k)
+        retry_results[k] = records
         if records is not None:
             successful_pages += 1
         retry_log.append(dict(field=k[0],term=k[1],offset=k[2],pageSize=k[3],
                               status="unavailable" if records is None else "complete"))
-    # Reuse the retry result if the same page is in today's primary scan.
-    retry_results={(r["field"],r["term"],r["offset"],r["pageSize"]):r["status"]
-                   for r in retry_log}
-    # A successful short retry page still needs its row count for pagination.
-    # Store it only in memory, not in the retry queue.
+    # Reuse exact page results, including short/empty responses, so that
+    # normal pagination terminates identically without duplicate requests.
     for field, term in queries:
         seen_pages = 0
         failed_offset = None
         for offset in offsets:
             k=(field,term,offset,page_size)
-            if k in retry_results:
-                # A retry already observed the rows. Continue deeper pages
-                # conservatively on success; no second request for this key.
-                if retry_results[k]=="unavailable":
-                    records=None
-                else:
-                    seen_pages+=1
-                    continue
-            else:
-                records=retrieve(k)
+            reused = k in retry_results
+            records = retry_results[k] if reused else retrieve(k)
             if records is None:
                 failed_offset=offset
                 failed_queries+=1
                 break
             seen_pages+=1
-            successful_pages+=1
+            if not reused:
+                successful_pages+=1
             if len(records)<page_size:
                 break
             if sleep_seconds:

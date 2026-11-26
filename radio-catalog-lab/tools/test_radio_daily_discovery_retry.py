@@ -70,3 +70,15 @@ class RetryTests(unittest.TestCase):
             raise DiscoveryQueryUnavailable("down")
         with self.assertRaisesRegex(DiscoveryQueryUnavailable,"all discovery pages"):
             self.scan(fail)
+
+    def test_reused_short_page_stops_regular_pagination(self):
+        pending={}
+        failed(pending,("tag","metal",0,2),DAY)
+        calls=[]
+        result=discover(fetch=lambda *k: calls.append(k) or [],tags=["metal"],
+            names=[],day=NEXT,page_size=2,max_pages=3,known_ids=set(),
+            retry_state=report(pending,DAY))
+        self.assertEqual(calls,[("tag","metal",0,2)])
+        self.assertEqual(result["successfulPageCount"],1)
+        self.assertEqual(result["queries"][0]["pagesRead"],1)
+        self.assertEqual(result["pendingRetryCount"],0)
