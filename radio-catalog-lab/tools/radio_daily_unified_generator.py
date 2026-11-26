@@ -14,6 +14,7 @@ from radio_daily_repair_plan import plan as repair_plan, simulate as repair_simu
 from radio_daily_status_preview import build as status_build, MAX_CHECKS
 from radio_daily_logo_plan import plan as logo_plan, stage as logo_stage
 from radio_daily_merge_plan import plan as merge_plan, apply as merge_apply, undo as merge_undo
+from radio_daily_repair_material import live_recover
 
 
 def stream_urls(station):
@@ -186,15 +187,20 @@ def main():
              "repair", "confirmation", "repair-report", "status-report", "logo-maintenance", "missing-logo", "output-dir")
     for name in names:
         p.add_argument("--" + name, type=Path, required=True)
+    p.add_argument("--allow-repair-material-network", action="store_true")
     a = p.parse_args()
     if a.output_dir.exists():
         raise ValueError("fresh output directory required")
     raw = load_bytes(a.baseline)
     verify_baseline(load_bytes(a.pointer), raw)
-    # Public runner has no transient repair URLs yet; pending repairs are
-    # recorded rather than fetched or guessed. No competing v9 artifact.
-    payload, report = build(raw, *(strict_json(load_bytes(getattr(a, k))) for k in
-        ("discovery", "dossiers", "decisions", "maintenance", "repair", "confirmation", "repair_report", "status_report", "logo_maintenance", "missing_logo")))
+    evidence = [strict_json(load_bytes(getattr(a, k))) for k in
+        ("discovery", "dossiers", "decisions", "maintenance", "repair", "confirmation", "repair_report", "status_report", "logo_maintenance", "missing_logo")]
+    urls, held = ({}, [])
+    if a.allow_repair_material_network:
+        urls, held = live_recover(raw, *evidence[3:7])
+    payload, report = build(raw, *evidence, urls=urls)
+    report["repairMaterialDeferred"] = held
+    report["repairMaterialRecoveredCount"] = len(urls)
     a.output_dir.mkdir(parents=True)
     if payload is not None:
         (a.output_dir / "unsigned-candidate-v9.json").write_bytes(payload)
