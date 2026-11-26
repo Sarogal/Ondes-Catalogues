@@ -31,6 +31,81 @@ def registry(hints=None, *, source="open_world_visible_card_research"):
 
 
 class OpenWorldArtistGenreTests(unittest.TestCase):
+    def test_same_slot_with_memory_reaches_all_new_profiles_before_repeating(self):
+        rows = {}
+        for i in range(25):
+            name = f"Act {i:03d}"
+            url = f"https://artist{i}.example.org/"
+            item = registry([{"name": name, "url": url}])["items"]["key"]
+            item["candidate"].update(leadArtist=name, officialArtistNames=[name])
+            rows[str(i)] = item
+        batch = {"schema": "grossesondes.concert.intake.v1", "items": rows}
+        calls = []
+        def fetch(url, cache):
+            calls.append(url)
+            return PROFILE  # Exact identity fails; no musical fact is promoted.
+        previous = None
+        for expected in (10, 10, 5, 0):
+            previous = research.build(batch, DAY, prior=previous, slot=0,
+                                      limit=10, fetch=fetch)
+            self.assertEqual(previous["sourcesChecked"], expected)
+            self.assertFalse(previous["publicationAllowed"])
+        self.assertEqual(len(calls), 25)
+        self.assertEqual(len(set(calls)), 25)
+        self.assertEqual(previous["profileSourcesInCooldown"], 25)
+        self.assertEqual(previous["memoryFactCount"], 0)
+        later = research.build(batch, DAY + dt.timedelta(days=1), prior=previous,
+                               slot=0, limit=10, fetch=fetch)
+        self.assertEqual(later["sourcesChecked"], 10)
+
+    def test_fresh_profile_is_reused_and_new_artist_is_not_delayed(self):
+        first = research.build(registry(), DAY, fetch=lambda *a: PROFILE)
+        self.assertEqual(first["profilesRefreshed"], 1)
+        batch = registry()
+        added = registry([{"name": "New Solo", "url": "https://newsolo.example.org/"}])
+        item = added["items"]["key"]
+        item["candidate"].update(leadArtist="New Solo", officialArtistNames=["New Solo"])
+        batch["items"]["new"] = item
+        calls = []
+        def fetch(url, cache):
+            calls.append(url)
+            return PROFILE.replace(NAME, "New Solo")
+        next_day = research.build(batch, DAY + dt.timedelta(days=1), prior=first, fetch=fetch)
+        self.assertEqual(calls, ["https://newsolo.example.org/"])
+        self.assertEqual(next_day["memoryFactCount"], 2)
+        self.assertEqual(next_day["profilesRefreshed"], 1)
+        self.assertEqual(next_day["profileSourcesInCooldown"], 1)
+        self.assertEqual(next_day["officialDomainsAuthenticated"], 0)
+        due = research.build(registry(), DAY + dt.timedelta(days=14),
+                             prior=next_day, fetch=lambda *a: PROFILE)
+        self.assertEqual(due["sourcesChecked"], 1)
+        self.assertEqual(due["profilesRefreshed"], 1)
+        self.assertFalse(due["publicationAllowed"])
+
+    def test_legacy_fact_seeds_cooldown_without_granting_trust(self):
+        first = research.build(registry(), DAY, fetch=lambda *a: PROFILE)
+        first.pop("profileAttempts")
+        next_day = research.build(registry(), DAY + dt.timedelta(days=1),
+                                  prior=first, fetch=lambda *a: self.fail("cached"))
+        self.assertEqual(next_day["sourcesChecked"], 0)
+        self.assertEqual(next_day["facts"], first["facts"])
+        self.assertEqual(next_day["officialDomainsAuthenticated"], 0)
+        self.assertEqual(next_day["approvalsProposed"], 0)
+
+    def test_future_or_invalid_attempt_cannot_suppress_research(self):
+        first = research.build(registry(), DAY, fetch=lambda *a: PROFILE)
+        key = next(iter(first["profileAttempts"]))
+        for invalid in (
+                {"status": "read", "checkedAt": (DAY + dt.timedelta(days=10)).isoformat()},
+                {"status": "invented", "checkedAt": DAY.isoformat()},
+                {"status": "read", "checkedAt": []},
+        ):
+            with self.subTest(invalid=invalid):
+                prior = {**first, "profileAttempts": {key: invalid}}
+                out = research.build(registry(), DAY, prior=prior, fetch=lambda *a: PROFILE)
+                self.assertEqual(out["sourcesChecked"], 1)
+                self.assertFalse(out["publicationAllowed"])
+
     def test_unknown_artist_self_declared_musicgroup_is_retained_without_trust(self):
         seen = []
         original = registry()
