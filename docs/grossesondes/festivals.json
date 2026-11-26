@@ -6406,11 +6406,11 @@
       "city": "Montreuil",
       "notes": "Édition revérifiée sur la fiche officielle professionnelle ; lieu, artistes et GPS à confirmer.",
       "sourceConfidence": "Provenance OpenData et fiche professionnelle revérifiées",
-      "department": null,
+      "department": "93",
       "status": "Annoncé",
       "showOnMap": true,
       "lon": 2.4491,
-      "region": null,
+      "region": "Île-de-France",
       "auditSources": [
         "https://lamarbrerie.fr/disorder-festival-a-dark-celebration-2/"
       ],
