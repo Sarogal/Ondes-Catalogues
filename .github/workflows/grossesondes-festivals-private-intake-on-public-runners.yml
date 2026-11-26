@@ -73,7 +73,7 @@ jobs:
   watch:
     if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 27
+    timeout-minutes: 28
     steps:
       - name: Vérifier uniquement la présence des secrets, sans les afficher
         id: access
@@ -268,7 +268,7 @@ jobs:
 
       - name: OCR statique borné et cache privé (sans autorité éditoriale)
         if: steps.access.outputs.ready == 'true'
-        timeout-minutes: 4
+        timeout-minutes: 5
         continue-on-error: true
         shell: bash
         env:
@@ -277,12 +277,12 @@ jobs:
           set -euo pipefail
           # Optional enrichment: failure must not block the primary intake.
           # No external browser here, no credentials, no public OCR artifact.
-          if ! timeout 90s sudo apt-get install -y tesseract-ocr tesseract-ocr-fra tesseract-ocr-eng python3-pil > /tmp/grossesondes-private-logs/poster-install.log 2>&1; then
+          if ! timeout 75s sudo apt-get install -y tesseract-ocr tesseract-ocr-fra tesseract-ocr-eng python3-pil > /tmp/grossesondes-private-logs/poster-install.log 2>&1; then
             echo "::warning::OCR local indisponible ; collecte principale conservée"
             exit 0
           fi
           CACHE="intake/automation-intake/grossesondes/official-poster-ocr-cache.json"
-          if ! timeout 140s /usr/bin/python3 application/scripts/grossesondes_official_poster_rotation.py --catalogue application/docs/grossesondes/festivals.json --limit 4 --private-cache "$CACHE" > /tmp/grossesondes-private-logs/poster-ocr.log 2>&1; then
+          if ! timeout 195s /usr/bin/python3 application/scripts/grossesondes_official_poster_rotation.py --catalogue application/docs/grossesondes/festivals.json --limit 4 --private-cache "$CACHE" > /tmp/grossesondes-private-logs/poster-ocr.log 2>&1; then
             echo "::warning::Rotation OCR non terminée ; collecte principale conservée"
             exit 0
           fi
