@@ -79,6 +79,23 @@ def rotate(catalogue, today, previous=None, *, researcher=research_group, priori
                                           "independent_venue_point_found"
                                           for k in selected),
                    publication_ready=False, public_writes=0)
+    # Fixed provider names only; never log URLs, exception messages or private IDs.
+    providers = ("dila", "administrative", "official_html", "ban", "osm_nearby", "osm_named")
+    provider_totals = {}
+    for key in selected:
+        counters = latest[key]["result"].get("provider_diagnostics", {})
+        if not isinstance(counters, dict):
+            continue
+        for provider in providers:
+            row = counters.get(provider)
+            if (not isinstance(row, dict) or type(row.get("calls")) is not int
+                    or type(row.get("errors")) is not int
+                    or not 0 <= row["errors"] <= row["calls"] <= 100):
+                continue
+            total = provider_totals.setdefault(provider, {"calls": 0, "errors": 0})
+            for field in ("calls", "errors"):
+                total[field] += row[field]
+    summary["provider_diagnostics"] = provider_totals
     return state, summary
 
 
