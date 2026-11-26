@@ -104,3 +104,41 @@ class RotationTests(unittest.TestCase):
             "osm_named": {"calls": 3, "errors": 3},
             "official_html": {"calls": 6, "errors": 0}})
         self.assertNotIn("private-url", str(summary))
+
+    def test_six_group_rotation_preserves_fifo(self):
+        seen = []
+        def reader(group, day):
+            seen.append(group["venue"])
+            return dict(status="held", publication_ready=False)
+        state, summary = rotate(doc("ABCDEFGH"), DAY, researcher=reader, max_groups=6)
+        self.assertEqual(seen, list("ABCDEF"))
+        self.assertEqual(summary["examined"], 6)
+        self.assertEqual(summary["budget_deferred"], 0)
+        state, summary = rotate(doc("ABCDEFGH"), DAY, state, researcher=reader, max_groups=6)
+        self.assertEqual(seen[6:8], list("GH"))
+        self.assertEqual(summary["never_examined"], 0)
+
+    def test_soft_budget_keeps_unexamined_groups_and_hint_in_queue(self):
+        catalogue = doc("ABCDEFGH")
+        keys = {g["venue"]: identity(g) for g in research_queue(catalogue, DAY)["research_groups"]}
+        seen = []
+        elapsed = [0]
+        def reader(group, day):
+            seen.append(group["venue"])
+            elapsed[0] += 4
+            return dict(status="held", publication_ready=False)
+        state, summary = rotate(catalogue, DAY, researcher=reader,
+            max_groups=6, soft_seconds=7, clock=lambda: elapsed[0],
+            priority_keys={keys["H"]})
+        self.assertEqual(seen, list("AB"))
+        self.assertEqual(summary["examined"], 2)
+        self.assertEqual(summary["budget_deferred"], 4)
+        self.assertEqual(summary["accelerated_hints"], 0)
+        self.assertEqual(state["pending"], [keys[n] for n in "CDEFGHAB"])
+        self.assertEqual(set(state["latest"]), {keys["A"], keys["B"]})
+
+    def test_invalid_budget_refused(self):
+        for kwargs in ({"max_groups": 7}, {"max_groups": 0}, {"max_groups": True},
+                       {"soft_seconds": 601}, {"soft_seconds": 0}):
+            with self.assertRaises(ValueError):
+                rotate(doc("A"), DAY, **kwargs)
