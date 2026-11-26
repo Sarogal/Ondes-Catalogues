@@ -178,6 +178,38 @@ class ExistingVenueGeoEvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             evidence.verify(EVENT, venue, fetch=lambda *args: self.fail("must not fetch"))
 
+    def test_named_feature_diagnostics_are_fixed_and_do_not_change_matching(self):
+        site = evidence.extract_address(document(), EVENT, VENUE)
+        center = (48.08, 7.36)
+        def node(ident=1, name="New Room", lat=48.08, extra=""):
+            return (f'<node id="{ident}" lat="{lat}" lon="7.36">'
+                    f'<tag k="name" v="{name}"/>{extra}</node>')
+        def check(xml, expected):
+            def fetch(url, cap):
+                return '<osm version="0.6">' + xml + '</osm>', url
+            with self.assertRaises(evidence.geo.NamedFeatureHeld) as err:
+                evidence.geo._osm_map(site, center, fetch)
+            self.assertEqual(err.exception.code, expected)
+            self.assertEqual(str(err.exception),
+                "Independent BAN/OSM site: one independent named OSM feature at exact address required")
+        check(node(name="Other Room"), "osm_name_not_found")
+        check(node(extra='<tag k="addr:postcode" v="75001"/>'), "osm_postal_fields_conflict")
+        check(node(extra='<tag k="addr:housenumber" v="20"/>'), "osm_house_number_conflict")
+        check(node(lat=48.083), "osm_feature_outside_radius")
+        check(node(extra='<tag k="addr:street" v="Other Street"/>'), "osm_street_conflict")
+        check(node() + node(ident=2), "osm_multiple_named_features")
+        check('<way id="2"><tag k="name" v="New Room"/><nd ref="4"/></way>',
+              "osm_geometry_missing")
+        with patch.object(evidence.geo, "verify",
+                          side_effect=evidence.geo.NamedFeatureHeld("osm_street_conflict")):
+            with self.assertRaises(evidence.EvidenceHeld) as err:
+                evidence.verify(EVENT, VENUE, fetch=lambda *a: document())
+            self.assertEqual(err.exception.code, "osm_street_conflict")
+        xml = '<osm version="0.6">' + node() + '</osm>'
+        self.assertEqual(evidence.geo._osm_map(site, center,
+            lambda url, cap: (xml, url)),
+            ("https://www.openstreetmap.org/node/1", *center, "named-site-point"))
+
     def test_rejects_missing_independent_location(self):
         with patch.object(evidence.geo, "verify", side_effect=ValueError("ambiguous")):
             with self.assertRaises(ValueError):
