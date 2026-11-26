@@ -36,6 +36,7 @@ from grossesondes_archived_html_intake import (
 from grossesondes_official_html_edition import (
     VisibleText, VisibleParagraphs, MONTHS as OFFICIAL_MONTHS, CANCEL as OFFICIAL_CANCELLATION,
     explicit_ranges as current_visible_ranges,
+    fold as official_date_fold,
 )
 
 MAX_LINKS = 5
@@ -1454,7 +1455,9 @@ def multivenue_department_from_access(html, row, city, fetch, *, diagnostic=None
             # HTML indentation, line wrapping and nested inline tags are
             # not part of the venue's identity or the printed date.
             raw = " ".join(raw.split())
-            paragraph = fold(raw)
+            # Preserve printed separators (&, comma, dash) for the calendar
+            # grammar. The word-only fold turns "6 & 7" into "6 7".
+            paragraph = official_date_fold(raw)
             dates = {(a,b) for _,_,a,b in current_visible_ranges(paragraph, start.year)}
             if dates != {(start, end)}:
                 continue
