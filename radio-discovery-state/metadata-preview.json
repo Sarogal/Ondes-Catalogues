@@ -4,8 +4,9 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 26,
-  "distinctArtistHints": 31,
+  "stationsWithArtistHints": 28,
+  "distinctArtistHints": 35,
+  "stationsWithAlternativeHints": 0,
   "records": [
     {
       "stationuuid": "017f1b35-7330-4ccc-a8eb-0544a7a9b611",
@@ -47,7 +48,9 @@
       "approved": false,
       "publicationAllowed": false,
       "verdict": "metadata_no_parseable_title",
-      "observations": []
+      "observations": [],
+      "alternativeVersion": 2,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "05412426-3d22-4e8e-bee0-92b71dac20ff",
@@ -118,6 +121,24 @@
       ]
     },
     {
+      "stationuuid": "11ebd6e7-4b9f-4c93-afcd-bca082bb82a6",
+      "streamSha256": "58404456505af5db040c9dcc7ca0479017e676a947be85af7989133918c29164",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "The Blamed",
+          "titleSha256": "f1f4fada145ee4fe80dbe94051c5c92c91cbbcf3c76f36ef7b9aafa5b7b80f1c"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
       "stationuuid": "125f0f3a-4833-4e2d-856a-106fba6cd6cd",
       "streamSha256": "fcd9ff98cc5aa45e64cef6e0b6b825cfabbf71d20128fdc21f7df8284d0b4e20",
       "observedDate": "2026-11-26",
@@ -132,6 +153,18 @@
           "titleSha256": "55d88bf51765d0854be30863775e508745c47a3710c3957176addd529f8760b7"
         }
       ]
+    },
+    {
+      "stationuuid": "143ff518-5d57-4bf0-9859-e82af365a771",
+      "streamSha256": "d5665c05a035495396973e43df736a2c25978c53fa5a682408a2655f9d4f4520",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 2,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "25de583d-8165-4a5f-8ba5-39861a77f943",
@@ -287,7 +320,7 @@
     {
       "stationuuid": "4340f942-c877-4b60-9d2e-e628db62f761",
       "streamSha256": "a0d2546df73ea61f9f61152087c9a4c5d027a6bf2f74480e1082b0d280e1b18a",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -297,18 +330,33 @@
           "date": "2026-11-25",
           "artistHint": "Rage",
           "titleSha256": "7da9e701180e16438b8d0d49de481502b7019cc8100592bda0d29024d2c3e100"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "Gojira",
+          "titleSha256": "4684e4836798075f0480d4ab22e8e96a3cab5753f2f486c98d11a0c809def195"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "44088288-7ad1-44a7-8ec5-d8c210099c12",
       "streamSha256": "3443345152a9d708d5a506c600c8cdee46d235fd1623008431eb37cc985a7b82",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
-      "verdict": "metadata_no_parseable_title",
-      "observations": []
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-26",
+          "artistHint": "Silbermond",
+          "titleSha256": "9508b2ffcc68a90725cccaee88cb7bfc09379f7573475b41c988720fd2acf146"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "4488dc76-a690-4e51-a46c-3600be8195c4",
@@ -481,7 +529,7 @@
     {
       "stationuuid": "5e9f7c0a-a1ef-4739-b115-dad73cfbf404",
       "streamSha256": "08c4129d00a6096cde9f1ef2a03caac619f400f91ba137643751c1da9c9f4eb6",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -491,8 +539,15 @@
           "date": "2026-11-25",
           "artistHint": "Howard Jones",
           "titleSha256": "35ab7b6599c0e12b19c22939501c37e3d95f24ce339840caf378be6bcc961674"
+        },
+        {
+          "date": "2026-11-26",
+          "artistHint": "Naked Eyes",
+          "titleSha256": "01446a4b26cabdc881ccad3a3ff16c0e8e49ca4c8a3183e44af580c0a3414941"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "62ef2552-35e9-433a-b747-efdae52bfe4f",

@@ -3,11 +3,11 @@
   "scanDate": "2026-11-26",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 31,
-  "dueNameCount": 15,
-  "attemptedCount": 1,
-  "serviceFailure": "service_or_response_held",
-  "retryAfterKey": "la pulqueria",
+  "observedNameCount": 35,
+  "dueNameCount": 19,
+  "attemptedCount": 6,
+  "serviceFailure": null,
+  "retryAfterKey": null,
   "entries": {
     "38 special": {
       "status": "ambiguous_or_incomplete",
@@ -170,6 +170,24 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "mlkuz": {
+      "status": "not_found",
+      "artistName": "MLKUZ",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "naked eyes": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Naked Eyes",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "never obey again": {
       "status": "not_found",
       "artistName": "Never Obey Again",
@@ -182,6 +200,42 @@
     "nine inch nails": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Nine Inch Nails",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "panda bear, cindy lee": {
+      "status": "not_found",
+      "artistName": "Panda Bear, Cindy Lee",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "phinehas": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Phinehas",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "poison": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Poison",
+      "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "rage": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Rage",
       "checkedAt": "2026-11-26",
       "source": "wikidata",
       "researchVersion": 2,

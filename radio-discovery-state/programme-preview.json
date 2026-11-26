@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "freshnessDays": 30,
-  "stationCount": 38,
+  "stationCount": 40,
   "stationsWithWikidataHints": 2,
   "stationsWithSourceConflicts": 0,
-  "stationsWithMultipleObservationDays": 5,
+  "stationsWithMultipleObservationDays": 7,
   "stationsWithGenreHints": 4,
   "verifiedArtistCount": 0,
   "records": [
@@ -248,6 +248,37 @@
       "publicationAllowed": false
     },
     {
+      "stationuuid": "11ebd6e7-4b9f-4c93-afcd-bca082bb82a6",
+      "streamSha256": "58404456505af5db040c9dcc7ca0479017e676a947be85af7989133918c29164",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 1,
+      "distinctArtistTitleHints": 1,
+      "distinctTitleHashes": 1,
+      "observationDates": [
+        "2026-11-26"
+      ],
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 1
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 1
+      },
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
       "stationuuid": "125f0f3a-4833-4e2d-856a-106fba6cd6cd",
       "streamSha256": "fcd9ff98cc5aa45e64cef6e0b6b825cfabbf71d20128fdc21f7df8284d0b4e20",
       "matchesDecisionStream": true,
@@ -274,6 +305,33 @@
       "sourceHintCounts": {
         "no_usable_source": 1
       },
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "143ff518-5d57-4bf0-9859-e82af365a771",
+      "streamSha256": "d5665c05a035495396973e43df736a2c25978c53fa5a682408a2655f9d4f4520",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
+      "distinctArtistHints": 0,
+      "distinctArtistTitleHints": 0,
+      "distinctTitleHashes": 0,
+      "observationDates": [],
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 0
+      },
+      "sourceHintCounts": {},
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -556,11 +614,43 @@
       "streamSha256": "a0d2546df73ea61f9f61152087c9a4c5d027a6bf2f74480e1082b0d280e1b18a",
       "matchesDecisionStream": true,
       "observedInScan": true,
+      "distinctArtistHints": 2,
+      "distinctArtistTitleHints": 2,
+      "distinctTitleHashes": 2,
+      "observationDates": [
+        "2026-11-25",
+        "2026-11-26"
+      ],
+      "stalePairCount": 0,
+      "artistHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 2
+      },
+      "artistTitleHintCounts": {
+        "target_hint": 0,
+        "other_hint": 0,
+        "mixed_hint": 0,
+        "unclassified_hint": 2
+      },
+      "sourceHintCounts": {
+        "no_usable_source": 2
+      },
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "44088288-7ad1-44a7-8ec5-d8c210099c12",
+      "streamSha256": "3443345152a9d708d5a506c600c8cdee46d235fd1623008431eb37cc985a7b82",
+      "matchesDecisionStream": true,
+      "observedInScan": true,
       "distinctArtistHints": 1,
       "distinctArtistTitleHints": 1,
       "distinctTitleHashes": 1,
       "observationDates": [
-        "2026-11-25"
+        "2026-11-26"
       ],
       "stalePairCount": 0,
       "artistHintCounts": {
@@ -578,33 +668,6 @@
       "sourceHintCounts": {
         "no_usable_source": 1
       },
-      "verifiedArtistCount": 0,
-      "approved": false,
-      "publicationAllowed": false
-    },
-    {
-      "stationuuid": "44088288-7ad1-44a7-8ec5-d8c210099c12",
-      "streamSha256": "3443345152a9d708d5a506c600c8cdee46d235fd1623008431eb37cc985a7b82",
-      "matchesDecisionStream": true,
-      "observedInScan": true,
-      "distinctArtistHints": 0,
-      "distinctArtistTitleHints": 0,
-      "distinctTitleHashes": 0,
-      "observationDates": [],
-      "stalePairCount": 0,
-      "artistHintCounts": {
-        "target_hint": 0,
-        "other_hint": 0,
-        "mixed_hint": 0,
-        "unclassified_hint": 0
-      },
-      "artistTitleHintCounts": {
-        "target_hint": 0,
-        "other_hint": 0,
-        "mixed_hint": 0,
-        "unclassified_hint": 0
-      },
-      "sourceHintCounts": {},
       "verifiedArtistCount": 0,
       "approved": false,
       "publicationAllowed": false
@@ -970,27 +1033,28 @@
       "streamSha256": "08c4129d00a6096cde9f1ef2a03caac619f400f91ba137643751c1da9c9f4eb6",
       "matchesDecisionStream": true,
       "observedInScan": true,
-      "distinctArtistHints": 1,
-      "distinctArtistTitleHints": 1,
-      "distinctTitleHashes": 1,
+      "distinctArtistHints": 2,
+      "distinctArtistTitleHints": 2,
+      "distinctTitleHashes": 2,
       "observationDates": [
-        "2026-11-25"
+        "2026-11-25",
+        "2026-11-26"
       ],
       "stalePairCount": 0,
       "artistHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 1
+        "unclassified_hint": 2
       },
       "artistTitleHintCounts": {
         "target_hint": 0,
         "other_hint": 0,
         "mixed_hint": 0,
-        "unclassified_hint": 1
+        "unclassified_hint": 2
       },
       "sourceHintCounts": {
-        "no_usable_source": 1
+        "no_usable_source": 2
       },
       "verifiedArtistCount": 0,
       "approved": false,
@@ -1110,7 +1174,7 @@
         "unclassified_hint": 1
       },
       "sourceHintCounts": {
-        "no_usable_source": 1
+        "musicbrainz_only": 1
       },
       "verifiedArtistCount": 0,
       "approved": false,

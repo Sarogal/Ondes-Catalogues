@@ -4,12 +4,12 @@
   "publicationAllowed": false,
   "editoriallyApprovedCount": 0,
   "attemptedPageCount": 8,
-  "linkedPagesFetched": 2,
-  "htmlObservedCount": 72,
-  "identityTargetCount": 9,
+  "linkedPagesFetched": 8,
+  "htmlObservedCount": 76,
+  "identityTargetCount": 11,
   "structuredProgrammeCount": 3,
   "programmeScopeCount": 0,
-  "declaredStreamLinkedCount": 3,
+  "declaredStreamLinkedCount": 4,
   "records": [
     {
       "stationuuid": "01707580-90b4-47cd-9a46-2954e457ea8f",
@@ -827,15 +827,15 @@
       "homepageSha256": "712c9d60a7f9929230457b12b437b3958a84cb10ebdc5a55edb7fe9e5c365a10",
       "identityNameSha256": "fb6db86db3ccbbf75c681d6205fccb16d5b7ed1cda143e27487f5c36cd93390e",
       "reportedHost": "metalzone.radio.br",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "retrieval": "html_observed",
-      "analyzerVersion": 3,
+      "analyzerVersion": 4,
       "streamSha256": "a0d2546df73ea61f9f61152087c9a4c5d027a6bf2f74480e1082b0d280e1b18a",
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": true,
-      "signal": "stale_analyzer_or_stream_review",
+      "signal": "identity_and_target_indication",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -849,13 +849,21 @@
         "metal"
       ],
       "primaryElectronicTerms": [],
-      "pageSha256": "735389b53020ddf33b7dde363755b6f8657591fc465bb75d367fe1f997259bdf",
+      "pageSha256": "262922b10eb05333a3ca1e40f10e6de71e2551e907dd6e135e8a05cb64d72b61",
       "finalPageSha256": "712c9d60a7f9929230457b12b437b3958a84cb10ebdc5a55edb7fe9e5c365a10",
       "imageHintSha256": [
         "1d0891a405df71fc2bda45d0cd454c6753653eeb4d9016b399a678a03e09c8c7",
         "28909c887bcd60e50647f8ca2f78302368b8b724d55a85f0161d0b1c0f6cdeb3",
         "4d3cb57df221366e56520fb8706e6739cad23736c54f0cf12e9096829153ad71",
         "fd93be9f2b13eeeb3162e2ff77044374baf4cfff03c53d1babaf5d7157166230"
+      ],
+      "linkedPageEvidence": [
+        {
+          "pageSha256": "ccdde05c513d597105d488a1ca462fc31306a4e5550d329add43afe796f19310",
+          "finalPageSha256": "0693b4b64fcc704e9b6d8c57110cab6f2be01554a939f9d815db668851e608d9",
+          "programmeScopeEvidence": false,
+          "declaredStreamLinked": false
+        }
       ]
     },
     {
@@ -903,15 +911,15 @@
       "homepageSha256": "dc7005bff656520d348886c415ba5af5cd254b01bdf05fa7c8ac1ed34caaf7ed",
       "identityNameSha256": "2133e278320c98a9f8f167fc30aa1c6eee069998a0687ad8c8cb6cef48d108b3",
       "reportedHost": "metalradio.gr",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "retrieval": "html_observed",
-      "analyzerVersion": 3,
+      "analyzerVersion": 4,
       "streamSha256": "c23922f43cbedb9e0b05f782bcaf5062c34cf2886d35b772b53731ba5c6d3a4d",
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "stale_analyzer_or_stream_review",
+      "signal": "unbound_target_indication",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -926,9 +934,10 @@
         "metalcore"
       ],
       "primaryElectronicTerms": [],
-      "pageSha256": "944d684909c013f76c5d752f5d84b320b243c371ef8fc302a7e46be19854318d",
+      "pageSha256": "ce7bef3b8334d2064152d7a7d24aab52f2b682dd937286d24347bff2047ba92a",
       "finalPageSha256": "dc7005bff656520d348886c415ba5af5cd254b01bdf05fa7c8ac1ed34caaf7ed",
-      "imageHintSha256": []
+      "imageHintSha256": [],
+      "linkedPageEvidence": []
     },
     {
       "stationuuid": "4e3c3bc3-7d48-4a20-84cc-509d3e2cea14",
@@ -1170,6 +1179,60 @@
       "finalPageSha256": "12beab9ab81535bac62d60ead408734da9f8d5b4af12a80ec4403abd733004d2",
       "imageHintSha256": [],
       "linkedPageEvidence": []
+    },
+    {
+      "stationuuid": "5e9f7c0a-a1ef-4739-b115-dad73cfbf404",
+      "homepageSha256": "1f1cee9de783f97c013456085ee22f2027f693e4066375d600ac94789d68e089",
+      "identityNameSha256": "f92fbdb0fe78d29817d172f70540467e6a499606789af453876301836541b8af",
+      "reportedHost": "welovetheeightiesradio.com",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "08c4129d00a6096cde9f1ef2a03caac619f400f91ba137643751c1da9c9f4eb6",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": true,
+      "signal": "identity_and_target_indication",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [
+        "pop"
+      ],
+      "declaredStreamLinked": true,
+      "primaryTargetTerms": [
+        "metal"
+      ],
+      "visibleTargetTerms": [
+        "heavy metal",
+        "metal"
+      ],
+      "primaryElectronicTerms": [],
+      "pageSha256": "7532c0fbc2ea56707b479aeedbd7be67789b6a341b882516f269846411824483",
+      "finalPageSha256": "1f1cee9de783f97c013456085ee22f2027f693e4066375d600ac94789d68e089",
+      "imageHintSha256": [
+        "28fc3dd300f666104935deca7875a64a04363ded3b657c634407b17ef35c911f",
+        "48120de101da03def090c09784cf2fdbe116613e18912662842ea548d7036b74",
+        "5b28ddb8960b4c05fde711cc94b8fc0da229424fcfdcb8fbe35ef7302923f2b2",
+        "d5e157ec2546e5e93812b02462d870013f22378ab8605f9b32f219457ac09e69",
+        "d80dabc0e63214fab00a74824657abd61003891a60c43da4af1adceba34f9f49"
+      ],
+      "linkedPageEvidence": [
+        {
+          "pageSha256": "8675005651e8ab7ba96abe45ff35cc5652ca217e40ff581c912523c386b8e7fb",
+          "finalPageSha256": "a66ba347437e5a7e29abdafac136b224469948c745f03f15832c4e4d28de48ac",
+          "programmeScopeEvidence": false,
+          "declaredStreamLinked": false
+        },
+        {
+          "pageSha256": "f74bb5be09fffb4a7015eb1608166c88a78ebfff85deb35361298796e7babf8a",
+          "finalPageSha256": "be26d4095f31736be08f68d2e3ff541ec7e06837a85e189f67758a46f222a221",
+          "programmeScopeEvidence": false,
+          "declaredStreamLinked": false
+        }
+      ]
     },
     {
       "stationuuid": "6014fd73-f56c-43e3-9c7b-43ef280f278f",
@@ -1577,6 +1640,41 @@
       "linkedPageEvidence": []
     },
     {
+      "stationuuid": "9628a108-0601-11e8-ae97-52543be04c81",
+      "homepageSha256": "676b9440e83c7c6e49b870ea278672259e91cafc8c9047e1a6c4222609d5e1d5",
+      "identityNameSha256": "a1e6722248139a4b37162eb09bae7693153bf1228454ab09544ab5980b04a559",
+      "reportedHost": "www.2000fm.net",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "728d8a9c5da25b798772fe7765b2b6b6b3b8944dd557e34f3115eeb469ba2607",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": false,
+      "signal": "unbound_target_indication",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [
+        "country",
+        "hip hop",
+        "pop"
+      ],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [
+        "hard rock",
+        "punk"
+      ],
+      "visibleTargetTerms": [],
+      "primaryElectronicTerms": [],
+      "pageSha256": "8d1db8114edc7ab78442f344bbaf35ba111cf5155cb30765ae424ca6c45ac84d",
+      "finalPageSha256": "676b9440e83c7c6e49b870ea278672259e91cafc8c9047e1a6c4222609d5e1d5",
+      "imageHintSha256": [],
+      "linkedPageEvidence": []
+    },
+    {
       "stationuuid": "981237b0-253c-4be9-81ce-6fcb86006733",
       "homepageSha256": "691c99d05c9781203e4386a07a8c85f98b085121998cc5788b3f7dd5329eff12",
       "identityNameSha256": "7f2ef616910a79c69aa6f941cecdcdddeb398b2d633c9d3333542e733e8543f2",
@@ -1726,15 +1824,15 @@
       "homepageSha256": "acb9407c361e1d53e6a0cfe36e159935d216342b696f2a37d31142f0073e0168",
       "identityNameSha256": "eea7aa8fd37d71ab646143ec9d37145cfd4f5fafc2320c43fdb1232f0ff294cc",
       "reportedHost": "motoradio.online",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "retrieval": "html_observed",
-      "analyzerVersion": 3,
+      "analyzerVersion": 4,
       "streamSha256": "c578c574dc41a0bf8619f7c47b6cdc508eaca722673179680be98cd7e76e2ffe",
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "stale_analyzer_or_stream_review",
+      "signal": "unbound_target_indication",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -1746,12 +1844,13 @@
         "hard rock"
       ],
       "primaryElectronicTerms": [],
-      "pageSha256": "dead31dbe95f3be80a4fd9bed47a0af7919ccbff0559172e8eecd4ef3721fee4",
+      "pageSha256": "f4facd656ae6242a36ac69a910444548ae2d0a30ab428859aa1cb5a2bfcb719c",
       "finalPageSha256": "acb9407c361e1d53e6a0cfe36e159935d216342b696f2a37d31142f0073e0168",
       "imageHintSha256": [
         "62ca58a468338120be62af2c366b2a84df51235e8099a2c0768c77dc1087f199",
         "9eb7dc04de47836f1907bc0e73d02e9957f9448beff6dc196b5d79a6834b969b"
-      ]
+      ],
+      "linkedPageEvidence": []
     },
     {
       "stationuuid": "ad0f6199-f729-4fb1-b19c-e2c6fd545ff9",
@@ -2174,6 +2273,34 @@
       "imageHintSha256": [
         "fd38f9ae16311ca693d789200ce136292dd36f5334c3282512e70828ce2295d5"
       ]
+    },
+    {
+      "stationuuid": "d342e328-81bb-4026-9822-cd6c02313be0",
+      "homepageSha256": "568ba3238bd3b2a5821a604c1e37bb9e3ab445e48a380775ad7f8117cb13aafe",
+      "identityNameSha256": "65d892205e7ac22a223afc995cff61d2db710607f898497fb2bbfe3a9a99f1fa",
+      "reportedHost": "www.ajoradio.org",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "bc56ddb29c4eff514166cbd9fa14d3d40c9679c76588cfd5a0979f8d182b593d",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": false,
+      "signal": "no_format_evidence",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [],
+      "primaryElectronicTerms": [],
+      "pageSha256": "fa2c3e5b11e54ba095cdadf0926f98f2f7801b614c4de25363fe4bd12c4f58bf",
+      "finalPageSha256": "568ba3238bd3b2a5821a604c1e37bb9e3ab445e48a380775ad7f8117cb13aafe",
+      "imageHintSha256": [],
+      "linkedPageEvidence": []
     },
     {
       "stationuuid": "d469d86b-e0a7-45ac-aa94-6be76329ab82",
@@ -2660,15 +2787,15 @@
       "homepageSha256": "81615e733fabb4a8bd7be36525e83622a6cfcc68d7c951b439acd5bfe1cc3b43",
       "identityNameSha256": "a93d32d00b4e78c233475874258e1194d88d2ad8b798281c74d748695a23fc05",
       "reportedHost": "midnight-madness.eradioweb.com",
-      "observedDate": "2026-11-25",
+      "observedDate": "2026-11-26",
       "observedInScan": true,
       "retrieval": "html_observed",
-      "analyzerVersion": 3,
+      "analyzerVersion": 4,
       "streamSha256": "687d6a80b6ffd3ab7f0b6959ea7e549c382f12d90fc182bd6d7a5b3fa23e86a1",
       "editorialApproved": false,
       "publicationAllowed": false,
       "identityNameMatch": false,
-      "signal": "stale_analyzer_or_stream_review",
+      "signal": "unbound_target_indication",
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
       "programmeScopeSources": [],
@@ -2682,14 +2809,43 @@
         "metal"
       ],
       "primaryElectronicTerms": [],
-      "pageSha256": "20a1d2461b212358f7c7b9eba1abf2f8aefa7de63b5d13f6b5de26be961f4ae0",
+      "pageSha256": "e08fd224a526e6e304610c6ff12d95a01c68b249da226878e57f859ee2bfdb08",
       "finalPageSha256": "81615e733fabb4a8bd7be36525e83622a6cfcc68d7c951b439acd5bfe1cc3b43",
       "imageHintSha256": [
         "3909c474485e6eb40f4f3f50593f82bb4f7ba27c019ed51b61641b7a34e85a77",
         "784e2ecc0552188b8acadb9043cde685ea0e42edeaadc948492a31e05e0cd982",
         "b390e624eb6241f38f4e3515e68346d332218226126d4d3a42e079d7323cb875",
         "eccbcb9d2cba0fe4cb3160422bd96a27be65f6d042b40e407c8b6e42c19dc624"
-      ]
+      ],
+      "linkedPageEvidence": []
+    },
+    {
+      "stationuuid": "f95f4310-ff8c-4106-9b8e-18f05e594f1f",
+      "homepageSha256": "fd7fe6e419d42e787c088bf892f665da0465e50e11e01c5f449bb76436e29609",
+      "identityNameSha256": "4f827bbe56fa345138f05b1312ed4d458e5a79bd8ccb9e0d077e7c14bbfa39d4",
+      "reportedHost": "vvrr.page.radio",
+      "observedDate": "2026-11-26",
+      "observedInScan": true,
+      "retrieval": "html_observed",
+      "analyzerVersion": 4,
+      "streamSha256": "53948485098b57585dda110ae9c67bcf5fca741c1335e4b93742af7f7b973ef9",
+      "editorialApproved": false,
+      "publicationAllowed": false,
+      "identityNameMatch": true,
+      "signal": "no_format_evidence",
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "programmeScopeSources": [],
+      "programmeScopeTerms": [],
+      "otherFormatTerms": [],
+      "declaredStreamLinked": false,
+      "primaryTargetTerms": [],
+      "visibleTargetTerms": [],
+      "primaryElectronicTerms": [],
+      "pageSha256": "808a4b33f33d1add28ec26b3c06e64435fba7a852d98196156e54f4d8b8bde7d",
+      "finalPageSha256": "fd7fe6e419d42e787c088bf892f665da0465e50e11e01c5f449bb76436e29609",
+      "imageHintSha256": [],
+      "linkedPageEvidence": []
     }
   ]
 }

@@ -873,7 +873,7 @@
       "stationuuid": "795e1e3f-8b5a-414a-bb28-a53164c27c71",
       "sourceClass": "missing_source",
       "sourceSha256": null,
-      "audioEvidenceRank": 2,
+      "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
       "publicationAllowed": false,
