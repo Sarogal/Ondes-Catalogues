@@ -1,6 +1,7 @@
 import io
 import json
 import unittest
+import uuid
 from radio_daily_recording_preview import resolve,build
 from radio_daily_metadata_preview import collect
 from radio_daily_continuity_preview import read_icy_titles
@@ -27,11 +28,24 @@ class RecordingTests(unittest.TestCase):
         self.assertEqual(r["artistMbids"],[MBID])
         self.assertEqual(r["recordingMbids"],[RID])
     def test_homonyms_same_song_held(self):
-        r=resolve("Iron Band","Song",lambda p:{"count":2,"recordings":[recording(),recording(UID)]})
+        r=resolve("Iron Band","Song",lambda p:{"count":2,"recordings":[recording(),dict(recording(UID),id=UID)]})
         self.assertEqual(r["status"],"ambiguous_credit")
     def test_truncated_or_wrong_title_held(self):
         self.assertEqual(resolve("Iron Band","Song",lambda p:{"count":51,"recordings":[recording()]})["status"],"incomplete_search")
         self.assertEqual(resolve("Iron Band","Song",lambda p:{"count":1,"recordings":[recording(title="Other")]})["status"],"no_exact_credit")
+    def test_paginated_recording_credit_and_late_conflict(self):
+        rows = [dict(recording(title="Other"), id=str(uuid.UUID(int=i+1)))
+                for i in range(50)] + [recording()]
+        offsets = []
+        def paged(params):
+            off = params.get("offset", 0)
+            offsets.append(off)
+            return {"count": len(rows), "offset": off, "recordings": rows[off:off+50]}
+        self.assertEqual(resolve("Iron Band", "Song", paged)["artistMbids"], [MBID])
+        self.assertEqual(offsets, [0, 50])
+        rows[0] = dict(recording(UID), id=str(uuid.UUID(int=1)))
+        self.assertEqual(resolve("Iron Band", "Song", paged)["status"], "ambiguous_credit")
+
     def test_no_title_persisted(self):
         m,r,t=fixture()
         out=build(m,r,t,limit=1,request=request)

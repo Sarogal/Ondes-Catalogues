@@ -22,6 +22,7 @@ MAX_NAMES = 8
 MAX_BYTES = 400_000
 MAX_STATE = 12 * 1024 * 1024
 SEARCH_LIMIT = 25
+MAX_SEARCH_PAGES = 4
 
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -72,14 +73,51 @@ class Client:
             raise ValueError("invalid response")
         return data
 
+def search_pages(request, query, field, limit):
+    """Return complete bounded search rows, or None for incomplete evidence.
+
+    Refuse moving totals, repeated IDs, short nonfinal pages and excessive
+    result sets rather than treating a partial result as a unique match.
+    """
+    rows = []
+    seen = set()
+    total = None
+    for page in range(MAX_SEARCH_PAGES):
+        offset = page * limit
+        params = {"query": query, "limit": limit}
+        if offset:
+            params["offset"] = offset
+        data = request(params)
+        batch, count = data.get(field), data.get("count")
+        if (not isinstance(batch, list) or type(count) is not int
+                or count < offset + len(batch) or len(batch) > limit):
+            raise ValueError("invalid search result")
+        if total is None:
+            total = count
+            if total > limit * MAX_SEARCH_PAGES:
+                return None
+        if count != total or ("offset" in data and
+                              (type(data["offset"]) is not int or data["offset"] != offset)):
+            return None
+        if len(batch) != min(limit, total - offset):
+            return None
+        for row in batch:
+            if not isinstance(row, dict) or not valid_id(row.get("id")):
+                raise ValueError("invalid search row")
+            if row["id"] in seen:
+                return None
+            seen.add(row["id"])
+        rows.extend(batch)
+        if len(rows) == total:
+            return rows
+    return None
+
 def research(name, request):
     # Literal Lucene phrase; untrusted metadata is never query syntax.
     phrase = name.replace("\\", "\\\\").replace('"', '\\"')
-    result = request("", {"query": 'artist:"' + phrase + '"', "limit": SEARCH_LIMIT})
-    rows, count = result.get("artists"), result.get("count")
-    if not isinstance(rows, list) or type(count) is not int or count < len(rows):
-        raise ValueError("invalid search result")
-    if count > len(rows):
+    rows = search_pages(lambda params: request("", params),
+                        'artist:"' + phrase + '"', "artists", SEARCH_LIMIT)
+    if rows is None:
         return {"status": "ambiguous_or_incomplete"}
     matches = [x for x in rows if isinstance(x, dict) and isinstance(x.get("name"), str)
                and key(x["name"]) == key(name)]

@@ -13,7 +13,7 @@ import unicodedata
 from pathlib import Path
 from urllib.error import HTTPError
 
-from radio_daily_artist_research import Client, key, safe_name, valid_id
+from radio_daily_artist_research import Client, key, safe_name, valid_id, search_pages
 from radio_daily_metadata_preview import valid_hint
 from radio_daily_qualification_dossiers import index, safe_digest
 from radio_stream_recheck_ledger import parse_day, SHA256_RE
@@ -32,12 +32,9 @@ def phrase(value):
     return '"' + value.replace("\\","\\\\").replace('"','\\"') + '"'
 
 def resolve(artist,title,request):
-    data=request({"query":"artist:"+phrase(artist)+" AND recording:"+phrase(title),
-                  "limit":SEARCH_LIMIT})
-    rows,count=data.get("recordings"),data.get("count")
-    if not isinstance(rows,list) or type(count) is not int or count<len(rows):
-        raise ValueError("invalid recording search")
-    if count>len(rows):
+    rows=search_pages(request, "artist:"+phrase(artist)+" AND recording:"+phrase(title),
+                      "recordings", SEARCH_LIMIT)
+    if rows is None:
         return {"status":"incomplete_search"}
     found={}
     for row in rows:
