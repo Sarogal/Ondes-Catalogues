@@ -238,6 +238,7 @@ def inspect_municipal(lead, *, directory_fetch=None, page_read=None):
     page_read = page_read or read_municipal_https
     counts = Counter()
     city, venue = identity(lead)
+    stage = "directory"
     try:
         directory = directory_fetch(city)
         code = lead.get("code_commune")
@@ -266,17 +267,23 @@ def inspect_municipal(lead, *, directory_fetch=None, page_read=None):
                 raise ValueError("municipal_scope")
             return final, html
 
+        stage = "homepage"
         home, html = read("https://" + sorted(hosts)[0] + "/")
+        counts["municipal_homepage_read"] += 1
         names = {venue} | {lead[k] for k in ("nom_du_lieu", "nom_usuel_du_lieu")
                            if isinstance(lead.get(k), str) and 2 <= len(lead[k]) <= 180}
         def links(url, content):
             return {hit for name in names
                     if (hit := exact_named_venue_page(name, url, content, city, directory))}
+        stage = "link_discovery"
         targets = links(home, html)
         if not targets:
-            for section in _section_pages(home, html, city, directory):
+            sections = _section_pages(home, html, city, directory)
+            counts["municipal_sections_discovered"] += len(sections)
+            for section in sections:
                 try:
                     final, section_html = read(section)
+                    counts["municipal_sections_read"] += 1
                     targets.update(links(final, section_html))
                 except (OSError, ValueError, TypeError, KeyError, UnicodeError):
                     counts["municipal_section_unavailable"] += 1
@@ -284,11 +291,14 @@ def inspect_municipal(lead, *, directory_fetch=None, page_read=None):
         if len(targets) != 1:
             counts["municipal_exact_page_missing" if not targets else "municipal_exact_page_ambiguous"] += 1
             return counts
+        stage = "dedicated_page"
         final, html = read(next(iter(targets)))
         counts["municipal_exact_page_found"] += 1
+        stage = "content"
         counts["municipal_" + inspect_official_content(lead, html)] += 1
     except (OSError, ValueError, TypeError, KeyError, UnicodeError, OverflowError):
         counts["municipal_research_unavailable"] += 1
+        counts["municipal_failed_" + stage] += 1
     return counts
 
 
