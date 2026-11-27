@@ -30,6 +30,8 @@ BAN_DIAGNOSTIC_CODES = (
     "ban_unavailable", "ban_exact_address_unmatched", "admin_unavailable",
     "admin_identity_unmatched", "historical_postcode_conflict", "proof_found",
     "section_discovery_attempted", "section_page_unavailable",
+    "culture_directory_attempted", "culture_directory_unavailable",
+    "culture_directory_no_exact_match", "culture_directory_hints_found",
 )
 _BAN_DIAGNOSTICS = Counter()
 
@@ -222,7 +224,7 @@ def _section_pages(home, html, city, directory):
 
 
 def discover_official_ban(row, *, directory_fetch=None, page_read=None,
-                          ban_fetch=None, admin_fetch=None):
+                          ban_fetch=None, admin_fetch=None, cultural_lookup=None):
     """Use an untrusted venue URL or exact municipal homepage link as a hint.
 
     Every page is authenticated by a fresh DILA result before network access.
@@ -262,9 +264,30 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
             _note("hint_not_authenticated")
         else:
             _note("hint_missing")
-        # At most one authenticated homepage, and one exact visible venue link.
+        # Only live production or an explicitly injected lookup may query
+        # the national directory. Offline callers stay network-free.
+        if cultural_lookup is None and use_municipal_reader:
+            from ptitesondes_national_cultural_directory_probe import exact_directory_record
+            cultural_lookup = exact_directory_record
+        if not pages and cultural_lookup is not None:
+            from ptitesondes_national_cultural_directory_probe import directory_website_hints
+            _note("culture_directory_attempted")
+            try:
+                record = cultural_lookup(city, venue)
+                if record is None:
+                    _note("culture_directory_no_exact_match")
+                else:
+                    for url in directory_website_hints(record):
+                        if (approved_municipal_page_host(url, city, directory)
+                                and urlsplit(url).path.strip("/")):
+                            pages.append(url)
+                    if pages:
+                        _note("culture_directory_hints_found")
+            except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
+                _note("culture_directory_unavailable")
+        # At most one authenticated homepage, and bounded exact page hints.
         home = "https://" + sorted(hosts)[0] + "/"
-        for url in pages:
+        for url in pages[:3]:
             try:
                 final, html = read_page(url)
                 proof = corroborate_official_ban(city, venue, final, html,
