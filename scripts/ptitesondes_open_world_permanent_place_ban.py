@@ -372,17 +372,20 @@ def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=No
     No DILA dependency. Inspect a bounded set of safe listed URLs; only exact
     dedicated identity and independent address evidence may qualify a page.
     Contradictory identified pages stay private.
-    Do not follow redirects or consume saved coordinates, addresses or URLs.
+    Only same-host HTTPS canonicalization is allowed; never consume saved
+    coordinates, addresses or URLs.
     """
     from ptitesondes_national_cultural_directory_probe import (
         exact_directory_record, directory_website_hints)
     from ptitesondes_cultural_directory_identity import directory_identity, same_official_address
     from ptitesondes_dila_municipal_domains import _host
-    from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
+    from ptitesondes_unlisted_source_safe_recheck import read_cultural_https
     from ptitesondes_generic_venue_ign_corroboration import fetch_ign
     from ptitesondes_open_world_permanent_place_draft import fetch_admin
     cultural_lookup = cultural_lookup or exact_directory_record
-    page_read = page_read or read_unknown_https
+    if page_read is None:
+        def page_read(url):
+            return read_cultural_https(url)
     ban_fetch = ban_fetch or fetch_ign
     admin_fetch = admin_fetch or fetch_admin
     _note("culture_independent_attempted")
@@ -400,7 +403,11 @@ def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=No
         matched = []
         for url in urls:
             try:
-                html = page_read(url)
+                result = page_read(url)
+                final_url, html = result if isinstance(result, tuple) else (url, result)
+                if (_host(final_url) != _host(url) or urlsplit(final_url).query
+                        or urlsplit(final_url).fragment):
+                    raise ValueError('cultural_redirect_outside_authority')
             except (OSError, ValueError, TypeError, UnicodeError):
                 _note("culture_independent_page_unavailable")
                 continue
@@ -414,7 +421,7 @@ def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=No
             if not parser.seen_main or norm_text(venue) not in parser.headings:
                 _note("official_identity_unmatched")
                 continue
-            facts = visible_place_facts(city, venue, url, html, identity["insee"])
+            facts = visible_place_facts(city, venue, final_url, html, identity["insee"])
             if facts is None:
                 return _note("culture_independent_multi_url_conflict") if len(urls) > 1 else None
             if not same_official_address(identity, facts):

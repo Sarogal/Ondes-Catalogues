@@ -304,6 +304,25 @@ class OfficialPlaceBANTests(unittest.TestCase):
         drafts, summary = review_drafts(state, day, **dict(kwargs, cultural_lookup=lambda *_: None))
         self.assertEqual(drafts, [])
 
+    def test_cultural_canonical_page_keeps_exact_authority(self):
+        from ptitesondes_open_world_permanent_place_ban import discover_independent_cultural_ban
+        from unittest.mock import patch
+        home = "https://culture.example/"
+        record = {"commune": CITY, "nom_du_lieu": VENUE, "code_commune": "12345",
+                  "code_postal": "12345", "numero_et_libelle_voie": "12 Rue des Jeux",
+                  "adresse_complete": f"12 Rue des Jeux, 12345 {CITY}",
+                  "site_internet_et_autres_liens": home}
+        kwargs = dict(cultural_lookup=lambda *_: record, ban_fetch=lambda _: BAN,
+                      admin_fetch=lambda *_: ADMIN)
+        lead = {"city": CITY, "venue": VENUE}
+        with patch("ptitesondes_unlisted_source_safe_recheck.read_cultural_https",
+                   return_value=(home+"lieu/", HTML)):
+            self.assertEqual(discover_independent_cultural_ban(lead, **kwargs)["official_url"],
+                             home+"lieu/")
+        with patch("ptitesondes_unlisted_source_safe_recheck.read_cultural_https",
+                   return_value=("https://other.example/", HTML)):
+            self.assertIsNone(discover_independent_cultural_ban(lead, **kwargs))
+
     def test_multiple_cultural_links_require_exact_consistent_proof(self):
         from ptitesondes_open_world_permanent_place_ban import discover_independent_cultural_ban
         a, b = "https://a.example/lieu", "https://b.example/lieu"
