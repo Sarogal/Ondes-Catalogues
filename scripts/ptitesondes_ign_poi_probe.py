@@ -63,25 +63,29 @@ def summarize(doc):
             "field_presence": dict(fields), "feature_types": dict(types),
             "publication_ready": False, "public_writes": 0}
 
-def exact_poi_point(record, doc):
+def exact_poi_point(record, doc, diagnostics=None):
     """A unique exact named point, not a street or commune centroid.
 
     This is a private location hypothesis only. The independent official
     page, cultural relevance and public access still need validation.
     """
+    def reject(reason):
+        if diagnostics is not None:
+            diagnostics[reason] += 1
+        return None
     try:
         pair = identity(record)
         if pair is None:
-            return None
+            return reject('directory_identity')
         city, name = pair
         code, postcode = record["code_commune"], record.get("code_postal")
         if not isinstance(postcode, str) or not re.fullmatch(r"[0-9]{5}", postcode):
-            return None
+            return reject("directory_postcode_format")
         summarize(doc)
         features = doc["features"]
         # A full truncated result set cannot establish uniqueness.
         if len(features) >= LIMIT:
-            return None
+            return reject('truncated_results')
         matches = []
         for feature in features:
             p, g = feature["properties"], feature["geometry"]
@@ -89,9 +93,12 @@ def exact_poi_point(record, doc):
                 continue
             # A second exact-name result or malformed matching feature
             # must not be silently discarded to manufacture uniqueness.
-            if (p.get("citycode") != code or p.get("postcode") != postcode
-                    or norm_text(p.get("city")) != norm_text(city)):
-                return None
+            if p.get("citycode") != code:
+                return reject("poi_insee_mismatch")
+            if p.get("postcode") != postcode:
+                return reject("poi_postcode_mismatch")
+            if norm_text(p.get("city")) != norm_text(city):
+                return reject("poi_city_mismatch")
             category = p.get("category")
             if isinstance(category, str):
                 category = [category]
@@ -100,20 +107,22 @@ def exact_poi_point(record, doc):
                     or any(norm_text(x) in ("street", "rue", "commune", "municipality",
                                            "locality", "lieu dit") for x in category)
                     or p.get("type") in ("street", "municipality", "locality", "housenumber")):
-                return None
+                return reject("poi_category_or_type")
             score = p.get("score")
             if type(score) not in (int, float) or not math.isfinite(score) or not 0.8 <= score <= 1:
-                return None
+                return reject("poi_score")
             xy = g.get("coordinates")
             if (g.get("type") != "Point" or not isinstance(xy, list) or len(xy) != 2
                     or not all(type(x) in (int, float) and math.isfinite(x) for x in xy)
                     or not -180 <= xy[0] <= 180 or not -90 <= xy[1] <= 90
                     or xy == [0, 0]):
-                return None
+                return reject("poi_geometry")
             matches.append((xy[1], xy[0]))
-        return matches[0] if len(matches) == 1 else None
+        if len(matches) != 1:
+            return reject("poi_exact_name_missing" if not matches else "poi_exact_name_ambiguous")
+        return matches[0]
     except (ValueError, TypeError, KeyError, AttributeError, OverflowError):
-        return None
+        return reject("invalid_response")
 
 
 def verify_admin_point(record, point, admin_fetch):
@@ -134,6 +143,7 @@ def probe(*, discover=scan, lookup=exact_directory_record, query=fetch_poi, admi
     leads = discover()["records"]
     attempted = exact = admin_verified = 0
     summaries = []
+    diagnostics = Counter()
     if admin_fetch is None:
         from ptitesondes_open_world_permanent_place_draft import fetch_admin
         admin_fetch = fetch_admin
@@ -145,16 +155,32 @@ def probe(*, discover=scan, lookup=exact_directory_record, query=fetch_poi, admi
         attempted += 1
         response = query(pair[1], record["code_commune"])
         summaries.append(summarize(response))
-        point = exact_poi_point(record, response)
+        point = exact_poi_point(record, response, diagnostics)
         exact += int(point is not None)
         admin_verified += int(verify_admin_point(record, point, admin_fetch))
     return {"discovered": len(leads), "attempted": attempted, "responses": summaries,
             "exact_named_points": exact, "admin_verified_points": admin_verified,
+            "rejection_counts": dict(diagnostics),
             "publication_ready": False, "public_writes": 0}
+
+def discover_probe_sample():
+    # At most 240 rows, with a deterministic bounded page advance; no
+    # mutation of production cursors, and at most five POI lookups.
+    records = {}
+    page = 1
+    for _ in range(3):
+        result = scan(page)
+        for row in result["records"]:
+            records[(norm_text(row["city"]), norm_text(row["venue"]))] = row
+        page = result["next_page"]
+        if page == 1 or len(records) >= 5:
+            break
+    return {"records": list(records.values())}
+
 
 if __name__ == "__main__":
     try:
-        print(json.dumps(probe(), sort_keys=True))
+        print(json.dumps(probe(discover=discover_probe_sample), sort_keys=True))
     except (OSError, ValueError, KeyError, TypeError, UnicodeError, OverflowError):
         print("::error::IGN POI probe unavailable or invalid")
         raise SystemExit(1) from None
