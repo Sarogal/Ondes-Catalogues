@@ -24,7 +24,9 @@ from ptitesondes_open_world_permanent_place_research import (
 from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
 
 from ptitesondes_open_world_permanent_place_draft import build_draft, fetch_admin
-from ptitesondes_open_world_permanent_place_ban import discover_official_ban, build_ban_draft
+from ptitesondes_open_world_permanent_place_ban import (
+    discover_official_ban, discover_independent_cultural_ban, build_ban_draft,
+)
 from ptitesondes_generic_venue_ign_corroboration import fetch_ign
 
 MAX_BYTES = 900000
@@ -53,7 +55,8 @@ def read_private(token):
 
 
 def review_drafts(private, today, *, osm_fetch=fetch_named, page_read=read_unknown_https,
-           directory_fetch=fetch_dila, admin_fetch=fetch_admin, ban_fetch=fetch_ign):
+           directory_fetch=fetch_dila, admin_fetch=fetch_admin, ban_fetch=fetch_ign,
+           cultural_lookup=None):
     counts = Counter()
     drafts = []
     summary = {"private_candidates": 0, "rechecked": 0,
@@ -89,6 +92,8 @@ def review_drafts(private, today, *, osm_fetch=fetch_named, page_read=read_unkno
         if evidence.get("method") == "dila_official_place_address_plus_ban":
             lead["ban_route"] = True
             lead["possible_website_unverified"] = evidence.get("official_url")
+        if evidence.get("method") == "culture_directory_official_place_address_plus_ban":
+            lead["cultural_ban_route"] = True
         candidates.append((key, lead))
     summary["private_candidates"] = len(candidates)
     candidates.sort(key=lambda pair: pair[0])
@@ -100,6 +105,22 @@ def review_drafts(private, today, *, osm_fetch=fetch_named, page_read=read_unkno
         summary["rechecked"] += 1
         city = lead["city"]
         try:
+            if lead.get("cultural_ban_route"):
+                fresh = discover_independent_cultural_ban(
+                    lead, cultural_lookup=cultural_lookup, page_read=page_read,
+                    ban_fetch=ban_fetch, admin_fetch=admin_fetch)
+                if fresh is None:
+                    counts["fresh_cultural_ban_evidence_unavailable"] += 1
+                    continue
+                summary["independently_corroborated"] += 1
+                counts["fresh_cultural_ban_place_evidence"] += 1
+                draft = build_ban_draft(fresh, today)
+                if draft is not None:
+                    drafts.append(draft)
+                    summary["complete_draft_records"] += 1
+                else:
+                    counts["draft_facts_not_complete"] += 1
+                continue
             if city not in cache:
                 cache[city] = directory_fetch(city)
             directory = cache[city]
