@@ -1,0 +1,47 @@
+name: Grosses Ondes — isolated daily radio scheduler
+
+# GitHub only runs cron workflows from the default branch. This dispatcher
+# schedules the reviewed isolated radio workflow, never a production publisher.
+on:
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+    inputs:
+      run_stream_probes:
+        description: Enable radio stream probes in the isolated cycle
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: radio-isolated-schedule-dispatch
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main' && vars.RADIO_LAB_AUTONOMOUS_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      APPROVED_SHA: ${{ vars.RADIO_LAB_AUTONOMOUS_APPROVED_SHA }}
+      PROBES: ${{ github.event_name == 'schedule' || inputs.run_stream_probes }}
+    steps:
+      - name: Dispatch only exact owner-pinned isolated revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo=Sarogal/Ondes-Catalogues
+          branch=feature/radio-daily-discovery-lab-20261120
+          [[ "$APPROVED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          current="$(gh api "repos/$repo/git/ref/heads/$branch" --jq '.object.sha')"
+          [[ "$current" == "$APPROVED_SHA" ]] || { echo "Radio code changed; review and re-pin required"; exit 1; }
+          [[ "$PROBES" == true || "$PROBES" == false ]]
+          # workflow_dispatch is an allowed GITHUB_TOKEN event. The branch
+          # contains the implementation at this same registered workflow path.
+          gh workflow run radio-catalog-daily-discovery.yml --repo "$repo" \
+            --ref "$branch" -f run_stream_probes="$PROBES"
+          echo "RADIO_ISOLATED_DAILY_DISPATCHED $current"
