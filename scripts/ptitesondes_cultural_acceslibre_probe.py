@@ -33,7 +33,7 @@ def candidates(fetch=_fetch):
     return [row for row in found.values() if row is not None]
 
 
-def inspect_official_content(lead, html):
+def inspect_official_content(lead, html, *, diagnostics=None):
     """Read-only explicit identity, address and family evidence stages."""
     from ptitesondes_open_world_permanent_place_ban import (
         _parse_place_main, ACTIVITIES, ACCESS, RESTRICTED, CLOSED, MAX_HTML,
@@ -44,6 +44,11 @@ def inspect_official_content(lead, html):
     parser = _parse_place_main(html, allow_role_main=True)
     names = {norm_text(lead.get(k)) for k in ("nom_du_lieu", "nom_usuel_du_lieu")} - {""}
     if not parser.seen_main or len(parser.headings) != 1 or parser.headings[0] not in names:
+        if diagnostics is not None:
+            detail = ("main_missing" if not parser.seen_main else
+                      "heading_missing" if not parser.headings else
+                      "headings_multiple" if len(parser.headings) != 1 else "heading_different")
+            diagnostics["identity_" + detail] += 1
         return "page_identity_unconfirmed"
     if any(RESTRICTED.search(b) or CLOSED.search(b) for b in parser.blocks):
         return "page_access_restricted"
@@ -92,14 +97,15 @@ def inspect_official(lead, hit, page_read=None):
             final, html = page_read(url)
             if not same_cultural_authority(url, final) or urlsplit(final).query or urlsplit(final).fragment:
                 raise ValueError("unexpected_authority")
-            reason = inspect_official_content(lead, html)
+            reason = inspect_official_content(lead, html, diagnostics=counts)
             if reason == "page_identity_unconfirmed":
                 target = _cultural_named_page(venue, final, html, verified_aliases=aliases)
+                counts["exact_named_link_found" if target else "exact_named_link_unavailable"] += 1
                 if target:
                     final, html = page_read(target)
                     if not same_cultural_authority(url, final) or urlsplit(final).query or urlsplit(final).fragment:
                         raise ValueError("unexpected_authority")
-                    reason = inspect_official_content(lead, html)
+                    reason = inspect_official_content(lead, html, diagnostics=counts)
             counts[reason] += 1
         except (OSError, ValueError, TypeError, KeyError, UnicodeError, OverflowError):
             counts["page_unavailable"] += 1
