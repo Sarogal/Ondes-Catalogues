@@ -609,6 +609,68 @@ def registered_venue_source(venue):
     return next(iter(matches)) if len(matches) == 1 else None
 
 
+class _PracticalTitle(HTMLParser):
+    """Retain only the document title, not arbitrary text or metadata."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.in_title = False
+        self.titles = []
+    def handle_starttag(self, tag, attrs):
+        if tag == "title":
+            self.in_title = True
+            self.titles.append("")
+    def handle_data(self, data):
+        if self.in_title:
+            self.titles[-1] += data
+    def handle_endtag(self, tag):
+        if tag == "title":
+            self.in_title = False
+
+
+def _access_section_address(page, blocks, venue):
+    """One venue-named document with a bounded explicit arrival section.
+
+    Do not take addresses from the restaurant, ticket office or transport
+    sections of a practical page. A generic heading alone is not identity.
+    The caller still independently verifies the named physical BAN/OSM site.
+    """
+    title = _PracticalTitle()
+    title.feed(page)
+    title.close()
+    if len(title.titles) != 1:
+        return set()
+    name = triage.words(venue.get("name"))
+    parts = [triage.words(part) for part in re.split(
+        r"\s+[–—|\-]\s+|\s*[:|]\s*", title.titles[0])]
+    if not name or name not in parts:
+        return set()
+    labels = {"comment venir", "venir", "acces", "comment acceder",
+              "venir a la salle", "getting here", "how to get here"}
+    headings = [i for i, (tag, value) in enumerate(blocks)
+                if tag in {"h1", "h2", "h3", "h4"}
+                and triage.words(value) in labels]
+    if not headings:
+        return set()
+    require(len(headings) == 1, "ambiguous practical arrival sections")
+    nearby = []
+    for tag, value in blocks[headings[0]+1:headings[0]+9]:
+        if tag.startswith("h") or NONVENUE.search(triage.words(value)):
+            break
+        nearby.append(value)
+    addresses = set()
+    for i, value in enumerate(nearby):
+        if not re.search(r"\b\d{5}\b", value):
+            continue
+        matches = {_postal_line(value, venue["city"])}
+        if i:
+            matches.add(_postal_line(nearby[i-1] + " " + value, venue["city"]))
+        matches.discard(None)
+        require(len(matches) == 1, "conflicting practical arrival address")
+        addresses.update(matches)
+    require(len(addresses) == 1, "one exact arrival address required")
+    return addresses
+
+
 def _standalone_practical_address(html, source, venue, fetch, cache):
     """Follow one actual visible same-origin practical link, never guess URLs."""
     links = PracticalLinks()
@@ -659,6 +721,7 @@ def _standalone_practical_address(html, source, venue, fetch, cache):
                 require(prior is not None, "conflicting named practical postal address")
                 matches.add(prior)
             addresses.update(matches)
+    addresses.update(_access_section_address(page, parser.blocks, venue))
     require(len(addresses) == 1, "one exact named practical address required")
     street, postcode = next(iter(addresses))
     site = dict(venue, address=street, postalCode=postcode)
