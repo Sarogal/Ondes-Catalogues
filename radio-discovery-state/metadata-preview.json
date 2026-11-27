@@ -5,7 +5,7 @@
   "approvedCount": 0,
   "attemptedCount": 6,
   "stationsWithArtistHints": 110,
-  "distinctArtistHints": 150,
+  "distinctArtistHints": 153,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -942,7 +942,7 @@
     {
       "stationuuid": "4e3c3bc3-7d48-4a20-84cc-509d3e2cea14",
       "streamSha256": "1ee03af57fb0d058d32da8cb728f75a31ad23d3949c5411a96357bcf26d4d954",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -954,7 +954,7 @@
     {
       "stationuuid": "4f30ac19-4a41-40cb-8999-2ca19b34711e",
       "streamSha256": "50c1bc9192fae23a3878c2e33c81eabbbda08dc5eed8b7c7e4b041cf915ff2c8",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -966,7 +966,7 @@
     {
       "stationuuid": "4f420bd6-f547-4d84-acb1-0526f5263151",
       "streamSha256": "6ec2c0634265a964950f24250053be6a85e29e7f4268c894dde223da65c88d17",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -981,6 +981,11 @@
           "date": "2026-11-26",
           "artistHint": "Black Sabbath",
           "titleSha256": "eb7eeaaf64486bb0bb292931ecaddf97db0155ffba7e61ef52ada62a1eb8912f"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Monster Magnet",
+          "titleSha256": "3893f8efb0e3ea7483bac3f4733976e839d8df590cf9576aa18038f643214e23"
         }
       ],
       "alternativeVersion": 0,
@@ -989,7 +994,7 @@
     {
       "stationuuid": "517b189e-46eb-4156-bf93-905f7934c838",
       "streamSha256": "a0723ce1b5898b068d2a1d2a5b4c171b1e8aaad5a8fe0e7a45ce2701ac011733",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1004,6 +1009,11 @@
           "date": "2026-11-26",
           "artistHint": "Skip the Use",
           "titleSha256": "2cb897c4b842cc5518913b5f55871124fbdb74e34b6703f07b76921638872e6e"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Minutemen",
+          "titleSha256": "daf2b5f004b4d9be1294eef5368feafc9ef45116159731d52dff0cb3a0a7ffbd"
         }
       ],
       "alternativeVersion": 0,
@@ -1012,7 +1022,7 @@
     {
       "stationuuid": "53cf8dd0-be8f-4186-96d2-767e751459a4",
       "streamSha256": "0c2be1d8943747a4af28b3709105cefa09ca3067759a809221d21d98bed0c6a1",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1027,6 +1037,11 @@
           "date": "2026-11-26",
           "artistHint": "Suicide Machines",
           "titleSha256": "786f69ee2a802bb8392e83be2260ee35d1f4bd027436ee26785e92735d3dbbac"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Lower Class Brats",
+          "titleSha256": "d149030da656068aa200bcc1596115ccbe8742ff039ef58d21213e5ed44cc681"
         }
       ],
       "alternativeVersion": 0,
@@ -1035,7 +1050,7 @@
     {
       "stationuuid": "53f8aadb-cb61-4132-9240-dac5b76e0095",
       "streamSha256": "73883f4c1fc1d4fa0cf0f47d95cc86c697b9e90f40f75081c8570373d4439337",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1050,6 +1065,11 @@
           "date": "2026-11-26",
           "artistHint": "тима гранж (Томск)",
           "titleSha256": "36d9484c01f4c9c6bc6a83fe1f54f35c511cefe164e79dd1caf3b4ac42016c1f"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Marble Carrion (Новосибирск)",
+          "titleSha256": "27244db881dc6865ea508f790d9ae581d50d1cc84f62c6bcdaaa46e431a0317d"
         }
       ],
       "alternativeVersion": 0,

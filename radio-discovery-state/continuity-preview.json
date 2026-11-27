@@ -4,7 +4,7 @@
   "publicationAllowed": false,
   "technicallyQualifiedCount": 0,
   "attemptedCount": 6,
-  "continuousIcyCount": 138,
+  "continuousIcyCount": 137,
   "finiteResponseCount": 3,
   "records": [
     {
@@ -1278,7 +1278,7 @@
     {
       "stationuuid": "59a3411a-e5bc-4ff9-9341-bb949f09a230",
       "streamSha256": "2b7014e394f5e7e21cb764adc4b6896a54ebf7af9ca9bc47b89d423d49f1bee9",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "positiveObservationDates": [
         "2026-11-25",
         "2026-11-26"
@@ -1286,13 +1286,13 @@
       "observedInScan": true,
       "technicalQualified": false,
       "publicationAllowed": false,
-      "verdict": "continuous_icy_frame_indication",
+      "verdict": "insufficient_continuity_evidence",
       "windowCount": 3,
       "sampleBytes": 12288,
-      "elapsedMs": 4183,
-      "coherentWindowCount": 3,
+      "elapsedMs": 4077,
+      "coherentWindowCount": 2,
       "distinctWindowCount": 3,
-      "frameCodec": "mpeg_layer3",
+      "frameCodec": null,
       "finiteResponse": false,
       "icyHeaderPresent": true,
       "earlyEnd": false
@@ -1319,10 +1319,11 @@
     {
       "stationuuid": "5c8f8628-58bd-433b-b3a2-9bdd63e64cef",
       "streamSha256": "3e297cdb425f47ba6944c96fb68ece4e35db6e95374c581fabde0dc8e7164ea4",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "positiveObservationDates": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "observedInScan": true,
       "technicalQualified": false,
@@ -1383,10 +1384,11 @@
     {
       "stationuuid": "62ef2552-35e9-433a-b747-efdae52bfe4f",
       "streamSha256": "ed7da234ceab2923c1e84a6e7772716502e28ea3d6684d4b2027145fe61de218",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "positiveObservationDates": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "observedInScan": true,
       "technicalQualified": false,
@@ -1394,7 +1396,7 @@
       "verdict": "continuous_icy_frame_indication",
       "windowCount": 3,
       "sampleBytes": 12288,
-      "elapsedMs": 4240,
+      "elapsedMs": 4241,
       "coherentWindowCount": 3,
       "distinctWindowCount": 3,
       "frameCodec": "aac_adts",
@@ -1405,10 +1407,11 @@
     {
       "stationuuid": "652a2fa1-d3fe-4724-a3eb-3d6b7fb1e687",
       "streamSha256": "d7735960dc083e55ebbcf7c294be2faf0e517ed4355da8d8c7459963cdebd976",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "positiveObservationDates": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "observedInScan": true,
       "technicalQualified": false,
@@ -1416,7 +1419,7 @@
       "verdict": "continuous_icy_frame_indication",
       "windowCount": 3,
       "sampleBytes": 12288,
-      "elapsedMs": 4423,
+      "elapsedMs": 4798,
       "coherentWindowCount": 3,
       "distinctWindowCount": 3,
       "frameCodec": "mpeg_layer3",
@@ -1448,10 +1451,11 @@
     {
       "stationuuid": "6928b97f-56f2-459e-b7e8-d76997fd9802",
       "streamSha256": "7420bb7ecd89803cc9d82f15696d5af755f543e5265467929b1c1eaf5644e4d2",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "positiveObservationDates": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "observedInScan": true,
       "technicalQualified": false,
@@ -1459,7 +1463,7 @@
       "verdict": "continuous_icy_frame_indication",
       "windowCount": 3,
       "sampleBytes": 12288,
-      "elapsedMs": 4179,
+      "elapsedMs": 4223,
       "coherentWindowCount": 3,
       "distinctWindowCount": 3,
       "frameCodec": "aac_adts",
@@ -1470,10 +1474,11 @@
     {
       "stationuuid": "6fc8bce6-0ab9-4d0a-a703-992634eddf61",
       "streamSha256": "91952bac6ff32ecefb03a9be8829f86c7f873623b54c2c87af06159d675a8bf3",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "positiveObservationDates": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "observedInScan": true,
       "technicalQualified": false,
