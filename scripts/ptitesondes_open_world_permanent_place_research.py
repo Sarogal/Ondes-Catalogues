@@ -330,6 +330,13 @@ def public_diagnostic_lines(summary):
             count = values.get(label)
             if type(count) is int and 0 <= count <= 10000:
                 lines.append(f"{key}.{label}: {count}")
+    from ptitesondes_open_world_permanent_place_ban import BAN_DIAGNOSTIC_CODES
+    diagnostics = summary.get("ban_diagnostics")
+    if isinstance(diagnostics, dict):
+        for key in BAN_DIAGNOSTIC_CODES:
+            count = diagnostics.get(key)
+            if type(count) is int and 0 <= count <= 10000:
+                lines.append(f"ban_diagnostics.{key}: {count}")
     return lines
 
 
@@ -362,6 +369,8 @@ def main():
         print(json.dumps({"error_stage": stage, "publication_ready": False,
                           "public_writes": 0}, sort_keys=True))
         raise SystemExit(1) from None
+    from ptitesondes_open_world_permanent_place_ban import ban_diagnostics
+    summary["ban_diagnostics"] = ban_diagnostics()
     summary["osm_transport"] = osm_transport_diagnostics()
     print(json.dumps(summary, sort_keys=True))
 
