@@ -29,6 +29,21 @@ LON_HALF = 0.00110
 MAX_DISTANCE_METERS = 95
 
 
+class NamedFeatureHeld(ValueError):
+    """Fixed, non-sensitive reason for a failed independent feature match."""
+    CODES = frozenset({"osm_name_not_found", "osm_postal_fields_conflict",
+                      "osm_house_number_conflict", "osm_geometry_missing",
+                      "osm_feature_outside_radius", "osm_street_conflict",
+                      "osm_multiple_named_features"})
+
+    def __init__(self, code):
+        if code not in self.CODES:
+            raise ValueError("Invalid named feature diagnostic")
+        self.code = code
+        # Preserve the existing shared consumer contract and exception type.
+        super().__init__("Independent BAN/OSM site: one independent named OSM feature at exact address required")
+
+
 def require(ok, reason):
     if not ok:
         raise ValueError("Independent BAN/OSM site: " + reason)
@@ -276,6 +291,7 @@ def _osm_map(site, center, fetch, *, official_website=None, min_score=0.78):
     house, official_street = _street_parts(site["address"])
     matches = []
     conflicting_street = []
+    stages = set()
     for kind in ("node", "way"):
         for feature in root.findall(kind):
             ident = feature.get("id")
@@ -286,18 +302,22 @@ def _osm_map(site, center, fetch, *, official_website=None, min_score=0.78):
             # street is already independently verified by BAN, and the named
             # feature must be unique within 95 m. Never treat an explicitly
             # contradictory OSM city or postal code as missing information.
-            if (clean(tags.get("name")) != clean(site["name"])
-                    or (tags.get("addr:city") is not None
+            if clean(tags.get("name")) != clean(site["name"]):
+                continue
+            stages.add("name")
+            if ((tags.get("addr:city") is not None
                         and clean(tags["addr:city"]) != clean(site["city"]))
                     or (tags.get("addr:postcode") is not None
                         and tags["addr:postcode"] != site["postalCode"])
                     or tags.get("addr:country", "FR").upper() != "FR"):
                 continue
+            stages.add("postal")
             different_street = bool(tags.get("addr:street")
                                     and clean(tags["addr:street"]) != official_street)
             if house and tags.get("addr:housenumber") and clean(
                     tags["addr:housenumber"]) != house:
                 continue
+            stages.add("house")
             if kind == "node":
                 position = nodes.get(ident)
             else:
@@ -307,8 +327,11 @@ def _osm_map(site, center, fetch, *, official_website=None, min_score=0.78):
                 position = (sum(x[0] for x in refs) / len(refs),
                             sum(x[1] for x in refs) / len(refs)) if (
                                 len(refs) >= 3 and all(refs)) else None
+            if position:
+                stages.add("geometry")
             if position and _distance_meters(
                     lat, lon, position[0], position[1]) <= MAX_DISTANCE_METERS:
+                stages.add("distance")
                 match = (f"{OSM_PUBLIC}/{kind}/{ident}",
                          position[0], position[1],
                          "named-site-point" if kind == "node" else "named-site-area")
@@ -322,8 +345,22 @@ def _osm_map(site, center, fetch, *, official_website=None, min_score=0.78):
         match, tags, position = conflicting_street[0]
         if _registered_address(site, tags, position, fetch, official_website, min_score):
             matches.append(match)
-    require(len(matches) == 1,
-            "one independent named OSM feature at exact address required")
+    if len(matches) != 1:
+        if len(matches) > 1 or len(conflicting_street) > 1:
+            code = "osm_multiple_named_features"
+        elif "distance" in stages:
+            code = "osm_street_conflict"
+        elif "geometry" in stages:
+            code = "osm_feature_outside_radius"
+        elif "house" in stages:
+            code = "osm_geometry_missing"
+        elif "postal" in stages:
+            code = "osm_house_number_conflict"
+        elif "name" in stages:
+            code = "osm_postal_fields_conflict"
+        else:
+            code = "osm_name_not_found"
+        raise NamedFeatureHeld(code)
     return matches[0]
 
 

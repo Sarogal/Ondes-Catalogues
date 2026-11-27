@@ -564,6 +564,8 @@ def verify(event, venue, *, fetch=probe.safe_fetch, cache=None):
         msg = str(exc)
         if msg == "Independent BAN/OSM site: one exact government street address required":
             code = "ban_exact_address_unconfirmed"
+        elif isinstance(exc, geo.NamedFeatureHeld):
+            code = exc.code
         elif msg == "Independent BAN/OSM site: one independent named OSM feature at exact address required":
             code = "osm_named_feature_unconfirmed"
         else:
