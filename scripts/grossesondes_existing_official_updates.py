@@ -1883,7 +1883,10 @@ def independently_read_posters(site, row, html, rendered, reader, budget, *, lin
     # linked_pages, and already fetched in this same Publisher run.
     allowed = set(linked_pages(site, page(html)))
     if isinstance(rendered, str):
-        allowed.update(linked_pages(site, page(rendered)))
+        try:
+            allowed.update(linked_pages(site, page(rendered, rendered=True)))
+        except (ValueError, TypeError, UnicodeError):
+            rendered = None
     surfaces = [(site, html), (site, rendered)]
     surfaces.extend((url, content) for url, content in linked_html
                     if url in allowed)
@@ -2001,6 +2004,9 @@ def apply_independently_verified_updates(
         # Store only independently fetched, safely linked first-party HTML;
         # a future date may appear in official news rather than on the home.
         html_pages = [(site, root_html)]
+        # Retain the validated full document (not the synthetic scope views).
+        # Never send an admitted isolated DOM back through the raw HTTPS cap.
+        full_documents = [root]
         # On a current-edition homepage, old news cards may be nested in
         # <article> while the live ticket categories are in <main>. Inspect
         # both as separate first-party content scopes, not one mixed roster.
@@ -2034,6 +2040,7 @@ def apply_independently_verified_updates(
                     selected_links = rendered_links
                     pages.append((site, rendered_doc))
                     html_pages.append((site, rendered_root))
+                    full_documents.append(rendered_doc)
                     report["browser_recoveries"] += 1
                     report["rechecked_pages"] += 1
             except (OSError, TimeoutError, ValueError, UnicodeError, TypeError, KeyError):
@@ -2057,6 +2064,7 @@ def apply_independently_verified_updates(
                     linked_doc = page(linked_html, rendered=True)
                 pages.append((link, linked_doc))
                 html_pages.append((link, linked_html))
+                full_documents.append(linked_doc)
                 report["rechecked_pages"] += 1
             except (OSError, TimeoutError, ValueError, UnicodeError, TypeError) as exc:
                 linked_fetch_errors.append({"url": link, "error": type(exc).__name__})
@@ -2128,13 +2136,13 @@ def apply_independently_verified_updates(
             # A page can explicitly separate winter and summer rosters.
             # This additional route independently binds the list to the
             # exact signed edition rather than accepting brand/year alone.
-            for url, html in html_pages:
+            for (url, html), parsed_doc in zip(html_pages, full_documents, strict=True):
                 seasonal_names = season_scoped_first_names(
-                    page(html), html, old, today)
+                    parsed_doc, html, old, today)
                 if seasonal_names:
                     claims.extend(seasonal_names)
                     sources.append(url)
-                daily_names = daily_programme_artists(page(html), html, old, today)
+                daily_names = daily_programme_artists(parsed_doc, html, old, today)
                 if daily_names:
                     claims.extend(daily_names)
                     sources.append(url)
