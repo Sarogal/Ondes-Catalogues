@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "scanDate": "2026-11-26",
+  "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "attemptedCount": 0,
-  "stationsWithArtistHints": 108,
-  "distinctArtistHints": 124,
-  "attemptedHlsCount": 0,
+  "attemptedCount": 6,
+  "stationsWithArtistHints": 109,
+  "distinctArtistHints": 128,
+  "attemptedHlsCount": 1,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
   "stationsWithAlternativeHints": 0,
@@ -14,7 +14,7 @@
     {
       "stationuuid": "017f1b35-7330-4ccc-a8eb-0544a7a9b611",
       "streamSha256": "2c9ec5aa863946e78cdd1173b91c3693693c72bc0ee0fb2dc4873b381b850c80",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -24,13 +24,20 @@
           "date": "2026-11-26",
           "artistHint": "ZZ Top",
           "titleSha256": "b97c07e390a36747d43181d52fce801aa9b6506d017e9c7e422eef6609ab41e7"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Stone Sour",
+          "titleSha256": "3c4ce44c14d1e177cbe37bca38390b2b92d1e8ae1deb55c7aa2b3bbc90245ca3"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "0231aca1-4e0c-41e4-9b17-74538f1d3c25",
       "streamSha256": "dd296e44bf28597be6fe06a86d97aa060e9cf544930d6db081702fc22d14bdf9",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -40,13 +47,20 @@
           "date": "2026-11-26",
           "artistHint": "Shadow La Sombra",
           "titleSha256": "861356ed28d1b72b6411f81f00f83defe6126c724ca1a4670de9f6df98ac430c"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Hackeboda",
+          "titleSha256": "4ad3e662a9cc0ed4e04790c3593dfd86d7e01bda47fa6f0a548fc1a285ab4790"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "035ed365-f6dc-46a2-901d-7ac97880e875",
       "streamSha256": "7f39876a8b876844369bcce72b212767153cba84bb9cf531267897d7573862c8",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -102,7 +116,7 @@
     {
       "stationuuid": "0cd363a2-d26f-4957-bc69-9b1f85b5f173",
       "streamSha256": "0e61f2ea0afc5d375fa933b4e03084c37d10bacb40505709ffa8e2d9d5eb7a51",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -422,7 +436,7 @@
     {
       "stationuuid": "25de583d-8165-4a5f-8ba5-39861a77f943",
       "streamSha256": "fcab32b81f3023cc0712a2ea56a31ca7f8c19afe57d5435849e35e665dd04f19",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -437,8 +451,15 @@
           "date": "2026-11-26",
           "artistHint": "The Futureheads",
           "titleSha256": "974e2a9256ad1a1256cd6777e16b4bcfc24a4501030d9b4fb39456f0ae5668be"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Worker & Parasite",
+          "titleSha256": "63b58a50c9da015b18c66c6e388f037833d08bb133d47c51a4c922b82b423ec0"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "2d8f653c-0709-42b0-bc76-71434a8d31b7",
@@ -1095,6 +1116,24 @@
           "date": "2026-11-26",
           "artistHint": "Jeff Beck Group",
           "titleSha256": "1acbc32bc8d6c12cc76d2fba29887d70c31f14528c0eabad995db5f04c970c18"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "726f15bd-3603-4aa3-b78b-bf1fb533b8c3",
+      "streamSha256": "636d5a147bf5ce7692870770c45b1ad463816f4244a15719f9b318e08f7cccc8",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-27",
+          "artistHint": "Various Artists",
+          "titleSha256": "fd873923c8af3353cb56f8c79dced64e9d3f0046f422f9166f971efceb7af140"
         }
       ],
       "alternativeVersion": 0,

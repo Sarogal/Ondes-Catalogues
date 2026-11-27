@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "scanDate": "2026-11-26",
+  "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedLogoCount": 0,
-  "candidateCount": 159,
-  "attemptedSourceCount": 0,
+  "candidateCount": 160,
+  "attemptedSourceCount": 7,
   "decodedCandidateCount": 26,
   "retainedEvidenceCount": 1,
   "records": [
@@ -88,11 +88,12 @@
       "stationuuid": "0bc40b21-cd89-4dcb-ad47-18528395168a",
       "sourceClass": "same_reported_host",
       "sourceSha256": "851f44a074b1e95cdc2f3767000e2e67bf3fb23a77c3204ac8c89e4ea3f45526",
-      "audioEvidenceRank": 0,
-      "retrieval": "not_attempted",
+      "audioEvidenceRank": 2,
+      "retrieval": "failed_review",
       "logoApproved": false,
       "publicationAllowed": false,
-      "observedInScan": true
+      "observedInScan": true,
+      "observedDate": "2026-11-27"
     },
     {
       "stationuuid": "0ccdab5a-e2d4-46c1-988e-00bb53378b33",
@@ -229,7 +230,7 @@
       "logoApproved": false,
       "publicationAllowed": false,
       "observedInScan": true,
-      "observedDate": "2026-11-26"
+      "observedDate": "2026-11-27"
     },
     {
       "stationuuid": "16b32eac-febf-49ee-85e4-06b559c78b96",
@@ -305,7 +306,7 @@
       "stationuuid": "221e04bb-6d8a-4e13-a9b6-621561fc07f8",
       "sourceClass": "missing_source",
       "sourceSha256": null,
-      "audioEvidenceRank": 2,
+      "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
       "publicationAllowed": false,
@@ -387,7 +388,7 @@
       "stationuuid": "32bac5f0-58bc-445a-8e54-8ce9ba7f48df",
       "sourceClass": "missing_source",
       "sourceSha256": null,
-      "audioEvidenceRank": 2,
+      "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
       "publicationAllowed": false,
@@ -412,7 +413,7 @@
       "logoApproved": false,
       "publicationAllowed": false,
       "observedInScan": true,
-      "observedDate": "2026-11-26"
+      "observedDate": "2026-11-27"
     },
     {
       "stationuuid": "35080d89-d7b9-4e1e-af80-ae4a50420f67",
@@ -474,7 +475,7 @@
       "logoApproved": false,
       "publicationAllowed": false,
       "observedInScan": true,
-      "observedDate": "2026-11-26"
+      "observedDate": "2026-11-27"
     },
     {
       "stationuuid": "3cf8f90f-0776-44ef-ac57-1eb446abfbe4",
@@ -747,7 +748,7 @@
       "logoApproved": false,
       "publicationAllowed": false,
       "observedInScan": true,
-      "observedDate": "2026-11-26"
+      "observedDate": "2026-11-27"
     },
     {
       "stationuuid": "6014fd73-f56c-43e3-9c7b-43ef280f278f",
@@ -822,6 +823,16 @@
     {
       "stationuuid": "7264e476-09d5-4dc0-8580-bf8cc2070265",
       "sourceClass": "missing_source",
+      "sourceSha256": null,
+      "audioEvidenceRank": 2,
+      "retrieval": "not_attempted",
+      "logoApproved": false,
+      "publicationAllowed": false,
+      "observedInScan": true
+    },
+    {
+      "stationuuid": "726f15bd-3603-4aa3-b78b-bf1fb533b8c3",
+      "sourceClass": "external_image_host_review",
       "sourceSha256": null,
       "audioEvidenceRank": 2,
       "retrieval": "not_attempted",
@@ -1028,7 +1039,7 @@
       "logoApproved": false,
       "publicationAllowed": false,
       "observedInScan": true,
-      "observedDate": "2026-11-26"
+      "observedDate": "2026-11-27"
     },
     {
       "stationuuid": "913fc253-fd99-4f0e-a215-f7751bbed27a",
@@ -1359,7 +1370,7 @@
       "logoApproved": false,
       "publicationAllowed": false,
       "observedInScan": true,
-      "observedDate": "2026-11-26"
+      "observedDate": "2026-11-27"
     },
     {
       "stationuuid": "c9e17187-7b9f-48af-8454-0cf8462302c7",
@@ -1407,7 +1418,7 @@
       "stationuuid": "cf7a3162-64a7-461c-a7c4-10660bc41e82",
       "sourceClass": "missing_source",
       "sourceSha256": null,
-      "audioEvidenceRank": 2,
+      "audioEvidenceRank": 0,
       "retrieval": "not_attempted",
       "logoApproved": false,
       "publicationAllowed": false,
@@ -1650,7 +1661,7 @@
       "logoApproved": false,
       "publicationAllowed": false,
       "observedInScan": true,
-      "observedDate": "2026-11-26"
+      "observedDate": "2026-11-27"
     },
     {
       "stationuuid": "e98a9578-6006-4611-af89-f80d1bf13817",

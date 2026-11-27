@@ -1,10 +1,11 @@
 {
   "approvedCount": 0,
-  "attemptedCount": 0,
+  "attemptedCount": 1,
   "candidateCatalogueWritten": false,
   "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
   "counts": {
-    "no_transition": 296
+    "await_repeated_continuity": 1,
+    "no_transition": 295
   },
   "massTransitionHeld": false,
   "proposalCount": 0,
@@ -2534,7 +2535,7 @@
     {
       "approved": false,
       "catalogueStatus": "quarantined",
-      "decision": "no_transition",
+      "decision": "await_repeated_continuity",
       "goStationId": "go-station-000306",
       "proof": [],
       "publicationAllowed": false,
@@ -2676,7 +2677,7 @@
       "stationSha256": "4e1b08aff15439b8d352a9dfb822c3f4657a82284eb84dd873282e18eed66485"
     }
   ],
-  "scanDate": "2026-11-26",
+  "scanDate": "2026-11-27",
   "schemaVersion": 1,
   "streams": [
     {
@@ -2737,7 +2738,13 @@
     },
     {
       "goStationId": "go-station-000306",
-      "observations": [],
+      "observations": [
+        {
+          "date": "2026-11-27",
+          "route": "direct",
+          "verdict": "continuous_icy_frame_indication"
+        }
+      ],
       "publicationAllowed": false,
       "streamId": "legacy-stream-001",
       "streamSha256": "f31b1d3200d2c9e8743cf23e265e1e630ba2afdccd2c0a91cd2a897866f97c00"

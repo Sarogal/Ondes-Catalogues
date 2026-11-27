@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
-  "scanDate": "2026-11-26",
+  "scanDate": "2026-11-27",
   "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
   "approvedCount": 0,
   "publicationAllowed": false,
   "analyzerVersion": 2,
-  "attemptedCount": 0,
-  "candidateCount": 4,
+  "attemptedCount": 3,
+  "candidateCount": 3,
   "counts": {
-    "broadcaster_unlinked": 4
+    "broadcaster_unlinked": 3
   },
   "records": [
     {
-      "goStationId": "go-station-000009",
-      "stationuuid": "ef38194d-10d6-403f-acf7-b5e268037fae",
-      "streamSha256": "e81a17ccfa37a2b166c219b50922934d17ad063550aa561302907c4bfbdb9e3d",
+      "goStationId": "go-station-000034",
+      "stationuuid": "558c4adf-b1ab-4c2e-99ab-ae2755f2a538",
+      "streamSha256": "fd8bf257cf563d6709895a38eeda27bc64e7f8da0d60136c8d5c81e454e1a4b7",
       "observations": [
         {
           "date": "2026-11-26",
@@ -25,21 +25,9 @@
           "route": null,
           "continuity": "not_checked",
           "analyzerVersion": 2
-        }
-      ],
-      "positiveDates": [],
-      "continuityDates": [],
-      "reviewStatus": "broadcaster_unlinked",
-      "approved": false,
-      "publicationAllowed": false
-    },
-    {
-      "goStationId": "go-station-000034",
-      "stationuuid": "558c4adf-b1ab-4c2e-99ab-ae2755f2a538",
-      "streamSha256": "fd8bf257cf563d6709895a38eeda27bc64e7f8da0d60136c8d5c81e454e1a4b7",
-      "observations": [
+        },
         {
-          "date": "2026-11-26",
+          "date": "2026-11-27",
           "status": "broadcaster_unlinked",
           "declaration": null,
           "pageSha256": null,
@@ -69,6 +57,16 @@
           "route": null,
           "continuity": "not_checked",
           "analyzerVersion": 2
+        },
+        {
+          "date": "2026-11-27",
+          "status": "broadcaster_unlinked",
+          "declaration": null,
+          "pageSha256": null,
+          "rootPageSha256": null,
+          "route": null,
+          "continuity": "not_checked",
+          "analyzerVersion": 2
         }
       ],
       "positiveDates": [],
@@ -84,6 +82,16 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "status": "broadcaster_unlinked",
+          "declaration": null,
+          "pageSha256": null,
+          "rootPageSha256": null,
+          "route": null,
+          "continuity": "not_checked",
+          "analyzerVersion": 2
+        },
+        {
+          "date": "2026-11-27",
           "status": "broadcaster_unlinked",
           "declaration": null,
           "pageSha256": null,

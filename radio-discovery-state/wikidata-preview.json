@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "scanDate": "2026-11-26",
+  "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 124,
-  "dueNameCount": 0,
-  "attemptedCount": 0,
+  "observedNameCount": 128,
+  "dueNameCount": 4,
+  "attemptedCount": 4,
   "serviceFailure": null,
   "retryAfterKey": null,
   "entries": {
@@ -361,6 +361,15 @@
       "status": "ambiguous_or_incomplete",
       "artistName": "Good Charlotte",
       "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "hackeboda": {
+      "status": "not_found",
+      "artistName": "Hackeboda",
+      "checkedAt": "2026-11-27",
       "source": "wikidata",
       "researchVersion": 2,
       "identityVerified": false,
@@ -990,6 +999,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "stone sour": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Stone Sour",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "suicide machines": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Suicide Machines",
@@ -1179,6 +1197,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "various artists": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Various Artists",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "vertical67": {
       "status": "not_found",
       "artistName": "VERTICAL67",
@@ -1228,6 +1255,15 @@
       "status": "ambiguous_or_incomplete",
       "artistName": "Womb",
       "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "worker & parasite": {
+      "status": "not_found",
+      "artistName": "Worker & Parasite",
+      "checkedAt": "2026-11-27",
       "source": "wikidata",
       "researchVersion": 2,
       "identityVerified": false,

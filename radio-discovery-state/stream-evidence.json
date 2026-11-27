@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "observationDate": "2026-11-26",
+  "observationDate": "2026-11-27",
   "publicationAllowed": false,
   "technicallyQualifiedCount": 0,
-  "repeatAudioCandidateCount": 121,
-  "repeatLiveFrameEvidenceCount": 75,
-  "notObservedTodayCount": 3,
+  "repeatAudioCandidateCount": 13,
+  "repeatLiveFrameEvidenceCount": 11,
+  "notObservedTodayCount": 145,
   "records": [
     {
       "stationuuid": "01707580-90b4-47cd-9a46-2954e457ea8f",
@@ -23,15 +23,17 @@
       "stationuuid": "017f1b35-7330-4ccc-a8eb-0544a7a9b611",
       "streamSha256": "2c9ec5aa863946e78cdd1173b91c3693693c72bc0ee0fb2dc4873b381b850c80",
       "audioEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "liveFrameEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
-      "lastObservedDate": "2026-11-26",
+      "lastObservedDate": "2026-11-27",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": false,
-      "repeatLiveFrameEvidence": false,
+      "repeatAudioSample": true,
+      "repeatLiveFrameEvidence": true,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -40,15 +42,17 @@
       "streamSha256": "dd296e44bf28597be6fe06a86d97aa060e9cf544930d6db081702fc22d14bdf9",
       "audioEvidenceDates": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "liveFrameEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
-      "lastObservedDate": "2026-11-26",
+      "lastObservedDate": "2026-11-27",
       "lastVerdict": "audio_sample_ok",
       "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": false,
+      "repeatLiveFrameEvidence": true,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -57,15 +61,17 @@
       "streamSha256": "7f39876a8b876844369bcce72b212767153cba84bb9cf531267897d7573862c8",
       "audioEvidenceDates": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "liveFrameEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
-      "lastObservedDate": "2026-11-26",
+      "lastObservedDate": "2026-11-27",
       "lastVerdict": "audio_sample_ok",
       "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": false,
+      "repeatLiveFrameEvidence": true,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -74,7 +80,7 @@
       "streamSha256": "810cd26ac3b640719b181159532a9a2ef750dd20d2262b9fa117a0bc2a8ce074",
       "audioEvidenceDates": [],
       "liveFrameEvidenceDates": [],
-      "lastObservedDate": "2026-11-26",
+      "lastObservedDate": "2026-11-27",
       "lastVerdict": "not_confirmed_audio",
       "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
@@ -86,15 +92,17 @@
       "streamSha256": "bf1810018392cb47db73befc7e7017085f55a36af5b1605d6407cce9112ec745",
       "audioEvidenceDates": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "liveFrameEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
-      "lastObservedDate": "2026-11-26",
+      "lastObservedDate": "2026-11-27",
       "lastVerdict": "audio_sample_ok",
       "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": false,
+      "repeatLiveFrameEvidence": true,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -103,25 +111,31 @@
       "streamSha256": "cba5d24e595f67fe2b680a9aa4342ed0a3e90867cab971dc275f76f4f228d3b5",
       "audioEvidenceDates": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "liveFrameEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
-      "lastObservedDate": "2026-11-26",
+      "lastObservedDate": "2026-11-27",
       "lastVerdict": "audio_sample_ok",
       "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": false,
+      "repeatLiveFrameEvidence": true,
       "technicalQualified": false,
       "publicationAllowed": false
     },
     {
       "stationuuid": "0bc40b21-cd89-4dcb-ad47-18528395168a",
       "streamSha256": "1120980f1d05276076fcbf6adcfda68bd56292fa889300d48907cf0fa360048b",
-      "audioEvidenceDates": [],
-      "liveFrameEvidenceDates": [],
-      "lastObservedDate": "2026-11-26",
-      "lastVerdict": "audio_mime_only",
+      "audioEvidenceDates": [
+        "2026-11-27"
+      ],
+      "liveFrameEvidenceDates": [
+        "2026-11-27"
+      ],
+      "lastObservedDate": "2026-11-27",
+      "lastVerdict": "audio_sample_ok",
       "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
@@ -132,10 +146,11 @@
       "streamSha256": "dcb022eb38657531f34bfc76035e014a3ae5baddbf4a4d72c825b2c6990913a6",
       "audioEvidenceDates": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "liveFrameEvidenceDates": [],
-      "lastObservedDate": "2026-11-26",
+      "lastObservedDate": "2026-11-27",
       "lastVerdict": "audio_sample_ok",
       "repeatAudioSample": true,
       "repeatLiveFrameEvidence": false,
@@ -147,7 +162,7 @@
       "streamSha256": "0e61f2ea0afc5d375fa933b4e03084c37d10bacb40505709ffa8e2d9d5eb7a51",
       "audioEvidenceDates": [],
       "liveFrameEvidenceDates": [],
-      "lastObservedDate": "2026-11-26",
+      "lastObservedDate": "2026-11-27",
       "lastVerdict": "playlist_pending",
       "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
@@ -166,7 +181,7 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -183,7 +198,7 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -192,15 +207,17 @@
       "stationuuid": "11ebd6e7-4b9f-4c93-afcd-bca082bb82a6",
       "streamSha256": "58404456505af5db040c9dcc7ca0479017e676a947be85af7989133918c29164",
       "audioEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "liveFrameEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
-      "lastObservedDate": "2026-11-26",
+      "lastObservedDate": "2026-11-27",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": false,
-      "repeatLiveFrameEvidence": false,
+      "repeatAudioSample": true,
+      "repeatLiveFrameEvidence": true,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -216,7 +233,7 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -233,7 +250,7 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -250,7 +267,7 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -265,7 +282,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -282,7 +299,7 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -297,7 +314,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -312,7 +329,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -329,7 +346,7 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -360,7 +377,7 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -369,15 +386,17 @@
       "stationuuid": "193ce893-b2f4-11e8-afe1-52543be04c81",
       "streamSha256": "aab7170bbb95784cb4255057e432c00d8e6bb90c5fc0cc04dd0aa77af0deba82",
       "audioEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "liveFrameEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
-      "lastObservedDate": "2026-11-26",
+      "lastObservedDate": "2026-11-27",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": false,
-      "repeatLiveFrameEvidence": false,
+      "repeatAudioSample": true,
+      "repeatLiveFrameEvidence": true,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -405,7 +424,7 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -432,7 +451,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -446,8 +465,8 @@
       "liveFrameEvidenceDates": [
         "2026-11-26"
       ],
-      "lastObservedDate": "2026-11-26",
-      "lastVerdict": "audio_sample_ok",
+      "lastObservedDate": "2026-11-27",
+      "lastVerdict": "audio_mime_only",
       "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
@@ -465,7 +484,7 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -482,7 +501,7 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -499,7 +518,7 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -533,8 +552,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -551,8 +570,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -565,8 +584,8 @@
       "liveFrameEvidenceDates": [
         "2026-11-26"
       ],
-      "lastObservedDate": "2026-11-26",
-      "lastVerdict": "audio_sample_ok",
+      "lastObservedDate": "2026-11-27",
+      "lastVerdict": "audio_mime_only",
       "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
@@ -576,15 +595,17 @@
       "stationuuid": "341376c9-ce9e-4377-aaf8-a791d42cf567",
       "streamSha256": "feff2157c56ec604328d7e33735cc579cd23580fe2a498a415a9e852e9df886c",
       "audioEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "liveFrameEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
-      "lastObservedDate": "2026-11-26",
+      "lastObservedDate": "2026-11-27",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": false,
-      "repeatLiveFrameEvidence": false,
+      "repeatAudioSample": true,
+      "repeatLiveFrameEvidence": true,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -601,8 +622,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -619,8 +640,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -648,7 +669,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -675,7 +696,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -693,8 +714,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -711,8 +732,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -726,7 +747,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -744,8 +765,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -759,7 +780,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -777,8 +798,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -795,8 +816,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -813,8 +834,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -831,8 +852,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -849,8 +870,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -867,8 +888,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -882,7 +903,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -900,8 +921,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -918,8 +939,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -936,8 +957,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -954,8 +975,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -972,8 +993,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -990,8 +1011,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1005,7 +1026,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -1020,7 +1041,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -1054,8 +1075,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1063,12 +1084,13 @@
       "stationuuid": "5c885f44-2c9e-4485-a8bb-b858f06eaff6",
       "streamSha256": "135aca8b77412ae5755e57263fe733099f35912d5c89a3bf1713d9c2176e5e8e",
       "audioEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "liveFrameEvidenceDates": [],
-      "lastObservedDate": "2026-11-26",
+      "lastObservedDate": "2026-11-27",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": false,
+      "repeatAudioSample": true,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -1086,8 +1108,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1104,8 +1126,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1119,7 +1141,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -1137,8 +1159,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1155,8 +1177,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1185,8 +1207,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1215,8 +1237,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1233,8 +1255,24 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "726f15bd-3603-4aa3-b78b-bf1fb533b8c3",
+      "streamSha256": "636d5a147bf5ce7692870770c45b1ad463816f4244a15719f9b318e08f7cccc8",
+      "audioEvidenceDates": [
+        "2026-11-27"
+      ],
+      "liveFrameEvidenceDates": [
+        "2026-11-27"
+      ],
+      "lastObservedDate": "2026-11-27",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1263,8 +1301,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1281,8 +1319,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1299,8 +1337,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1333,8 +1371,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1351,8 +1389,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1385,8 +1423,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1400,7 +1438,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -1418,8 +1456,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1427,15 +1465,17 @@
       "stationuuid": "84d6bcb6-493b-43f8-aea4-1289fccfecb8",
       "streamSha256": "04ddc354c50813f888b5121bc77ab677b815da0a7b22dcc2dcb23a3bea594f0a",
       "audioEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "liveFrameEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
-      "lastObservedDate": "2026-11-26",
+      "lastObservedDate": "2026-11-27",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": false,
-      "repeatLiveFrameEvidence": false,
+      "repeatAudioSample": true,
+      "repeatLiveFrameEvidence": true,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1452,8 +1492,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1470,8 +1510,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1488,8 +1528,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1503,7 +1543,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -1512,15 +1552,17 @@
       "stationuuid": "8c150c94-fe1d-4be8-93cf-fd585a300541",
       "streamSha256": "6bc179b03dad50e0a25f295f449f464f1d8623ef454ec275512581955e034e70",
       "audioEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "liveFrameEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
-      "lastObservedDate": "2026-11-26",
+      "lastObservedDate": "2026-11-27",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": false,
-      "repeatLiveFrameEvidence": false,
+      "repeatAudioSample": true,
+      "repeatLiveFrameEvidence": true,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1549,8 +1591,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1567,8 +1609,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1585,8 +1627,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1603,8 +1645,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1621,8 +1663,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1639,8 +1681,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1657,8 +1699,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1711,8 +1753,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1726,7 +1768,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -1756,8 +1798,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1771,7 +1813,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -1801,8 +1843,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1816,7 +1858,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -1834,8 +1876,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1852,8 +1894,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1861,15 +1903,17 @@
       "stationuuid": "b5a3e6e2-c26d-420f-ac46-d26e04382f7b",
       "streamSha256": "8075cc137c75baa02a371778be5272dc3876f4a23a563e243e342f3bd0eb5fb3",
       "audioEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "liveFrameEvidenceDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
-      "lastObservedDate": "2026-11-26",
+      "lastObservedDate": "2026-11-27",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": false,
-      "repeatLiveFrameEvidence": false,
+      "repeatAudioSample": true,
+      "repeatLiveFrameEvidence": true,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1898,8 +1942,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1916,8 +1960,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -1931,7 +1975,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -1985,8 +2029,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2003,8 +2047,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2021,8 +2065,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2036,7 +2080,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -2054,8 +2098,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2069,7 +2113,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -2083,8 +2127,8 @@
       "liveFrameEvidenceDates": [
         "2026-11-26"
       ],
-      "lastObservedDate": "2026-11-26",
-      "lastVerdict": "audio_sample_ok",
+      "lastObservedDate": "2026-11-27",
+      "lastVerdict": "audio_mime_only",
       "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
@@ -2100,7 +2144,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -2115,7 +2159,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -2133,8 +2177,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2151,8 +2195,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2166,7 +2210,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -2196,8 +2240,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2211,7 +2255,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -2229,8 +2273,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2244,7 +2288,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -2262,8 +2306,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2307,7 +2351,7 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -2341,8 +2385,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2359,8 +2403,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2377,8 +2421,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2407,8 +2451,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2425,8 +2469,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2443,8 +2487,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2461,8 +2505,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2479,8 +2523,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2497,8 +2541,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2512,7 +2556,7 @@
       "liveFrameEvidenceDates": [],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -2530,8 +2574,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2548,8 +2592,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2566,8 +2610,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2584,8 +2628,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2602,8 +2646,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2620,8 +2664,8 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
-      "repeatLiveFrameEvidence": true,
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
     },
@@ -2637,7 +2681,7 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false
@@ -2666,7 +2710,7 @@
       ],
       "lastObservedDate": "2026-11-26",
       "lastVerdict": "audio_sample_ok",
-      "repeatAudioSample": true,
+      "repeatAudioSample": false,
       "repeatLiveFrameEvidence": false,
       "technicalQualified": false,
       "publicationAllowed": false

@@ -4,10 +4,6 @@
   "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
   "deferred": [
     {
-      "goStationId": "go-station-000009",
-      "reason": "broadcaster_unlinked"
-    },
-    {
       "goStationId": "go-station-000034",
       "reason": "broadcaster_unlinked"
     },
@@ -17,16 +13,25 @@
     }
   ],
   "deferredCounts": {
-    "broadcaster_unlinked": 2,
+    "broadcaster_unlinked": 1,
     "multiple_candidates": 1
   },
   "proposalCount": 0,
   "proposals": [],
   "publicationAllowed": false,
-  "scanDate": "2026-11-26",
+  "scanDate": "2026-11-27",
   "schemaVersion": 1,
   "signed": false,
   "stationCount": 296,
-  "statusReviewCounts": {},
-  "statusReviews": []
+  "statusReviewCounts": {
+    "restoration_probe_review": 1
+  },
+  "statusReviews": [
+    {
+      "approved": false,
+      "goStationId": "go-station-000306",
+      "publicationAllowed": false,
+      "reviewStatus": "restoration_probe_review"
+    }
+  ]
 }

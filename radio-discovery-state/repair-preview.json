@@ -1,24 +1,35 @@
 {
   "schemaVersion": 1,
-  "scanDate": "2026-11-26",
+  "scanDate": "2026-11-27",
   "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
   "approvedCount": 0,
   "publicationAllowed": false,
-  "eligibleStationCount": 77,
-  "dueStationCount": 0,
-  "attemptedCount": 0,
+  "eligibleStationCount": 76,
+  "dueStationCount": 76,
+  "attemptedCount": 4,
   "serviceFailureCount": 0,
-  "stationsWithFreshHints": 3,
+  "stationsWithFreshHints": 2,
   "counts": {
     "candidates_observed": 3,
-    "no_candidate_observed": 74
+    "no_candidate_observed": 75
   },
   "records": [
     {
-      "goStationId": "go-station-000006",
-      "lastAttemptDate": "2026-11-26",
+      "goStationId": "go-station-000005",
+      "lastAttemptDate": "2026-11-27",
       "searchStatus": "no_candidate_observed",
-      "hintsObservedDate": "2026-11-26",
+      "hintsObservedDate": "2026-11-27",
+      "hints": [],
+      "approved": false,
+      "publicationAllowed": false,
+      "maintenanceEligible": true,
+      "hintsFresh": true
+    },
+    {
+      "goStationId": "go-station-000006",
+      "lastAttemptDate": "2026-11-27",
+      "searchStatus": "no_candidate_observed",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
       "approved": false,
       "publicationAllowed": false,
@@ -43,14 +54,14 @@
       ],
       "approved": false,
       "publicationAllowed": false,
-      "maintenanceEligible": true,
+      "maintenanceEligible": false,
       "hintsFresh": true
     },
     {
       "goStationId": "go-station-000015",
-      "lastAttemptDate": "2026-11-26",
+      "lastAttemptDate": "2026-11-27",
       "searchStatus": "no_candidate_observed",
-      "hintsObservedDate": "2026-11-26",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
       "approved": false,
       "publicationAllowed": false,
@@ -59,9 +70,9 @@
     },
     {
       "goStationId": "go-station-000021",
-      "lastAttemptDate": "2026-11-26",
+      "lastAttemptDate": "2026-11-27",
       "searchStatus": "no_candidate_observed",
-      "hintsObservedDate": "2026-11-26",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
       "approved": false,
       "publicationAllowed": false,
@@ -809,7 +820,7 @@
       "hints": [],
       "approved": false,
       "publicationAllowed": false,
-      "maintenanceEligible": true,
+      "maintenanceEligible": false,
       "hintsFresh": true
     },
     {

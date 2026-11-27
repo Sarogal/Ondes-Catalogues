@@ -2,19 +2,20 @@
   "schemaVersion": 1,
   "policyVersion": 3,
   "basePolicyVersion": 2,
-  "scanDate": "2026-11-26",
+  "scanDate": "2026-11-27",
   "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
   "publicationAllowed": false,
   "approvedCount": 0,
   "verifiedArtistCount": 0,
-  "stationCount": 275,
+  "stationCount": 276,
   "unmatchedProgrammeCount": 0,
   "counts": {
     "advanced_candidate": 1,
     "already_known": 82,
-    "editorial_review": 117,
+    "declared_and_observed_target_review": 1,
+    "editorial_review": 118,
     "identity_review": 29,
-    "observed_music_candidate": 31,
+    "observed_music_candidate": 30,
     "programme_conflict_review": 2,
     "programme_context_review": 7,
     "source_recheck": 5,
@@ -27,7 +28,7 @@
     "other_genre_observed_hints": 7,
     "source_conflict": 2,
     "target_observed_hints": 27,
-    "unclassified_observations": 68
+    "unclassified_observations": 69
   },
   "records": [
     {
@@ -80,13 +81,13 @@
           "target_hint": 1,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 0
+          "unclassified_hint": 1
         },
         "pairHints": {
           "target_hint": 1,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 0
+          "unclassified_hint": 1
         },
         "collaborationMemberHints": {
           "target_hint": 0,
@@ -95,14 +96,16 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "musicbrainz_only": 1
+          "musicbrainz_only": 1,
+          "no_usable_source": 1
         },
         "independentObservationDays": [
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "reportedBroadcastDays": [],
-        "distinctArtistHints": 1,
-        "distinctArtistTitleHints": 1
+        "distinctArtistHints": 2,
+        "distinctArtistTitleHints": 2
       },
       "crossSourcePairHintCount": 0,
       "stationEditorialHint": false,
@@ -136,13 +139,13 @@
           "target_hint": 0,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 2
         },
         "pairHints": {
           "target_hint": 0,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 2
         },
         "collaborationMemberHints": {
           "target_hint": 0,
@@ -151,14 +154,15 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "no_usable_source": 1
+          "no_usable_source": 2
         },
         "independentObservationDays": [
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "reportedBroadcastDays": [],
-        "distinctArtistHints": 1,
-        "distinctArtistTitleHints": 1
+        "distinctArtistHints": 2,
+        "distinctArtistTitleHints": 2
       },
       "crossSourcePairHintCount": 0,
       "stationEditorialHint": false,
@@ -449,8 +453,7 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence",
-        "resolve_recent_negative_technical_observation"
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -486,7 +489,7 @@
       "stationEditorialHint": false,
       "broadcasterStreamLink": false,
       "programmeScopeHint": false,
-      "continuityHint": false,
+      "continuityHint": true,
       "logoDecodedHint": false,
       "verifiedArtistCount": 0,
       "approved": false,
@@ -1734,7 +1737,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "obtain_current_continuity_evidence",
+        "resolve_recent_negative_technical_observation"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -1774,7 +1778,7 @@
       "stationEditorialHint": false,
       "broadcasterStreamLink": false,
       "programmeScopeHint": false,
-      "continuityHint": true,
+      "continuityHint": false,
       "logoDecodedHint": false,
       "verifiedArtistCount": 0,
       "approved": false,
@@ -1862,8 +1866,7 @@
       "shadowDecision": "editorial_review",
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -1924,13 +1927,13 @@
           "target_hint": 0,
           "other_hint": 0,
           "mixed_hint": 1,
-          "unclassified_hint": 1
+          "unclassified_hint": 2
         },
         "pairHints": {
           "target_hint": 0,
           "other_hint": 0,
           "mixed_hint": 1,
-          "unclassified_hint": 1
+          "unclassified_hint": 2
         },
         "collaborationMemberHints": {
           "target_hint": 0,
@@ -1939,15 +1942,17 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "musicbrainz_only": 2
+          "musicbrainz_only": 2,
+          "no_usable_source": 1
         },
         "independentObservationDays": [
           "2026-11-25",
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "reportedBroadcastDays": [],
-        "distinctArtistHints": 2,
-        "distinctArtistTitleHints": 2
+        "distinctArtistHints": 3,
+        "distinctArtistTitleHints": 3
       },
       "crossSourcePairHintCount": 0,
       "stationEditorialHint": true,
@@ -2042,7 +2047,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "compare_observed_and_declared_programme"
@@ -2118,7 +2124,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -2173,7 +2180,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "obtain_current_continuity_evidence",
+        "resolve_recent_negative_technical_observation"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -2213,7 +2221,7 @@
       "stationEditorialHint": false,
       "broadcasterStreamLink": false,
       "programmeScopeHint": false,
-      "continuityHint": true,
+      "continuityHint": false,
       "logoDecodedHint": false,
       "verifiedArtistCount": 0,
       "approved": false,
@@ -2282,7 +2290,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -2332,7 +2341,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -2587,7 +2597,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -2726,7 +2737,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -2809,7 +2821,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -2887,7 +2900,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -2959,7 +2973,7 @@
     },
     {
       "stationuuid": "42b89f69-bff0-48ba-ae66-a554e84414d7",
-      "streamSha256": "fb44d277d19b16205b8b9a7e393be06e4016e04cbbc5cbc90111806a46032c7a",
+      "streamSha256": "1fe99d0fa5e27e9cb8066966a83b439c6e7d51f2c7ea417e5daaf5558349c96f",
       "v2Decision": "already_known",
       "shadowDecision": "already_known",
       "v2BlockingReasons": [],
@@ -2984,7 +2998,8 @@
       "shadowDecision": "editorial_review",
       "v2BlockingReasons": [
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -3059,7 +3074,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "compare_observed_and_declared_programme"
@@ -3113,7 +3129,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -3319,7 +3336,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -3422,7 +3440,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -3473,7 +3492,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -3523,7 +3543,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -3578,7 +3599,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -3634,7 +3656,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -3691,7 +3714,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -3963,7 +3987,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -4045,7 +4070,8 @@
       "shadowDecision": "observed_music_candidate",
       "v2BlockingReasons": [
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -4100,7 +4126,8 @@
       "shadowDecision": "programme_context_review",
       "v2BlockingReasons": [
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "compare_observed_and_declared_programme"
@@ -4246,7 +4273,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -4322,7 +4350,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -4424,7 +4453,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -4587,7 +4617,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -4723,7 +4754,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -4759,6 +4791,61 @@
         "reportedBroadcastDays": [],
         "distinctArtistHints": 2,
         "distinctArtistTitleHints": 2
+      },
+      "crossSourcePairHintCount": 0,
+      "stationEditorialHint": false,
+      "broadcasterStreamLink": false,
+      "programmeScopeHint": false,
+      "continuityHint": true,
+      "logoDecodedHint": false,
+      "verifiedArtistCount": 0,
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "726f15bd-3603-4aa3-b78b-bf1fb533b8c3",
+      "streamSha256": "636d5a147bf5ce7692870770c45b1ad463816f4244a15719f9b318e08f7cccc8",
+      "v2Decision": "editorial_review",
+      "shadowDecision": "editorial_review",
+      "v2BlockingReasons": [
+        "obtain_station_bound_editorial_evidence",
+        "bind_broadcaster_to_stream",
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
+      ],
+      "nextActions": [
+        "collect_more_programme_observations"
+      ],
+      "programmeEvidenceStatus": "unclassified_observations",
+      "programmeBound": true,
+      "programmeEvidence": {
+        "artistHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 1
+        },
+        "pairHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 1
+        },
+        "collaborationMemberHints": {
+          "target_hint": 0,
+          "other_hint": 0,
+          "mixed_hint": 0,
+          "unclassified_hint": 0
+        },
+        "sourceHints": {
+          "no_usable_source": 1
+        },
+        "independentObservationDays": [
+          "2026-11-27"
+        ],
+        "reportedBroadcastDays": [],
+        "distinctArtistHints": 1,
+        "distinctArtistTitleHints": 1
       },
       "crossSourcePairHintCount": 0,
       "stationEditorialHint": false,
@@ -4858,7 +4945,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [],
       "programmeEvidenceStatus": "unclassified_observations",
@@ -4911,7 +4999,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -4986,7 +5075,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -5097,7 +5187,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -5171,7 +5262,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -5271,7 +5363,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -5352,7 +5445,8 @@
       "shadowDecision": "editorial_review",
       "v2BlockingReasons": [
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -5400,7 +5494,7 @@
     },
     {
       "stationuuid": "814ff1ae-7f10-46d8-8784-d60be8a43365",
-      "streamSha256": "5aa5e07734f2b9aeb1b29d5df7a6aa193e47134165daa22d17dc7bde1b2b2860",
+      "streamSha256": "f409a9470a84b425166831a514c3df8ab3c88d98cd950a285906ee3c12d3e797",
       "v2Decision": "already_known",
       "shadowDecision": "already_known",
       "v2BlockingReasons": [],
@@ -5580,7 +5674,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -5634,7 +5729,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -5688,7 +5784,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -5927,7 +6024,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -6026,7 +6124,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -6101,7 +6200,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -6191,7 +6291,7 @@
     },
     {
       "stationuuid": "960de41d-0601-11e8-ae97-52543be04c81",
-      "streamSha256": "b18e6a4c1527402df0ae74ccf9c236c515015866a03f7570ad16c4a41f4b8bb4",
+      "streamSha256": "aa0bba2bf4999d7fd582108d6ae398b27d3ff46c8bb88749bb988dc8a60bfea8",
       "v2Decision": "already_known",
       "shadowDecision": "already_known",
       "v2BlockingReasons": [],
@@ -6340,7 +6440,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -6394,7 +6495,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -6448,7 +6550,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -6584,7 +6687,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -6688,7 +6792,7 @@
     },
     {
       "stationuuid": "9a5811ad-f4b5-11e8-a471-52543be04c81",
-      "streamSha256": "89af54cf1a2e84d470b396c23761bb7f6acffb589e4e6acaebfb72894608c0cb",
+      "streamSha256": "46f872f5445eb7ea88ce1f3d0425bbc4d1a1b69cf9972141fc88c1d0809707cb",
       "v2Decision": "already_known",
       "shadowDecision": "already_known",
       "v2BlockingReasons": [],
@@ -6942,7 +7046,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -7101,7 +7206,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -7347,7 +7453,8 @@
       "shadowDecision": "editorial_review",
       "v2BlockingReasons": [
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -7474,7 +7581,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -7528,7 +7636,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -7593,14 +7702,10 @@
     {
       "stationuuid": "b5a3e6e2-c26d-420f-ac46-d26e04382f7b",
       "streamSha256": "8075cc137c75baa02a371778be5272dc3876f4a23a563e243e342f3bd0eb5fb3",
-      "v2Decision": "advanced_candidate",
-      "shadowDecision": "observed_music_candidate",
-      "v2BlockingReasons": [
-        "repeat_continuity_on_distinct_days"
-      ],
-      "nextActions": [
-        "resolve_remaining_station_and_technical_gates"
-      ],
+      "v2Decision": "ready_for_staging_review",
+      "shadowDecision": "declared_and_observed_target_review",
+      "v2BlockingReasons": [],
+      "nextActions": [],
       "programmeEvidenceStatus": "target_observed_hints",
       "programmeBound": true,
       "programmeEvidence": {
@@ -7706,7 +7811,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -7760,7 +7866,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -8074,7 +8181,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -8148,7 +8256,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -8198,7 +8307,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -8350,7 +8460,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -8496,7 +8607,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "obtain_current_continuity_evidence",
+        "resolve_recent_negative_technical_observation"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -8536,7 +8648,7 @@
       "stationEditorialHint": false,
       "broadcasterStreamLink": false,
       "programmeScopeHint": false,
-      "continuityHint": true,
+      "continuityHint": false,
       "logoDecodedHint": false,
       "verifiedArtistCount": 0,
       "approved": false,
@@ -8693,7 +8805,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -8767,7 +8880,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -8878,7 +8992,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -8960,7 +9075,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -9069,7 +9185,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -9248,7 +9365,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -9358,7 +9476,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -9412,7 +9531,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -9466,7 +9586,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -9571,7 +9692,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -9626,7 +9748,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -9680,7 +9803,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -9734,7 +9858,8 @@
       "v2BlockingReasons": [
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "compare_observed_and_declared_programme"
@@ -9788,7 +9913,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -9842,7 +9968,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -9925,7 +10052,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "compare_observed_and_declared_programme"
@@ -9979,7 +10107,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_music_source_conflict"
@@ -10034,7 +10163,8 @@
         "refresh_current_reconciliation",
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [],
       "programmeEvidenceStatus": "unclassified_observations",
@@ -10182,7 +10312,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -10236,7 +10367,8 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "nextActions": [
         "collect_more_programme_observations"

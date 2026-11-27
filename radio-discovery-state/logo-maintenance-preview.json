@@ -1,14 +1,12 @@
 {
   "approvedLogoCount": 0,
-  "attemptedCount": 0,
+  "attemptedCount": 2,
   "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
   "catalogChanged": false,
   "counts": {
-    "changed_image_review": 1,
     "missing_logo": 32,
     "query_source_held": 10,
-    "source_unavailable_review": 1,
-    "unchanged": 252
+    "unchanged": 254
   },
   "observedSourceCount": 179,
   "publicationAllowed": false,
@@ -2307,16 +2305,14 @@
     },
     {
       "catalogueStatus": "active",
-      "changedDates": [
-        "2026-11-26"
-      ],
+      "changedDates": [],
       "expectedImageSha256": "61a04ec119f4895c367e2c6063d1c29f7e9bd2e639a1f9b3b5bfd681f6d99f71",
       "goStationId": "go-station-000211",
-      "lastObservationDate": "2026-11-26",
+      "lastObservationDate": "2026-11-27",
       "logoApproved": false,
-      "observedImageSha256": "aa00ba12965b9bd7339f4f064e0720fc09a81930e59219288e56ea13082b15fe",
+      "observedImageSha256": "61a04ec119f4895c367e2c6063d1c29f7e9bd2e639a1f9b3b5bfd681f6d99f71",
       "publicationAllowed": false,
-      "reviewStatus": "changed_image_review",
+      "reviewStatus": "unchanged",
       "sourceSha256": "3d7b7a83aef1c958bf0749e09091cc1d236adf7b472619547e7337ebcb3c3d99"
     },
     {
@@ -2936,11 +2932,11 @@
       "changedDates": [],
       "expectedImageSha256": "6f70223ab916504a6740438329bf5d292215826f46c3a2faa3f92820ec54a76c",
       "goStationId": "go-station-000267",
-      "lastObservationDate": "2026-11-26",
+      "lastObservationDate": "2026-11-27",
       "logoApproved": false,
-      "observedImageSha256": null,
+      "observedImageSha256": "6f70223ab916504a6740438329bf5d292215826f46c3a2faa3f92820ec54a76c",
       "publicationAllowed": false,
-      "reviewStatus": "source_unavailable_review",
+      "reviewStatus": "unchanged",
       "sourceSha256": "6707037ad8148c1ec7c6f65fbc9edf607fe0109382d92adce59f67ffdab718f5"
     },
     {
@@ -3568,7 +3564,7 @@
       "sourceSha256": "52f6e48b71f05cc474118178a315ab5476e60c476680182e6c9d0c92bccea970"
     }
   ],
-  "scanDate": "2026-11-26",
+  "scanDate": "2026-11-27",
   "schemaVersion": 1,
   "sourceCount": 189,
   "sources": [
@@ -4374,6 +4370,17 @@
             "width": 145
           },
           "retrieval": "decoded"
+        },
+        {
+          "date": "2026-11-27",
+          "image": {
+            "byteLength": 9468,
+            "height": 145,
+            "imageSha256": "61a04ec119f4895c367e2c6063d1c29f7e9bd2e639a1f9b3b5bfd681f6d99f71",
+            "mime": "image/webp",
+            "width": 145
+          },
+          "retrieval": "decoded"
         }
       ],
       "publicationAllowed": false,
@@ -5018,6 +5025,17 @@
         {
           "date": "2026-11-26",
           "retrieval": "failed_review"
+        },
+        {
+          "date": "2026-11-27",
+          "image": {
+            "byteLength": 33874,
+            "height": 600,
+            "imageSha256": "6f70223ab916504a6740438329bf5d292215826f46c3a2faa3f92820ec54a76c",
+            "mime": "image/png",
+            "width": 600
+          },
+          "retrieval": "decoded"
         }
       ],
       "publicationAllowed": false,

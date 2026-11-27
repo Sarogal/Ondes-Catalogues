@@ -1,29 +1,30 @@
 {
   "schemaVersion": 1,
   "policyVersion": 2,
-  "scanDate": "2026-11-26",
+  "scanDate": "2026-11-27",
   "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "stagingReviewCount": 0,
+  "stagingReviewCount": 1,
   "counts": {
-    "advanced_candidate": 4,
+    "advanced_candidate": 3,
     "already_known": 82,
-    "editorial_review": 154,
+    "editorial_review": 155,
     "identity_review": 29,
+    "ready_for_staging_review": 1,
     "source_recheck": 5,
     "technical_review": 1
   },
   "blockingReasonCounts": {
-    "bind_broadcaster_to_stream": 155,
-    "confirm_station_level_programme_scope": 162,
-    "obtain_current_continuity_evidence": 40,
-    "obtain_station_bound_editorial_evidence": 146,
+    "bind_broadcaster_to_stream": 156,
+    "confirm_station_level_programme_scope": 163,
+    "obtain_current_continuity_evidence": 42,
+    "obtain_station_bound_editorial_evidence": 147,
     "refresh_current_reconciliation": 5,
-    "repeat_continuity_on_distinct_days": 45,
+    "repeat_continuity_on_distinct_days": 116,
     "resolve_duplicate_or_legacy_identity": 29,
     "resolve_mixed_or_electronic_format": 40,
-    "resolve_recent_negative_technical_observation": 40
+    "resolve_recent_negative_technical_observation": 42
   },
   "records": [
     {
@@ -124,7 +125,8 @@
       "continuityIndication": true,
       "positiveContinuityDays": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": true,
       "blockingReasons": [
@@ -262,7 +264,7 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
+      "continuityIndication": true,
       "positiveContinuityDays": [
         "2026-11-26"
       ],
@@ -271,8 +273,7 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence",
-        "resolve_recent_negative_technical_observation"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -312,7 +313,8 @@
       "continuityIndication": true,
       "positiveContinuityDays": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": false,
       "blockingReasons": [
@@ -932,7 +934,7 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": true,
+      "continuityIndication": false,
       "positiveContinuityDays": [
         "2026-11-26"
       ],
@@ -941,7 +943,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "obtain_current_continuity_evidence",
+        "resolve_recent_negative_technical_observation"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -996,13 +999,13 @@
       "programmeScopeEvidence": false,
       "continuityIndication": true,
       "positiveContinuityDays": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1019,7 +1022,8 @@
       "continuityIndication": true,
       "positiveContinuityDays": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": true,
       "blockingReasons": [
@@ -1088,7 +1092,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1127,7 +1132,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1141,7 +1147,7 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": true,
+      "continuityIndication": false,
       "positiveContinuityDays": [
         "2026-11-26"
       ],
@@ -1150,7 +1156,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "obtain_current_continuity_evidence",
+        "resolve_recent_negative_technical_observation"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1196,7 +1203,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1219,7 +1227,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1363,7 +1372,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1454,7 +1464,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1499,7 +1510,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1544,7 +1556,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1571,7 +1584,7 @@
       "stationuuid": "42b89f69-bff0-48ba-ae66-a554e84414d7",
       "name": "SomaFM Metal Detector (32k AAC)",
       "decision": "already_known",
-      "streamSha256": "fb44d277d19b16205b8b9a7e393be06e4016e04cbbc5cbc90111806a46032c7a",
+      "streamSha256": "1fe99d0fa5e27e9cb8066966a83b439c6e7d51f2c7ea417e5daaf5558349c96f",
       "editorialMatch": false,
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
@@ -1600,7 +1613,8 @@
       "logoDecodedHint": true,
       "blockingReasons": [
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1639,7 +1653,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1662,7 +1677,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1695,7 +1711,8 @@
       "continuityIndication": true,
       "positiveContinuityDays": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": false,
       "blockingReasons": [
@@ -1789,7 +1806,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1850,7 +1868,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1874,7 +1893,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1897,7 +1917,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1920,7 +1941,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1943,7 +1965,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1967,7 +1990,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2113,7 +2137,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2157,7 +2182,8 @@
       "logoDecodedHint": false,
       "blockingReasons": [
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2179,7 +2205,8 @@
       "logoDecodedHint": false,
       "blockingReasons": [
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2274,7 +2301,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2313,7 +2341,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2360,7 +2389,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2469,7 +2499,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2556,7 +2587,31 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
+      ],
+      "approved": false,
+      "publicationAllowed": false
+    },
+    {
+      "stationuuid": "726f15bd-3603-4aa3-b78b-bf1fb533b8c3",
+      "name": "Avalon Studio",
+      "decision": "editorial_review",
+      "streamSha256": "636d5a147bf5ce7692870770c45b1ad463816f4244a15719f9b318e08f7cccc8",
+      "editorialMatch": false,
+      "broadcasterStreamLink": false,
+      "structuredProgrammeEvidence": false,
+      "programmeScopeEvidence": false,
+      "continuityIndication": true,
+      "positiveContinuityDays": [
+        "2026-11-27"
+      ],
+      "logoDecodedHint": false,
+      "blockingReasons": [
+        "obtain_station_bound_editorial_evidence",
+        "bind_broadcaster_to_stream",
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2623,7 +2678,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2647,7 +2703,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2687,7 +2744,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2736,7 +2794,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2775,7 +2834,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2838,7 +2898,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2882,7 +2943,8 @@
       "logoDecodedHint": true,
       "blockingReasons": [
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2891,7 +2953,7 @@
       "stationuuid": "814ff1ae-7f10-46d8-8784-d60be8a43365",
       "name": "DJ 666 Geordieblackcore",
       "decision": "already_known",
-      "streamSha256": "5aa5e07734f2b9aeb1b29d5df7a6aa193e47134165daa22d17dc7bde1b2b2860",
+      "streamSha256": "f409a9470a84b425166831a514c3df8ab3c88d98cd950a285906ee3c12d3e797",
       "editorialMatch": false,
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
@@ -3027,7 +3089,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3050,7 +3113,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3073,7 +3137,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3185,7 +3250,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3245,7 +3311,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3285,7 +3352,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3328,7 +3396,7 @@
       "stationuuid": "960de41d-0601-11e8-ae97-52543be04c81",
       "name": "SomaFM Metal Detector (128k AAC)",
       "decision": "already_known",
-      "streamSha256": "b18e6a4c1527402df0ae74ccf9c236c515015866a03f7570ad16c4a41f4b8bb4",
+      "streamSha256": "aa0bba2bf4999d7fd582108d6ae398b27d3ff46c8bb88749bb988dc8a60bfea8",
       "editorialMatch": false,
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
@@ -3457,7 +3525,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3480,7 +3549,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3503,7 +3573,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3592,7 +3663,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3625,7 +3697,7 @@
       "stationuuid": "9a5811ad-f4b5-11e8-a471-52543be04c81",
       "name": "SomaFM Metal Detector (128k MP3)",
       "decision": "already_known",
-      "streamSha256": "89af54cf1a2e84d470b396c23761bb7f6acffb589e4e6acaebfb72894608c0cb",
+      "streamSha256": "46f872f5445eb7ea88ce1f3d0425bbc4d1a1b69cf9972141fc88c1d0809707cb",
       "editorialMatch": false,
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
@@ -3817,7 +3889,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3903,7 +3976,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4038,7 +4112,8 @@
       "logoDecodedHint": true,
       "blockingReasons": [
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4102,7 +4177,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4125,7 +4201,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4149,7 +4226,7 @@
     {
       "stationuuid": "b5a3e6e2-c26d-420f-ac46-d26e04382f7b",
       "name": "Rock Space Radio",
-      "decision": "advanced_candidate",
+      "decision": "ready_for_staging_review",
       "streamSha256": "8075cc137c75baa02a371778be5272dc3876f4a23a563e243e342f3bd0eb5fb3",
       "editorialMatch": true,
       "broadcasterStreamLink": true,
@@ -4157,12 +4234,11 @@
       "programmeScopeEvidence": true,
       "continuityIndication": true,
       "positiveContinuityDays": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": false,
-      "blockingReasons": [
-        "repeat_continuity_on_distinct_days"
-      ],
+      "blockingReasons": [],
       "approved": false,
       "publicationAllowed": false
     },
@@ -4208,7 +4284,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4231,7 +4308,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4381,7 +4459,8 @@
       "continuityIndication": true,
       "positiveContinuityDays": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": false,
       "blockingReasons": [
@@ -4411,7 +4490,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4450,7 +4530,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4473,7 +4554,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4554,7 +4636,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4623,7 +4706,7 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": true,
+      "continuityIndication": false,
       "positiveContinuityDays": [
         "2026-11-26"
       ],
@@ -4632,7 +4715,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "obtain_current_continuity_evidence",
+        "resolve_recent_negative_technical_observation"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4748,7 +4832,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4787,7 +4872,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4855,7 +4941,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4900,7 +4987,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -4946,7 +5034,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -5031,7 +5120,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -5079,7 +5169,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -5102,7 +5193,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -5125,7 +5217,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -5171,7 +5264,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -5195,7 +5289,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -5218,7 +5313,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -5241,7 +5337,8 @@
       "blockingReasons": [
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -5264,7 +5361,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -5287,7 +5385,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -5333,7 +5432,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -5356,7 +5456,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -5380,7 +5481,8 @@
         "refresh_current_reconciliation",
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -5463,7 +5565,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format"
+        "resolve_mixed_or_electronic_format",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -5486,7 +5589,8 @@
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope"
+        "confirm_station_level_programme_scope",
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false
