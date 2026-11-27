@@ -103,3 +103,39 @@ Before any rehearsal using actual credentials:
 
 A real rehearsal, then a separately authorized trust transition to Android,
 are required before unattended publication can be enabled.
+
+## Owner-authorized first real isolated release
+
+The owner explicitly authorized the protected environments, experimental key,
+isolated ref writes and first signed remote catalogue on 2026-11-27. This
+does not authorize production, Android changes or merging PR #474.
+
+The one-time owner workstation command
+`python radio_lab_provision.py --activate-isolated-lab` creates the three
+branch-restricted environments, requires owner approval on the signing
+environment, generates an encrypted Ed25519 key and installs it through
+GitHub CLI stdin. The public pin is stored independently in repository
+variables. No secret is printed or written to Git. Setup refuses rotation
+and partial identities. The experimental private key has no local backup.
+No personal access token is provisioned: the transport and readback jobs
+receive separate short-lived GitHub job tokens with respective permissions.
+
+After reviewing the exact code SHA and a same-day successful discovery run,
+`python radio_lab_provision.py --launch REVIEWED_SHA RUN_ID` creates a single
+activation marker. A push to that marker triggers
+`.github/workflows/radio-lab-first-release.yml` only on the laboratory code
+branch. The first release requalifies real admissions, reanchors exact TEST
+v8 bytes with the independent lab key (without changing TEST), signs V9,
+exports only public bytes, transfers the root and direct successor with
+explicit leases, independently verifies the actual Git ref and GitHub Raw
+catalogue and artwork mirrors, and records a deployment after acceptance.
+No other operation families or scheduled publication are activated yet.
+Original legacy logo URLs are not rewritten or asserted to be reachable:
+the independent Raw acceptance verifies the published content-addressed
+copies, not the external source URLs. Android trust and URL compatibility
+remain separate acceptance gates.
+
+The new workflow is dormant until the owner creates the marker and approves
+the signing environment. Its actual remote execution has not yet been
+verified. On interruption after transfer, rerun only the failed job using
+the existing public artifact; do not regenerate a different V9.
