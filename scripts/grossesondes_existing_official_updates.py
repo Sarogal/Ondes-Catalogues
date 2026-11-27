@@ -1326,7 +1326,7 @@ def home_matches_edition(doc, row, today):
 
 
 def signed_rotation(published, today, limit=MAX_HOSTS, tick=None,
-                    browser_sites=(), *, alternate_order=False):
+                    browser_sites=(), *, alternate_order=False, rotate_within_batch=False):
     if (not isinstance(published, dict) or published.get("schema") != 1 or
             type(limit) is not int or not 0 <= limit <= 60):
         raise ValueError("Invalid signed source rotation")
@@ -1375,6 +1375,12 @@ def signed_rotation(published, today, limit=MAX_HOSTS, tick=None,
     # complete rotation so the tail is not permanently starved.
     if alternate_order and (batch // ceil(len(urls) / limit)) % 2:
         selected.reverse()
+    if rotate_within_batch and selected:
+        # Each complete rotation advances the first source in this batch.
+        # Preserve membership; a small shared image budget must not always
+        # be consumed by the same first origins. A retry is deterministic.
+        shift = (batch // ceil(len(urls) / limit)) % len(selected)
+        selected = selected[shift:] + selected[:shift]
     return [(url, grouped[url]) for url in selected]
 
 
@@ -1784,7 +1790,8 @@ def apply_independently_verified_updates(
     poster_budget = [MAX_PUBLISHER_POSTERS]
     poster_rate_limited_hosts = set()
     for site, rows in signed_rotation(
-            published, today, limit, tick, browser_sites=browser_sites):
+            published, today, limit, tick, browser_sites=browser_sites,
+            rotate_within_batch=poster_reader is not None):
         if site in browser_sites:
             report["browser_roots_checked"] += 1
         report["checked_official_hosts"] += 1

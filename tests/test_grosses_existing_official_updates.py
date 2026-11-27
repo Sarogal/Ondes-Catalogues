@@ -1676,6 +1676,31 @@ class FreshPosterPublisherTests(unittest.TestCase):
             poster_reader=reader, commune_resolver=lambda *_: None)
         return original["festivals"][0], result["festivals"][0], report, reader
 
+    def test_poster_budget_priority_rotates_without_changing_signed_batch(self):
+        rows = [festival("festival-%d" % i, "https://festival-%d.fr/" % i)
+                for i in range(12)]
+        signed = doc(*rows)
+        for limit in (4, 8, 24):
+            from math import ceil
+            batches = ceil(len(rows) / limit)
+            for slot in range(batches):
+                first = signed_rotation(signed, DAY, limit=limit, tick=slot)
+                priorities = []
+                for cycle in range(len(first)):
+                    tick = slot + cycle * batches
+                    ordinary = signed_rotation(signed, DAY, limit=limit, tick=tick)
+                    rotated = signed_rotation(
+                        signed, DAY, limit=limit, tick=tick, rotate_within_batch=True)
+                    self.assertEqual({u for u, _ in ordinary}, {u for u, _ in rotated})
+                    self.assertEqual(rotated, signed_rotation(
+                        signed, DAY, limit=limit, tick=tick, rotate_within_batch=True))
+                    priorities.append(rotated[0][0])
+                self.assertEqual(set(priorities), {u for u, _ in first})
+        # A fully covered catch-up run still changes its first origin.
+        self.assertNotEqual(
+            signed_rotation(signed, DAY, limit=48, tick=0, rotate_within_batch=True)[0][0],
+            signed_rotation(signed, DAY, limit=48, tick=1, rotate_within_batch=True)[0][0])
+
     def test_fresh_current_poster_proves_additive_roster_and_announced_price(self):
         old, new, report, reader = self.run_update()
         reader.assert_called_once_with(self.site, self.image, cache={})
