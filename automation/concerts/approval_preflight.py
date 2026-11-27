@@ -304,12 +304,30 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
                 if published_event.get(field) != value
             )
             detail = "changed fields: " + ", ".join(differing)
-        rejected.append({
+        rejection = {
             "eventId": event["id"],
             "publisherResult": detail,
             "changedFields": differing,
             "publisherReason": reasons[0][:160].replace("\n", " ").replace("\r", " ") if reasons else None,
-        })
+        }
+        # A newly paired site is validated before its linked event. Its
+        # failure otherwise appears only as the downstream "unknown venue".
+        # Attach only the exact new site's private, bounded rejection.
+        linked_sites = [row["venue"]["id"] for row in new_sites
+                        if row["eventBinding"]["eventId"] == event["id"]]
+        if len(linked_sites) == 1:
+            site_id = linked_sites[0]
+            site_reasons = [
+                str(row.get("reason", ""))
+                for row in (stats.get("held") or [])
+                if isinstance(row, dict) and row.get("candidateId") == site_id
+            ]
+            if site_reasons:
+                import re
+                rejection["pairedVenueId"] = site_id
+                rejection["pairedVenuePublisherReason"] = re.sub(
+                    r"https?://\S+", "[url]", " ".join(site_reasons[0].split()))[:160]
+        rejected.append(rejection)
     # Prioritize the real publisher's EVENT rejections, so the existing
     # safe-subset mechanism can drop the paired site together with the event.
     if rejected:
