@@ -1,6 +1,6 @@
 import unittest
 from urllib.parse import urlsplit, parse_qs
-from ptitesondes_ign_poi_probe import poi_url, summarize, probe
+from ptitesondes_ign_poi_probe import poi_url, summarize, probe, exact_poi_point, verify_admin_point
 
 class IGNPOIProbeTests(unittest.TestCase):
     def test_encoded_query_and_scope(self):
@@ -18,6 +18,24 @@ class IGNPOIProbeTests(unittest.TestCase):
         self.assertEqual(result["valid_points"], 1)
         self.assertNotIn("PRIVATE", str(result))
         self.assertFalse(result["publication_ready"])
+
+    def test_exact_named_point_and_reject_ambiguous_or_wrong_commune(self):
+        import copy
+        row = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois",
+               "code_commune": "01234", "code_postal": "01230"}
+        feature = {"type": "Feature", "properties": {"name": "Ludothèque A",
+                   "city": "Les Bois", "citycode": "01234", "postcode": "01230",
+                   "category": ["culture"], "score": 0.99},
+                   "geometry": {"type": "Point", "coordinates": [2, 48]}}
+        doc = {"type": "FeatureCollection", "features": [feature]}
+        self.assertEqual(exact_poi_point(row, doc), (48, 2))
+        for field, value in (("citycode", "99999"), ("score", 0.3),
+                             ("type", "municipality"), ("name", "Ludothèque B")):
+            wrong = copy.deepcopy(doc)
+            wrong["features"][0]["properties"][field] = value
+            self.assertIsNone(exact_poi_point(row, wrong))
+        self.assertIsNone(exact_poi_point(row, dict(doc, features=[feature, feature])))
+        self.assertFalse(verify_admin_point(row, (48, 2), lambda *_: []))
 
     def test_probe_selects_discovered_identity(self):
         row = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois", "code_commune": "01234"}

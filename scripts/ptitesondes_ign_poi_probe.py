@@ -63,20 +63,93 @@ def summarize(doc):
             "field_presence": dict(fields), "feature_types": dict(types),
             "publication_ready": False, "public_writes": 0}
 
-def probe(*, discover=scan, lookup=exact_directory_record, query=fetch_poi):
+def exact_poi_point(record, doc):
+    """A unique exact named point, not a street or commune centroid.
+
+    This is a private location hypothesis only. The independent official
+    page, cultural relevance and public access still need validation.
+    """
+    try:
+        pair = identity(record)
+        if pair is None:
+            return None
+        city, name = pair
+        code, postcode = record["code_commune"], record.get("code_postal")
+        if not isinstance(postcode, str) or not re.fullmatch(r"[0-9]{5}", postcode):
+            return None
+        summarize(doc)
+        features = doc["features"]
+        # A full truncated result set cannot establish uniqueness.
+        if len(features) >= LIMIT:
+            return None
+        matches = []
+        for feature in features:
+            p, g = feature["properties"], feature["geometry"]
+            if norm_text(p.get("name")) != norm_text(name):
+                continue
+            # A second exact-name result or malformed matching feature
+            # must not be silently discarded to manufacture uniqueness.
+            if (p.get("citycode") != code or p.get("postcode") != postcode
+                    or norm_text(p.get("city")) != norm_text(city)):
+                return None
+            category = p.get("category")
+            if isinstance(category, str):
+                category = [category]
+            if (not isinstance(category, list) or not category or len(category) > 20
+                    or any(not isinstance(x, str) or not norm_text(x) for x in category)
+                    or any(norm_text(x) in ("street", "rue", "commune", "municipality",
+                                           "locality", "lieu dit") for x in category)
+                    or p.get("type") in ("street", "municipality", "locality", "housenumber")):
+                return None
+            score = p.get("score")
+            if type(score) not in (int, float) or not math.isfinite(score) or not 0.8 <= score <= 1:
+                return None
+            xy = g.get("coordinates")
+            if (g.get("type") != "Point" or not isinstance(xy, list) or len(xy) != 2
+                    or not all(type(x) in (int, float) and math.isfinite(x) for x in xy)
+                    or not -180 <= xy[0] <= 180 or not -90 <= xy[1] <= 90
+                    or xy == [0, 0]):
+                return None
+            matches.append((xy[1], xy[0]))
+        return matches[0] if len(matches) == 1 else None
+    except (ValueError, TypeError, KeyError, AttributeError, OverflowError):
+        return None
+
+
+def verify_admin_point(record, point, admin_fetch):
+    if point is None:
+        return False
+    from ptitesondes_open_world_permanent_place_draft import administrative_identity
+    try:
+        response = admin_fetch(*point)
+        return (administrative_identity(response, record["commune"], record["code_postal"]) is not None
+                and response[0]["code"] == record["code_commune"])
+    except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
+        return False
+
+
+def probe(*, discover=scan, lookup=exact_directory_record, query=fetch_poi, admin_fetch=None):
     # Select only automatically discovered leads. No fixed venue list, no
     # saved GPS, no private data, no public or private catalogue writes.
     leads = discover()["records"]
-    attempted = 0
+    attempted = exact = admin_verified = 0
     summaries = []
+    if admin_fetch is None:
+        from ptitesondes_open_world_permanent_place_draft import fetch_admin
+        admin_fetch = fetch_admin
     for lead in leads[:5]:
         record = lookup(lead["city"], lead["venue"])
         pair = identity(record)
         if pair is None:
             continue
         attempted += 1
-        summaries.append(summarize(query(pair[1], record["code_commune"])))
+        response = query(pair[1], record["code_commune"])
+        summaries.append(summarize(response))
+        point = exact_poi_point(record, response)
+        exact += int(point is not None)
+        admin_verified += int(verify_admin_point(record, point, admin_fetch))
     return {"discovered": len(leads), "attempted": attempted, "responses": summaries,
+            "exact_named_points": exact, "admin_verified_points": admin_verified,
             "publication_ready": False, "public_writes": 0}
 
 if __name__ == "__main__":
