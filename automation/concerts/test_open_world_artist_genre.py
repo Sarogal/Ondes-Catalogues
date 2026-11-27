@@ -74,6 +74,41 @@ class OpenWorldArtistGenreTests(unittest.TestCase):
                                slot=0, limit=10, fetch=fetch)
         self.assertEqual(later["sourcesChecked"], 10)
 
+    def test_private_held_stages_are_bounded_and_retained_during_cooldown(self):
+        bio_link = '<title>New Act</title><a href="/bio">Bio</a>'
+        def fail(*args):
+            raise OSError("https://private.example.org/secret")
+        cases = [
+            ("profile_fetch", fail),
+            ("structured_profile_rejected", lambda *a: PROFILE.replace(NAME, "Other Act")),
+            ("direct_description_rejected", lambda *a: "<title>New Act</title>"),
+            ("biography_fetch", lambda u, c: bio_link if u == URL else fail()),
+            ("biography_evidence_rejected", lambda u, c: bio_link if u == URL else "<title>Other Act</title>"),
+        ]
+        for stage, fetch in cases:
+            with self.subTest(stage=stage):
+                first = research.build(registry(), DAY, fetch=fetch)
+                self.assertEqual(first["reasonCounts"], {"profileHeld": 1})
+                self.assertEqual(first["heldStageCounts"], {stage: 1})
+                self.assertEqual(first["rememberedHeldStageCounts"], {stage: 1})
+                self.assertNotIn("private.example.org", json.dumps(first))
+                self.assertFalse(first["publicationAllowed"])
+                self.assertEqual(first["approvalsProposed"], 0)
+                second = research.build(registry(), DAY, prior=first,
+                                        fetch=lambda *a: self.fail("cooldown"))
+                self.assertEqual(second["heldStageCounts"], {})
+                self.assertEqual(second["rememberedHeldStageCounts"], {stage: 1})
+                third = research.build(registry(), DAY + dt.timedelta(days=1),
+                                       prior=second, fetch=lambda *a: PROFILE)
+                self.assertEqual(third["rememberedHeldStageCounts"], {})
+                self.assertEqual(third["profilesRefreshed"], 1)
+        first = research.build(registry(), DAY, fetch=fail)
+        next(iter(first["profileAttempts"].values()))["heldStage"] = "untrusted text"
+        out = research.build(registry(), DAY, prior=first,
+                             fetch=lambda *a: self.fail("cooldown"))
+        self.assertEqual(out["rememberedHeldStageCounts"], {})
+        self.assertNotIn("untrusted text", json.dumps(out))
+
     def test_fresh_profile_is_reused_and_new_artist_is_not_delayed(self):
         first = research.build(registry(), DAY, fetch=lambda *a: PROFILE)
         self.assertEqual(first["profilesRefreshed"], 1)

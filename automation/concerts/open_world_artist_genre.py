@@ -225,6 +225,12 @@ def _memory(prior):
 PROFILE_REFRESH_DAYS = 14
 PROFILE_RETRY_DAYS = 1
 
+# Bounded private telemetry, never remote exception strings, URLs or HTML.
+PROFILE_HELD_STAGES = frozenset({
+    "profile_fetch", "structured_profile_rejected", "biography_link_rejected",
+    "biography_fetch", "biography_evidence_rejected", "direct_description_rejected",
+})
+
 
 def _source_key(source):
     return hashlib.sha256(
@@ -246,6 +252,10 @@ def _attempt_memory(prior, sources, facts, today):
                 continue
             if day <= today:
                 attempts[key] = {"checkedAt": day.isoformat(), "status": row["status"]}
+                stage = row.get("heldStage")
+                if (row["status"] == "held" and isinstance(stage, str)
+                        and stage in PROFILE_HELD_STAGES):
+                    attempts[key]["heldStage"] = stage
     elif saved is None:
         # Legacy migration: only a previously read exact profile can seed
         # scheduling. No genre, identity or authority is inferred from this.
@@ -293,15 +303,18 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
     attempts = _attempt_memory(prior, sources, facts, today)
     selection, due_count = _due_sources(sources, attempts, today, slot, limit)
     counters, cache, refreshed = Counter(), {}, 0
+    held_stages = Counter()
     for source in selection:
         url = source["url"]
         fact_key = _source_key(source)
         attempts[fact_key] = {"checkedAt": today.isoformat(), "status": "held"}
+        stage = "profile_fetch"
         try:
             # safe_fetch independently re-resolves every hostname, pins TLS,
             # validates ALL public DNS IPs, obeys robots and rejects redirects.
             html = fetch(url, cache)
             identity_key = source["identityKey"]
+            stage = "structured_profile_rejected"
             try:
                 genres = profile_genres(html, source["name"])
                 evidence_kind = "unverified-origin-artist-structured-profile"
@@ -310,8 +323,10 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
                 # Follow ONLY an explicit same-host Bio/About link. Even a
                 # convincing first-person biography is untrusted research
                 # until domain ownership is independently authenticated.
+                stage = "biography_link_rejected"
                 link = bio.linked_official_biography(html, url, url)
                 if link and sites.safe_page(link) == link:
+                    stage = "biography_fetch"
                     page = fetch(link, cache)
                     synthetic_source = {
                         "artistId": identity_key, "sourceRole": "artist_official",
@@ -321,6 +336,7 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
                         "artists": [{"id": identity_key, "name": source["name"],
                                      "aliases": []}]
                     }
+                    stage = "biography_evidence_rejected"
                     fact = bio.verify_official_biography(
                         synthetic_source, synthetic_names, page,
                         link, link, today)
@@ -328,6 +344,7 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
                     genre_url = link
                     evidence_kind = "unverified-origin-artist-visible-linked-bio"
                 else:
+                    stage = "direct_description_rejected"
                     genres = bio.direct_artist_description(html, source["name"])
                     genre_url = url
                     evidence_kind = "unverified-origin-artist-visible-direct-description"
@@ -352,6 +369,8 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
         except (ValueError, TypeError, KeyError, OSError, TimeoutError,
                 RecursionError):
             counters["profileHeld"] += 1
+            attempts[fact_key]["heldStage"] = stage
+            held_stages[stage] += 1
     return {
         "schema": SCHEMA,
         "asOf": today.isoformat(),
@@ -367,6 +386,10 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
         "profilesRefreshed": refreshed,
         "memoryFactCount": len(facts),
         "reasonCounts": dict(sorted(counters.items())),
+        "heldStageCounts": dict(sorted(held_stages.items())),
+        "rememberedHeldStageCounts": dict(sorted(Counter(
+            row["heldStage"] for row in attempts.values()
+            if row.get("status") == "held" and "heldStage" in row).items())),
         "facts": dict(sorted(facts.items())),
         "publicationAllowed": False,
         "approvalsProposed": 0,
