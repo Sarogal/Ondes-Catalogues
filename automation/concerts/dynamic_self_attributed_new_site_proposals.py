@@ -28,6 +28,7 @@ if str(ROOT) not in sys.path:
 from automation.concerts import dynamic_new_site_approval_proposals as geo_producer
 from automation.concerts import event_site_pair_recheck as pairs
 from automation.concerts import official_rss_jsonld_bridge as bridge
+from automation.concerts import openagenda_official_concert as oa
 from automation.concerts import source_admission_intake as intake
 from automation.concerts import source_evidence_probe as probe
 from automation.concerts import venue_address_osm_source as address_osm
@@ -103,6 +104,12 @@ def eligible(registry, catalogue, today):
         except (ValueError, TypeError, KeyError, AttributeError):
             continue
         if date < today or (url, c["date"]) in published:
+            continue
+        # OpenAgenda hosts third-party venue agendas; its canonical event
+        # pages cannot prove ownership of the venue's own website. Leave
+        # them to the independent UID-scoped OpenAgenda new-site verifier.
+        # Route by validated URL, never by a discovery label or a substring.
+        if oa.is_openagenda_event_url(url):
             continue
         rows.append((c["date"], url, c))
     # Daily rotation covers every unknown site; no source/domain/artist list.
