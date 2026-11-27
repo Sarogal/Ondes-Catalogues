@@ -170,6 +170,65 @@ def _ban_result(site, fetch, *, include_region=False, min_score=0.78):
     return center, region
 
 
+def independently_resolve_postcode(site, fetch, *, min_score=0.78):
+    """Resolve only a missing postcode from an exact official street and city.
+
+    The independently established department and region must also agree.
+    No authority to publish: the caller must replay the normal full address
+    and independently named OSM site verification with the returned postcode.
+    """
+    require(isinstance(site, dict) and site.get("postalCode") in (None, "")
+            and all(isinstance(site.get(k), str) and site[k].strip()
+                    for k in ("address", "city", "department", "region"))
+            and type(min_score) in (int, float) and math.isfinite(min_score)
+            and 0.78 <= min_score <= 0.99,
+            "invalid incomplete postal identity")
+    house, street = _street_parts(site["address"])
+    require(street and len(street) >= 4
+            and not re.search(r"\b\d{5}\b", site["address"]),
+            "incomplete or contradictory official street")
+    url = BAN + "?" + urlencode({
+        "q": f"{site['address']} {site['city']}, France",
+        "limit": 5, "autocomplete": 0,
+    })
+    body, final = fetch(url, 130_000)
+    require(final == url and isinstance(body, str) and len(body) <= 130_000,
+            "French government address lookup unavailable")
+    report = json.loads(body)
+    require(isinstance(report, dict) and isinstance(report.get("features"), list)
+            and len(report["features"]) <= 5,
+            "ambiguous or invalid government response")
+    matches = []
+    for item in report["features"]:
+        if not isinstance(item, dict):
+            continue
+        props, geom = item.get("properties"), item.get("geometry")
+        if not isinstance(props, dict) or not isinstance(geom, dict):
+            continue
+        postcode = props.get("postcode")
+        if (geom.get("type") != "Point" or not _geo(geom.get("coordinates"))
+                or not isinstance(postcode, str) or not re.fullmatch(r"\d{5}", postcode)
+                or clean(props.get("city")) != clean(site["city"])
+                or clean(props.get("street")) != street
+                or props.get("type") != ("housenumber" if house else "street")
+                or (house and clean(props.get("housenumber")) != house)
+                or type(props.get("score")) not in (int, float)
+                or not math.isfinite(props["score"]) or props["score"] < min_score):
+            continue
+        context = props.get("context")
+        if not isinstance(context, str) or len(context) > 180:
+            continue
+        parts = [x.strip() for x in context.split(",")]
+        dept = site["department"].strip().upper()
+        if (len(parts) not in (2, 3) or parts[0].upper() != dept
+                or (len(parts) != 3 and not dept.startswith(("97", "98")))
+                or clean(parts[-1]) != clean(site["region"])):
+            continue
+        matches.append(postcode)
+    require(len(matches) == 1, "one exact independently resolved postal code required")
+    return matches[0]
+
+
 def independently_attested_region(site, fetch):
     """A missing OPTIONAL first-party region can be sourced from exact BAN.
 
