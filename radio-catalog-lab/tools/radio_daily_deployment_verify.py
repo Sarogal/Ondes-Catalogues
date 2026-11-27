@@ -56,8 +56,19 @@ def verify_public_snapshot(selected, head, *, fetch, expected_commit, public_key
             raise ValueError("public resource unavailable")
         if response.effective_url != url:
             raise ValueError("public resource redirected")
+        # GitHub Raw may serve JSON as text/plain, or images as generic
+        # binary. Relax MIME only for the fixed isolated ref, not inherited
+        # external logos. Exact bytes, signatures and decoded artwork still
+        # have to pass all independent integrity checks.
+        allowed = {mime}
+        if url.startswith(ROOT) and ROOT.startswith(
+                "https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/refs/heads/radio-lab-publisher-rehearsal/"):
+            if mime == "application/json":
+                allowed.add("text/plain")
+            elif mime in ("image/png", "image/jpeg", "image/webp"):
+                allowed.add("application/octet-stream")
         if (not isinstance(response.content_type, str)
-                or response.content_type.split(";", 1)[0].strip().lower() != mime):
+                or response.content_type.split(";", 1)[0].strip().lower() not in allowed):
             raise ValueError("unexpected public content type")
         if not isinstance(response.body, bytes) or not 0 < len(response.body) <= limit:
             raise ValueError("invalid public resource size")
