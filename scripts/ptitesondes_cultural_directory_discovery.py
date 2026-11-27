@@ -92,8 +92,23 @@ def scan(previous_page=1, *, fetch=_fetch, budget=MAX_PAGES):
     for _ in range(budget):
         query = URL.split("?")[0] + "?" + urlencode({
             "page": page, "page_size": PAGE_SIZE})
-        doc = fetch(query)
-        found, current_total = parse_page(doc, page)
+        try:
+            doc = fetch(query)
+            found, current_total = parse_page(doc, page)
+        except (OSError, ValueError):
+            # Only reset a persisted cursor if a fresh complete first page
+            # independently proves that the requested page no longer exists.
+            # A truncated response or transient outage on an in-range page
+            # must not silently move the cursor or lose unseen records.
+            if pages or page == 1:
+                raise
+            first = fetch(URL.split("?")[0] + "?" + urlencode({
+                "page": 1, "page_size": PAGE_SIZE}))
+            first_found, first_total = parse_page(first, 1)
+            if page <= max(1, (first_total + PAGE_SIZE - 1) // PAGE_SIZE):
+                raise
+            page, doc = 1, first
+            found, current_total = first_found, first_total
         if total is not None and total != current_total:
             raise ValueError("directory_changed_during_scan")
         total = current_total
@@ -111,10 +126,61 @@ def scan(previous_page=1, *, fetch=_fetch, budget=MAX_PAGES):
             "directory_total": total, "publication_ready": False, "public_writes": 0}
 
 
+PROBE_FIELDS = ("code_commune", "site_internet_et_autres_liens",
+                "adresse_complete", "numero_et_libelle_voie", "adresse_entree_public",
+                "accessible_au_public", "conditions_acces", "conditions_ouverture",
+                "types_noms_publics", "domaines_noms_publics", "description")
+
+
+def format_counts(rows):
+    """Aggregate shapes only: no identities, URLs, addresses or raw values."""
+    from collections import Counter
+    result = {}
+    for key in PROBE_FIELDS:
+        counts = Counter()
+        for row in rows:
+            if key not in row:
+                shape = "missing"
+            else:
+                value = row[key]
+                if value is None:
+                    shape = "null"
+                elif isinstance(value, str):
+                    shape = "blank" if not value.strip() else "text"
+                    if value.strip().startswith(("[", "{")):
+                        import json
+                        try:
+                            parsed = json.loads(value)
+                            if isinstance(parsed, (list, dict)):
+                                shape = "json_list_text" if isinstance(parsed, list) else "json_object_text"
+                        except ValueError:
+                            pass
+                    if key == "accessible_au_public" and norm_text(value) in ("oui", "non", "true", "false", "1", "0"):
+                        shape = "boolean_text"
+                elif type(value) is bool:
+                    shape = "boolean"
+                elif isinstance(value, list):
+                    shape = "list"
+                elif isinstance(value, dict):
+                    shape = "object"
+                elif type(value) in (int, float):
+                    shape = "number"
+                else:
+                    shape = "other"
+            counts[shape] += 1
+        result[key] = dict(counts)
+    return result
+
+
 def live_probe():
-    result = scan(budget=2)
+    rows = []
+    def observed_fetch(url):
+        doc = _fetch(url)
+        rows.extend(doc["data"])
+        return doc
+    result = scan(budget=2, fetch=observed_fetch)
     return {key: value for key, value in result.items() if key != "records"} | {
-        "family_leads": len(result["records"])}
+        "family_leads": len(result["records"]), "field_shapes": format_counts(rows)}
 
 
 if __name__ == "__main__":
