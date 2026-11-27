@@ -627,6 +627,26 @@ class _PracticalTitle(HTMLParser):
             self.in_title = False
 
 
+def _arrival_postal_line(value, city):
+    """An explicit address field may include an administrative complement.
+
+    Strip only a separated address label and a narrowly typed administrative
+    suffix after the exact municipality. Never substitute another municipality
+    or a second street/postcode. The complete core still needs BAN and OSM.
+    """
+    value = re.sub(r"^\s*adresse\s*(?:[:\u241e])\s*", "", value, flags=re.I)
+    direct = _postal_line(value, city)
+    if direct is not None:
+        return direct
+    core, sep, suffix = value.rpartition(",")
+    if not sep or len(suffix) > 120 or not re.fullmatch(
+            r"(?:metropole de|metropole du|metropole d|communaute d agglomeration de|communaute de communes de) [a-z ]{2,80}",
+            triage.words(suffix)):
+        return None
+    # Do not discard unrecognized material before the administrative suffix.
+    return _postal_line(core, city)
+
+
 def _access_section_address(page, blocks, venue):
     """One venue-named document with a bounded explicit arrival section.
 
@@ -645,7 +665,9 @@ def _access_section_address(page, blocks, venue):
     if not name or name not in parts:
         return set()
     labels = {"comment venir", "venir", "acces", "comment acceder",
-              "venir a la salle", "getting here", "how to get here"}
+              "venir a la salle", "getting here", "how to get here",
+              "venir a " + name, "venir au " + name,
+              "acces a " + name}
     headings = [i for i, (tag, value) in enumerate(blocks)
                 if tag in {"h1", "h2", "h3", "h4"}
                 and triage.words(value) in labels]
@@ -661,9 +683,9 @@ def _access_section_address(page, blocks, venue):
     for i, value in enumerate(nearby):
         if not re.search(r"\b\d{5}\b", value):
             continue
-        matches = {_postal_line(value, venue["city"])}
+        matches = {_arrival_postal_line(value, venue["city"])}
         if i:
-            matches.add(_postal_line(nearby[i-1] + " " + value, venue["city"]))
+            matches.add(_arrival_postal_line(nearby[i-1] + " " + value, venue["city"]))
         matches.discard(None)
         require(len(matches) == 1, "conflicting practical arrival address")
         addresses.update(matches)
