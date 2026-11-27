@@ -1663,6 +1663,43 @@ class FreshPosterPublisherTests(unittest.TestCase):
         self.assertEqual(new["lineup"], [])
         self.assertIsNone(new["price"])
 
+    def test_poster_on_official_linked_programme_page(self):
+        from unittest.mock import Mock
+        programme = self.site + "programmation/"
+        root = self.home.replace('<img src="/exemple-2027.jpg">',
+                                 '<a href="/programmation/">Programmation</a>')
+        linked = self.home.replace('/exemple-2027.jpg', 'exemple-2027.jpg')
+        pages = {self.site: root, programme: linked}
+        reader = Mock(return_value=self.reading)
+        original = doc(self.row)
+        result, report = apply_independently_verified_updates(
+            original, original, DAY, tick=0, fetch=pages.__getitem__,
+            poster_reader=reader, commune_resolver=lambda *_: None)
+        reader.assert_called_once_with(self.site, programme + "exemple-2027.jpg", cache={})
+        new = result["festivals"][0]
+        self.assertEqual(new["lineup"], ["Alpha", "New Artist"])
+        self.assertEqual(new["price"], "Tarifs annoncés — Pass 3 jours : 75 €")
+        self.assertTrue(_verified_official_update_delta(original["festivals"][0], new))
+        self.assertEqual(report["fresh_poster_images_read"], 1)
+
+    def test_unlinked_or_wrong_edition_poster_page_cannot_publish(self):
+        from unittest.mock import Mock
+        from grossesondes_existing_official_updates import independently_read_posters
+        programme = self.site + "programmation/"
+        root = self.home.replace('<img src="/exemple-2027.jpg">', '')
+        linked_root = root.replace("</main>",
+                                   '<a href="/programmation/">Programmation</a></main>')
+        for home, url, html in (
+            (root, programme, self.home),
+            (linked_root, "https://other.fr/programmation/", self.home),
+            (linked_root, programme, self.home.replace("13 au 15", "20 au 22")),
+        ):
+            reader = Mock(return_value=self.reading)
+            self.assertEqual(independently_read_posters(
+                self.site, self.row, home, None, reader, [2],
+                linked_html=[(url, html)]), ([], None, []))
+            reader.assert_not_called()
+
     def test_conflicting_poster_rosters_and_prices_not_promoted(self):
         from unittest.mock import Mock
         reader = Mock(side_effect=[self.reading, self.make_reading("Artistes : Beta", "Pass 3J : 85 €")])
