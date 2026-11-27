@@ -37,6 +37,18 @@ class IGNPOIProbeTests(unittest.TestCase):
         self.assertIsNone(exact_poi_point(row, dict(doc, features=[feature, feature])))
         self.assertFalse(verify_admin_point(row, (48, 2), lambda *_: []))
 
+    def test_rejection_reason_does_not_emit_values(self):
+        from collections import Counter
+        row = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois",
+               "code_commune": "01234", "code_postal": None}
+        d = Counter()
+        self.assertIsNone(exact_poi_point(row, {}, d))
+        self.assertEqual(dict(d), {"directory_postcode_format": 1})
+        row["code_postal"] = "01230"
+        self.assertIsNone(exact_poi_point(row, {"type": "FeatureCollection", "features": []}, d))
+        self.assertEqual(d["poi_exact_name_missing"], 1)
+        self.assertNotIn("Ludothèque", str(d))
+
     def test_probe_selects_discovered_identity(self):
         row = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois", "code_commune": "01234"}
         seen = []
