@@ -41,6 +41,14 @@ class CulturalDirectoryProbeTests(unittest.TestCase):
                 exact_directory_record("Cité", "Ludothèque",
                     fetch=lambda _: {"data": data, "meta": {"total": total}})
 
+    def test_website_hints_are_bounded_and_untrusted(self):
+        from ptitesondes_national_cultural_directory_probe import directory_website_hints
+        row = {"site_internet_et_autres_liens": json.dumps([
+            {"url": "https://example.fr/lieu"}, "http://example.fr/",
+            "https://127.0.0.1/", "https://example.fr/a?secret=1",
+            "https://example.fr/lieu"])}
+        self.assertEqual(directory_website_hints(row), ["https://example.fr/lieu"])
+
     def test_no_redirect_or_noncanonical_endpoint(self):
         class Response:
             status = 200
