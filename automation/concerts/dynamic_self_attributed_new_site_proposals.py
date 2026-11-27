@@ -86,7 +86,9 @@ def eligible(registry, catalogue, today):
         if (not isinstance(c, dict)
                 or row.get("status") != "pending_review"
                 or type(row.get("stableObservations")) is not int
-                or row["stableObservations"] < 2
+                # A single discovery is only a lead. Fresh independent
+                # event, BAN, OSM and Publisher proofs supply all authority.
+                or row["stableObservations"] < 1
                 or c.get("reviewBucket") not in REVIEW_BUCKETS
                 or c.get("publicationAllowed") is not False
                 or c.get("reviewRequired") is not True
