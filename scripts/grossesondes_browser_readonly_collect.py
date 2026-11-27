@@ -8,6 +8,7 @@ Never choose targets from a private patch, from HTML links, or from CLI URLs.
 from __future__ import annotations
 
 import argparse
+from html.parser import HTMLParser
 from concurrent.futures import ThreadPoolExecutor
 import os
 import re
@@ -15,6 +16,7 @@ from datetime import datetime, date
 from hashlib import sha256
 import json
 from pathlib import Path
+from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 import sys
 
@@ -188,6 +190,52 @@ def prioritize_unavailable(published, history, today, slot, *,
     return selected, len(candidates), len(failures)
 
 
+
+_PROGRAMME_ROUTE = re.compile(
+    r"/(?:lineup|line-up|programmation|programme|program|artists|artistes)/?$", re.I)
+
+
+def _is_programme_href(href):
+    if not isinstance(href, str) or not 0 < len(href) <= 500:
+        return False
+    try:
+        return bool(_PROGRAMME_ROUTE.search("/" + urlsplit(href).path.lstrip("/")))
+    except ValueError:
+        return False
+
+
+class _AnchorInventory(HTMLParser):
+    """Diagnostic only: count markup anchors, including non-visible ones."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.anchors = self.programmes = 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag != "a":
+            return
+        href = dict(attrs).get("href")
+        if isinstance(href, str) and href:
+            self.anchors = min(10000, self.anchors + 1)
+            if _is_programme_href(href):
+                self.programmes = min(10000, self.programmes + 1)
+
+
+def programme_link_inventory(html, parsed, selected):
+    """Only fixed bounded counts, never hrefs, content or extra authority."""
+    raw = _AnchorInventory()
+    raw.feed(html)
+    raw.close()
+    return {
+        "markup_anchors": raw.anchors,
+        "markup_programme_anchors": raw.programmes,
+        "parsed_anchors": min(10000, len(parsed.links)),
+        "parsed_programme_anchors": min(10000, sum(
+            _is_programme_href(href) for href, _ in parsed.links)),
+        "selected_links": len(selected),
+        "selected_programme_links": sum(_is_programme_href(link) for link in selected),
+    }
+
+
 def collect(urls, renderer=rendered_html, *, diagnostics=None):
     """Visit signed roots, then at most two safely discovered official links."""
     result, seen = [], set()
@@ -211,7 +259,12 @@ def collect(urls, renderer=rendered_html, *, diagnostics=None):
                                 "bytes": len(html.encode("utf-8"))})
             # A link is only a bounded research target discovered in CURRENT
             # same-host rendered HTML; it cannot grant publication authority.
-            links = linked_pages(url, page(html, rendered=True), prefer_programme=True)[:MAX_LINKS_PER_SITE]
+            parsed = page(html, rendered=True)
+            links = linked_pages(url, parsed, prefer_programme=True)[:MAX_LINKS_PER_SITE]
+            # Log inventories only on linkless roots. Never use them to
+            # select hidden links or to grant publication authority.
+            if not links:
+                diagnostics[-1].update(programme_link_inventory(html, parsed, links))
             for index, link in enumerate(links, 1):
                 # Never disclose an untrusted discovered URL in diagnostics.
                 detail = {"url": url, "link_slot": index,

@@ -174,8 +174,12 @@ class BrowserPreflightTests(unittest.TestCase):
                 '<script>' + 'x' * MAX_COMPACTION_INPUT_BYTES + '</script>',
                 ''):
             with self.subTest(size=len(html)):
-                with self.assertRaisesRegex(BrowserEvidenceError, "invalid_bounded_dom"):
+                with self.assertRaises(BrowserEvidenceError) as caught:
                     bounded_rendered_html(html)
+                expected = ("invalid_bounded_dom" if not html else
+                            "dom_input_over_limit" if len(html.encode("utf-8")) > MAX_COMPACTION_INPUT_BYTES
+                            else "dom_compaction_insufficient")
+                self.assertEqual(caught.exception.reason, expected)
 
 
 if __name__ == "__main__":
