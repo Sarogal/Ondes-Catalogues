@@ -1064,6 +1064,7 @@ jobs:
           # Hard time bound, no raw evidence in the public log or artifacts.
           if ! timeout 150s python public/automation/concerts/existing_venue_geo_preflight.py \
               --before confidential/automation/concerts/approved.json \
+              --registry confidential/automation/concerts/intake/registry.json \
               --reference public/docs/grossesondes/concerts-reference.json \
               --catalogue public/docs/grossesondes/concerts.json \
               --report "$REPORT" --slot "$SCAN_SLOT" "${OPTIONS[@]}" \

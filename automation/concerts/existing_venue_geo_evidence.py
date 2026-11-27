@@ -9,6 +9,7 @@ This never edits the catalogue or produces a signed approval.
 from __future__ import annotations
 
 import datetime as dt
+import json
 from collections import Counter
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlsplit
@@ -401,6 +402,8 @@ def _named_footer_address(html, venue):
         address = _postal_line(rest, venue["city"])
         require(address is not None, "named footer postal address unconfirmed")
         addresses.add(address)
+    if not addresses:
+        raise MissingVenueAddress("no named visible footer address")
     require(len(addresses) == 1, "one named visible footer address required")
     street, postcode = next(iter(addresses))
     site = dict(venue, address=street, postalCode=postcode)
@@ -592,6 +595,179 @@ def verify(event, venue, *, fetch=probe.safe_fetch, cache=None):
             "publisherAuthorityGranted": False}
 
 
+def registered_venue_source(venue):
+    """Select one existing identity-bound official source, never a fuzzy match."""
+    try:
+        rows = json.loads(official.SOURCES.read_text(encoding="utf-8"))["venues"]
+        matches = {
+            row["url"] for row in rows
+            if isinstance(row, dict) and isinstance(row.get("url"), str)
+            and official.official_origin(venue, row["url"]) == row["url"]
+        }
+    except (OSError, ValueError, TypeError, KeyError):
+        return None
+    return next(iter(matches)) if len(matches) == 1 else None
+
+
+def _standalone_practical_address(html, source, venue, fetch, cache):
+    """Follow one actual visible same-origin practical link, never guess URLs."""
+    links = PracticalLinks()
+    links.feed(html)
+    links.close()
+    origin = urlsplit(source)
+    candidates = set()
+    for link in links.links:
+        resolved = urljoin(source, link)
+        target = urlsplit(resolved)
+        if (target.scheme == "https" and target.netloc.casefold() == origin.netloc.casefold()
+                and not target.username and not target.password
+                and not target.query and not target.fragment
+                and target.path.rstrip("/") != origin.path.rstrip("/")
+                and intake.valid_https(resolved)):
+            candidates.add(resolved)
+    require(len(candidates) == 1, "one visible official practical link required")
+    page = fetch(next(iter(candidates)), cache)
+    require(isinstance(page, str) and 0 < len(page) <= probe.MAX_BYTES,
+            "invalid practical page")
+    addresses = set()
+    try:
+        footer = _named_footer_address(page, venue)
+        addresses.add((footer["address"], footer["postalCode"]))
+    except MissingVenueAddress:
+        pass
+    parser = AddressBlocks()
+    parser.feed(page)
+    parser.close()
+    for i, (tag, text) in enumerate(parser.blocks):
+        if tag not in {"h1", "h2", "h3", "h4"} or not _named_location(text, venue):
+            continue
+        nearby = []
+        for kind, value in parser.blocks[i+1:i+6]:
+            if kind.startswith("h") or NONVENUE.search(triage.words(value)):
+                break
+            nearby.append(value)
+        for j, value in enumerate(nearby):
+            # A split street/postcode may occupy two adjacent visible blocks.
+            variants = [value]
+            if j+1 < len(nearby):
+                variants.append(value + " " + nearby[j+1])
+            matches = {_postal_line(v, venue["city"]) for v in variants}
+            matches.discard(None)
+            if re.search(r"\b\d{5}\b", value) and not matches:
+                # A preceding street line may be part of the exact address.
+                prior = _postal_line(nearby[j-1] + " " + value, venue["city"]) if j else None
+                require(prior is not None, "conflicting named practical postal address")
+                matches.add(prior)
+            addresses.update(matches)
+    require(len(addresses) == 1, "one exact named practical address required")
+    street, postcode = next(iter(addresses))
+    site = dict(venue, address=street, postalCode=postcode)
+    require(address_source.eligible_address(site), "non-geocodable practical address")
+    return site
+
+
+def discovered_venue_sources(registry, venues, today):
+    """Untrusted, exact name/city navigation hints; never source authority."""
+    if (not isinstance(registry, dict) or registry.get("schema") != intake.REGISTRY_SCHEMA
+            or not isinstance(registry.get("items"), dict)):
+        return {}
+    from open_world_site_research import safe_page
+    from collections import defaultdict
+    identities = defaultdict(list)
+    for vid, venue in venues.items():
+        identities[(intake.normalized(venue.get("name")),
+                    intake.normalized(venue.get("city")))].append(vid)
+    candidates = defaultdict(dict)
+    for record in registry["items"].values():
+        if not isinstance(record, dict) or record.get("status") != "pending_review":
+            continue
+        lead = record.get("candidate")
+        if (not isinstance(lead, dict) or lead.get("publicationAllowed") is not False
+                or lead.get("reviewRequired") is not True
+                or not intake.official_claim(lead.get("source"))
+                or lead.get("cancellationNotice") is True):
+            continue
+        try:
+            day = dt.date.fromisoformat(lead.get("date"))
+        except (ValueError, TypeError):
+            continue
+        if day < today:
+            continue
+        ids = identities.get((intake.normalized(lead.get("venue")),
+                              intake.normalized(lead.get("city"))), [])
+        if len(ids) != 1:
+            continue
+        url = safe_page(lead.get("eventDetailUrl") or lead.get("sourceUrl"))
+        if not url or urlsplit(url).query:
+            continue
+        host = intake.valid_https(url).removeprefix("www.")
+        previous = candidates[ids[0]].get(host)
+        rank = (day.isoformat(), url)
+        if previous is None or rank < previous:
+            candidates[ids[0]][host] = rank
+    # Competing domains are not silently chosen. New evidence can resolve
+    # that ambiguity during a later cycle.
+    return {vid: next(iter(hosts.values()))[1]
+            for vid, hosts in candidates.items() if len(hosts) == 1}
+
+
+def verify_venue_source(source, venue, *, fetch=probe.safe_fetch, cache=None):
+    """Correct an existing coarse pin without needing a published concert.
+
+    Require a registered origin or independent named OSM website attribution,
+    one explicitly named physical address and a fresh BAN/OSM match.
+    A generic contact address, a discovery hint alone or a city pin cannot qualify.
+    """
+    from open_world_site_research import safe_page
+    require(isinstance(venue, dict) and eligible(venue)
+            and isinstance(source, str) and safe_page(source) == source
+            and not urlsplit(source).query,
+            "unsafe venue source")
+    registered = registered_venue_source(venue) == source
+    cache = {} if cache is None else cache
+    try:
+        html = fetch(source, cache)
+        require(isinstance(html, str) and 0 < len(html) <= probe.MAX_BYTES,
+                "invalid venue page")
+        try:
+            site = _named_footer_address(html, venue)
+        except MissingVenueAddress:
+            site = _standalone_practical_address(html, source, venue, fetch, cache)
+    except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
+        raise EvidenceHeld("standalone_named_address_unconfirmed") from exc
+    def bounded(endpoint, limit):
+        body = fetch(endpoint, cache)
+        require(isinstance(body, str) and 0 < len(body) <= min(limit, probe.MAX_BYTES),
+                "independent geographical evidence unavailable")
+        return body, endpoint
+    try:
+        if registered:
+            feature, lat, lon, precision = geo.verify(
+                site, bounded, official_website=source)
+        else:
+            # The private URL is only a hint. Independently match the exact
+            # postal address and named OSM feature, then its HTTPS website.
+            website, named_feature = address_source.website_from_address(
+                site, fetch=fetch, cache=cache)
+            actual, expected = intake.valid_https(source), intake.valid_https(website)
+            require(bool(actual and expected)
+                    and actual.removeprefix("www.") == expected.removeprefix("www."),
+                    "discovered source not independently attributed")
+            feature, lat, lon, precision = geo.verify(site, bounded)
+            require(feature == named_feature, "named site identity changed")
+    except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
+        raise EvidenceHeld("standalone_independent_geo_unconfirmed") from exc
+    require(precision in {"named-site-point", "named-site-area"},
+            "no independent named physical site")
+    return {"schema": SCHEMA, "venueId": venue["id"], "eventId": None,
+            "eventDate": None, "officialUrl": source,
+            "officialVenueSourceUrl": source, "originalVenue": dict(venue),
+            "venuePatch": {"address": site["address"], "postalCode": site["postalCode"],
+                           "latitude": lat, "longitude": lon, "geoSource": feature,
+                           "geoPrecision": precision},
+            "publicationAllowed": False, "publisherAuthorityGranted": False}
+
+
 def _recent_keys(raw, active):
     """Keep only unique active IDs, oldest to newest; advisory scheduling."""
     if not isinstance(raw, list):
@@ -605,7 +781,7 @@ def _recent_keys(raw, active):
     return list(reversed(result))
 
 
-def _review_history(prior, groups, today):
+def _review_history(prior, groups, today, standalone=()):
     if (not isinstance(prior, dict)
             or prior.get("schema") != SCHEMA + ".scan"
             or prior.get("publicationAllowed") is not False
@@ -616,7 +792,7 @@ def _review_history(prior, groups, today):
             return [], {}
     except (KeyError, TypeError, ValueError):
         return [], {}
-    active = {vid for vid, rows in groups.items() if rows}
+    active = {vid for vid, rows in groups.items() if rows} | set(standalone)
     venues = _recent_keys(prior.get("recentVenueIds"), active)
     saved = prior.get("recentEventIdsByVenue")
     events = {}
@@ -640,7 +816,8 @@ def _touch(recent, key):
     recent.append(key)
 
 
-def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify, prior=None):
+def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify,
+         prior=None, verify_standalone=verify_venue_source, registry=None):
     """Bounded private research. Rotate over all eligible venues and their events.
 
     A permanent hold at the first room cannot starve the remaining rooms.
@@ -671,14 +848,21 @@ def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify, p
             continue
         if day >= today:
             groups[event["venueId"]].append(event)
-    ordered = sorted((vid for vid in groups if groups[vid]),
+    hints = discovered_venue_sources(
+        registry, {vid: venues[vid] for vid in groups if not groups[vid]}, today)
+    standalone = {vid: source for vid, rows in groups.items() if not rows
+                  if (source := registered_venue_source(venues[vid]) or hints.get(vid)) is not None}
+    ordered = sorted((vid for vid in groups if groups[vid] or vid in standalone),
                      key=lambda vid: (-len(groups[vid]), vid))
     cycle = today.toordinal() * 3 + slot
     start = (cycle * limit) % len(ordered) if ordered else 0
-    recent_venues, recent_events = _review_history(prior, groups, today)
+    recent_venues, recent_events = _review_history(prior, groups, today, standalone)
     chosen = _least_recent(ordered[start:] + ordered[:start], recent_venues)[:limit]
     report = {"schema": SCHEMA + ".scan", "asOf": today.isoformat(),
-              "eligibleVenues": len(groups), "venuesWithFutureOfficialEvents": len(ordered),
+              "eligibleVenues": len(groups),
+              "venuesWithFutureOfficialEvents": sum(bool(rows) for rows in groups.values()),
+              "venuesWithStandaloneSource": len(standalone), "standaloneSourcesExamined": 0,
+              "venuesWithDiscoveredSourceHints": len(hints),
               "examinedVenues": len(chosen), "eventPagesExamined": 0,
               "proposals": [], "held": [], "reasonCounts": {},
               "publicationAllowed": False, "publisherAuthorityGranted": False}
@@ -686,6 +870,17 @@ def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify, p
     reasons = Counter()
     for vid in chosen:
         _touch(recent_venues, vid)
+        if vid in standalone:
+            report["standaloneSourcesExamined"] += 1
+            try:
+                report["proposals"].append(verify_standalone(
+                    standalone[vid], venues[vid], cache=cache))
+            except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
+                code = exc.code if isinstance(exc, EvidenceHeld) else "other_evidence_unconfirmed"
+                reasons[code] += 1
+                report["held"].append({"venueId": vid, "reason": "no_verified_address",
+                                       "reasonCounts": {code: 1}})
+            continue
         rows = sorted(groups[vid], key=lambda e: (e["date"], e["id"]))
         # Avoid retrying only the same event page for a room indefinitely.
         offset = cycle % len(rows)

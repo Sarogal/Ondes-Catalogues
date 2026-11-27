@@ -446,3 +446,108 @@ class LinkedPracticalAddressTests(unittest.TestCase):
                           return_value="https://unknown-room.fr/"), self.assertRaises(ValueError):
             evidence.verify(event, VENUE, fetch=lambda url, cache: (
                 page if url == URL else self.fail("contradiction must not trigger fallback")))
+
+class StandaloneVenueSourceTests(unittest.TestCase):
+    def test_exact_named_footer_and_independent_geo_without_event(self):
+        source = "https://unknown-room.fr/"
+        html = "<footer><address>New Room: 19 rue des Jardins, 68000 Colmar</address></footer>"
+        with patch.object(evidence, "registered_venue_source", return_value=source), \
+             patch.object(evidence.geo, "verify", return_value=(OSM, 48.08, 7.36, "named-site-point")):
+            proof = evidence.verify_venue_source(source, VENUE, fetch=lambda *a: html)
+            self.assertIsNone(proof["eventId"])
+            self.assertEqual(proof["venuePatch"]["address"], "19 rue des Jardins")
+            self.assertFalse(proof["publicationAllowed"])
+            for bad in (html.replace("New Room", "Other Room"),
+                        html.replace("Colmar", "Paris"),
+                        html + html.replace("19 rue", "21 rue")):
+                with self.assertRaises(ValueError):
+                    evidence.verify_venue_source(source, VENUE, fetch=lambda *a: bad)
+        with patch.object(evidence, "registered_venue_source", return_value=None), \
+             patch.object(evidence.address_source, "website_from_address",
+                          return_value=("https://other.fr/", OSM)):
+            with self.assertRaises(ValueError):
+                evidence.verify_venue_source(source, VENUE, fetch=lambda *a: html)
+
+    def test_standalone_follows_only_visible_exact_practical_page(self):
+        source = "https://unknown-room.fr/"
+        link = '<nav><a href="/infos/">Infos pratiques</a></nav>'
+        address = "<h1>Infos pratiques</h1><h2>New Room</h2><p>19 rue des Jardins</p><p>68000 Colmar</p>"
+        calls = []
+        def fetch(url, cache):
+            calls.append(url)
+            return link if url == source else address
+        with patch.object(evidence, "registered_venue_source", return_value=source), \
+             patch.object(evidence.geo, "verify", return_value=(OSM, 48.08, 7.36, "named-site-point")):
+            proof = evidence.verify_venue_source(source, VENUE, fetch=fetch)
+            self.assertEqual(proof["venuePatch"]["address"], "19 rue des Jardins")
+            self.assertEqual(calls, [source, source + "infos/"])
+            for page in (
+                    address.replace("Colmar", "Paris"),
+                    address + "<h2>New Room</h2><p>21 rue des Jardins 68000 Colmar</p>",
+                    address.replace("<h2>New Room</h2>", "<h2>Other Room</h2>"),
+                    '<div hidden>' + address + '</div>'):
+                with self.assertRaises(ValueError):
+                    evidence.verify_venue_source(source, VENUE, fetch=lambda url, cache: link if url == source else page)
+            for landing in (
+                    link.replace("/infos/", "https://other.fr/infos/"),
+                    '<div hidden>' + link + '</div>',
+                    link + link.replace("/infos/", "/acces/"),
+                    '<footer><address>New Room: 19 rue des Jardins, 75000 Paris</address></footer>' + link):
+                with self.assertRaises(ValueError):
+                    evidence.verify_venue_source(source, VENUE, fetch=lambda url, cache: landing if url == source else self.fail("unsafe fallback"))
+
+    def test_scan_rotates_orphan_venue_without_event(self):
+        source = "https://unknown-room.fr/"
+        with patch.object(evidence, "registered_venue_source", return_value=source):
+            report = evidence.scan({"venues": [VENUE], "events": []},
+                                   dt.date(2026, 11, 25),
+                                   verify_standalone=lambda url, venue, **kw: {
+                                       "venueId": venue["id"], "officialUrl": url})
+        self.assertEqual(report["venuesWithFutureOfficialEvents"], 0)
+        self.assertEqual(report["standaloneSourcesExamined"], 1)
+        self.assertEqual(report["eventPagesExamined"], 0)
+        self.assertEqual(report["proposals"][0]["venueId"], VENUE["id"])
+
+    def test_discovered_source_requires_independent_exact_osm_website(self):
+        source = "https://unknown-room.fr/events/one"
+        html = "<footer><address>New Room: 19 rue des Jardins, 68000 Colmar</address></footer>"
+        with patch.object(evidence, "registered_venue_source", return_value=None), \
+             patch.object(evidence.address_source, "website_from_address",
+                          return_value=("https://unknown-room.fr/", OSM)) as website, \
+             patch.object(evidence.geo, "verify", return_value=(OSM, 48.08, 7.36, "named-site-point")):
+            proof = evidence.verify_venue_source(source, VENUE, fetch=lambda *a: html)
+            website.assert_called_once()
+            self.assertEqual(proof["officialUrl"], source)
+            self.assertIsNone(proof["eventId"])
+            self.assertFalse(proof["publicationAllowed"])
+        for domain in ("https://other.fr/", "https://unknown-room.fr.evil.example/"):
+            with patch.object(evidence, "registered_venue_source", return_value=None), \
+                 patch.object(evidence.address_source, "website_from_address", return_value=(domain, OSM)), \
+                 patch.object(evidence.geo, "verify", side_effect=AssertionError("unbound domain")):
+                with self.assertRaises(ValueError):
+                    evidence.verify_venue_source(source, VENUE, fetch=lambda *a: html)
+
+    def test_discovery_hint_selection_exact_identity_and_no_competing_domain(self):
+        today = dt.date(2026, 11, 25)
+        source = "https://unknown-room.fr/events/one"
+        lead = {"source": "agenda_officiel_new_room", "date": "2027-02-12",
+                "venue": VENUE["name"], "city": VENUE["city"],
+                "sourceUrl": source, "publicationAllowed": False, "reviewRequired": True}
+        record = {"status": "pending_review", "candidate": lead}
+        registry = {"schema": evidence.intake.REGISTRY_SCHEMA, "items": {"one": record}}
+        venues = {VENUE["id"]: VENUE}
+        self.assertEqual(evidence.discovered_venue_sources(registry, venues, today),
+                         {VENUE["id"]: source})
+        with patch.object(evidence, "registered_venue_source", return_value=None):
+            result = evidence.scan({"venues": [VENUE], "events": []}, today,
+                                   registry=registry,
+                                   verify_standalone=lambda url, v, **kw: {"officialUrl": url})
+            self.assertEqual(result["standaloneSourcesExamined"], 1)
+            self.assertEqual(result["proposals"], [{"officialUrl": source}])
+        for changes in ({"city": "Paris"}, {"date": "2020-01-01"},
+                        {"sourceUrl": "https://openagenda.com/agenda/events/test"},
+                        {"publicationAllowed": True}):
+            denied = {**registry, "items": {"one": {**record, "candidate": {**lead, **changes}}}}
+            self.assertEqual(evidence.discovered_venue_sources(denied, venues, today), {})
+        registry["items"]["two"] = {**record, "candidate": {**lead, "sourceUrl": "https://other.fr/events/one"}}
+        self.assertEqual(evidence.discovered_venue_sources(registry, venues, today), {})
