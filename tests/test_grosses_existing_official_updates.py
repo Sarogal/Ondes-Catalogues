@@ -1163,7 +1163,8 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         root = ('<main><h1>Festival Exemple 2027</h1><p>17 au 20 juin 2027</p>'
                 + ''.join('<a href="/news/annonce-%d">Annonce</a>' % i for i in range(8))
                 + '<a href="/en/lineup">Line up</a></main>')
-        self.assertEqual(linked_pages(site, page(root))[0], url)
+        self.assertNotEqual(linked_pages(site, page(root))[0], url)
+        self.assertEqual(linked_pages(site, page(root), prefer_programme=True)[0], url)
         row = festival("festival-exemple-2027", site, dates=("2027-06-17", "2027-06-20"))
         row["name"] = "Festival Exemple"
         def fetch(address):
