@@ -120,6 +120,7 @@ def main():
     for name in ("before", "reference", "catalogue", "report"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--slot", type=int, required=True)
+    parser.add_argument("--registry", type=Path)
     parser.add_argument("--apply", action="store_true")
     args = parser.parse_args()
     def load(path):
@@ -135,7 +136,9 @@ def main():
             prior = saved.get("research")
     except (OSError, ValueError, TypeError):
         pass
-    research = evidence.scan(current, today, slot=args.slot, prior=prior)
+    registry = load(args.registry) if args.registry else None
+    research = evidence.scan(current, today, slot=args.slot, prior=prior,
+                             registry=registry)
     previous = load(args.before)
     proposed, report = select(previous, research, load(args.reference), current, today)
     if args.apply and report["validatedByPublisher"]:
