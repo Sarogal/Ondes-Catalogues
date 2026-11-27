@@ -919,7 +919,8 @@ class AddressReplayHeld(ValueError):
                        "structured_country_conflict", "structured_description_conflict",
                        "visible_heading_mismatch", "visible_date_conflict",
                        "visible_address_conflict", "visible_named_address_not_found",
-                       "ambiguous_event_nodes"})
+                       "ambiguous_event_nodes", "structured_address_type_unsupported",
+                       "structured_text_address_unconfirmed"})
 
     def __init__(self, message, diagnostics):
         super().__init__(message)
@@ -944,7 +945,7 @@ def _missing_address_from_own_visible_event(raw, event, venue, html, *, diagnost
 
     location = raw.get("location")
     if (not isinstance(location, dict)
-            or location.get("address") is not None
+            or location.get("address") not in (None, "")
             or not bridge._event_types(location.get("@type")) & {"Place", "MusicVenue"}
             or raw.get("url") != event.get("officialUrl")):
         return reject("structured_place_or_canonical_missing")
@@ -1180,6 +1181,44 @@ def official_place_city_suffix(raw, venue, url):
     return True
 
 
+def _exact_text_postal_address(raw, event, venue):
+    """Schema.org permits address as Text; require the full known French site."""
+    import existing_venue_geo_evidence as geo
+    from venue_address_osm_source import eligible_address
+    place = raw.get("location")
+    if (not isinstance(place, dict)
+            or not bridge._event_types(place.get("@type")) & {"Place", "MusicVenue"}
+            or raw.get("url") != event.get("officialUrl")
+            or not eligible_address(venue) or geo.eligible(venue)):
+        return False
+    addr = place.get("address")
+    if not isinstance(addr, str) or not 0 < len(addr) <= 500:
+        return False
+    for field, expected in (("streetAddress", venue["address"]),
+                            ("postalCode", venue["postalCode"]),
+                            ("addressLocality", venue["city"])):
+        if place.get(field) not in (None, "") and normal(place[field]) != normal(expected):
+            return False
+    country_confirmed = False
+    for field in ("country", "addressCountry"):
+        country = place.get(field)
+        if country not in (None, ""):
+            if isinstance(country, dict):
+                country = country.get("name") or country.get("@id")
+            if normal(country) not in {"fr", "france", "republique francaise"}:
+                return False
+            country_confirmed = True
+    if place.get("description") not in (None, "") and not _exact_location_description(
+            dict(place, address={}), venue):
+        return False
+    addr = re.sub(r"\b(\d{2})\s+(\d{3})\b(?=\s)", r"\1\2", addr)
+    expected = normal(" ".join(venue[k] for k in ("address", "postalCode", "city")))
+    actual = normal(addr)
+    return (re.findall(r"\b\d{5}\b", addr) == [venue["postalCode"]]
+            and (actual in {expected + " france", expected + " fr"}
+                 or (country_confirmed and actual == expected)))
+
+
 def _event(raw, event, venue, artists, *, accept_generic=False,
            fetch=None, cache=None, html=None, allow_visible_address=False,
            allow_incomplete_official_venue=False, profile_scan_day=None,
@@ -1217,13 +1256,19 @@ def _event(raw, event, venue, artists, *, accept_generic=False,
     if (allow_incomplete_official_venue
             and _official_incomplete_venue_address(raw, event, venue)):
         pass  # No venue mutation; the separate geographic preflight owns it.
-    elif addr is None and allow_visible_address and accept_generic:
+    elif isinstance(addr, str) and addr and accept_generic:
+        if not _exact_text_postal_address(raw, event, venue):
+            if address_diagnostics is not None:
+                address_diagnostics.add("structured_text_address_unconfirmed")
+            require(False, "physical venue address absent")
+    elif addr in (None, "") and allow_visible_address and accept_generic:
         require(_missing_address_from_own_visible_event(
                     raw, event, venue, html, diagnostics=address_diagnostics),
                 "physical venue address absent")
     else:
-        if addr is None and accept_generic and address_diagnostics is not None:
-            address_diagnostics.add("ambiguous_event_nodes")
+        if not isinstance(addr, dict) and accept_generic and address_diagnostics is not None:
+            address_diagnostics.add("ambiguous_event_nodes" if addr in (None, "")
+                                    else "structured_address_type_unsupported")
         require(isinstance(addr, dict), "physical venue address absent")
         country = addr.get("addressCountry")
         if isinstance(country, dict):
