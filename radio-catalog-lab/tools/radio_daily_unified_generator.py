@@ -9,7 +9,7 @@ import copy
 from pathlib import Path
 
 from radio_daily_v9_generator import BASELINE, build as add_build, digest, encode, check_catalog, load_bytes
-from radio_daily_baseline_verify import strict_json, validate_shape, verify_baseline
+from radio_daily_baseline_verify import strict_json, validate_shape, verify_baseline, cli_anchor
 from radio_daily_repair_plan import plan as repair_plan, simulate as repair_simulate
 from radio_daily_status_preview import build as status_build, MAX_CHECKS
 from radio_daily_logo_plan import plan as logo_plan, stage as logo_stage
@@ -211,7 +211,7 @@ def main():
     if a.output_dir.exists():
         raise ValueError("fresh output directory required")
     raw = load_bytes(a.baseline)
-    verify_baseline(load_bytes(a.pointer), raw, expected_sha=a.baseline_sha256, expected_sequence=a.baseline_sequence)
+    verify_baseline(load_bytes(a.pointer), raw, **cli_anchor(a.baseline_sha256,a.baseline_sequence))
     evidence = [strict_json(load_bytes(getattr(a, k))) for k in
         ("discovery", "dossiers", "decisions", "maintenance", "repair", "confirmation", "repair_report", "status_report", "logo_maintenance", "missing_logo")]
     urls, held = ({}, [])
