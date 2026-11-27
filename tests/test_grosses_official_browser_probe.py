@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from grossesondes_official_browser_probe import (
     compare_proof, request_allowed, trusted_parent, probe_sources,
     bounded_rendered_html, BrowserEvidenceError, MAX_DOM_BYTES,
+    wait_for_linkless_dom,
     MAX_COMPACTION_INPUT_BYTES,
 )
 
@@ -180,6 +181,25 @@ class BrowserPreflightTests(unittest.TestCase):
                             "dom_input_over_limit" if len(html.encode("utf-8")) > MAX_COMPACTION_INPUT_BYTES
                             else "dom_compaction_insufficient")
                 self.assertEqual(caught.exception.reason, expected)
+
+    def test_linkless_dom_wait_is_bounded_and_only_used_without_anchors(self):
+        from unittest.mock import Mock
+        page = Mock()
+        anchors = page.locator.return_value
+        anchors.count.return_value = 3
+        wait_for_linkless_dom(page, TimeoutError)
+        anchors.first.wait_for.assert_not_called()
+        anchors.count.return_value = 0
+        wait_for_linkless_dom(page, TimeoutError)
+        page.locator.assert_called_with("a[href]")
+        anchors.first.wait_for.assert_called_once_with(
+            state="attached", timeout=4000)
+        anchors.first.wait_for.side_effect = TimeoutError
+        wait_for_linkless_dom(page, TimeoutError)
+        # Genuine browser errors remain failures, not silently accepted.
+        anchors.first.wait_for.side_effect = ValueError("browser error")
+        with self.assertRaises(ValueError):
+            wait_for_linkless_dom(page, TimeoutError)
 
 
 if __name__ == "__main__":
