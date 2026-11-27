@@ -139,6 +139,33 @@ def read_unknown_https(url, *, resolver=socket.getaddrinfo,
     return html
 
 
+def read_cultural_https(url, *, resolver=socket.getaddrinfo,
+                       connection_factory=_PinnedHTTPS):
+    """Bounded HTTPS canonicalization within the exact directory-listed host.
+
+    The caller must authenticate the initial URL from a fresh directory row.
+    A different host (including a www alias), query, or fragment is not
+    authority. DNS and pinned TLS are checked again on every hop.
+    """
+    from ptitesondes_dila_municipal_domains import _host
+    host = _host(url)
+    seen = set()
+    for _ in range(3):
+        if (not host or not _safe_url(url) or _host(url) != host or url in seen
+                or urlsplit(url).query or urlsplit(url).fragment):
+            raise ValueError("cultural_redirect_outside_authority_or_loop")
+        seen.add(url)
+        html, location = _read_pinned_once(
+            url, resolver=resolver, connection_factory=connection_factory,
+            municipal_redirect=True)
+        if location is None:
+            return url, html
+        if not _safe_url(location, base=url):
+            raise ValueError("cultural_redirect_unsafe_location")
+        url = urljoin(url, location)
+    raise ValueError("cultural_redirect_budget_exceeded")
+
+
 def read_municipal_https(url, city, directory, *, resolver=socket.getaddrinfo,
                          connection_factory=_PinnedHTTPS):
     """Only DILA-authenticated HTTPS scope, at most two explicit redirects.

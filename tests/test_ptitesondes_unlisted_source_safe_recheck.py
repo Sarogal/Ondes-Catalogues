@@ -144,6 +144,34 @@ class UnlistedSafeSourceTests(unittest.TestCase):
                 self.assertEqual(len(conn.calls), 1)
                 self.assertTrue(conn.closed)
 
+    def test_cultural_redirect_exact_host_and_pinned_dns(self):
+        from ptitesondes_unlisted_source_safe_recheck import read_cultural_https
+        class Redirect(FakeResponse):
+            def __init__(self, location):
+                super().__init__(status=301)
+                self.location = location
+            def getheader(self, key):
+                return self.location if key == "Location" else super().getheader(key)
+        home = "https://culture.example/"
+        for target in ("/lieu/", "https://culture.example/lieu/"):
+            calls = []
+            def factory(host, ip):
+                calls.append((host, ip))
+                return FakeConnection(Redirect(target) if len(calls) == 1 else FakeResponse())
+            self.assertEqual(read_cultural_https(home, resolver=dns("8.8.8.8"),
+                             connection_factory=factory)[0], home+"lieu/")
+            self.assertEqual(len(calls), 2)
+        for target in ("https://other.example/", "https://www.culture.example/",
+                       "http://culture.example/", "/lieu?q=secret", home):
+            calls = []
+            def factory(host, ip):
+                calls.append(host)
+                return FakeConnection(Redirect(target))
+            with self.assertRaises(ValueError):
+                read_cultural_https(home, resolver=dns("8.8.8.8"),
+                                    connection_factory=factory)
+            self.assertEqual(len(calls), 1)
+
     def test_invalid_untrusted_urls_never_even_resolve_dns(self):
         resolver = Mock(side_effect=AssertionError("never resolve"))
         invalids = [
