@@ -243,6 +243,27 @@ class IsolatedBrowserCollectionTests(unittest.TestCase):
         self.assertEqual(called, [HOME, linked])
         self.assertEqual(len(proof["entries"]), 2)
 
+    def test_link_diagnostics_are_bounded_and_do_not_disclose_discovered_urls(self):
+        from grossesondes_official_browser_probe import BrowserEvidenceError
+        home = ('<main><a href="/fr/lineup">Programmation</a>'
+                '<a href="/fr/billetterie">Billetterie</a></main>')
+        diagnostics = []
+        def render(url):
+            if url == HOME:
+                return home
+            if url.endswith("/lineup"):
+                raise BrowserEvidenceError("invalid_bounded_dom")
+            return HTML
+        report = collect([HOME], renderer=render, diagnostics=diagnostics)
+        self.assertEqual(len(report["entries"]), 2)
+        self.assertEqual(diagnostics[1:], [
+            {"url": HOME, "link_slot": 1, "role": "programme",
+             "status": "invalid_bounded_dom"},
+            {"url": HOME, "link_slot": 2, "role": "other",
+             "status": "link_rendered", "bytes": len(HTML.encode())}])
+        self.assertNotIn("/lineup", str(diagnostics))
+        self.assertNotIn("/billetterie", str(diagnostics))
+
     def test_reject_unsafe_unsigned_url(self):
         with self.assertRaises(ValueError):
             collect(["http://localhost/"], renderer=lambda _: HTML)
