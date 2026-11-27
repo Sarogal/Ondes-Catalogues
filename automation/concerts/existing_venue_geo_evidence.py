@@ -653,7 +653,7 @@ def _standalone_practical_address(html, source, venue, fetch, cache):
                 variants.append(value + " " + nearby[j+1])
             matches = {_postal_line(v, venue["city"]) for v in variants}
             matches.discard(None)
-            if re.search(r"\\b\\d{5}\\b", value) and not matches:
+            if re.search(r"\b\d{5}\b", value) and not matches:
                 # A preceding street line may be part of the exact address.
                 prior = _postal_line(nearby[j-1] + " " + value, venue["city"]) if j else None
                 require(prior is not None, "conflicting named practical postal address")
