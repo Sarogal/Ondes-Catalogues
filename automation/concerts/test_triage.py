@@ -42,6 +42,34 @@ class TriageTests(unittest.TestCase):
         self.assertEqual(result["reviewBucket"], "possible_duplicate")
         self.assertEqual(result["catalogueMatches"], ["event-soen"])
 
+    def test_optional_french_venue_article_is_only_duplicate_advisory(self):
+        reference = {
+            "artists": [{"id": "resolve", "name": "Resolve"}],
+            "venues": [{"id": "venue", "name": "Le Transbordeur",
+                        "city": "Villeurbanne"}],
+            "events": [{"id": "existing", "date": "2027-01-22",
+                        "title": "Resolve", "venueId": "venue",
+                        "artistIds": ["resolve"]}],
+        }
+        candidate = {"date": "2027-01-22", "city": "Villeurbanne",
+                     "venue": "Transbordeur", "leadArtist": "Resolve",
+                     "name": "Resolve + Silent Planet + Spleen",
+                     "classification": ["Metalcore"]}
+        result = triage.triage(candidate, catalogue=reference)
+        self.assertEqual(result["catalogueMatches"], ["existing"])
+        self.assertEqual(result["reviewBucket"], "possible_duplicate")
+        self.assertIsNone(result["catalogueMatchEvidence"])
+        self.assertFalse(result["publicationAllowed"])
+        self.assertTrue(result["reviewRequired"])
+        for changed in ({"venue": "Le Transbordeur Club"},
+                        {"venue": "La Rayonne"}, {"city": "Lyon"},
+                        {"date": "2027-01-23"},
+                        {"leadArtist": "Different", "name": "Different"}):
+            with self.subTest(changed=changed):
+                other = triage.triage(dict(candidate, **changed), catalogue=reference)
+                self.assertFalse(other["possibleExistingConcert"])
+                self.assertFalse(other["publicationAllowed"])
+
     def test_no_duplicate_different_date(self):
         row = triage.triage({
             "source": "agenda_ics", "name": "Death Valley Girls",
