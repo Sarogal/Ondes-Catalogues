@@ -61,6 +61,23 @@ class FestivalTrustedPushTests(unittest.TestCase):
         self.assertIn("!cancelled()", workflow[end:])
         self.assertIn("name: grossesondes-public-poster-dom", workflow[end:])
 
+    def test_ocr_batch_advances_with_every_trusted_run_even_without_dom(self):
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        start = workflow.index("      - name: Capturer uniquement les DOM publics")
+        end = workflow.index("      - uses: actions/upload-artifact", start)
+        capture = workflow[start:end]
+        start = workflow.index("      - name: OCR statique et DOM transportés")
+        end = workflow.index("      - name: Enregistrer exclusivement", start)
+        private = workflow[start:end]
+        for step in (capture, private):
+            self.assertIn('tick="$GITHUB_RUN_NUMBER"', step)
+            self.assertNotIn('GITHUB_RUN_ATTEMPT', step)
+            self.assertNotIn('date -u +%s', step)
+        self.assertLess(private.index('args+=(--tick "$tick")'),
+                        private.index('if [[ "$POSTER_DOM_TICK" == "$tick"'))
+        self.assertIn('args+=(--rendered-evidence', private)
+        self.assertIn("'linked_candidates'", private)
+
     def test_trusted_push_wakes_only_independent_publisher(self):
         publisher = PUBLISHER.read_text(encoding="utf-8")
         # A successful trusted main push can wake verification, not grant publication.

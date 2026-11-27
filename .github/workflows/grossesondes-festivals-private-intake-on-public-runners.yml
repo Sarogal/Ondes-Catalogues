@@ -122,7 +122,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tick="$(( $(date -u +%s) / 43200 ))"
+          # A new trusted run advances the batch; a retry retains it.
+          tick="$GITHUB_RUN_NUMBER"
+          [[ "$tick" =~ ^[0-9]{1,10}$ ]]
           python scripts/grossesondes_official_poster_rotation.py --catalogue docs/grossesondes/festivals.json --limit 4 --tick "$tick" --browser --capture-rendered-evidence "$RUNNER_TEMP/poster-dom/evidence.json"
           echo "tick=$tick" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v7
@@ -355,9 +357,11 @@ jobs:
           fi
           CACHE="intake/automation-intake/grossesondes/official-poster-ocr-cache.json"
           args=(--catalogue application/docs/grossesondes/festivals.json --limit 4 --private-cache "$CACHE")
-          tick="$POSTER_DOM_TICK"
-          if [[ "$tick" =~ ^[0-9]{1,10}$ && -s "$RUNNER_TEMP/poster-dom/evidence.json" ]]; then
-            args+=(--tick "$tick" --rendered-evidence "$RUNNER_TEMP/poster-dom/evidence.json")
+          tick="$GITHUB_RUN_NUMBER"
+          [[ "$tick" =~ ^[0-9]{1,10}$ ]] || exit 0
+          args+=(--tick "$tick")
+          if [[ "$POSTER_DOM_TICK" == "$tick" && -s "$RUNNER_TEMP/poster-dom/evidence.json" ]]; then
+            args+=(--rendered-evidence "$RUNNER_TEMP/poster-dom/evidence.json")
           fi
           if ! timeout 195s /usr/bin/python3 application/scripts/grossesondes_official_poster_rotation.py "${args[@]}" > /tmp/grossesondes-private-logs/poster-ocr.log 2>&1; then
             echo "::warning::Rotation OCR non terminée ; collecte principale conservée"
@@ -371,6 +375,7 @@ jobs:
           print('OCR privé :', report['checked_hosts'], 'sites,',
                 report['images_read'], 'affiches,',
                  sum(row.get('rendered_candidates', 0) for row in report['rows']), 'candidats DOM,',
+                 sum(row.get('linked_candidates', 0) for row in report['rows']), 'candidats liés,',
                 sum(image.get('cache_hit') is True
                     for row in report['rows'] for image in row.get('images', [])),
                 'réutilisations du cache. Aucune publication directe.')
