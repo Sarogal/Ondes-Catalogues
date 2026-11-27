@@ -35,6 +35,8 @@ BAN_DIAGNOSTIC_CODES = (
     "culture_independent_attempted", "culture_independent_identity_unmatched",
     "culture_independent_url_ambiguous", "culture_independent_page_unavailable",
     "culture_independent_address_conflict", "culture_independent_proof_found",
+    "culture_independent_multi_url_attempted", "culture_independent_multi_url_conflict",
+    "culture_independent_multi_url_resolved",
 )
 _BAN_DIAGNOSTICS = Counter()
 
@@ -367,8 +369,9 @@ def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=No
                                       ban_fetch=None, admin_fetch=None):
     """Fresh national directory link, exact first-party page, independent BAN.
 
-    No DILA dependency. Exactly one safe listed URL is required because the
-    directory field also contains other links; ambiguous links stay private.
+    No DILA dependency. Inspect a bounded set of safe listed URLs; only exact
+    dedicated identity and independent address evidence may qualify a page.
+    Contradictory identified pages stay private.
     Do not follow redirects or consume saved coordinates, addresses or URLs.
     """
     from ptitesondes_national_cultural_directory_probe import (
@@ -389,19 +392,44 @@ def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=No
         identity = directory_identity(city, venue, record)
         if identity is None:
             return _note("culture_independent_identity_unmatched")
-        urls = directory_website_hints(record)
-        if len(urls) != 1 or not _host(urls[0]):
+        urls = [url for url in directory_website_hints(record) if _host(url)]
+        if not 1 <= len(urls) <= 4:
             return _note("culture_independent_url_ambiguous")
-        url = urls[0]
-        try:
-            html = page_read(url)
-        except (OSError, ValueError, TypeError, UnicodeError):
-            return _note("culture_independent_page_unavailable")
-        facts = visible_place_facts(city, venue, url, html, identity["insee"])
-        if facts is None:
+        if len(urls) > 1:
+            _note("culture_independent_multi_url_attempted")
+        matched = []
+        for url in urls:
+            try:
+                html = page_read(url)
+            except (OSError, ValueError, TypeError, UnicodeError):
+                _note("culture_independent_page_unavailable")
+                continue
+            # Distinguish an unrelated page from a contradictory page for
+            # this exact venue. The latter cannot be hidden by a good link.
+            if not isinstance(html, str) or not 50 <= len(html) <= MAX_HTML:
+                continue
+            parser = PlaceMain()
+            parser.feed(html)
+            parser.close()
+            if not parser.seen_main or norm_text(venue) not in parser.headings:
+                _note("official_identity_unmatched")
+                continue
+            facts = visible_place_facts(city, venue, url, html, identity["insee"])
+            if facts is None:
+                return _note("culture_independent_multi_url_conflict") if len(urls) > 1 else None
+            if not same_official_address(identity, facts):
+                return _note("culture_independent_address_conflict")
+            matched.append(facts)
+        if not matched:
             return None
-        if not same_official_address(identity, facts):
-            return _note("culture_independent_address_conflict")
+        facts = matched[0]
+        # Multiple qualifying pages must agree on all extracted facts.
+        if any({k: v for k, v in item.items() if k != "official_url"} !=
+               {k: v for k, v in facts.items() if k != "official_url"}
+               for item in matched[1:]):
+            return _note("culture_independent_multi_url_conflict")
+        if len(urls) > 1:
+            _note("culture_independent_multi_url_resolved")
         historical = row.get("historical_address_unverified")
         if isinstance(historical, dict) and historical.get("postal_code") not in (None, facts["postcode"]):
             return _note("historical_postcode_conflict")
