@@ -444,6 +444,59 @@ class OpenAgendaNewNamedSitePublisherTests(unittest.TestCase):
                 self.assertEqual(report["examined"], 4)
                 self.assertEqual(report["firstReviewInMemory"], 0)
 
+    def test_one_previous_pair_retry_preserves_cohort_and_budget(self):
+        from automation.concerts import dynamic_new_site_approval_proposals as geo
+        leads = [
+            (DAY, "https://example.org/events/" + str(i),
+             {"candidateId": "lead-" + str(i),
+              "reviewBucket": "genre_tag_review" if i < 6 else "genre_unknown"})
+            for i in range(8)
+        ]
+        chosen = [leads[0], leads[1], leads[2], leads[6]]
+        row = leads[5]
+        check = {"candidateId": row[2]["candidateId"], "date": DAY,
+                 "state": "publisher_bound_openagenda_event_site_pair",
+                 "reviewKey": geo.site_review_key(row),
+                 "proposedEventId": "test-event"}
+        prior = {"schema": producer.SCHEMA, "publicationAllowed": False,
+                 "privateApprovalApplied": False, "candidateChecks": [check]}
+        result, retried = producer._prioritize_previous_pair(
+            chosen, leads, prior, set(), 4)
+        self.assertEqual(result, [leads[0], leads[1], row, leads[6]])
+        self.assertEqual(retried, {geo.site_review_key(row)})
+        self.assertEqual(len(result), len(chosen))
+        for invalid, signed, limit in (
+                ({**check, "immediatePairRetry": True}, set(), 4),
+                (check, {"test-event"}, 4),
+                ({**check, "reviewKey": "wrong"}, set(), 4),
+                (check, set(), 1)):
+            unchanged, retries = producer._prioritize_previous_pair(
+                chosen, leads, {**prior, "candidateChecks": [invalid]}, signed, limit)
+            self.assertEqual(unchanged, chosen)
+            self.assertEqual(retries, set())
+        legacy = {k: v for k, v in check.items()
+                  if k not in ("reviewKey", "proposedEventId")}
+        duplicate = (DAY, "https://other.example.org/event", row[2])
+        self.assertEqual(producer._prioritize_previous_pair(
+            chosen, leads + [duplicate], {**prior, "candidateChecks": [legacy]},
+            set(), 4), (chosen, set()))
+
+    def test_replayed_pair_is_freshly_verified_and_failure_stays_private(self):
+        base, previous = geo_fixture.test_catalogue(), geo_fixture.before()
+        fetch, _ = official_get()
+        proposed, first = producer.build(
+            observation(), base, previous, TODAY, fetch=fetch, limit=4)
+        self.assertEqual(len(proposed["approvals"]), 1)
+        bad, reads = official_get(changes={"status": 2})
+        result, second = producer.build(
+            observation(), base, previous, TODAY, fetch=bad, limit=4, prior=first)
+        self.assertEqual(second["immediatePairRetries"], 1)
+        self.assertIn(OFFICIAL_EXPORT, reads)
+        self.assertEqual(result, previous)
+        self.assertFalse(second["publicationAllowed"])
+        self.assertEqual(second["examined"], 1)
+        self.assertTrue(second["candidateChecks"][0]["immediatePairRetry"])
+
     def test_priority_and_unknown_genres_both_rotate_without_starvation(self):
         leads = []
         for bucket in ("genre_tag_review", "genre_unknown"):
