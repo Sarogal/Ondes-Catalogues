@@ -1,0 +1,30 @@
+name: P'tites Ondes — compatibilité annuaire culturel national
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_national_cultural_directory_probe.py'
+      - 'tests/test_ptitesondes_national_cultural_directory_probe.py'
+      - '.github/workflows/ptitesondes-national-cultural-directory-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  schema:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test read-only schema contract
+        env:
+          PYTHONPATH: scripts
+        run: python -m unittest discover -s tests -p 'test_ptitesondes_national_cultural_directory_probe.py' -v
+      - name: Probe public Ministry directory without logging sample records
+        run: python scripts/ptitesondes_national_cultural_directory_probe.py
