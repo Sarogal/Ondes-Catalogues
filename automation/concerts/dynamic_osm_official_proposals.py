@@ -420,7 +420,14 @@ EXTRACTOR_FILES = (
 )
 _MISSING_ADDRESS_REPLAY = (
     "publisher_recheck: Unlisted official source: no unique exact first-party MusicEvent: venue_address_missing")
-_EXTRACTION_REASONS = frozenset({
+_GEO_REPLAY_REASONS = frozenset({
+    "publisher_recheck: Unlisted official source: no unique exact first-party MusicEvent: venue_postal_identity_mismatch",
+    "publisher_recheck: Unlisted official source: no unique exact first-party MusicEvent: venue_street_mismatch",
+})
+# These failures may be repaired either by a verified venue update or by
+# a new Publisher address parser/contract. Both paths share the existing
+# bounded retry quota; neither turns prior failure into evidence.
+_EXTRACTION_REASONS = _GEO_REPLAY_REASONS | frozenset({
     _MISSING_ADDRESS_REPLAY,
     "official_event_content: Source admission: unique first-party music event not found: named_bill_missing_or_ambiguous",
     "official_event_content: Source admission: unique first-party music event not found: relevant_artist_or_event_genre_missing",
@@ -457,7 +464,7 @@ def _retry_memory(prior, selected):
                   if key in active and (revision == "legacy" or _valid_revision(revision))}
         # The previous release did not remember this diagnostic. Recover it
         # from the last exact correlated window, without resetting other holds.
-        migration_reasons = {_MISSING_ADDRESS_REPLAY}
+        migration_reasons = {_MISSING_ADDRESS_REPLAY} | _GEO_REPLAY_REASONS
     elif "extractionRetryMemory" in prior:
         return {}
     else:
@@ -489,12 +496,6 @@ def _retry_memory(prior, selected):
         if len(matches) == 1:
             result.setdefault(matches[0], revision)
     return result
-
-
-_GEO_REPLAY_REASONS = frozenset({
-    "publisher_recheck: Unlisted official source: no unique exact first-party MusicEvent: venue_postal_identity_mismatch",
-    "publisher_recheck: Unlisted official source: no unique exact first-party MusicEvent: venue_street_mismatch",
-})
 
 
 def _venue_fingerprints(catalogue, selected):

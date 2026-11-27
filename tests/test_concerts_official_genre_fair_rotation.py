@@ -431,6 +431,37 @@ class FairGenreReviewSlots(unittest.TestCase):
                                         prior={**first, "publicationAllowed": True})
             self.assertEqual(invalid["changedVenueGeoPriorityChecks"], 0)
 
+    def test_publisher_postal_holds_requeued_on_changed_code_without_venue_change(self):
+        queue = [row("unknown", i) for i in range(60)]
+        cat = {**CATALOGUE, "venues": [
+            {"id": "official-room-" + str(i), "name": "Room " + str(i),
+             "city": "Tours", "postalCode": "À vérifier", "address": "À vérifier",
+             "geoPrecision": "centre de commune"}
+            for i in range(13)]}
+        for reason in sorted(pipeline._GEO_REPLAY_REASONS):
+            with self.subTest(reason=reason), \
+                 mock.patch.object(pipeline, "eligible", return_value=queue), \
+                 mock.patch.object(pipeline, "propose", side_effect=ValueError(reason)):
+                with mock.patch.object(pipeline, "_extractor_revision", return_value="a"*64):
+                    _, first = pipeline.build({}, cat, BEFORE, TODAY, limit=16)
+                    self.assertEqual(len(first["extractionRetryMemory"]), 16)
+                    self.assertEqual(len(first["venueGeoRetryMemory"]), 16)
+                    # Simulate an older report which only knew the geo route.
+                    prior = {**first, "extractionRetryMemory": {}}
+                    _, same = pipeline.build({}, cat, BEFORE, TODAY, limit=16, prior=prior)
+                    self.assertEqual(same["changedExtractorPriorityChecks"], 0)
+                with mock.patch.object(pipeline, "_extractor_revision", return_value="b"*64):
+                    out, changed = pipeline.build({}, cat, BEFORE, TODAY, limit=16, prior=prior)
+                    self.assertEqual(changed["changedExtractorRetryPendingBefore"], 16)
+                    self.assertEqual(changed["changedExtractorPriorityChecks"], 4)
+                    self.assertEqual(changed["changedVenueGeoPriorityChecks"], 0)
+                    self.assertEqual(changed["changedExtractorRetryPendingAfter"], 12)
+                    self.assertEqual(out, BEFORE)
+                    self.assertFalse(changed["publicationAllowed"])
+                    _, again = pipeline.build({}, cat, BEFORE, TODAY, limit=16, prior=changed)
+                    self.assertLess(again["changedExtractorRetryPendingAfter"], 12)
+                    self.assertLessEqual(again["changedExtractorPriorityChecks"], 4)
+
     def test_geographic_and_extractor_retries_share_one_budget(self):
         queue = [row("unknown", i) for i in range(50)]
         window = queue[20:36]
