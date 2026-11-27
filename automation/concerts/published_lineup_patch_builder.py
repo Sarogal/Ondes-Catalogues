@@ -176,7 +176,8 @@ def build_promotional(catalogue, approved, today, *, fetch=probe.safe_fetch, lim
                 or not any(oa.promotional_artist_candidate(known.get(aid, {}).get("name"))
                            or oa.city_artist_candidate(known.get(aid, {}).get("name"),
                                venues.get(current.get("venueId"), {}).get("city"))
-                           or identity.possible(known.get(aid, {}).get("name"))
+                           or identity.possible(known.get(aid, {}).get("name"),
+                                                venues.get(current.get("venueId")))
                            for aid in current.get("artistIds", []))):
             continue
         if len(proposals) + len(held) >= limit:
@@ -187,7 +188,8 @@ def build_promotional(catalogue, approved, today, *, fetch=probe.safe_fetch, lim
                         ("id", "date", "venueId", "officialUrl", "genres",
                          "status", "sourceType")),
                     "published event identity differs from original approval")
-            repaired = any(identity.possible(known.get(aid, {}).get("name"))
+            repaired = any(identity.possible(known.get(aid, {}).get("name"),
+                                                venues.get(current.get("venueId")))
                            for aid in current["artistIds"])
             if repaired:
                 names = identity.recheck(original, catalogue, fetch=lambda url: fetch(url, cache))
