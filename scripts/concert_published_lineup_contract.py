@@ -88,13 +88,36 @@ def promotional_source(signed_original, current):
     event = signed_original.get("event")
     evidence = signed_original.get("officialEvidence")
     require(isinstance(event, dict) and isinstance(evidence, list)
-            and len(evidence) == 1 and isinstance(evidence[0], dict),
+            and all(isinstance(p, dict) for p in evidence),
             "original OpenAgenda proof absent")
-    proof = evidence[0]
-    require(proof.get("proofType") ==
-            "dynamic-existing-venue-openagenda-single-source-v1"
-            and proof.get("url") == event.get("officialUrl")
-            and proof.get("officialOpenAgendaEventUrl") == event.get("officialUrl")
+    venues = [v for v in current["venues"] if v["id"] == event.get("venueId")]
+    require(len(venues) == 1, "physical venue not in existing catalogue")
+    venue = venues[0]
+    if len(evidence) == 1:
+        proof = evidence[0]
+        require(proof.get("proofType") ==
+                "dynamic-existing-venue-openagenda-single-source-v1"
+                and proof.get("officialOpenAgendaEventUrl") == event.get("officialUrl"),
+                "original existing-venue OpenAgenda proof required")
+    elif len(evidence) == 2:
+        # Historical paired site has already passed the independent Publisher.
+        # Reconstruct the same signed binding, never grant new site authority.
+        from scripts import concert_dynamic_new_site_source as site
+        proof = evidence[1]
+        require(evidence[0].get("proofType") == "official-organizer-or-venue"
+                and evidence[0].get("url") == event.get("officialUrl")
+                and evidence[0].get("checkedAt") == signed_original.get("reviewedAt")
+                and evidence[0].get("checkedFields") == ["artists", "date", "venue", "genre"]
+                and set(proof) == site.OPENAGENDA_NEW_FIELDS
+                and proof.get("proofType") == site.OPENAGENDA_NEW_PROFILE
+                and proof.get("checkedFields") == site.OPENAGENDA_NEW_CHECKED
+                and proof.get("namedOsmUrl") == venue.get("geoSource")
+                and event.get("sourceType") == "organisateur"
+                and event.get("genres") == proof.get("officialGenreLabels"),
+                "original new-site OpenAgenda proof required")
+    else:
+        raise ValueError("Lineup patch refused: original OpenAgenda proof absent")
+    require(proof.get("url") == event.get("officialUrl")
             and proof.get("checkedAt") == signed_original.get("reviewedAt")
             and oa.is_openagenda_event_url(event.get("officialUrl")),
             "original UID-bound OpenAgenda proof required")
@@ -109,7 +132,9 @@ def promotional_source(signed_original, current):
     require(all(aid in artists and normal(artists[aid].get("name")) == normal(name)
                 for aid, name in zip(ids, raw)),
             "original published identities changed")
-    candidates = [oa.promotional_artist_candidate(name) or name for name in raw]
+    candidates = [oa.promotional_artist_candidate(name)
+                  or oa.city_artist_candidate(name, venue.get("city"))
+                  or name for name in raw]
     require(any(normal(before) != normal(after)
                 for before, after in zip(raw, candidates))
             and len({normal(name) for name in candidates}) == len(candidates),
