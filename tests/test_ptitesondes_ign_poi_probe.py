@@ -1,6 +1,6 @@
 import unittest
 from urllib.parse import urlsplit, parse_qs
-from ptitesondes_ign_poi_probe import poi_url, summarize, probe, exact_poi_point, verify_admin_point
+from ptitesondes_ign_poi_probe import poi_url, summarize, probe, exact_poi_point, verify_admin_point, query_official_names
 
 class IGNPOIProbeTests(unittest.TestCase):
     def test_encoded_query_and_scope(self):
@@ -48,6 +48,25 @@ class IGNPOIProbeTests(unittest.TestCase):
         self.assertIsNone(exact_poi_point(row, {"type": "FeatureCollection", "features": []}, d))
         self.assertEqual(d["poi_exact_name_missing"], 1)
         self.assertNotIn("Ludothèque", str(d))
+
+    def test_official_alias_and_conflicting_alias_points(self):
+        from collections import Counter
+        row = {"nom_du_lieu": "Centre culturel A", "nom_usuel_du_lieu": "Ludothèque A",
+               "commune": "Les Bois", "code_commune": "01234", "code_postal": "01230"}
+        def doc(name, x):
+            return {"type": "FeatureCollection", "features": [{
+                "type": "Feature", "properties": {"name": name, "city": "Les Bois",
+                "citycode": "01234", "postcode": "01230", "category": ["culture"], "score": 0.99},
+                "geometry": {"type": "Point", "coordinates": [x, 48]}}]}
+        empty = {"type": "FeatureCollection", "features": []}
+        d = Counter()
+        point, _ = query_official_names(row, lambda n, _: doc(n, 2) if n == "Ludothèque A" else empty, d)
+        self.assertEqual(point, (48, 2))
+        self.assertFalse(d)
+        point, _ = query_official_names(row, lambda n, _: doc(n, 2 if n == "Ludothèque A" else 3), d)
+        self.assertIsNone(point)
+        self.assertEqual(d["poi_official_alias_conflict"], 1)
+        self.assertIsNone(exact_poi_point(row, doc("Ludothèque B", 2)))
 
     def test_probe_selects_discovered_identity(self):
         row = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois", "code_commune": "01234"}
