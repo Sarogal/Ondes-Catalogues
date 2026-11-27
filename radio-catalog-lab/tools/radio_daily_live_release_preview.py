@@ -18,7 +18,7 @@ from radio_daily_live_maintenance_release_preview import preview_status, preview
 from radio_daily_live_combined_preview import combine_and_rehearse
 
 
-def run(pointer, raw, *, anchor, day, discovery, dossiers, maintenance, repair, confirmation, logo_maintenance, missing_logo, status, cache_dirs=None):
+def qualify_operations(pointer, raw, *, anchor, day, discovery, dossiers, maintenance, repair, confirmation, logo_maintenance, missing_logo, status, cache_dirs=None):
     verify_baseline(pointer, raw, **anchor)
     sha = anchor["expected_sha"]
     if any(r.get("scanDate") != day for r in (discovery, dossiers, maintenance, repair, confirmation)):
@@ -54,7 +54,15 @@ def run(pointer, raw, *, anchor, day, discovery, dossiers, maintenance, repair, 
                 maintenance=maintenance, repair=repair, confirmation=confirmation, operations=operations, **extra)
         except ValueError:
             results[kind] = dict(outcome="strict_gate_held", candidateSha256=None)
-    return dict(schemaVersion=1, scanDate=day, catalogBaselineSha256=sha,
+    return results, operations
+
+
+def run(pointer, raw, *, anchor, day, discovery, dossiers, maintenance, repair, confirmation, logo_maintenance, missing_logo, status, cache_dirs=None):
+    results, operations = qualify_operations(pointer, raw, anchor=anchor, day=day,
+        discovery=discovery,dossiers=dossiers,maintenance=maintenance,repair=repair,
+        confirmation=confirmation,logo_maintenance=logo_maintenance,missing_logo=missing_logo,
+        status=status,cache_dirs=cache_dirs)
+    return dict(schemaVersion=1, scanDate=day, catalogBaselineSha256=anchor["expected_sha"],
                 publicationAllowed=False, signed=False, operations=results,
                 combined=combine_and_rehearse(pointer, raw, anchor=anchor, day=day, operations=operations, cache_dirs=cache_dirs,
                     state=dict(maintenance=maintenance, logo=logo_maintenance, missing=missing_logo,
