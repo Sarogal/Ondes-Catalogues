@@ -1938,9 +1938,11 @@ def apply_independently_verified_updates(
                     new_names.append(n)
             fields = []
             if ((new_names or cleaned_lineup != current_lineup)
-                    and isinstance(old.get("lineup"), list)
-                    and type(old.get("bands")) is int and
-                    old["bands"] == len(old["lineup"])):
+                    and (old.get("lineup") is None or isinstance(old.get("lineup"), list))
+                    and (old.get("bands") is None or
+                         (isinstance(old.get("lineup"), list)
+                          and type(old.get("bands")) is int
+                          and old["bands"] == len(current_lineup)))):
                 new["lineup"] = cleaned_lineup + new_names
                 new["bands"] = len(new["lineup"])
                 fields.extend(("lineup", "bands"))
