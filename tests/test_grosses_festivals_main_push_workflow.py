@@ -78,6 +78,18 @@ class FestivalTrustedPushTests(unittest.TestCase):
         self.assertIn('args+=(--rendered-evidence', private)
         self.assertIn("'linked_candidates'", private)
 
+    def test_readonly_ocr_preview_rotates_real_signed_sources_on_pr_and_schedule(self):
+        from pathlib import Path
+        preview = (Path(__file__).resolve().parents[1] / ".github/workflows"
+                   / "grossesondes-festival-poster-rotation-preview.yml").read_text(encoding="utf-8")
+        rotation = preview.split("      - name: Read-only public catalogue rotation", 1)[1]
+        self.assertIn('tick="$GITHUB_RUN_NUMBER"', rotation)
+        self.assertIn('--limit 4 --tick "$tick"', rotation)
+        self.assertNotIn("if: github.event_name", rotation)
+        self.assertIn('"$GITHUB_EVENT_NAME" == workflow_dispatch', rotation)
+        for forbidden in ("secrets.", "--private-cache", "automation-intake/", "contents: write"):
+            self.assertNotIn(forbidden, preview)
+
     def test_trusted_push_wakes_only_independent_publisher(self):
         publisher = PUBLISHER.read_text(encoding="utf-8")
         # A successful trusted main push can wake verification, not grant publication.
