@@ -75,13 +75,23 @@ def candidate_sources(registry, today, *, musicbrainz=None, wikidata=None):
                     hints[frontier.normalized(name)].add((name, url))
     # Directory results are ONLY additional navigation hints for names
     # present in the live pending registry. Never import community genres.
-    # Prefer existing event-attached links; directory suggestions fill gaps,
-    # rather than turning a tour page and a homepage into false ambiguity.
+    # Prefer event-attached links. A directory may also supply an explicit
+    # homepage on the same origin when several direct paths are ambiguous.
+    # Never replace a single direct link or resolve competing origins.
     direct_keys = set(hints)
+    direct_origins = {}
+    for key in direct_keys:
+        urls = {u for _, u in hints[key]}
+        origins = {urlsplit(u).netloc.casefold() for u in urls}
+        has_homepage = any(urlsplit(u).path in ("", "/")
+                           and not urlsplit(u).query and not urlsplit(u).fragment
+                           for u in urls)
+        if len(urls) > 1 and len(origins) == 1 and not has_homepage:
+            direct_origins[key] = next(iter(origins))
     for _, task in mb.candidate_tasks(registry, today).items():
         name = task[2]
         key = frontier.normalized(name)
-        if not key or key in direct_keys:
+        if not key or (key in direct_keys and key not in direct_origins):
             continue
         for directory, schema, id_field, valid_id in (
                 (musicbrainz, mb.SCHEMA, "mbid", mb.valid_id),
@@ -108,8 +118,15 @@ def candidate_sources(registry, today, *, musicbrainz=None, wikidata=None):
                 continue
             for raw in entry["homepageHints"]:
                 url = sites.safe_page(raw)
-                if url:
-                    hints[key].add((name, url))
+                if not url:
+                    continue
+                if key in direct_origins:
+                    parts = urlsplit(url)
+                    if (parts.netloc.casefold() != direct_origins[key]
+                            or parts.path not in ("", "/")
+                            or parts.query or parts.fragment):
+                        continue
+                hints[key].add((name, url))
     selected, ambiguous = [], 0
     for name_key, values in sorted(hints.items()):
         urls = {u for _, u in values}
