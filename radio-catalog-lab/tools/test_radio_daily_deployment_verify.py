@@ -116,3 +116,13 @@ class DeploymentVerifyTests(unittest.TestCase):
         self.responses[url] = replace(original, body=b"x"*len(original.body))
         with self.assertRaisesRegex(ValueError, "logo digest"):
             self.verify()
+
+    def test_fixed_raw_json_media_type_and_exact_bytes(self):
+        for url in (POINTER_URL, self.catalog_url):
+            self.responses[url] = replace(self.responses[url],
+                content_type="text/plain; charset=utf-8")
+        self.assertTrue(self.verify()["deploymentVerified"])
+        self.responses[self.catalog_url] = replace(self.responses[self.catalog_url],
+            body=b"x"*len(self.responses[self.catalog_url].body))
+        with self.assertRaisesRegex(ValueError, "catalogue differs"):
+            self.verify()
