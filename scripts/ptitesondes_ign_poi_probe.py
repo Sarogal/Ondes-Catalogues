@@ -34,9 +34,10 @@ def fetch_poi(name, code, opener=None):
         raise ValueError("oversized_poi_response")
     return json.loads(raw)
 
-def summarize(doc):
-    if (not isinstance(doc, dict) or doc.get("type") != "FeatureCollection"
-            or not isinstance(doc.get("features"), list) or len(doc["features"]) > LIMIT):
+def summarize(doc, *, limit=LIMIT):
+    if (type(limit) is not int or not 1 <= limit <= 20
+            or not isinstance(doc, dict) or doc.get("type") != "FeatureCollection"
+            or not isinstance(doc.get("features"), list) or len(doc["features"]) > limit):
         raise ValueError("invalid_poi_collection")
     fields = Counter()
     types = Counter()
@@ -74,7 +75,7 @@ def official_names(record):
     return list(names.values())
 
 
-def exact_poi_point(record, doc, diagnostics=None):
+def exact_poi_point(record, doc, diagnostics=None, *, limit=LIMIT):
     """A unique exact named point, not a street or commune centroid.
 
     This is a private location hypothesis only. The independent official
@@ -93,10 +94,10 @@ def exact_poi_point(record, doc, diagnostics=None):
         code, postcode = record["code_commune"], record.get("code_postal")
         if not isinstance(postcode, str) or not re.fullmatch(r"[0-9]{5}", postcode):
             return reject("directory_postcode_format")
-        summarize(doc)
+        summarize(doc, limit=limit)
         features = doc["features"]
         # A full truncated result set cannot establish uniqueness.
-        if len(features) >= LIMIT:
+        if len(features) >= limit:
             return reject('truncated_results')
         matches = []
         for feature in features:
@@ -137,14 +138,13 @@ def exact_poi_point(record, doc, diagnostics=None):
         return reject("invalid_response")
 
 
-def query_official_names(record, query, diagnostics, *, contextual=False):
+def query_official_names(record, query, diagnostics):
     """Check both official names; do not hide conflicting or truncated hits."""
     points = set()
     responses = []
     reasons = Counter()
     for name in official_names(record):
-        search = name + " " + record["commune"] if contextual else name
-        response = query(search, record["code_commune"])
+        response = query(name, record["code_commune"])
         responses.append(summarize(response))
         local = Counter()
         point = exact_poi_point(record, response, local)
@@ -177,16 +177,13 @@ def verify_admin_point(record, point, admin_fetch):
         return False
 
 
-def probe(*, discover=scan, lookup=exact_directory_record, query=fetch_poi, admin_fetch=None,
-          compare_context=False):
+def probe(*, discover=scan, lookup=exact_directory_record, query=fetch_poi, admin_fetch=None):
     # Select only automatically discovered leads. No fixed venue list, no
     # saved GPS, no private data, no public or private catalogue writes.
     leads = discover()["records"]
     attempted = exact = admin_verified = 0
     summaries = []
     diagnostics = Counter()
-    contextual_diagnostics = Counter()
-    contextual_exact = contextual_verified = contextual_unavailable = 0
     if admin_fetch is None:
         from ptitesondes_open_world_permanent_place_draft import fetch_admin
         admin_fetch = fetch_admin
@@ -200,23 +197,9 @@ def probe(*, discover=scan, lookup=exact_directory_record, query=fetch_poi, admi
         summaries.extend(responses)
         exact += int(point is not None)
         admin_verified += int(verify_admin_point(record, point, admin_fetch))
-        if compare_context:
-            try:
-                contextual_point, _ = query_official_names(record, query, contextual_diagnostics,
-                                                            contextual=True)
-                if point is not None and contextual_point is not None and point != contextual_point:
-                    contextual_diagnostics["poi_context_point_conflict"] += 1
-                    continue
-                contextual_exact += int(contextual_point is not None)
-                contextual_verified += int(verify_admin_point(record, contextual_point, admin_fetch))
-            except (OSError, ValueError, TypeError, KeyError, UnicodeError, OverflowError):
-                contextual_unavailable += 1
     return {"discovered": len(leads), "attempted": attempted, "responses": summaries,
             "exact_named_points": exact, "admin_verified_points": admin_verified,
             "rejection_counts": dict(diagnostics),
-            "contextual_comparison": {"enabled": compare_context, "exact_named_points": contextual_exact,
-                "admin_verified_points": contextual_verified, "unavailable": contextual_unavailable,
-                "rejection_counts": dict(contextual_diagnostics)},
             "publication_ready": False, "public_writes": 0}
 
 def discover_probe_sample():
@@ -236,7 +219,7 @@ def discover_probe_sample():
 
 if __name__ == "__main__":
     try:
-        print(json.dumps(probe(discover=discover_probe_sample, compare_context=True), sort_keys=True))
+        print(json.dumps(probe(discover=discover_probe_sample), sort_keys=True))
     except (OSError, ValueError, KeyError, TypeError, UnicodeError, OverflowError):
         print("::error::IGN POI probe unavailable or invalid")
         raise SystemExit(1) from None
