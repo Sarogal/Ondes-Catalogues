@@ -134,11 +134,18 @@ def administrative_identity(response, city, postcode):
 
 class MainBlocks(_Visibility):
     """Only explicit main/article content; exclude navigation and sidebars."""
-    def __init__(self):
+    def __init__(self, *, role_main=False):
         super().__init__()
         self.active = []
         self.blocks = []
         self.seen_main = False
+        self.role_main = role_main
+        self.role_main_count = 0
+        self.role_depths = set()
+
+    def in_main(self):
+        return any(not hidden and (tag in ('main', 'article') or depth in self.role_depths)
+                   for depth, (tag, hidden) in enumerate(self.elements))
 
     def handle_starttag(self, tag, attrs):
         attrs = list(attrs)
@@ -147,7 +154,12 @@ class MainBlocks(_Visibility):
         hidden = super().handle_starttag(tag, attrs)
         if not hidden and tag in ("main", "article"):
             self.seen_main = True
-        in_main = any(t in ("main", "article") and not h for t, h in self.elements)
+        if (self.role_main and not hidden and tag in ('div', 'section')
+                and dict(attrs).get('role') == 'main'):
+            self.role_main_count += 1
+            self.role_depths.add(len(self.elements)-1)
+            self.seen_main = True
+        in_main = self.in_main()
         if not hidden and in_main and tag in ("p", "li", "address"):
             self.active.append((tag, []))
 
@@ -163,6 +175,7 @@ class MainBlocks(_Visibility):
             if len(self.blocks) > MAX_BLOCKS:
                 raise ValueError("too_many_place_blocks")
         super().handle_endtag(tag)
+        self.role_depths = {depth for depth in self.role_depths if depth < len(self.elements)}
 
 
 def build_draft(city, venue, postcode, url, html, osm, admin, today):

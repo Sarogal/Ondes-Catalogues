@@ -62,15 +62,15 @@ def ban_diagnostics():
 
 class PlaceMain(MainBlocks):
     """Bind the exact visible H1 to the same main/article as the facts."""
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *, role_main=False):
+        super().__init__(role_main=role_main)
         self.headings = []
         self.heading = None
 
     def handle_starttag(self, tag, attrs):
         super().handle_starttag(tag, attrs)
         if (tag == "h1" and not self._hidden()
-                and any(t in ("main", "article") and not h for t, h in self.elements)):
+                and self.in_main()):
             self.heading = []
 
     def handle_data(self, data):
@@ -83,6 +83,21 @@ class PlaceMain(MainBlocks):
             self.headings.append(norm_text(" ".join(self.heading)))
             self.heading = None
         super().handle_endtag(tag)
+
+
+def _parse_place_main(html, *, allow_role_main=False):
+    parser = PlaceMain()
+    parser.feed(html)
+    parser.close()
+    # Fallback only if no visible native main/article exists; require one
+    # explicit accessible landmark, not a heuristic CSS class or whole body.
+    if allow_role_main and not parser.seen_main:
+        parser = PlaceMain(role_main=True)
+        parser.feed(html)
+        parser.close()
+        if parser.role_main_count != 1:
+            return PlaceMain()
+    return parser
 
 
 def official_facts(city, venue, url, html, directory):
@@ -106,7 +121,8 @@ def official_facts(city, venue, url, html, directory):
         return None
 
 
-def visible_place_facts(city, venue, url, html, insee, *, verified_aliases=()):
+def visible_place_facts(city, venue, url, html, insee, *, verified_aliases=(),
+                        allow_role_main=False):
     """Content only: callers MUST separately authenticate the exact URL."""
     try:
         town, name = norm_text(city), norm_text(venue)
@@ -115,9 +131,7 @@ def visible_place_facts(city, venue, url, html, insee, *, verified_aliases=()):
                 or not re.fullmatch(r"(?:[0-9]{5}|2[AB][0-9]{3})", insee)
                 or not isinstance(html, str) or not 50 <= len(html) <= MAX_HTML):
             return None
-        parser = PlaceMain()
-        parser.feed(html)
-        parser.close()
+        parser = _parse_place_main(html, allow_role_main=allow_role_main)
         blocks = parser.blocks
         names = {name} | {norm_text(alias) for alias in verified_aliases}
         if len(parser.headings) != 1 or parser.headings[0] not in names or not parser.seen_main:
@@ -465,9 +479,7 @@ def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=No
             # this exact venue. The latter cannot be hidden by a good link.
             if not isinstance(html, str) or not 50 <= len(html) <= MAX_HTML:
                 continue
-            parser = PlaceMain()
-            parser.feed(html)
-            parser.close()
+            parser = _parse_place_main(html, allow_role_main=True)
             if not parser.seen_main or not names.intersection(parser.headings):
                 _note("culture_independent_main_missing" if not parser.seen_main else
                       "culture_independent_heading_missing" if not parser.headings else
@@ -490,7 +502,7 @@ def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=No
                     _note("culture_independent_named_page_unavailable")
                     continue
             facts = visible_place_facts(city, venue, final_url, html, identity["insee"],
-                                        verified_aliases=aliases)
+                                        verified_aliases=aliases, allow_role_main=True)
             if facts is not None and parser.headings and parser.headings[0] != norm_text(venue) and parser.headings[0] in names:
                 _note("culture_independent_alias_heading")
             if facts is None:

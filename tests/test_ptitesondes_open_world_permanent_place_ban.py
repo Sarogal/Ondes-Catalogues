@@ -327,6 +327,27 @@ class OfficialPlaceBANTests(unittest.TestCase):
                    return_value=("https://other.example/", HTML)):
             self.assertIsNone(discover_independent_cultural_ban(lead, **kwargs))
 
+    def test_cultural_explicit_main_landmark_not_whole_body(self):
+        from ptitesondes_open_world_permanent_place_ban import discover_independent_cultural_ban
+        url = "https://culture.fr/lieu/"
+        record = {"commune": CITY, "nom_du_lieu": VENUE, "code_commune": "12345",
+                  "code_postal": "12345", "numero_et_libelle_voie": "12 Rue des Jeux",
+                  "adresse_complete": f"12 Rue des Jeux, 12345 {CITY}",
+                  "site_internet_et_autres_liens": url}
+        lead = {"city": CITY, "venue": VENUE}
+        def qualify(html):
+            return discover_independent_cultural_ban(lead, cultural_lookup=lambda *_: record,
+                page_read=lambda _: html, ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN)
+        body = HTML.replace("<main>", '<div role="main">').replace("</main>", "</div>")
+        self.assertIsNotNone(qualify(body))
+        for bad in (body.replace('role="main"', 'class="main"'),
+                    body.replace('role="main"', 'role="main" hidden'),
+                    body+'<div role="main"><p>Other</p></div>',
+                    body.replace(f"<h1>{VENUE}</h1>", "")+f"<h1>{VENUE}</h1>",
+                    body.replace("12 Rue", "14 Rue")):
+            self.assertIsNone(qualify(bad))
+        self.assertIsNone(official_facts(CITY, VENUE, PAGE, body, DIR))
+
     def test_cultural_exact_official_alias_not_fuzzy_identity(self):
         from ptitesondes_open_world_permanent_place_ban import discover_independent_cultural_ban
         url = "https://culture.fr/lieu/"
