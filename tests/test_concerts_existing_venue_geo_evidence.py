@@ -466,6 +466,34 @@ class StandaloneVenueSourceTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 evidence.verify_venue_source(source, VENUE, fetch=lambda *a: self.fail("unbound source"))
 
+    def test_standalone_follows_only_visible_exact_practical_page(self):
+        source = "https://unknown-room.fr/"
+        link = '<nav><a href="/infos/">Infos pratiques</a></nav>'
+        address = "<h1>Infos pratiques</h1><h2>New Room</h2><p>19 rue des Jardins</p><p>68000 Colmar</p>"
+        calls = []
+        def fetch(url, cache):
+            calls.append(url)
+            return link if url == source else address
+        with patch.object(evidence, "registered_venue_source", return_value=source), \
+             patch.object(evidence.geo, "verify", return_value=(OSM, 48.08, 7.36, "named-site-point")):
+            proof = evidence.verify_venue_source(source, VENUE, fetch=fetch)
+            self.assertEqual(proof["venuePatch"]["address"], "19 rue des Jardins")
+            self.assertEqual(calls, [source, source + "infos/"])
+            for page in (
+                    address.replace("Colmar", "Paris"),
+                    address + "<h2>New Room</h2><p>21 rue des Jardins 68000 Colmar</p>",
+                    address.replace("<h2>New Room</h2>", "<h2>Other Room</h2>"),
+                    '<div hidden>' + address + '</div>'):
+                with self.assertRaises(ValueError):
+                    evidence.verify_venue_source(source, VENUE, fetch=lambda url, cache: link if url == source else page)
+            for landing in (
+                    link.replace("/infos/", "https://other.fr/infos/"),
+                    '<div hidden>' + link + '</div>',
+                    link + link.replace("/infos/", "/acces/"),
+                    '<footer><address>New Room: 19 rue des Jardins, 75000 Paris</address></footer>' + link):
+                with self.assertRaises(ValueError):
+                    evidence.verify_venue_source(source, VENUE, fetch=lambda url, cache: landing if url == source else self.fail("unsafe fallback"))
+
     def test_scan_rotates_orphan_venue_without_event(self):
         source = "https://unknown-room.fr/"
         with patch.object(evidence, "registered_venue_source", return_value=source):
