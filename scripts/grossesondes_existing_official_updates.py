@@ -52,7 +52,7 @@ DATE_FIELDS = frozenset((
 ))
 CHANGEABLE = (frozenset(("lineup", "bands", "price", "notes", "lastVerified", "auditSources", "venue"))
               | COMMUNE_FIELDS | DATE_FIELDS)
-ROLE = re.compile(r"\b(?:programmation|line up|lineup|groupes?|noms|artistes?|"
+ROLE = re.compile(r"\b(?:programme|programmation|line up|lineup|groupes?|noms|artistes?|"
                   r"annonce|affiche|actualites?|news|billetterie|tarifs?|pass|"
                   r"annulation|annule|report|reporte|cancelled|postponed|202[7-9])\b")
 GENRE_LIST = re.compile(r"\b(?:groupes?|noms|artistes?|programmation|lineup|affiche|ils seront)\b")
@@ -799,7 +799,7 @@ def linked_pages(site, parsed):
             continue
         rank = (-1 if re.search(r"annulation|annule|report|reporte|cancelled|postponed", label)
                 else 0 if re.search(r"nouveaux? noms|groupes? annonces?|annonce|affiche", label)
-                else 1 if re.search(r"programmation|lineup|groupes", label)
+                else 1 if re.search(r"programme|programmation|lineup|groupes", label)
                 else 2 if re.search(r"billetterie|pass|tarif", label)
                 else 3)
         ranked[url] = min(rank, ranked.get(url, rank))
@@ -901,6 +901,89 @@ def listed_artists(blocks):
             result.append(name)
     return result
 
+
+
+def daily_programme_artists(doc, html, row, today):
+    """A complete printed day-by-day programme with explicit concert billing.
+
+    A single official signed domain is enough, but not a bare year or an
+    undated list. Require brand in the actual page title, the visible
+    programme year and the complete ordered calendar with correct weekdays.
+    Only explicit CONCERTS: ... | SALLE ... blocks supply names; exhibitions,
+    films, venue labels, unrelated news and sponsor names never do.
+    """
+    from grossesondes_official_html_edition import festival_visible_content
+    from datetime import timedelta
+    try:
+        start, end = date.fromisoformat(row["startDate"]), date.fromisoformat(row["endDate"])
+        if (start < date.fromisoformat(today) or start.year != end.year
+                or not 1 <= (end - start).days <= 7):
+            return []
+        title = _EditionTitle()
+        title.feed(html)
+        title.close()
+        brand = fold(re.sub(r"\b20[2-4]\d\b", "", row["name"]))
+        if len(brand.replace(" ", "")) < 8 or not re.search(
+                r"(?<![a-z0-9])" + re.escape(brand) + r"(?![a-z0-9])",
+                fold(" ".join(title.parts))):
+            return []
+        visible, _ = festival_visible_content(html)
+        visible = fold(visible)
+        years = set(re.findall(r"\bprogramm(?:e|ation)\s+(20[2-4]\d)\b", visible))
+        if (years and years != {str(start.year)}) or SENSITIVE.search(visible):
+            return []
+        blocks = doc.relevant()
+        day_pattern = re.compile(
+            r"(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+"
+            r"(\d{1,2})(?:er)?\s+(" + "|".join(OFFICIAL_MONTHS) +
+            r")(?:\s+(20[2-4]\d))?")
+        days, names, active = [], [], False
+        opening_year_proof = False
+        for block in blocks:
+            normalized = fold(block["text"])
+            if block["tag"] in ("h1", "h2", "h3"):
+                match = day_pattern.fullmatch(normalized)
+                if match:
+                    day = date(start.year, OFFICIAL_MONTHS[match[3]], int(match[2]))
+                    if (match[4] not in (None, str(start.year))
+                            or day.weekday() != WEEKDAY_2027_LABELS[match[1]]
+                            or not start <= day <= end or normalized not in visible):
+                        return []
+                    days.append(day)
+                    active = True
+                    continue
+                active = False
+            if not active or block["tag"] != "p" or normalized not in visible:
+                continue
+            # A dated opening announcement on the first day is equally
+            # explicit year proof when the programme title is navigation.
+            if days == [start]:
+                from grossesondes_official_html_edition import explicit_ranges
+                opening_year_proof |= any(
+                    begin == finish == start for _, _, begin, finish
+                    in explicit_ranges(normalized, start.year))
+            # Only the explicit concert portion of a mixed daily paragraph.
+            billing = re.search(
+                r"(?:^|\s)concerts?\s*:\s*([^|]{2,1200})\s*\|\s*"
+                r"(?:salle|sc[eè]ne|lieu)\s+[^|]{1,120}$",
+                block["text"], re.I)
+            if not billing:
+                continue
+            parts = re.split(r"\s+[†‡•·]\s+", billing[1].strip())
+            if not 2 <= len(parts) <= 30:
+                continue
+            valid = [good_artist(part) for part in parts]
+            if (not all(valid) or any(re.search(r"[:;!?]", part) for part in parts)
+                    or len({key(n) for n in valid}) != len(valid)):
+                continue
+            names.extend(valid)
+        expected = [start + timedelta(days=i) for i in range((end-start).days + 1)]
+        if (days != expected or len(names) > 80
+                or not (years == {str(start.year)} or opening_year_proof)):
+            return []
+        return list({key(n): n for n in names}.values())
+    except (KeyError, ValueError, TypeError, UnicodeError):
+        return []
 
 
 def season_scoped_first_names(doc, html, row, today):
@@ -1851,6 +1934,10 @@ def apply_independently_verified_updates(
                     page(html), html, old, today)
                 if seasonal_names:
                     claims.extend(seasonal_names)
+                    sources.append(url)
+                daily_names = daily_programme_artists(page(html), html, old, today)
+                if daily_names:
+                    claims.extend(daily_names)
                     sources.append(url)
             # Separate complete, explicitly labelled price tiers from the
             # legacy one-price-per-duration parser. Do not reconcile conflicting
