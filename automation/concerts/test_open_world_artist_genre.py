@@ -362,6 +362,41 @@ class DirectoryArtistResearchTests(unittest.TestCase):
         self.assertEqual(result["profilesRefreshed"], 1)
         self.assertEqual(result["directoryHintSources"], 0)
 
+    def test_directory_homepage_resolves_same_origin_direct_paths_only(self):
+        home = "https://newact.example.org/"
+        hints = [{"name": NAME, "url": URL},
+                 {"name": NAME, "url": home + "tour"}]
+        other = self.directory(wiki=True, homepageHints=["https://clone.example.org/"])
+        calls = []
+        def fetch(url, cache):
+            calls.append(url)
+            return PROFILE
+        result = research.build(registry(hints), DAY, fetch=fetch,
+                                musicbrainz=self.directory(homepageHints=[home]),
+                                wikidata=other)
+        self.assertEqual(calls, [home])
+        self.assertEqual(result["ambiguousArtistSourcesHeld"], 0)
+        self.assertEqual(result["profilesRefreshed"], 1)
+        self.assertEqual(result["officialDomainsAuthenticated"], 0)
+        self.assertEqual(result["approvalsProposed"], 0)
+        self.assertFalse(result["publicationAllowed"])
+        self.assertFalse(next(iter(result["facts"].values()))["officialDomainVerified"])
+        for urls in (["https://clone.example.org/"], [home + "bio"],
+                     [home + "?other=1"]):
+            out = research.build(registry(hints), DAY,
+                musicbrainz=self.directory(homepageHints=urls),
+                fetch=lambda *a: self.fail("ambiguous"))
+            self.assertEqual(out["ambiguousArtistSourcesHeld"], 1)
+        competing = hints + [{"name": NAME, "url": "https://clone.example.org/tour"}]
+        out = research.build(registry(competing), DAY,
+            musicbrainz=self.directory(homepageHints=[home]),
+            fetch=lambda *a: self.fail("competing origins"))
+        self.assertEqual(out["ambiguousArtistSourcesHeld"], 1)
+        calls.clear()
+        research.build(registry(), DAY, fetch=fetch,
+                       musicbrainz=self.directory(homepageHints=[home]))
+        self.assertEqual(calls, [URL])
+
     def test_contradictory_structured_profile_cannot_be_hidden_by_biography(self):
         html = PROFILE + PROFILE.replace('"Death Metal"', '"Thrash Metal"') + '<a href="/bio">Bio</a>'
         def fetch(url, cache):
