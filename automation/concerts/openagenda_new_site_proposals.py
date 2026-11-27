@@ -29,6 +29,7 @@ from automation.concerts import openagenda_official_concert as oa
 from automation.concerts import dynamic_new_site_approval_proposals as geography
 from automation.concerts import event_site_pair_recheck as pairs
 from automation.concerts import source_admission_intake as intake
+from automation.concerts import source_cross_domain_corroboration as cross
 from automation.concerts import source_evidence_probe as probe
 from automation.concerts.independent_named_site_geo import _distance_meters
 from scripts import concert_dynamic_new_site_source as publisher_source
@@ -45,7 +46,9 @@ def require(ok, reason):
 
 
 def _site_key(name, city):
-    return intake.normalized(name), intake.normalized(city)
+    # Routing only: use the existing-venue lane's conservative name key.
+    # The original event's exact venue identity is still checked separately.
+    return cross.clean_venue(name), intake.normalized(city)
 
 
 def eligible(registry, catalogue, today):
@@ -155,8 +158,8 @@ def propose(row, catalogue, today, *, fetch=probe.safe_fetch):
         place = _unpublished_location(records[0])
     except (TypeError, ValueError, KeyError, IndexError) as exc:
         raise ValueError("OpenAgenda new-site: original event data malformed") from exc
-    require(_site_key(place["name"], place["city"]) ==
-            _site_key(candidate["venue"], candidate["city"]),
+    require((intake.normalized(place["name"]), intake.normalized(place["city"])) ==
+            (intake.normalized(candidate["venue"]), intake.normalized(candidate["city"])),
             "official place changed from discovered location")
     # A syndicated public agenda is only a discovery hint. Authenticate
     # the original UID pair, exact event slug and origin permalink from
