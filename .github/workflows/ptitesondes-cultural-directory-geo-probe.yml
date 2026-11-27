@@ -1,0 +1,27 @@
+name: P'tites Ondes — audit des coordonnées de l'annuaire culturel
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_cultural_directory_geo_probe.py'
+      - 'tests/test_ptitesondes_cultural_directory_geo_probe.py'
+      - '.github/workflows/ptitesondes-cultural-directory-geo-probe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline point audit tests
+        env:
+          PYTHONPATH: scripts
+        run: python -m unittest discover -s tests -p 'test_ptitesondes_cultural_directory_geo_probe.py' -v
+      - name: Live aggregate point audit
+        run: python scripts/ptitesondes_cultural_directory_geo_probe.py
