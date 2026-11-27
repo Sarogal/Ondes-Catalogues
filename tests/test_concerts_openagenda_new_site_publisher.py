@@ -129,7 +129,8 @@ class OpenAgendaNewNamedSitePublisherTests(unittest.TestCase):
                          published["venues"][-1]["id"])
 
     def test_city_suffix_is_not_a_new_artist_at_new_venue(self):
-        base = geo_fixture.test_catalogue()
+        reference = geo_fixture.test_catalogue()
+        base = copy.deepcopy(reference)
         base["artists"].append({"id": "ultra-vomit", "name": "Ultra Vomit", "aliases": []})
         previous = geo_fixture.before()
         title = "ULTRA VOMIT - TOURS"
@@ -148,7 +149,7 @@ class OpenAgendaNewNamedSitePublisherTests(unittest.TestCase):
         with mock.patch.object(signer.probe, "safe_fetch", side_effect=fetch):
             self.assertEqual(len(approval_preflight.check_append_only(
                 previous, proposed, TODAY)), 1)
-            published, stats = publisher.merge(base, base, proposed, TODAY)
+            published, stats = publisher.merge(reference, base, proposed, TODAY)
         self.assertEqual(stats["newEvents"], 1, stats)
         self.assertEqual(stats["newVenues"], 1, stats)
         self.assertEqual(stats["newArtists"], 0, stats)
