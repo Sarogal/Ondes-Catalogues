@@ -3,11 +3,11 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 143,
-  "dueNameCount": 36,
-  "attemptedCount": 1,
+  "observedNameCount": 147,
+  "dueNameCount": 40,
+  "attemptedCount": 3,
   "serviceFailure": "http_503",
-  "retryAfterKey": "her echo",
+  "retryAfterKey": "kornkob95",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -447,6 +447,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "jack punk rock demonstration": {
+      "status": "not_found",
+      "artistName": "Jack Punk Rock Demonstration",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "jason derulo; nicki minaj; ty dolla $ign": {
       "status": "not_found",
       "artistName": "Jason Derulo; Nicki Minaj; Ty Dolla $ign",
@@ -564,6 +573,15 @@
       "artistName": "Kayo Dot",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "kindness": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Kindness",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
       "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false

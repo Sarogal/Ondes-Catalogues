@@ -3,11 +3,11 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 143,
-  "dueNameCount": 3,
+  "observedNameCount": 147,
+  "dueNameCount": 7,
   "attemptedCount": 1,
   "serviceFailure": "service_or_response_held",
-  "retryAfterKey": "kindness",
+  "retryAfterKey": "les touffes kretiennes",
   "entries": {
     "2000 fm": {
       "status": "identity_held",

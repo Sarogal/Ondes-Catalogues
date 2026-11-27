@@ -5,13 +5,13 @@
   "approvedCount": 0,
   "publicationAllowed": false,
   "eligibleStationCount": 75,
-  "dueStationCount": 55,
+  "dueStationCount": 51,
   "attemptedCount": 4,
   "serviceFailureCount": 0,
   "stationsWithFreshHints": 2,
   "counts": {
     "candidates_observed": 3,
-    "no_candidate_observed": 79
+    "no_candidate_observed": 80
   },
   "records": [
     {
@@ -333,9 +333,9 @@
     },
     {
       "goStationId": "go-station-000085",
-      "lastAttemptDate": "2026-11-26",
+      "lastAttemptDate": "2026-11-27",
       "searchStatus": "no_candidate_observed",
-      "hintsObservedDate": "2026-11-26",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
       "approved": false,
       "publicationAllowed": false,
@@ -355,9 +355,9 @@
     },
     {
       "goStationId": "go-station-000092",
-      "lastAttemptDate": "2026-11-26",
+      "lastAttemptDate": "2026-11-27",
       "searchStatus": "no_candidate_observed",
-      "hintsObservedDate": "2026-11-26",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
       "approved": false,
       "publicationAllowed": false,
@@ -366,9 +366,9 @@
     },
     {
       "goStationId": "go-station-000099",
-      "lastAttemptDate": "2026-11-26",
+      "lastAttemptDate": "2026-11-27",
       "searchStatus": "no_candidate_observed",
-      "hintsObservedDate": "2026-11-26",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
       "approved": false,
       "publicationAllowed": false,
@@ -387,6 +387,17 @@
       "hintsFresh": true
     },
     {
+      "goStationId": "go-station-000102",
+      "lastAttemptDate": "2026-11-27",
+      "searchStatus": "no_candidate_observed",
+      "hintsObservedDate": "2026-11-27",
+      "hints": [],
+      "approved": false,
+      "publicationAllowed": false,
+      "maintenanceEligible": true,
+      "hintsFresh": true
+    },
+    {
       "goStationId": "go-station-000110",
       "lastAttemptDate": "2026-11-26",
       "searchStatus": "no_candidate_observed",
@@ -394,7 +405,7 @@
       "hints": [],
       "approved": false,
       "publicationAllowed": false,
-      "maintenanceEligible": true,
+      "maintenanceEligible": false,
       "hintsFresh": true
     },
     {

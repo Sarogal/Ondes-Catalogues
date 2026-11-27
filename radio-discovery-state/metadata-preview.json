@@ -5,7 +5,7 @@
   "approvedCount": 0,
   "attemptedCount": 6,
   "stationsWithArtistHints": 110,
-  "distinctArtistHints": 143,
+  "distinctArtistHints": 147,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -669,7 +669,7 @@
     {
       "stationuuid": "35080d89-d7b9-4e1e-af80-ae4a50420f67",
       "streamSha256": "49ad66de7ab731d5dfd7d4a726e439856c73f3f336de0397fff71bbdf37f11ff",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -681,7 +681,7 @@
     {
       "stationuuid": "36d2f90a-baf1-4abb-bf7b-55536d606f93",
       "streamSha256": "420d073b675b5b2abd9c633d827a151abd58c8e5748017c7e493faf650b265e4",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -691,6 +691,11 @@
           "date": "2026-11-26",
           "artistHint": "Nazareth",
           "titleSha256": "d27ff35fb9cb3c7e0e100abe0bee5fa302b0808ae7c68f05a2119b70cd739299"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Bad Touch",
+          "titleSha256": "cfc7cbbf44a8c8c2f557dc79827457e1965c917d27007a0ec67b953642c5e2c0"
         }
       ],
       "alternativeVersion": 0,
@@ -699,7 +704,7 @@
     {
       "stationuuid": "3a363c7c-0b66-4d78-9972-e62ab56ee61c",
       "streamSha256": "b3f8d7a57a3afee2430b5bc053abde597dacf4b6e25d28b30fbee86ff1c8c633",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -709,6 +714,11 @@
           "date": "2026-11-26",
           "artistHint": "Good Charlotte",
           "titleSha256": "be939131b935c9db3c5ef37e7eb9f179b32a22a910f8a9c62064086a237b53ff"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Anti-Nowhere League",
+          "titleSha256": "37771916c5817e137a859ca860c425b91ae52b446e78460ff4c563c216d9aef9"
         }
       ],
       "alternativeVersion": 0,
@@ -717,7 +727,7 @@
     {
       "stationuuid": "3a40f5fc-8ba3-4177-a145-b1f90dfb06d5",
       "streamSha256": "dd30406461d941b61cc5c3c9e0cdba561a7062b93da113034e70735e044481e4",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -732,13 +742,20 @@
           "date": "2026-11-26",
           "artistHint": "Downtown Mystics",
           "titleSha256": "b3c901b98eca84f0ee54255a71b2f644151b39b0fbc921ca35c4a449a2d24e1e"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Ozzy Osbourne",
+          "titleSha256": "5974df7b2c038a70ca852026a220642a3cc68f3b25bd92c26cc8c122a2aeb88d"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "3cf8f90f-0776-44ef-ac57-1eb446abfbe4",
       "streamSha256": "efd4f4b76d9b1b919f4de6a1c32726c57a58dd4f4cc9b5536f0ce5230b64e94a",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -753,13 +770,20 @@
           "date": "2026-11-26",
           "artistHint": "La Pulqueria",
           "titleSha256": "15dfde7fcc3771825558a95712d1b13496a18c8d66355364a6bff273ab4bbdc1"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Les Touffes Kretiennes",
+          "titleSha256": "60ca34816594e42d24218b166cac2accb55aec4a14dff75f78b4e8d953318123"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "3e416d41-3433-4f74-bb32-c224bda34016",
       "streamSha256": "600f26605e986226e5d5cddc48f3d2e4ac950ad2ba5bf70a13b26a80af00924c",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
