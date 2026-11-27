@@ -2,7 +2,7 @@
 import argparse
 from pathlib import Path
 
-from radio_daily_baseline_verify import verify_baseline, strict_json, KEY_ID, PUBLIC_KEY
+from radio_daily_baseline_verify import verify_baseline, strict_json, KEY_ID, PUBLIC_KEY, cli_anchor
 from radio_daily_v9_generator import digest, encode, load_bytes
 from radio_daily_decision_preview import decide
 from radio_daily_repair_plan import plan
@@ -73,8 +73,7 @@ def main():
         return strict_json(load_bytes(args.root / name))
     discovery = read("candidates.json")
     report = run(load_bytes(args.pointer), load_bytes(args.baseline),
-        anchor=dict(expected_sha=args.baseline_sha256, expected_sequence=args.baseline_sequence,
-                    public_key=PUBLIC_KEY, key_id=KEY_ID), day=discovery["scanDate"],
+        anchor=cli_anchor(args.baseline_sha256,args.baseline_sequence), day=discovery["scanDate"],
         discovery=discovery, dossiers=read("qualification-dossiers.json"),
         maintenance=read("maintenance-preview.json"), repair=read("repair-preview.json"),
         confirmation=read("repair-confirmation-preview.json"),
