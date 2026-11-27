@@ -92,7 +92,7 @@ def exact_directory_record(city, venue, *, fetch=_fetch):
     return next(iter(records.values())) if len(records) == 1 else None
 
 
-def directory_website_hints(row):
+def directory_website_hints(row, *, try_https_upgrade=False):
     """Extract only bounded HTTPS URLs from the Ministry's link field.
 
     Handles a plain link, delimited text, or nested JSON link records.
@@ -119,8 +119,21 @@ def directory_website_hints(row):
         elif isinstance(item, list) and len(item) <= 30:
             queue.extend(item)
         elif isinstance(item, str) and len(item) <= 16000:
-            for raw in re.findall(r"https://[^\s<>\"';|,]+", item):
-                url = _safe_url(raw.rstrip(")."))
+            pattern = r"https?://[^\s<>\"';|,]+" if try_https_upgrade else r"https://[^\s<>\"';|,]+"
+            for raw in re.findall(pattern, item):
+                raw = raw.rstrip(").")
+                if raw.startswith("http://"):
+                    # An exact directory-listed hostname is a research hint.
+                    # Never fetch HTTP, follow a downgrade, or rewrite an
+                    # explicit port, credentials, query or path.
+                    try:
+                        p = urlsplit(raw)
+                        if p.port is not None or p.username or p.password:
+                            continue
+                    except ValueError:
+                        continue
+                    raw = "https://" + raw[len("http://"):]
+                url = _safe_url(raw)
                 if not url:
                     continue
                 p = urlsplit(url)
