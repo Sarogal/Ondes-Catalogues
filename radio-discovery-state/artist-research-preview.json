@@ -3,11 +3,11 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 128,
-  "dueNameCount": 27,
-  "attemptedCount": 1,
+  "observedNameCount": 132,
+  "dueNameCount": 31,
+  "attemptedCount": 3,
   "serviceFailure": "http_503",
-  "retryAfterKey": "athena",
+  "retryAfterKey": "cats in space",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -100,6 +100,15 @@
       "artistName": "AxiomMaxiom",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "bad buka": {
+      "status": "not_found",
+      "artistName": "Bad Buka",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },
@@ -199,6 +208,15 @@
       "artistName": "BrainDead",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "brigadnyj podrjad": {
+      "status": "not_found",
+      "artistName": "Brigadnyj podrjad",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
       "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false

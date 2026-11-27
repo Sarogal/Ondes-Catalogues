@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 109,
-  "distinctArtistHints": 128,
+  "stationsWithArtistHints": 110,
+  "distinctArtistHints": 132,
   "attemptedHlsCount": 1,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -72,7 +72,7 @@
     {
       "stationuuid": "05412426-3d22-4e8e-bee0-92b71dac20ff",
       "streamSha256": "bf1810018392cb47db73befc7e7017085f55a36af5b1605d6407cce9112ec745",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -82,13 +82,20 @@
           "date": "2026-11-26",
           "artistHint": "Fuzz Kill Radio",
           "titleSha256": "1a43d1c435f5cd81dbdad3d43676f740d4ae8dc197445a8d275e7bef07017f49"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Jack Punk Rock Demonstration",
+          "titleSha256": "b3bddae85739d78155a554aed0f9dbcc00fda76b09d8ee63b38aaba2bf614402"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "0abce032-b825-46fb-96a4-016d75420ade",
       "streamSha256": "cba5d24e595f67fe2b680a9aa4342ed0a3e90867cab971dc275f76f4f228d3b5",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -98,13 +105,20 @@
           "date": "2026-11-26",
           "artistHint": "Phinehas",
           "titleSha256": "c50e5bb4b0308721f744bae7af56f10a0847091200fdbf445f3f0c9519745ded"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Her Echo",
+          "titleSha256": "e9024988fbfdec3e450d1c4c3756f9ec7389acdeaa55a4c0ed8267c5fca0957b"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "0bc40b21-cd89-4dcb-ad47-18528395168a",
       "streamSha256": "1120980f1d05276076fcbf6adcfda68bd56292fa889300d48907cf0fa360048b",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -340,7 +354,7 @@
     {
       "stationuuid": "1c6dcd6f-88c6-4fd4-8191-078435168e85",
       "streamSha256": "d8920caf1b7dfb954476c237a6f7007a3801a376f5e7357e1015c054b6bed0c8",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -985,7 +999,7 @@
     {
       "stationuuid": "5e9f7c0a-a1ef-4739-b115-dad73cfbf404",
       "streamSha256": "08c4129d00a6096cde9f1ef2a03caac619f400f91ba137643751c1da9c9f4eb6",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1000,6 +1014,11 @@
           "date": "2026-11-26",
           "artistHint": "Naked Eyes",
           "titleSha256": "01446a4b26cabdc881ccad3a3ff16c0e8e49ca4c8a3183e44af580c0a3414941"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Genesis",
+          "titleSha256": "8f86fbf9b74a44c05e0f0669d170a238a9ca7e29ae76a1eb2cab8adc3f7ecd3c"
         }
       ],
       "alternativeVersion": 0,
@@ -1554,6 +1573,24 @@
           "date": "2026-11-26",
           "artistHint": "Saxon",
           "titleSha256": "e1d2cd1d08470ea5550bc7d6506dfe64c807c3b231e89c7e208d3cf74a564f9c"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
+      "stationuuid": "9b198e36-57eb-4107-8412-97221333f531",
+      "streamSha256": "8d2fe0fb9b75e04770be57aea6cbd03e5506e2c7a42e1a2a69ff62966f4adaf4",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-27",
+          "artistHint": "suicidas",
+          "titleSha256": "9ec698eaf9b0236cd59ddb3b7af5e6a1d13f807889c1af63ed1bf7c2c5371d6a"
         }
       ],
       "alternativeVersion": 0,
