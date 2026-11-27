@@ -1,0 +1,14 @@
+{
+  "catalog_id": "grosses-ondes-radio",
+  "content_length": 575867,
+  "content_path": "releases/08f25acfab1d8dd8617206939f50bb7d2c86d0e7f06d7ccaf064110db732ce67.json",
+  "content_sha256": "08f25acfab1d8dd8617206939f50bb7d2c86d0e7f06d7ccaf064110db732ce67",
+  "published_at": "2026-11-27T00:00:00Z",
+  "release_sequence": 9,
+  "schema_version": 1,
+  "signature": {
+    "algorithm": "Ed25519",
+    "key_id": "radio-lab-63c5d2d1105b457c56f83baf",
+    "signature_base64": "4PkEG80NBapTZycP4wA1pJ6RLWu8E9/+HCV8oBVcg6K2L/dOtd7yTbcnQj5HvWkAJ1NFKSp6MXE/GMm+eG6BBw=="
+  }
+}

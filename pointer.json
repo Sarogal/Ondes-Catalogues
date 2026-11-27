@@ -1,14 +1,14 @@
 {
   "catalog_id": "grosses-ondes-radio",
-  "content_length": 574383,
-  "content_path": "releases/f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40.json",
-  "content_sha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
-  "published_at": "2026-11-23T21:57:25Z",
-  "release_sequence": 8,
+  "content_length": 575867,
+  "content_path": "releases/08f25acfab1d8dd8617206939f50bb7d2c86d0e7f06d7ccaf064110db732ce67.json",
+  "content_sha256": "08f25acfab1d8dd8617206939f50bb7d2c86d0e7f06d7ccaf064110db732ce67",
+  "published_at": "2026-11-27T00:00:00Z",
+  "release_sequence": 9,
   "schema_version": 1,
   "signature": {
     "algorithm": "Ed25519",
     "key_id": "radio-lab-63c5d2d1105b457c56f83baf",
-    "signature_base64": "a4cuLZLTahD6Yeg0VUC6FdpJKZQomS9W0LEou6tHiCuIuoF1TOP18GzHvVtk0iE3jsuNS9uJb/U/0M5a+gj4DQ=="
+    "signature_base64": "4PkEG80NBapTZycP4wA1pJ6RLWu8E9/+HCV8oBVcg6K2L/dOtd7yTbcnQj5HvWkAJ1NFKSp6MXE/GMm+eG6BBw=="
   }
 }
