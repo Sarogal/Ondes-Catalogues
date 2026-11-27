@@ -292,14 +292,25 @@ def promotional_artist_candidate(title):
     return name
 
 
-def _confirmed_promotional_artist(title, record):
+def city_artist_candidate(title, city):
+    """A separated exact municipality suffix is only a research hint."""
+    if not isinstance(title, str) or not normalized(city):
+        return None
+    match = re.search(r"\s+[-–—]\s+([^–—]+?)\s*\Z", title)
+    if not match or normalized(match.group(1)) != normalized(city):
+        return None
+    name = title[:match.start()].strip()
+    return name if 2 <= len(name) <= 120 and normalized(name) not in PLACEHOLDERS else None
+
+
+def _confirmed_promotional_artist(title, record, *, candidate=None):
     """Use the original UID-bound announcement's own independent name usage.
 
     Require a separate, visible occurrence of the proposed name after
     eliminating repetitions of the full promotional title. No external
     site, known-band list, or genre inference from a former membership.
     """
-    candidate = promotional_artist_candidate(title)
+    candidate = candidate or promotional_artist_candidate(title)
     if candidate is None:
         return None
     full = normalized(title)
@@ -311,7 +322,7 @@ def _confirmed_promotional_artist(title, record):
         content = (value.get("fr") or value.get("en")) if isinstance(value, dict) else None
         if not isinstance(content, str) or not 4 <= len(content) <= 20000:
             continue
-        reader = _VisibleOfficialGenreText()
+        reader = _LongDescriptionText()
         try:
             reader.feed(content)
             reader.close()
@@ -342,13 +353,16 @@ def _named_guest(name):
     return name
 
 
-def observed_bill_matches(observed, names):
+def observed_bill_matches(observed, names, *, city=None):
     """Correlate discovery with an independently verified bill, never sign it."""
     if not isinstance(observed, str) or not names:
         return False
     lead = observed.split(" + ")[0]
     known = [normalized(n) for n in names]
     if normalized(lead) in known:
+        return True
+    cleaned = city_artist_candidate(lead, city)
+    if cleaned and normalized(cleaned) in known:
         return True
     parts = re.split(r"\s+\|\s+", lead)
     # A composite discovery lead may stand for the exact ordered bill only.
@@ -714,8 +728,10 @@ def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
     names = _export_bill(title, record)
     cleaned = []
     for name in names:
-        if promotional_artist_candidate(name) is not None:
-            confirmed = _confirmed_promotional_artist(name, record)
+        candidate = (promotional_artist_candidate(name)
+                     or city_artist_candidate(name, venue.get("city")))
+        if candidate is not None:
+            confirmed = _confirmed_promotional_artist(name, record, candidate=candidate)
             if confirmed is None:
                 raise ValueError("OpenAgenda: promotional artist name not confirmed")
             cleaned.append(confirmed)

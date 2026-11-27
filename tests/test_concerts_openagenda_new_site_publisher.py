@@ -128,6 +128,40 @@ class OpenAgendaNewNamedSitePublisherTests(unittest.TestCase):
         self.assertEqual(published["events"][-1]["venueId"],
                          published["venues"][-1]["id"])
 
+    def test_city_suffix_is_not_a_new_artist_at_new_venue(self):
+        reference = geo_fixture.test_catalogue()
+        base = copy.deepcopy(reference)
+        base["artists"].append({"id": "ultra-vomit", "name": "Ultra Vomit", "aliases": []})
+        previous = geo_fixture.before()
+        title = "ULTRA VOMIT - TOURS"
+        registry = observation(name=title, leadArtist=title)
+        fetch, _ = official_get(changes={
+            "title": {"fr": title},
+            "keywords": {"fr": ["metal"]},
+            "longDescription": {"fr": "Ultra Vomit est un groupe de metal hors du commun."},
+        })
+        proposed, report = producer.build(registry, base, previous, TODAY, fetch=fetch)
+        self.assertEqual(len(proposed["approvals"]), 1, report)
+        event = proposed["approvals"][0]
+        self.assertEqual(event["event"]["artistIds"], ["ultra-vomit"])
+        self.assertEqual(event["newArtists"], [])
+        self.assertEqual(event["event"]["title"].casefold(), "ultra vomit")
+        with mock.patch.object(signer.probe, "safe_fetch", side_effect=fetch):
+            self.assertEqual(len(approval_preflight.check_append_only(
+                previous, proposed, TODAY)), 1)
+            published, stats = publisher.merge(reference, base, proposed, TODAY)
+        self.assertEqual(stats["newEvents"], 1, stats)
+        self.assertEqual(stats["newVenues"], 1, stats)
+        self.assertEqual(stats["newArtists"], 0, stats)
+        self.assertEqual(published["events"][-1]["artistIds"], ["ultra-vomit"])
+        for desc in (title, "Un autre groupe joue du metal.",
+                     "<script>Ultra Vomit est un groupe de metal.</script>"):
+            with self.subTest(desc=desc):
+                bad, _ = official_get(changes={"title": {"fr": title},
+                                               "longDescription": {"fr": desc}})
+                held, report = producer.build(registry, base, previous, TODAY, fetch=bad)
+                self.assertEqual(held, previous, report)
+
     def test_syndicated_event_at_unknown_room_uses_authenticated_origin(self):
         base = geo_fixture.test_catalogue()
         previous = geo_fixture.before()
