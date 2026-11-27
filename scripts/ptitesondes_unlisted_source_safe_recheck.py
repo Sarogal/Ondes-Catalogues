@@ -85,7 +85,8 @@ def _dns_public_ips(host, resolver=socket.getaddrinfo):
 
 
 def _read_pinned_once(url, *, resolver=socket.getaddrinfo,
-                      connection_factory=_PinnedHTTPS, municipal_redirect=False):
+                      connection_factory=_PinnedHTTPS, municipal_redirect=False,
+                      transport_fallback=False):
     """One bounded pinned HTTPS request. Never follow a redirect here."""
     if not _safe_url(url):
         _READ_FAILURES["unsafe_url"] += 1
@@ -102,13 +103,31 @@ def _read_pinned_once(url, *, resolver=socket.getaddrinfo,
     try:
         # Only a literal globally-routable IP reaches the socket. TLS still
         # verifies the original DNS hostname; no proxy settings are honored.
-        connection = connection_factory(parsed.hostname, ips[0])
-        connection.request("GET", path, headers={
-            "Accept": "text/html,application/xhtml+xml",
-            "Accept-Encoding": "identity", "Connection": "close",
-            "User-Agent": "PtitesOndesPrivateUnlistedSource/1.0",
-        })
-        response = connection.getresponse()
+        # Only cultural reads may retry one other already validated IP.
+        # No retries on TLS validation, HTTP status, or response content.
+        candidates = ips[:1]
+        if transport_fallback and len(ips) > 1:
+            ordered = sorted(ips, key=lambda ip: (ipaddress.ip_address(ip).version, ip))
+            candidates = ordered[:2]
+        for index, ip in enumerate(candidates):
+            try:
+                connection = connection_factory(parsed.hostname, ip)
+                connection.request("GET", path, headers={
+                    "Accept": "text/html,application/xhtml+xml",
+                    "Accept-Encoding": "identity", "Connection": "close",
+                    "User-Agent": "PtitesOndesPrivateUnlistedSource/1.0",
+                })
+                response = connection.getresponse()
+                if index:
+                    _READ_FAILURES["transport_fallback_recovered"] += 1
+                break
+            except (OSError, http.client.HTTPException) as exc:
+                if isinstance(exc, ssl.SSLError) or index + 1 == len(candidates):
+                    raise
+                if connection is not None:
+                    connection.close()
+                    connection = None
+                _READ_FAILURES["transport_fallback_attempted"] += 1
         if municipal_redirect and response.status in (301, 302, 303, 307, 308):
             location = response.getheader("Location")
             if not isinstance(location, str) or not location or len(location) > 600:
@@ -204,7 +223,7 @@ def read_cultural_https(url, *, resolver=socket.getaddrinfo,
         seen.add(url)
         html, location = _read_pinned_once(
             url, resolver=resolver, connection_factory=connection_factory,
-            municipal_redirect=True)
+            municipal_redirect=True, transport_fallback=True)
         if location is None:
             return url, html
         if not _safe_url(location, base=url):

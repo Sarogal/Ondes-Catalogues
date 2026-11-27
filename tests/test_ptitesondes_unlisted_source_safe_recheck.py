@@ -199,6 +199,38 @@ class UnlistedSafeSourceTests(unittest.TestCase):
             read_cultural_https(home, resolver=resolver, connection_factory=factory)
         self.assertEqual(calls, ["culture.fr"])
 
+    def test_cultural_transport_fallback_only_on_prevalidated_public_ips(self):
+        from ptitesondes_unlisted_source_safe_recheck import read_cultural_https
+        import ssl
+        url = "https://culture.fr/"
+        calls = []
+        def factory(host, ip):
+            calls.append(ip)
+            if ip == "8.8.4.4":
+                raise OSError("unreachable")
+            return FakeConnection()
+        self.assertEqual(read_cultural_https(url, resolver=dns("8.8.4.4", "8.8.8.8"),
+                         connection_factory=factory)[0], url)
+        self.assertEqual(calls, ["8.8.4.4", "8.8.8.8"])
+        calls.clear()
+        with self.assertRaises(ValueError):
+            read_unknown_https(url, resolver=dns("8.8.4.4", "8.8.8.8"),
+                               connection_factory=factory)
+        self.assertEqual(calls, ["8.8.4.4"])
+        calls.clear()
+        def bad_tls(host, ip):
+            calls.append(ip)
+            raise ssl.SSLCertVerificationError("untrusted")
+        with self.assertRaises(ValueError):
+            read_cultural_https(url, resolver=dns("8.8.4.4", "8.8.8.8"),
+                                connection_factory=bad_tls)
+        self.assertEqual(calls, ["8.8.4.4"])
+        calls.clear()
+        with self.assertRaises(ValueError):
+            read_cultural_https(url, resolver=dns("8.8.4.4", "127.0.0.1"),
+                                connection_factory=factory)
+        self.assertEqual(calls, [])
+
     def test_read_diagnostics_are_fixed_and_redacted(self):
         from ptitesondes_unlisted_source_safe_recheck import read_failure_counts
         before = read_failure_counts()
