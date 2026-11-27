@@ -323,6 +323,32 @@ class OfficialPlaceBANTests(unittest.TestCase):
                    return_value=("https://other.example/", HTML)):
             self.assertIsNone(discover_independent_cultural_ban(lead, **kwargs))
 
+    def test_cultural_homepage_exact_dedicated_link_only(self):
+        from ptitesondes_open_world_permanent_place_ban import discover_independent_cultural_ban
+        home = "https://culture.example/"
+        target = home+"lieu/"
+        record = {"commune": CITY, "nom_du_lieu": VENUE, "code_commune": "12345",
+                  "code_postal": "12345", "numero_et_libelle_voie": "12 Rue des Jeux",
+                  "adresse_complete": f"12 Rue des Jeux, 12345 {CITY}",
+                  "site_internet_et_autres_liens": home}
+        lead = {"city": CITY, "venue": VENUE}
+        for link, expected in (
+            (f'<a href="/lieu/">{VENUE}</a>', True),
+            (f'<a href="https://other.example/lieu/">{VENUE}</a>', False),
+            (f'<a hidden href="/lieu/">{VENUE}</a>', False),
+            (f'<a href="/lieu/">{VENUE}</a><a href="/autre/">{VENUE}</a>', False),
+        ):
+            calls = []
+            def read(url):
+                calls.append(url)
+                return ("<main><h1>Accueil culturel</h1>"+link+"</main>") if url == home else HTML
+            proof = discover_independent_cultural_ban(lead, cultural_lookup=lambda *_: record,
+                page_read=read, ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN)
+            self.assertEqual(proof is not None, expected)
+            self.assertEqual(calls, [home, target] if expected else [home])
+            if expected:
+                self.assertEqual(proof["official_url"], target)
+
     def test_cultural_identity_failure_stages_are_distinct(self):
         from ptitesondes_open_world_permanent_place_ban import discover_independent_cultural_ban, ban_diagnostics
         lead = {"city": CITY, "venue": VENUE}

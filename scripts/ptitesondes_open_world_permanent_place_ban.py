@@ -37,6 +37,7 @@ BAN_DIAGNOSTIC_CODES = (
     "culture_independent_address_conflict", "culture_independent_proof_found",
     "culture_independent_multi_url_attempted", "culture_independent_multi_url_conflict",
     "culture_independent_multi_url_resolved",
+    "culture_independent_named_page_found", "culture_independent_named_page_unavailable",
     "culture_independent_record_missing", "culture_independent_name_or_commune_mismatch",
     "culture_independent_administrative_code_format", "culture_independent_address_field_missing_or_invalid",
     "culture_independent_numbered_street_missing", "culture_independent_complete_address_mismatch",
@@ -370,6 +371,34 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
         return _note("official_facts_invalid")
 
 
+def _cultural_named_page(venue, current_url, html):
+    """One exact visible venue link on the already authenticated host."""
+    from ptitesondes_municipal_venue_link_discovery import VisibleLinks, MAX_ANCHORS
+    from ptitesondes_dynamic_municipal_source_links import _safe_url
+    from ptitesondes_dila_municipal_domains import _host
+    if not isinstance(html, str) or not 30 <= len(html) <= MAX_HTML:
+        return None
+    host = _host(current_url)
+    if not host:
+        return None
+    parser = VisibleLinks()
+    parser.feed(html)
+    parser.close()
+    if len(parser.links) >= MAX_ANCHORS:
+        return None
+    matches = set()
+    for href, label in parser.links:
+        if norm_text(label) != norm_text(venue):
+            continue
+        candidate = _safe_url(href, base=current_url)
+        if not candidate or candidate == current_url or _host(candidate) != host:
+            continue
+        p = urlsplit(candidate)
+        if p.path.strip("/") and not p.query and not p.fragment:
+            matches.add(candidate)
+    return next(iter(matches)) if len(matches) == 1 else None
+
+
 def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=None,
                                       ban_fetch=None, admin_fetch=None):
     """Fresh national directory link, exact first-party page, independent BAN.
@@ -431,8 +460,23 @@ def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=No
             parser.feed(html)
             parser.close()
             if not parser.seen_main or norm_text(venue) not in parser.headings:
-                _note("official_identity_unmatched")
-                continue
+                # A directory often lists an institution's homepage rather
+                # than its dedicated venue page. Follow only one exact
+                # visible link on that same authenticated host.
+                target = _cultural_named_page(venue, final_url, html)
+                if not target:
+                    _note("official_identity_unmatched")
+                    continue
+                _note("culture_independent_named_page_found")
+                try:
+                    result = page_read(target)
+                    final_url, html = result if isinstance(result, tuple) else (target, result)
+                    if (_host(final_url) != _host(url) or urlsplit(final_url).query
+                            or urlsplit(final_url).fragment):
+                        raise ValueError("cultural_redirect_outside_authority")
+                except (OSError, ValueError, TypeError, UnicodeError):
+                    _note("culture_independent_named_page_unavailable")
+                    continue
             facts = visible_place_facts(city, venue, final_url, html, identity["insee"])
             if facts is None:
                 return _note("culture_independent_multi_url_conflict") if len(urls) > 1 else None
