@@ -71,8 +71,45 @@ def classify(row):
     return "distinct_directory_point_unverified"
 
 
-def probe(*, fetch=_fetch, pages=(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)):
+def nearby_exact_node(row, doc):
+    """Require a unique named cultural node, exact city/postcode and proximity.
+    A matching map node remains an unverified hypothesis, not approval.
+    """
+    from ptitesondes_generic_venue_osm_preflight import MAX_ELEMENTS
+    from ptitesondes_open_world_permanent_place_evidence import mapped_place_kind
+    from ptitesondes_family_national_source_preflight import norm_text
+    if (classify(row) != "distinct_directory_point_unverified"
+            or not isinstance(doc, dict) or doc.get("remark")
+            or not isinstance(doc.get("elements"), list)
+            or len(doc["elements"]) >= MAX_ELEMENTS):
+        return None
+    names = {norm_text(row.get(k)) for k in ("nom_du_lieu", "nom_usuel_du_lieu")}
+    names.discard("")
+    city = norm_text(row.get("commune"))
+    postcode = row.get("code_postal")
+    if not names or not city or not isinstance(postcode, str) or len(postcode) != 5 or not postcode.isdigit():
+        return None
+    matches = [obj for obj in doc["elements"] if isinstance(obj, dict)
+               and isinstance(obj.get("tags"), dict)
+               and norm_text(obj["tags"].get("name")) in names
+               and norm_text(obj["tags"].get("addr:city")) in ("", city)]
+    if len(matches) != 1:
+        return None
+    obj = matches[0]
+    tags = obj["tags"]
+    loc = point(obj.get("lat"), obj.get("lon"))
+    if (obj.get("type") != "node" or type(obj.get("id")) is not int or obj["id"] <= 0
+            or norm_text(tags.get("addr:city")) != city or tags.get("addr:postcode") != postcode
+            or mapped_place_kind(tags) is None or tags.get("access") in ("private", "no", "customers")
+            or tags.get("disused") == "yes" or tags.get("abandoned") == "yes"
+            or loc is None or distance(loc, point(row["latitude"], row["longitude"])) > 65):
+        return None
+    return loc
+
+
+def probe(*, fetch=_fetch, nearby=None, pages=(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)):
     counts, family, numberless, shapes = Counter(), Counter(), Counter(), Counter()
+    candidates = []
     for page in pages[:12]:
         doc = fetch(URL.split("?")[0] + "?" + urlencode({"page": page, "page_size": PAGE_SIZE}))
         parse_page(doc, page)
@@ -89,14 +126,29 @@ def probe(*, fetch=_fetch, pages=(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)):
                 directory_identity(*lead, row, diagnostics)
                 if diagnostics.get("numbered_street_missing"):
                     numberless[reason] += 1
+                if reason == "distinct_directory_point_unverified":
+                    candidates.append((not bool(diagnostics.get("numbered_street_missing")), row))
+    map_counts = Counter()
+    if nearby is not None:
+        for _, row in sorted(candidates, key=lambda x: x[0])[:5]:
+            map_counts["attempted"] += 1
+            try:
+                doc = nearby(point(row["latitude"], row["longitude"]))
+                result = nearby_exact_node(row, doc)
+                map_counts["exact_node_hint" if result is not None else "no_exact_node"] += 1
+            except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
+                map_counts["map_unavailable"] += 1
     return {"rows_examined": sum(counts.values()), "point_counts": dict(counts),
             "family_counts": dict(family), "numberless_family_counts": dict(numberless),
-            "field_shapes": dict(shapes), "publication_ready": False, "public_writes": 0}
+            "field_shapes": dict(shapes), "nearby_map_counts": dict(map_counts), "publication_ready": False, "public_writes": 0}
 
 
 if __name__ == "__main__":
     try:
-        print(json.dumps(probe(), sort_keys=True))
+        from ptitesondes_generic_venue_osm_preflight import fetch_overpass, osm_transport_diagnostics
+        result = probe(nearby=fetch_overpass)
+        result["map_transport"] = osm_transport_diagnostics()
+        print(json.dumps(result, sort_keys=True))
     except (OSError, ValueError, TypeError, KeyError, UnicodeError, OverflowError):
         print("::error::Cultural directory point audit unavailable")
         raise SystemExit(1) from None
