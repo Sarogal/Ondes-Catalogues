@@ -30,12 +30,14 @@ class CulturePageError(ValueError):
         super().__init__(self.reason)
 
 
-def candidates(fetch=_fetch, *, pages=MAX_PROBE_PAGES):
+def candidates(fetch=_fetch, *, pages=MAX_PROBE_PAGES, research_sample=None):
     """Bounded broader sample, with no selection by venue or municipality."""
     if type(pages) is not int or not 1 <= pages <= MAX_PROBE_PAGES:
         raise ValueError("invalid_probe_budget")
     found = {}
     total = None
+    accepted_pages = 0
+    sample_status = "bounded_sample_complete"
     for page in range(1, pages + 1):
         try:
             doc = fetch(URL.split("?")[0] + "?" + urlencode({"page": page, "page_size": PAGE_SIZE}))
@@ -46,7 +48,12 @@ def candidates(fetch=_fetch, *, pages=MAX_PROBE_PAGES):
                 reason = exc.args[0]
             raise CulturePageError(page, reason) from None
         if total is not None and total != current_total:
-            raise CulturePageError(page, "directory_changed_during_scan")
+            if research_sample is None:
+                raise CulturePageError(page, "directory_changed_during_scan")
+            # Read-only research can retain the coherent prefix, but must not
+            # claim a complete scan, advance a cursor or consume the changed page.
+            sample_status = "partial_directory_changed"
+            break
         total = current_total
         for row in doc["data"]:
             key = identity(row)
@@ -56,8 +63,12 @@ def candidates(fetch=_fetch, *, pages=MAX_PROBE_PAGES):
                     found[normalized] = None
                 else:
                     found[normalized] = row
+        accepted_pages += 1
         if page >= max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE):
             break
+    if research_sample is not None:
+        research_sample.update({"sample_status": sample_status, "sample_pages": accepted_pages,
+                                "sample_page_limit": pages})
     return [row for row in found.values() if row is not None]
 
 
@@ -372,7 +383,8 @@ def run_stage(stage, action, *, retry=False, reset=None, sleep=None):
 
 
 def probe():
-    leads = run_stage("culture_directory", candidates, retry=True)
+    sample = {}
+    leads = run_stage("culture_directory", lambda: candidates(research_sample=sample), retry=True)
     with TemporaryDirectory() as tmp:
         path = Path(tmp) / "national.csv"
         def fetch_export():
@@ -392,7 +404,7 @@ def probe():
                 if not COLUMNS.issubset(fields) or len(fields) != len(set(fields)):
                     raise ValueError("invalid_export_schema")
                 return compare(leads, reader, inspect=inspect_with_municipal_fallback)
-        return run_stage("comparison", compare_export)
+        return run_stage("comparison", compare_export) | sample
 
 
 if __name__ == "__main__":

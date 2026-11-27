@@ -142,6 +142,24 @@ class CulturalAcceslibreProbeTests(unittest.TestCase):
             run_stage("culture_directory", lambda: candidates(oversized), retry=True, sleep=delays.append)
         self.assertEqual(delays, [3])
 
+    def test_research_only_sample_preserves_coherent_prefix_on_drift(self):
+        from unittest.mock import patch
+        from ptitesondes_cultural_acceslibre_probe import candidates
+        from ptitesondes_cultural_directory_discovery import PAGE_SIZE
+        row = {"commune": "Les Bois", "nom_du_lieu": "Ludothèque A", "code_commune": "01234"}
+        other = dict(row, nom_du_lieu="Ludothèque B")
+        responses = iter([
+            {"meta": {"total": PAGE_SIZE * 3}, "data": [row] + [{} for _ in range(PAGE_SIZE - 1)]},
+            {"meta": {"total": PAGE_SIZE * 4}, "data": [other] + [{} for _ in range(PAGE_SIZE - 1)]},
+        ])
+        sample = {}
+        with patch("ptitesondes_cultural_acceslibre_probe.classify", return_value="distinct_directory_point_unverified"):
+            self.assertEqual(candidates(lambda _: next(responses), pages=3, research_sample=sample), [row])
+        self.assertEqual(sample, {"sample_status": "partial_directory_changed",
+                                  "sample_pages": 1, "sample_page_limit": 3})
+        self.assertNotIn("next_page", sample)
+        self.assertNotIn("Ludothèque", str(sample))
+
     def test_broader_sample_is_bounded_and_stops_at_directory_end(self):
         from urllib.parse import parse_qs, urlsplit
         from ptitesondes_cultural_acceslibre_probe import candidates, MAX_PROBE_PAGES
