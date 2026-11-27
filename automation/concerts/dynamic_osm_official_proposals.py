@@ -281,7 +281,7 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
             initial = intake.normalized(candidate_name)
     named_lead = initial in {intake.normalized(name) for name in names}
     if official_export and not named_lead:
-        named_lead = openagenda.observed_bill_matches(observed, names)
+        named_lead = openagenda.observed_bill_matches(observed, names, city=venue.get("city"))
     tour_correlated = False
     if not named_lead and not openagenda_page:
         nodes = verified.individual_event_nodes(body, accept_generic=True)
