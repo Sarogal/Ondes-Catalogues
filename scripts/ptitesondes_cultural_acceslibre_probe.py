@@ -45,6 +45,79 @@ def candidates(fetch=_fetch, *, pages=MAX_PROBE_PAGES):
     return [row for row in found.values() if row is not None]
 
 
+def structured_place_hint(lead, html):
+    """Bounded JSON-LD discovery signal, never visible or GPS proof."""
+    from html.parser import HTMLParser
+    from ptitesondes_open_world_permanent_place_ban import MAX_HTML
+    if not isinstance(html, str) or len(html) > MAX_HTML:
+        return "structured_unavailable"
+
+    class Scripts(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.values = []
+            self.active = None
+            self.count = 0
+        def handle_starttag(self, tag, attrs):
+            if tag == "script" and dict(attrs).get("type", "").lower() == "application/ld+json":
+                self.count += 1
+                self.active = [] if self.count <= 8 else None
+        def handle_data(self, data):
+            if self.active is not None:
+                self.active.append(data)
+        def handle_endtag(self, tag):
+            if tag == "script" and self.active is not None:
+                self.values.append("".join(self.active))
+                self.active = None
+
+    parser = Scripts()
+    parser.feed(html)
+    parser.close()
+    if parser.count > 8:
+        return "structured_budget_exceeded"
+    names = {norm_text(lead.get(k)) for k in ("nom_du_lieu", "nom_usuel_du_lieu")} - {""}
+    hits = []
+    allowed = {"Place", "Library", "Museum", "CivicStructure", "PerformingArtsTheater",
+               "TouristAttraction", "LocalBusiness", "EducationalOrganization"}
+    for raw in parser.values:
+        if len(raw) > 100000:
+            return "structured_budget_exceeded"
+        try:
+            data = json.loads(raw)
+        except (ValueError, RecursionError):
+            return "structured_invalid"
+        nodes = data if isinstance(data, list) else [data]
+        if isinstance(data, dict) and "@graph" in data:
+            if not isinstance(data["@graph"], list):
+                return "structured_invalid"
+            nodes = data["@graph"]
+        if len(nodes) > 100:
+            return "structured_budget_exceeded"
+        for node in nodes:
+            if not isinstance(node, dict):
+                continue
+            types = node.get("@type")
+            types = types if isinstance(types, list) else [types]
+            if not any(isinstance(v, str) and v in allowed for v in types):
+                continue
+            name = node.get("name")
+            if not isinstance(name, str) or norm_text(name) not in names:
+                continue
+            addr = node.get("address")
+            if not isinstance(addr, dict):
+                hits.append(False)
+                continue
+            fields = [addr.get("streetAddress"), addr.get("postalCode"), addr.get("addressLocality")]
+            expected = [lead.get("numero_et_libelle_voie"), lead.get("code_postal"), lead.get("commune")]
+            hits.append(all(isinstance(a, str) and isinstance(b, str) and norm_text(a)
+                            and norm_text(a) == norm_text(b) for a, b in zip(fields, expected)))
+    if len(hits) > 1:
+        return "structured_identity_ambiguous"
+    if hits:
+        return "structured_address_concordant_hint" if hits[0] else "structured_address_unconfirmed"
+    return "structured_identity_unconfirmed" if parser.count else "structured_absent"
+
+
 def inspect_official_content(lead, html, *, diagnostics=None):
     """Read-only explicit identity, address and family evidence stages."""
     from ptitesondes_open_world_permanent_place_ban import (
@@ -61,6 +134,7 @@ def inspect_official_content(lead, html, *, diagnostics=None):
                       "heading_missing" if not parser.headings else
                       "headings_multiple" if len(parser.headings) != 1 else "heading_different")
             diagnostics["identity_" + detail] += 1
+            diagnostics[structured_place_hint(lead, html)] += 1
         return "page_identity_unconfirmed"
     if any(RESTRICTED.search(b) or CLOSED.search(b) for b in parser.blocks):
         return "page_access_restricted"

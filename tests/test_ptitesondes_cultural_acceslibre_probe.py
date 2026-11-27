@@ -30,8 +30,36 @@ class CulturalAcceslibreProbeTests(unittest.TestCase):
                 counts = Counter()
                 self.assertEqual(inspect_official_content(lead, html, diagnostics=counts),
                                  "page_identity_unconfirmed")
-                self.assertEqual(counts, {"identity_" + detail: 1})
+                self.assertEqual(counts, {"identity_" + detail: 1, "structured_absent": 1})
                 self.assertNotIn("Ludothèque", str(counts))
+
+    def test_structured_place_hint_never_bypasses_visible_content(self):
+        import json
+        from collections import Counter
+        from ptitesondes_cultural_acceslibre_probe import structured_place_hint, inspect_official_content
+        lead = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois",
+                "code_postal": "01230", "numero_et_libelle_voie": "Rue des Jeux"}
+        node = {"@type": "Library", "name": "Ludothèque A",
+                "address": {"streetAddress": "Rue des Jeux", "postalCode": "01230",
+                            "addressLocality": "Les Bois"}}
+        def html(data):
+            return '<script type="application/ld+json">' + json.dumps(data) + '</script>'
+        self.assertEqual(structured_place_hint(lead, html({"@graph": [node]})),
+                         "structured_address_concordant_hint")
+        self.assertEqual(structured_place_hint(lead, html([node, node])),
+                         "structured_identity_ambiguous")
+        self.assertEqual(structured_place_hint(lead, html(dict(node, address={}))),
+                         "structured_address_unconfirmed")
+        self.assertEqual(structured_place_hint(lead, html(dict(node, name="Autre"))),
+                         "structured_identity_unconfirmed")
+        self.assertEqual(structured_place_hint(lead, html(dict(node, **{"@type": "Event"}))),
+                         "structured_identity_unconfirmed")
+        self.assertEqual(structured_place_hint(lead, html(node) * 9),
+                         "structured_budget_exceeded")
+        counts = Counter()
+        self.assertEqual(inspect_official_content(lead, html(node), diagnostics=counts),
+                         "page_identity_unconfirmed")
+        self.assertEqual(counts["structured_address_concordant_hint"], 1)
 
     def test_broader_sample_is_bounded_and_stops_at_directory_end(self):
         from urllib.parse import parse_qs, urlsplit
