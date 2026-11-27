@@ -1323,7 +1323,7 @@ def load_isolated_browser_evidence(path, published, archive, today):
     admissible_links = set()
     for home in allowed.intersection(result):
         try:
-            admissible_links.update(linked_pages(home, page(result[home]), prefer_programme=True)[:2])
+            admissible_links.update(linked_pages(home, page(result[home], rendered=True), prefer_programme=True)[:2])
         except (ValueError, TypeError, UnicodeError):
             continue
     if any(url not in allowed and url not in admissible_links for url in result):
