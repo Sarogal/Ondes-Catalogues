@@ -1,0 +1,32 @@
+name: Radio quarantine recovery isolated CI
+on:
+  push:
+    branches:
+      - audit/radio-quarantine-recovery-ci-20261127
+permissions:
+  contents: read
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
+      - name: Verify exact reviewed recovery code and run regression suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          reviewed=fdd26add2b65944290563b7468b0eb7f224e0c66
+          git fetch --no-tags --depth=1 origin "$reviewed"
+          git diff --exit-code "$reviewed" HEAD -- radio-catalog-lab
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_daily_status_release_validation.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_daily_live_maintenance_release_preview.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_daily*.py" -v
+          for suite in test_radio_catalog_daily_candidate_reconcile.py test_radio_stream_technical_probe.py test_radio_stream_playlist_preview.py test_radio_stream_socket_integration.py test_radio_stream_recheck_ledger.py; do
+            python -m unittest discover -s radio-catalog-lab/tools -p "$suite" -v
+          done
