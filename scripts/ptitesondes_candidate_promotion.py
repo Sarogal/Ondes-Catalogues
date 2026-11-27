@@ -864,7 +864,28 @@ def public_run_summary(report):
     }
 
 
-def main():
+PREFLIGHT_PHASES = ("arguments", "backlog", "reference", "catalogue", "evaluate", "output")
+PREFLIGHT_ERRORS = ("network", "invalid_data", "io", "unexpected")
+
+
+def safe_preflight_failure(phase, exc):
+    # Fixed vocabulary only. Exception messages, paths, URLs and input values
+    # must never enter the public Actions log.
+    if phase not in PREFLIGHT_PHASES:
+        phase = "arguments"
+    if isinstance(exc, (HTTPError, URLError, TimeoutError, ConnectionError)):
+        kind = "network"
+    elif isinstance(exc, (ValueError, TypeError, KeyError, AttributeError, OverflowError)):
+        kind = "invalid_data"
+    elif isinstance(exc, OSError):
+        kind = "io"
+    else:
+        kind = "unexpected"
+    return "PREFLIGHT_FAILURE " + phase + " " + kind
+
+
+def main(phase_callback=lambda phase: None):
+    phase_callback("arguments")
     ap = argparse.ArgumentParser()
     ap.add_argument("--output-dir", type=Path,
                     default=Path("/tmp/ptitesondes-promotion"))
@@ -882,12 +903,14 @@ def main():
     if not 1 <= args.limit <= MAX_FETCH:
         raise ValueError("Taille de lot hors limite")
     today = args.date or datetime.now(ZoneInfo("Europe/Paris")).date()
+    phase_callback("backlog")
     if args.backlog_file is not None:
         leads = json.loads(args.backlog_file.read_text(encoding="utf-8"))
         if not isinstance(leads, list) or len(leads) > 4000:
             raise ValueError("Backlog local malformé")
     else:
         leads = official_leads(os.environ.get("PRIVATE_INTAKE_READ_TOKEN", ""))
+    phase_callback("reference")
     if args.reference_file is not None:
         baseline = json.loads(args.reference_file.read_text(encoding="utf-8"))
     else:
@@ -897,10 +920,13 @@ def main():
         if len(raw) > 1_000_000:
             raise ValueError("Référence historique trop volumineuse")
         baseline = json.loads(raw)
+    phase_callback("catalogue")
     published = json.loads(args.catalogue_file.read_text(encoding="utf-8"))
+    phase_callback("evaluate")
     patch, report = evaluate(leads, baseline, published, today,
                              limit=args.limit, slot=args.slot,
                              skip_published_prebatch=args.skip_published_prebatch)
+    phase_callback("output")
     args.output_dir.mkdir(parents=True, exist_ok=True)
     (args.output_dir / "preview-patch.json").write_text(
         json.dumps(patch, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -910,4 +936,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    current_phase = ["arguments"]
+    try:
+        main(lambda phase: current_phase.__setitem__(0, phase))
+    except Exception as exc:
+        print(safe_preflight_failure(current_phase[0], exc), file=sys.stderr)
+        raise SystemExit(1) from None
