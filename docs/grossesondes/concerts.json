@@ -2591,6 +2591,16 @@
       "id": "any-given-day",
       "name": "ANY GIVEN DAY",
       "aliases": []
+    },
+    {
+      "id": "red-flag",
+      "name": "Red Flag",
+      "aliases": []
+    },
+    {
+      "id": "baraka-freak",
+      "name": "Baraka Freak",
+      "aliases": []
     }
   ],
   "venues": [
@@ -16226,6 +16236,37 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Backstage By The Mill",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-27",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-27",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270119-rouen-red-flag",
+      "title": "Red Flag + Baraka Freak",
+      "date": "2027-01-19",
+      "artistIds": [
+        "red-flag",
+        "baraka-freak"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Punk Rock",
+        "Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda/red-flag-baraka-freak-guest",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le 106",
       "ticketUrl": null,
       "lastVerified": "2026-11-27",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
