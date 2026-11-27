@@ -18,6 +18,7 @@ KEY = "existingVenueGeoCorrections"
 PATCH = frozenset({"address", "postalCode", "latitude", "longitude",
                    "geoSource", "geoPrecision"})
 PROOF = "existing-venue-official-address-ban-osm-v1"
+STANDALONE_PROOF = "existing-venue-standalone-official-address-ban-osm-v1"
 FIELDS = frozenset({"venueId", "eventId", "eventDate", "officialUrl",
                     "officialVenueSourceUrl", "originalVenue", "venuePatch",
                     "reviewDecision", "reviewedBy", "reviewedAt", "proofType"})
@@ -44,21 +45,26 @@ def signed_proposal(proposal, today):
         "venueId", "eventId", "eventDate", "officialUrl",
         "officialVenueSourceUrl", "originalVenue", "venuePatch")},
         "reviewDecision": "approved", "reviewedBy": "independent-official-verifier",
-        "reviewedAt": today.isoformat(), "proofType": PROOF}
+        "reviewedAt": today.isoformat(), "proofType": (
+            STANDALONE_PROOF if proposal.get("eventId") is None
+            and proposal.get("eventDate") is None else PROOF)}
 
 
 def plan(row, catalogue, today):
     require(isinstance(row, dict) and set(row) == FIELDS
             and row["reviewDecision"] == "approved"
             and row["reviewedBy"] == "independent-official-verifier"
-            and row["proofType"] == PROOF, "invalid correction signature")
+            and row["proofType"] in {PROOF, STANDALONE_PROOF}, "invalid correction signature")
+    standalone = row["proofType"] == STANDALONE_PROOF
     try:
         checked = dt.date.fromisoformat(row["reviewedAt"])
-        event_day = dt.date.fromisoformat(row["eventDate"])
+        event_day = None if standalone else dt.date.fromisoformat(row["eventDate"])
     except (ValueError, TypeError) as exc:
         raise ValueError("Existing venue geo correction: invalid date") from exc
     require(checked.isoformat() == row["reviewedAt"] and checked <= today
-            and event_day.isoformat() == row["eventDate"] and checked <= event_day,
+            and ((standalone and row["eventId"] is None and row["eventDate"] is None)
+                 or (not standalone and event_day.isoformat() == row["eventDate"]
+                     and checked <= event_day)),
             "invalid correction chronology")
     original, patch = row["originalVenue"], row["venuePatch"]
     require(isinstance(original, dict) and isinstance(patch, dict)
@@ -86,22 +92,28 @@ def plan(row, catalogue, today):
     b = evidence.intake.valid_https(row["officialVenueSourceUrl"])
     require(bool(a and b) and a.removeprefix("www.") == b.removeprefix("www."),
             "invalid official source attribution")
-    events = [e for e in catalogue["events"] if e.get("id") == row["eventId"]]
-    require(len(events) == 1, "published event anchor missing or duplicate")
-    event = events[0]
-    require(event.get("venueId") == row["venueId"]
-            and event.get("date") == row["eventDate"]
-            and event.get("officialUrl") == row["officialUrl"]
-            and event.get("sourceType") == "salle", "published event anchor differs")
+    event = None
+    if standalone:
+        require(row["officialUrl"] == row["officialVenueSourceUrl"],
+                "standalone source identity differs")
+    else:
+        events = [e for e in catalogue["events"] if e.get("id") == row["eventId"]]
+        require(len(events) == 1, "published event anchor missing or duplicate")
+        event = events[0]
+        require(event.get("venueId") == row["venueId"]
+                and event.get("date") == row["eventDate"]
+                and event.get("officialUrl") == row["officialUrl"]
+                and event.get("sourceType") == "salle", "published event anchor differs")
     venues = [v for v in catalogue["venues"] if v.get("id") == row["venueId"]]
     require(len(venues) == 1 and venues[0] in (original, target),
             "published venue is neither signed original nor exact correction")
     return {"original": original, "target": target, "event": event,
             "already": venues[0] == target, "checked": checked,
-            "eventDay": event_day}
+            "eventDay": event_day, "standalone": standalone}
 
 
-def prepare(catalogue, approvals, today, *, verify_one=None, defer_unavailable=False):
+def prepare(catalogue, approvals, today, *, verify_one=None, verify_standalone=None,
+            defer_unavailable=False):
     """Return normalized original view and validated correction plans.
 
     The original view MUST pass the unchanged Publisher historical checks.
@@ -126,12 +138,14 @@ def prepare(catalogue, approvals, today, *, verify_one=None, defer_unavailable=F
         latest[vid] = row
     rows = list(latest.values())
     verify_one = evidence.verify if verify_one is None else verify_one
+    verify_standalone = evidence.verify_venue_source if verify_standalone is None else verify_standalone
     pending = [row for row in rows if not plans[row["venueId"]]["already"]]
     # Expired anchors do not consume network budget; structural corruption
     # still fails closed. Rotate live candidates to avoid starvation.
     live = [row for row in pending
-            if plans[row["venueId"]]["event"].get("status") == "confirmed"
-            and plans[row["venueId"]]["eventDay"] >= today
+            if (plans[row["venueId"]]["standalone"] or
+                (plans[row["venueId"]]["event"].get("status") == "confirmed"
+                 and plans[row["venueId"]]["eventDay"] >= today))
             and (today - plans[row["venueId"]]["checked"]).days <= 7]
     if not defer_unavailable:
         require(len(pending) <= MAX_PENDING, "pending corrections exceed review budget")
@@ -143,7 +157,8 @@ def prepare(catalogue, approvals, today, *, verify_one=None, defer_unavailable=F
         try:
             require(row["venueId"] in selected,
                     "first application needs fresh confirmed event proof or next review slot")
-            fresh = verify_one(p["event"], p["original"])
+            fresh = (verify_standalone(row["officialUrl"], p["original"])
+                     if p["standalone"] else verify_one(p["event"], p["original"]))
             require(signed_proposal(fresh, p["checked"]) == row,
                     "fresh independent evidence disagrees with signed correction")
         except (ValueError, TypeError, KeyError, OSError, TimeoutError):
