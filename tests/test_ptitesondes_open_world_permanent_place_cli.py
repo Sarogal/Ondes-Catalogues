@@ -31,7 +31,7 @@ class PlaceResearchCLITests(unittest.TestCase):
                     ban_research=lambda _: None,
                     osm_fetch=lambda *_: {"elements": []},
                     page_read=lambda _: self.fail("unexpected page read"), **kwargs)
-            with patch.object(sys, "argv", args), patch.object(mod, "cycle", side_effect=offline_cycle):
+            with patch.object(sys, "argv", args), patch.object(mod, "cycle", side_effect=offline_cycle), patch.object(mod, "scan_directory", side_effect=OSError("offline")):
                 for expected in (1, 2):
                     stdout = StringIO()
                     with redirect_stdout(stdout):
