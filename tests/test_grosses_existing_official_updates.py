@@ -1586,6 +1586,37 @@ if __name__ == "__main__":
     unittest.main()
 
 
+class DailyProgrammeTests(unittest.TestCase):
+    def test_complete_current_daily_programme_excludes_non_music_and_venue(self):
+        from grossesondes_existing_official_updates import daily_programme_artists, page
+        site = "https://festival-exemple.fr/"
+        row = festival("festival-exemple-2027", site, dates=("2027-08-13", "2027-08-15"))
+        row["name"] = "Festival Exemple 2027"
+        html = ("<html><head><title>Festival Exemple | Musiques</title></head><body><main>"
+                "<h2>Programme 2027</h2><h1>† vendredi 13 août †</h1>"
+                "<p>EXPOSITION : Peintre | GALERIE</p>"
+                "<h1>† samedi 14 août †</h1><p>CONCERTS : Alpha † New Artist | SALLE DU REX</p>"
+                "<h1>† dimanche 15 août †</h1><p>CONCERTS : Third Act • Fourth Act | SALLE B</p>"
+                "<p>CINEMA : Film | SALLE C</p></main></body></html>")
+        expected = ["Alpha", "New Artist", "Third Act", "Fourth Act"]
+        self.assertEqual(daily_programme_artists(page(html), html, row, DAY), expected)
+        original = doc(row)
+        new, report = apply_independently_verified_updates(
+            original, original, DAY, tick=0, fetch=lambda _: html,
+            commune_resolver=lambda *_: None)
+        self.assertEqual(new["festivals"][0]["lineup"], expected)
+        self.assertTrue(_verified_official_update_delta(row, new["festivals"][0]))
+        for altered in (
+            html.replace("Programme 2027", "Programme 2026"),
+            html.replace("dimanche 15", "lundi 15"),
+            html.replace("dimanche 15 août", "dimanche 22 août"),
+            html.replace("Festival Exemple |", "Autre Festival |"),
+            html.replace("<h1>† dimanche 15 août †</h1>", ""),
+            html.replace("EXPOSITION", "CONCERT ANNULÉ"),
+        ):
+            self.assertEqual(daily_programme_artists(page(altered), altered, row, DAY), [])
+
+
 class FreshPosterPublisherTests(unittest.TestCase):
     def setUp(self):
         self.site = "https://festival-exemple.fr/"
