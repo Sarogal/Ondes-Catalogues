@@ -1,0 +1,23 @@
+name: Grosses Ondes — isolated V10 successor contract test
+on:
+  push:
+    branches: [audit/radio-successor-v10-contract-20261127]
+    paths:
+      - .github/workflows/radio-lab-v10-contract-test.yml
+      - radio-catalog-lab/tools/test_radio_lab_successor_v10_contract.py
+permissions:
+  contents: read
+jobs:
+  successor-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
+      - name: Verify V10 successor contract without actual publication or secrets
+        run: python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_lab_successor_v10_contract.py" -v
