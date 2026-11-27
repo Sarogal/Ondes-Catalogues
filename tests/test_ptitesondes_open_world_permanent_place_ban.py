@@ -189,6 +189,58 @@ class OfficialPlaceBANTests(unittest.TestCase):
             "ban_unavailable": "secret", "admin_unavailable": True}})
         self.assertEqual(lines, ["ban_diagnostics.directory_unavailable: 2"])
 
+    def test_municipal_https_redirects_recheck_scope_and_dns(self):
+        from ptitesondes_unlisted_source_safe_recheck import read_municipal_https, read_unknown_https
+        from test_ptitesondes_unlisted_source_safe_recheck import FakeResponse, FakeConnection, dns
+        home = "https://www.ville-les-bois.fr/"
+        class Redirect(FakeResponse):
+            def __init__(self, destination):
+                super().__init__(status=302)
+                self.destination = destination
+            def getheader(self, key):
+                return self.destination if key == "Location" else super().getheader(key)
+        calls = []
+        def factory(host, ip):
+            calls.append((host, ip))
+            return FakeConnection(Redirect(PAGE) if len(calls) == 1 else FakeResponse(HTML))
+        final, html = read_municipal_https(home, CITY, DIR, resolver=dns("8.8.8.8"),
+                                         connection_factory=factory)
+        self.assertEqual((final, html), (PAGE, HTML))
+        self.assertEqual(len(calls), 2)
+        for target in ("https://other.example/", "http://www.ville-les-bois.fr/",
+                       "https://127.0.0.1/", home):
+            calls.clear()
+            def blocked(host, ip):
+                calls.append(host)
+                return FakeConnection(Redirect(target))
+            with self.assertRaises(ValueError):
+                read_municipal_https(home, CITY, DIR, resolver=dns("8.8.8.8"),
+                                     connection_factory=blocked)
+            self.assertEqual(len(calls), 1)
+        with self.assertRaises(ValueError):
+            read_unknown_https(home, resolver=dns("8.8.8.8"),
+                               connection_factory=lambda *_: FakeConnection(Redirect(PAGE)))
+
+    def test_municipal_redirect_preserves_final_page_identity(self):
+        from unittest.mock import patch
+        home = "https://www.ville-les-bois.fr/"
+        canonical_home = home + "accueil/"
+        canonical_page = home + "accueil/lieu"
+        reads = []
+        def municipal_read(url, city, directory):
+            reads.append(url)
+            if url == home:
+                return canonical_home, f'<a href="lieu">{VENUE}</a>'
+            self.assertEqual(url, canonical_page)
+            return PAGE, HTML
+        with patch("ptitesondes_unlisted_source_safe_recheck.read_municipal_https", municipal_read):
+            proof = discover_official_ban({"city": CITY, "venue": VENUE},
+                directory_fetch=lambda _: DIR, ban_fetch=lambda _: BAN,
+                admin_fetch=lambda *_: ADMIN)
+        self.assertIsNotNone(proof)
+        self.assertEqual(proof["official_url"], PAGE)
+        self.assertEqual(reads, [home, canonical_page])
+
     def test_ban_unavailable_is_not_publication_permission(self):
         def down(_):
             raise OSError("provider unavailable")
