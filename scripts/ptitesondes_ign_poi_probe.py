@@ -63,6 +63,17 @@ def summarize(doc):
             "field_presence": dict(fields), "feature_types": dict(types),
             "publication_ready": False, "public_writes": 0}
 
+def official_names(record):
+    """Only names explicitly attached to this fresh directory record."""
+    names = {}
+    for field in ("nom_du_lieu", "nom_usuel_du_lieu"):
+        value = record.get(field)
+        if (isinstance(value, str) and 2 <= len(value.strip()) <= 180
+                and norm_text(value) and not any(ord(c) < 32 or ord(c) == 127 for c in value)):
+            names.setdefault(norm_text(value), value.strip())
+    return list(names.values())
+
+
 def exact_poi_point(record, doc, diagnostics=None):
     """A unique exact named point, not a street or commune centroid.
 
@@ -78,6 +89,7 @@ def exact_poi_point(record, doc, diagnostics=None):
         if pair is None:
             return reject('directory_identity')
         city, name = pair
+        aliases = {norm_text(value) for value in official_names(record)}
         code, postcode = record["code_commune"], record.get("code_postal")
         if not isinstance(postcode, str) or not re.fullmatch(r"[0-9]{5}", postcode):
             return reject("directory_postcode_format")
@@ -89,7 +101,7 @@ def exact_poi_point(record, doc, diagnostics=None):
         matches = []
         for feature in features:
             p, g = feature["properties"], feature["geometry"]
-            if norm_text(p.get("name")) != norm_text(name):
+            if norm_text(p.get("name")) not in aliases:
                 continue
             # A second exact-name result or malformed matching feature
             # must not be silently discarded to manufacture uniqueness.
@@ -125,6 +137,33 @@ def exact_poi_point(record, doc, diagnostics=None):
         return reject("invalid_response")
 
 
+def query_official_names(record, query, diagnostics):
+    """Check both official names; do not hide conflicting or truncated hits."""
+    points = set()
+    responses = []
+    reasons = Counter()
+    for name in official_names(record):
+        response = query(name, record["code_commune"])
+        responses.append(summarize(response))
+        local = Counter()
+        point = exact_poi_point(record, response, local)
+        if point is not None:
+            points.add(point)
+        else:
+            reasons.update(local)
+    conflicts = {key for key in reasons if key != "poi_exact_name_missing"}
+    if conflicts:
+        diagnostics.update(reasons)
+        return None, responses
+    if len(points) > 1:
+        diagnostics["poi_official_alias_conflict"] += 1
+        return None, responses
+    if not points:
+        diagnostics["poi_exact_name_missing"] += 1
+        return None, responses
+    return next(iter(points)), responses
+
+
 def verify_admin_point(record, point, admin_fetch):
     if point is None:
         return False
@@ -153,9 +192,8 @@ def probe(*, discover=scan, lookup=exact_directory_record, query=fetch_poi, admi
         if pair is None:
             continue
         attempted += 1
-        response = query(pair[1], record["code_commune"])
-        summaries.append(summarize(response))
-        point = exact_poi_point(record, response, diagnostics)
+        point, responses = query_official_names(record, query, diagnostics)
+        summaries.extend(responses)
         exact += int(point is not None)
         admin_verified += int(verify_admin_point(record, point, admin_fetch))
     return {"discovered": len(leads), "attempted": attempted, "responses": summaries,
@@ -165,7 +203,7 @@ def probe(*, discover=scan, lookup=exact_directory_record, query=fetch_poi, admi
 
 def discover_probe_sample():
     # At most 240 rows, with a deterministic bounded page advance; no
-    # mutation of production cursors, and at most five POI lookups.
+    # mutation of production cursors, and at most ten POI lookups across five records.
     records = {}
     page = 1
     for _ in range(3):
