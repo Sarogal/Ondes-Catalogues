@@ -110,6 +110,16 @@ def exact_catalogue_matches(candidate, index):
     })
 
 
+def _same_venue_label(left, right):
+    # Generic French article variation, for advisory duplicate detection
+    # only. No alias registry, fuzzy matching or authority to merge venues.
+    def core(value):
+        parts = value.split()
+        return " ".join(parts[1:] if parts and parts[0] in
+                        {"le", "la", "les", "l"} else parts)
+    return left == right or bool(core(left) and core(left) == core(right))
+
+
 def possible_duplicates(candidate, index):
     date = candidate.get("date")
     city = words(candidate.get("city"))
@@ -124,7 +134,7 @@ def possible_duplicates(candidate, index):
         # are explicitly DIFFERENT. When either venue is missing, keep the
         # conservative duplicate hold until a location can be established.
         known_venue = event.get("venueName")
-        if candidate_venue and known_venue and candidate_venue != known_venue:
+        if candidate_venue and known_venue and not _same_venue_label(candidate_venue, known_venue):
             continue
         headline = event["title"]
         if name and headline and name == headline:
