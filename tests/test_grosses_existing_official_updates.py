@@ -1125,6 +1125,62 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
                 ["Foo", "Foo Fighters"], ["Foo Fighters"]),
             ["Foo", "Foo Fighters"])
 
+    def test_visible_programme_links_survive_hidden_void_and_nested_markup(self):
+        site = "https://festival-exemple.fr/"
+        url = site + "en/lineup"
+        root = ('<main><img aria-hidden="true" src="decoration.png">'
+                '<div hidden="hidden"><div>Hidden</div>'
+                '<a href="/hidden/lineup">Hidden roster</a></div>'
+                '<span style="visibility:hidden"><a href="/secret/lineup">'
+                'Invisible</a></span>'
+                '<h1>Festival Exemple 2027</h1><p>17 au 20 juin 2027</p>'
+                '<a href="/en/lineup"><img hidden src="icon.png">Line up</a></main>')
+        parsed = page(root)
+        self.assertEqual(linked_pages(site, parsed), [url])
+        self.assertTrue(any(b["text"] == "Festival Exemple 2027"
+                            for b in parsed.blocks))
+        row = festival("festival-exemple-2027", site, dates=("2027-06-17", "2027-06-20"))
+        row["name"] = "Festival Exemple"
+        row.pop("lineup")
+        row["bands"] = None
+        grid = ('<main><h1>Festival Exemple 2027</h1><h2>Line-Up</h2>'
+                '<p>Thursday 17 June Friday 18 June Saturday 19 June Sunday 20 June</p>'
+                '<a href="/en/artist/alpha-band">Alpha Band</a>'
+                '<a href="/en/artist/beta-band">Beta Band</a></main>')
+        original = doc(row)
+        updated, report = apply_independently_verified_updates(
+            original, original, DAY, tick=0, fetch={site: root, url: grid}.__getitem__,
+            commune_resolver=lambda *_: None)
+        self.assertEqual(updated["festivals"][0]["lineup"], ["Alpha Band", "Beta Band"])
+        diagnostic = report["official_edition_diagnostics"][0]
+        self.assertEqual(diagnostic["linked_pages_selected"], [url])
+        self.assertEqual(diagnostic["linked_fetch_errors"], [])
+        self.assertEqual(diagnostic["linked_pages_fetched"], 1)
+
+    def test_programme_route_priority_and_fetch_failure_are_auditable(self):
+        site = "https://festival-exemple.fr/"
+        url = site + "en/lineup"
+        root = ('<main><h1>Festival Exemple 2027</h1><p>17 au 20 juin 2027</p>'
+                + ''.join('<a href="/news/annonce-%d">Annonce</a>' % i for i in range(8))
+                + '<a href="/en/lineup">Line up</a></main>')
+        self.assertEqual(linked_pages(site, page(root))[0], url)
+        row = festival("festival-exemple-2027", site, dates=("2027-06-17", "2027-06-20"))
+        row["name"] = "Festival Exemple"
+        def fetch(address):
+            if address == site:
+                return root
+            raise TimeoutError("untrusted response details")
+        original = doc(row)
+        updated, report = apply_independently_verified_updates(
+            original, original, DAY, tick=0, fetch=fetch,
+            commune_resolver=lambda *_: None)
+        diagnostic = report["official_edition_diagnostics"][0]
+        self.assertEqual(diagnostic["linked_pages_selected"][0], url)
+        self.assertEqual(diagnostic["linked_fetch_errors"][0],
+                         {"url": url, "error": "TimeoutError"})
+        self.assertEqual(diagnostic["linked_pages_fetched"], 0)
+        self.assertEqual(updated["festivals"][0], row)
+
     def test_no_rogue_host_or_old_edition_proof(self):
         a = page(HOME)
         self.assertEqual(linked_pages(MOZHELL, a), [ARTICLE])
