@@ -172,7 +172,15 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
                             "name": site["name"], "city": site["city"],
                             "url": "https://nouveau-domaine-independant.fr/"}]
             }), encoding="utf-8")
-            original = fixture.page(URL)
+            # Exercise a complete, unnumbered postal street, as used by
+            # venues with a municipal pin. The Bikini fixture's additional
+            # business-park suffix is intentionally outside this strict route.
+            def official_page(**kwargs):
+                return fixture.page(URL, **kwargs).replace(
+                    json.dumps(next(v for v in BASE["venues"]
+                                    if v["id"] == fixture.VENUE_ID)["address"]),
+                    json.dumps("Allée François Mitterrand"))
+            original = official_page()
             def only_official(body):
                 def fetch(url, cache):
                     self.assertEqual(url, URL)
@@ -195,15 +203,18 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
                     self.assertEqual(next(v for v in merged["venues"] if v["id"] == site["id"]), old_site)
                 self.assertEqual(site, old_site)
                 for body in (
-                    fixture.page(URL, city="Paris"),
-                    fixture.page(URL, country="BE"),
-                    fixture.page(URL, postal="75000"),
-                    fixture.page(URL, postal="À vérifier"),
-                    fixture.page(URL, venue_name="Other Room"),
-                    fixture.page(URL, date="2027-03-06"),
-                    fixture.page(URL, status="EventCancelled"),
-                    fixture.page(URL, genres=False),
+                    official_page(city="Paris"),
+                    official_page(country="BE"),
+                    official_page(postal="75000"),
+                    official_page(postal="À vérifier"),
+                    official_page(venue_name="Other Room"),
+                    official_page(date="2027-03-06"),
+                    official_page(status="EventCancelled"),
+                    official_page(genres=False),
                     original.replace('"url": "' + URL + '"', '"url": null'),
+                    fixture.page(URL),  # compound street/park address stays held
+                    original.replace(json.dumps("Allée François Mitterrand"),
+                                     json.dumps("Adresse exacte à vérifier")),
                 ):
                     with self.subTest(body=body[:160]), self.assertRaises(ValueError):
                         identity.validate(signed, venues, artists, TODAY, fetch=only_official(body))
