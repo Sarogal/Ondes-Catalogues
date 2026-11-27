@@ -605,3 +605,59 @@ class StandaloneVenueSourceTests(unittest.TestCase):
             self.assertEqual(fourth["changedAddressPriorityChecks"], 0)
             self.assertEqual(fourth["changedAddressRetryPendingBefore"], 0)
         self.assertFalse(fourth["publicationAllowed"])
+
+    def test_named_arrival_section_with_label_and_administrative_complement(self):
+        source = "https://unknown-room.fr/"
+        link = '<nav><a href="/infos/">Infos pratiques</a></nav>'
+        page = ("<head><title>Infos pratiques : accès – New Room</title></head>"
+                "<h1>Infos pratiques</h1><h2>Venir à New Room</h2>"
+                "<p><strong>ADRESSE</strong><br/>19 rue des Jardins, 68000 Colmar, Métropole de Exemple</p>"
+                "<p>TRAM<br/>Arrêt central</p><h2>Restaurant</h2>"
+                "<p>21 rue des Jardins, 68000 Colmar</p>")
+        with patch.object(evidence, "registered_venue_source", return_value=source), \
+             patch.object(evidence.geo, "verify", return_value=(OSM, 48.08, 7.36, "named-site-point")) as geo:
+            proof = evidence.verify_venue_source(source, VENUE,
+                fetch=lambda url, cache: link if url == source else page)
+            self.assertEqual(proof["venuePatch"]["address"], "19 rue des Jardins")
+            self.assertEqual(proof["venuePatch"]["postalCode"], "68000")
+            self.assertEqual(geo.call_args.args[0]["city"], "Colmar")
+            for bad in (
+                    page.replace("Venir à New Room", "Venir à Other Room"),
+                    page.replace("68000 Colmar, Métropole", "68000 Paris, Métropole"),
+                    page.replace("Métropole de Exemple", "Paris"),
+                    page.replace("Métropole de Exemple", "75018 Paris"),
+                    page.replace("Métropole de Exemple", "Métropole de Exemple, Belgique"),
+                    page.replace("ADRESSE", "BILLETTERIE")):
+                with self.subTest(bad=bad), self.assertRaises(ValueError):
+                    evidence.verify_venue_source(source, VENUE,
+                        fetch=lambda url, cache: link if url == source else bad)
+
+    def test_standalone_missing_postcode_replays_full_geographic_contract(self):
+        source = "https://unknown-room.fr/"
+        link = '<nav><a href="/infos/">Infos pratiques</a></nav>'
+        page = ("<head><title>Infos pratiques – New Room</title></head>"
+                "<h1>Infos pratiques</h1><h2>Venir à New Room</h2>"
+                "<p><strong>Adresse</strong><br/>19 rue des Jardins, Colmar</p>")
+        def fetch(url, cache):
+            return link if url == source else page
+        with patch.object(evidence, "registered_venue_source", return_value=source), \
+             patch.object(evidence.geo, "independently_resolve_postcode", return_value="68000") as resolve, \
+             patch.object(evidence.geo, "verify", return_value=(OSM, 48.08, 7.36, "named-site-point")) as verify:
+            proof = evidence.verify_venue_source(source, VENUE, fetch=fetch)
+            self.assertEqual(proof["venuePatch"]["postalCode"], "68000")
+            self.assertIsNone(resolve.call_args.args[0]["postalCode"])
+            self.assertEqual(verify.call_args.args[0]["postalCode"], "68000")
+            self.assertFalse(proof["publicationAllowed"])
+        with patch.object(evidence, "registered_venue_source", return_value=source), \
+             patch.object(evidence.geo, "independently_resolve_postcode", side_effect=ValueError("ambiguous")), \
+             patch.object(evidence.geo, "verify", side_effect=AssertionError("unresolved address")):
+            with self.assertRaises(ValueError):
+                evidence.verify_venue_source(source, VENUE, fetch=fetch)
+        for bad in (page.replace("Colmar", "Paris"),
+                    page.replace("Adresse", "Restaurant"),
+                    page.replace("19 rue des Jardins, Colmar", "19 rue des Jardins, 75000 Colmar, Paris")):
+            with patch.object(evidence, "registered_venue_source", return_value=source), \
+                 patch.object(evidence.geo, "independently_resolve_postcode", side_effect=AssertionError("contradiction")):
+                with self.assertRaises(ValueError):
+                    evidence.verify_venue_source(source, VENUE,
+                        fetch=lambda url, cache: link if url == source else bad)

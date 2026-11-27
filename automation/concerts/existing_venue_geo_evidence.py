@@ -628,6 +628,41 @@ class _PracticalTitle(HTMLParser):
             self.in_title = False
 
 
+def _arrival_postal_line(value, city):
+    """An explicit address field may include an administrative complement.
+
+    Strip only a separated address label and a narrowly typed administrative
+    suffix after the exact municipality. Never substitute another municipality
+    or a second street/postcode. The complete core still needs BAN and OSM.
+    """
+    value = re.sub(r"^\s*adresse\s*(?:[:\u241e])\s*", "", value, flags=re.I)
+    direct = _postal_line(value, city)
+    if direct is not None:
+        return direct
+    core, sep, suffix = value.rpartition(",")
+    if not sep or len(suffix) > 120 or not re.fullmatch(
+            r"(?:metropole de|metropole du|metropole d|communaute d agglomeration de|communaute de communes de) [a-z ]{2,80}",
+            triage.words(suffix)):
+        return None
+    # Do not discard unrecognized material before the administrative suffix.
+    return _postal_line(core, city)
+
+
+def _labelled_street_without_postcode(value, city):
+    """Only a visibly labelled, complete street + exact city, no guessing."""
+    match = re.fullmatch(r"\s*adresse\s*[:\u241e]\s*(.+)", value, re.I)
+    if not match:
+        return None
+    street, sep, locality = match[1].rpartition(",")
+    street = street.strip()
+    if (not sep or triage.words(locality) != triage.words(city)
+            or not STREET.fullmatch(street)
+            or NONVENUE.search(triage.words(street))
+            or re.search(r"\b\d{5}\b", street)):
+        return None
+    return street, None
+
+
 def _access_section_address(page, blocks, venue):
     """One venue-named document with a bounded explicit arrival section.
 
@@ -646,7 +681,13 @@ def _access_section_address(page, blocks, venue):
     if not name or name not in parts:
         return set()
     labels = {"comment venir", "venir", "acces", "comment acceder",
-              "venir a la salle", "getting here", "how to get here"}
+              "venir a la salle", "getting here", "how to get here",
+              "venir a " + name, "venir au " + name,
+              "acces a " + name}
+    if name.startswith("le "):
+        labels.add("venir au " + name[3:])
+    if name.startswith("les "):
+        labels.add("venir aux " + name[4:])
     headings = [i for i, (tag, value) in enumerate(blocks)
                 if tag in {"h1", "h2", "h3", "h4"}
                 and triage.words(value) in labels]
@@ -659,15 +700,26 @@ def _access_section_address(page, blocks, venue):
             break
         nearby.append(value)
     addresses = set()
+    incomplete = set()
     for i, value in enumerate(nearby):
         if not re.search(r"\b\d{5}\b", value):
+            address = _labelled_street_without_postcode(value, venue["city"])
+            if address is not None:
+                incomplete.add(address)
             continue
-        matches = {_postal_line(value, venue["city"])}
+        matches = {_arrival_postal_line(value, venue["city"])}
         if i:
-            matches.add(_postal_line(nearby[i-1] + " " + value, venue["city"]))
+            matches.add(_arrival_postal_line(nearby[i-1] + " " + value, venue["city"]))
         matches.discard(None)
         require(len(matches) == 1, "conflicting practical arrival address")
         addresses.update(matches)
+    if incomplete:
+        require(len(incomplete) == 1, "ambiguous incomplete arrival addresses")
+        if addresses:
+            require(len(addresses) == 1 and next(iter(addresses))[0] ==
+                    next(iter(incomplete))[0], "conflicting complete and incomplete addresses")
+        else:
+            addresses = incomplete
     require(len(addresses) == 1, "one exact arrival address required")
     return addresses
 
@@ -726,7 +778,8 @@ def _standalone_practical_address(html, source, venue, fetch, cache):
     require(len(addresses) == 1, "one exact named practical address required")
     street, postcode = next(iter(addresses))
     site = dict(venue, address=street, postalCode=postcode)
-    require(address_source.eligible_address(site), "non-geocodable practical address")
+    require(postcode is None or address_source.eligible_address(site),
+            "non-geocodable practical address")
     return site
 
 
@@ -805,6 +858,12 @@ def verify_venue_source(source, venue, *, fetch=probe.safe_fetch, cache=None):
                 "independent geographical evidence unavailable")
         return body, endpoint
     try:
+        if site.get("postalCode") is None:
+            # Complete only a genuinely absent postcode. Replay the normal
+            # full BAN/OSM proof (including source attribution if unregistered).
+            postcode = geo.independently_resolve_postcode(site, bounded)
+            site = dict(site, postalCode=postcode)
+        require(address_source.eligible_address(site), "non-geocodable postal identity")
         if registered:
             feature, lat, lon, precision = geo.verify(
                 site, bounded, official_website=source)
