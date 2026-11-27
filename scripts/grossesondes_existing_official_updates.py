@@ -52,7 +52,7 @@ DATE_FIELDS = frozenset((
 ))
 CHANGEABLE = (frozenset(("lineup", "bands", "price", "notes", "lastVerified", "auditSources", "venue"))
               | COMMUNE_FIELDS | DATE_FIELDS)
-ROLE = re.compile(r"\b(?:programmation|line up|lineup|groupes?|noms|artistes?|"
+ROLE = re.compile(r"\b(?:programme|programmation|line up|lineup|groupes?|noms|artistes?|"
                   r"annonce|affiche|actualites?|news|billetterie|tarifs?|pass|"
                   r"annulation|annule|report|reporte|cancelled|postponed|202[7-9])\b")
 GENRE_LIST = re.compile(r"\b(?:groupes?|noms|artistes?|programmation|lineup|affiche|ils seront)\b")
@@ -799,7 +799,7 @@ def linked_pages(site, parsed):
             continue
         rank = (-1 if re.search(r"annulation|annule|report|reporte|cancelled|postponed", label)
                 else 0 if re.search(r"nouveaux? noms|groupes? annonces?|annonce|affiche", label)
-                else 1 if re.search(r"programmation|lineup|groupes", label)
+                else 1 if re.search(r"programme|programmation|lineup|groupes", label)
                 else 2 if re.search(r"billetterie|pass|tarif", label)
                 else 3)
         ranked[url] = min(rank, ranked.get(url, rank))
