@@ -308,6 +308,48 @@ class UnlistedExistingVenueTests(unittest.TestCase):
             dynamic.validate(signed, venues, artists, TODAY,
                 fetch=fake_fetch({"primary": body(), "osm": osm(website="https://autre.fr")}))
 
+    def test_exact_text_postal_address_and_empty_text_visible_replay(self):
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        node = next(dynamic.discover.read_ld(page(EVENT)))
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+        exact = " ".join(venue[k] for k in ("address", "postalCode", "city"))
+        def html(address, **fields):
+            n = copy.deepcopy(node)
+            n["location"].update(address=address, **fields)
+            return ("<main><h1>" + n["name"] + "</h1><p>5 mars 2027</p>"
+                    "<script type='application/ld+json'>" + json.dumps(n)
+                    + "</script><p>" + venue["name"] + "<br/>" + exact + "</p></main>")
+        for address, fields in ((exact + ", France", {}),
+                                (exact, {"country": "FR"}),
+                                (exact.replace("31520", "31 520") + " FR", {}),
+                                ("", {})):
+            with self.subTest(address=address):
+                self.assertTrue(dynamic.validate(signed, venues, artists, TODAY,
+                    fetch=fake_fetch({"primary": html(address, **fields)})))
+        for address, fields, code in (
+                (exact, {}, "structured_text_address_unconfirmed"),
+                (exact + " France", {"country": "BE"}, "structured_text_address_unconfirmed"),
+                (exact + " France", {"postalCode": "75001"}, "structured_text_address_unconfirmed"),
+                ("12 rue Autre 31520 " + venue["city"] + " France", {}, "structured_text_address_unconfirmed"),
+                (exact + " France ou 75001 Paris", {}, "structured_text_address_unconfirmed"),
+                ([], {}, "structured_address_type_unsupported"),
+        ):
+            with self.subTest(address=address), self.assertRaises(dynamic.AddressReplayHeld) as caught:
+                dynamic.validate(signed, venues, artists, TODAY,
+                    fetch=fake_fetch({"primary": html(address, **fields)}))
+            self.assertIn(code, caught.exception.address_replay_diagnostics)
+        with self.assertRaises(ValueError):
+            dynamic.validate(signed, venues, artists, TODAY, fetch=fake_fetch({
+                "primary": html(exact + " France"), "osm": osm(website="https://autre.fr")}))
+        with self.assertRaises(ValueError):
+            dynamic.validate(signed, venues, artists, TODAY,
+                fetch=fake_fetch({"primary": html("").replace("<br/>" + exact, "")}))
+
     def test_address_replay_diagnostics_are_fixed_and_do_not_change_refusal(self):
         signed = signed_approval()
         proof = signed["officialEvidence"][0]
