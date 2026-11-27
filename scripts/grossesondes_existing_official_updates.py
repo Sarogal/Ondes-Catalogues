@@ -769,7 +769,7 @@ def current_official_poster_candidates(html, site, row):
         return []
 
 
-def linked_pages(site, parsed):
+def linked_pages(site, parsed, *, prefer_programme=False):
     if safe_public_url(site) != site:
         return []
     host = urlsplit(site).hostname
@@ -801,14 +801,19 @@ def linked_pages(site, parsed):
         if re.search(r"/(?:20[01]\d|202[0-6])(?:/|$)", bits.path):
             continue
         label = fold(label + " " + bits.path.replace("-", " "))
-        if not ROLE.search(label):
+        programme_route = bool(re.search(
+            r"/(?:lineup|line-up|programmation|programme|program|artists|artistes)/?$",
+            bits.path, re.I))
+        if not ROLE.search(label) and not programme_route:
             continue
-        rank = (-1 if re.search(r"annulation|annule|report|reporte|cancelled|postponed", label)
-                else 0 if re.search(r"/(?:lineup|line-up|programmation|programme|program|artists|artistes)/?$", bits.path, re.I)
-                else 1 if re.search(r"nouveaux? noms|groupes? annonces?|annonce|affiche", label)
-                else 2 if re.search(r"programme|programmation|line up|lineup|groupes", label)
-                else 3 if re.search(r"billetterie|pass|tarif", label)
-                else 4)
+        # Preserve the legacy poster/announcement priority for OCR scans.
+        # Only the Publisher and its isolated browser prefer programme routes.
+        rank = (-2 if re.search(r"annulation|annule|report|reporte|cancelled|postponed", label)
+                else -1 if prefer_programme and programme_route
+                else 0 if re.search(r"nouveaux? noms|groupes? annonces?|annonce|affiche", label)
+                else 1 if re.search(r"programme|programmation|line up|lineup|groupes", label)
+                else 2 if re.search(r"billetterie|pass|tarif", label)
+                else 3)
         ranked[url] = min(rank, ranked.get(url, rank))
     return sorted(ranked, key=lambda u: (ranked[u], u))[:MAX_LINKS]
 
@@ -1946,7 +1951,7 @@ def apply_independently_verified_updates(
         ]
         if current_home.blocks:
             pages.append((site, current_home))
-        selected_links = linked_pages(site, root)
+        selected_links = linked_pages(site, root, prefer_programme=True)
         linked_fetch_errors = []
         for link in selected_links:
             try:
