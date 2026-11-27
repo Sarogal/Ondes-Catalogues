@@ -40,6 +40,18 @@ class DirectoryQueueTests(unittest.TestCase):
         self.assertEqual(c["directory"]["next_page"], 3)
         self.assertEqual(len(c["records"]), 3)
 
+    def test_larger_discovery_batch_respects_bound(self):
+        from ptitesondes_cultural_directory_discovery import MAX_ROWS_PER_SCAN
+        base = report(row())
+        a, summary = run(base, None, lambda n: dict(page(n+12, lead("Ludothèque A")),
+                                                    rows_examined=MAX_ROWS_PER_SCAN), limit=1)
+        self.assertEqual(summary["directory_rows_examined"], MAX_ROWS_PER_SCAN)
+        self.assertEqual(a["directory"]["next_page"], 13)
+        b, summary = run(base, a, lambda n: dict(page(n+12, lead("Ludothèque B")),
+                                                rows_examined=MAX_ROWS_PER_SCAN+1), limit=1)
+        self.assertEqual(summary["directory_unavailable"], 1)
+        self.assertEqual(b["directory"], a["directory"])
+
     def test_untrusted_permission_cannot_enter_queue(self):
         a, summary = run(report(row()), None,
                          lambda n: page(n+1, dict(lead("Ludothèque A"), public_eligible=True)))

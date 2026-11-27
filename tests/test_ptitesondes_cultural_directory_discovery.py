@@ -1,6 +1,7 @@
 import unittest
+from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
-from ptitesondes_cultural_directory_discovery import scan, PAGE_SIZE, format_counts
+from ptitesondes_cultural_directory_discovery import scan, PAGE_SIZE, MAX_PAGES, MAX_ROWS_PER_SCAN, format_counts
 
 def fixture(i):
     return {"commune": "Les Bois", "nom_du_lieu": f"Ludothèque {i}",
@@ -22,6 +23,21 @@ class CulturalDiscoveryTests(unittest.TestCase):
         self.assertEqual(len(result["records"]), PAGE_SIZE + 1)
         self.assertTrue(all(not r["public_eligible"] and not r["gps_verified"]
                             and "latitude" not in r for r in result["records"]))
+
+    def test_bounded_throughput_and_cursor_continuity(self):
+        def get(url):
+            page = int(parse_qs(urlsplit(url).query)["page"][0])
+            return {"meta": {"total": 2000},
+                    "data": [fixture(i) for i in range((page-1)*PAGE_SIZE, page*PAGE_SIZE)]}
+        with patch("ptitesondes_cultural_directory_discovery.monotonic", return_value=0):
+            result = scan(9, fetch=get)
+        self.assertEqual(result["rows_examined"], MAX_ROWS_PER_SCAN)
+        self.assertEqual(result["next_page"], 9 + MAX_PAGES)
+        self.assertEqual(len(result["records"]), MAX_ROWS_PER_SCAN)
+        with patch("ptitesondes_cultural_directory_discovery.monotonic", side_effect=[0, 31]):
+            result = scan(9, fetch=get)
+        self.assertEqual(result["rows_examined"], PAGE_SIZE)
+        self.assertEqual(result["next_page"], 10)
 
     def test_incomplete_response_cannot_advance_cursor(self):
         with self.assertRaises(ValueError):

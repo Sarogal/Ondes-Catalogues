@@ -7,12 +7,15 @@ both unchanged. This primitive does not modify the existing queue.
 """
 from urllib.parse import urlencode
 import re
+from time import monotonic
 
 from ptitesondes_family_national_source_preflight import norm_text
 from ptitesondes_national_cultural_directory_probe import URL, _fetch
 
 PAGE_SIZE = 20
-MAX_PAGES = 4
+MAX_PAGES = 12
+MAX_ROWS_PER_SCAN = PAGE_SIZE * MAX_PAGES
+SCAN_SECONDS = 30
 MAX_TOTAL = 2_000_000
 FAMILY = re.compile(
     r"\b(?:ludotheques?|jeune public|jeunesse|enfants?|tout petits|"
@@ -114,7 +117,12 @@ def scan(previous_page=1, *, fetch=_fetch, budget=MAX_PAGES):
     leads = {}
     examined = pages = 0
     total = None
+    deadline = monotonic() + SCAN_SECONDS
     for _ in range(budget):
+        # Finish at the last complete page when the discovery budget expires.
+        # A failed page still invalidates the scan; never skip it.
+        if pages and monotonic() >= deadline:
+            break
         query = URL.split("?")[0] + "?" + urlencode({
             "page": page, "page_size": PAGE_SIZE})
         try:
@@ -203,7 +211,7 @@ def live_probe():
         doc = _fetch(url)
         rows.extend(doc["data"])
         return doc
-    result = scan(budget=2, fetch=observed_fetch)
+    result = scan(fetch=observed_fetch)
     return {key: value for key, value in result.items() if key != "records"} | {
         "family_leads": len(result["records"]), "field_shapes": format_counts(rows)}
 
