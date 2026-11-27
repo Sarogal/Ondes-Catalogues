@@ -124,7 +124,7 @@ class _ExecutableScriptBodies(HTMLParser):
         self.script_start = None
         self.spans = []
 
-    def offset(self):
+    def source_index(self):
         line, column = self.getpos()
         while self.line < line:
             self.line_offset = self.html.index("\n", self.line_offset) + 1
@@ -141,7 +141,7 @@ class _ExecutableScriptBodies(HTMLParser):
                            (types[0] or "").strip().lower() in (
                                "text/javascript", "application/javascript",
                                "module", ""))))
-        self.script_start = (self.offset() + len(self.get_starttag_text())
+        self.script_start = (self.source_index() + len(self.get_starttag_text())
                              if executable else None)
 
     def handle_startendtag(self, tag, attrs):
@@ -150,7 +150,7 @@ class _ExecutableScriptBodies(HTMLParser):
 
     def handle_endtag(self, tag):
         if tag == "script" and self.script_start is not None:
-            end = self.offset()
+            end = self.source_index()
             if end - self.script_start >= 1024:
                 self.spans.append((self.script_start, end))
             self.script_start = None
