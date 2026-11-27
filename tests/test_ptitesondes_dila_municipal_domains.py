@@ -47,6 +47,26 @@ class DILAMunicipalDomainsTests(unittest.TestCase):
         self.assertIn("version_type", fields["select"][0])
         self.assertEqual(fields["limit"], ["30"])
 
+    def test_code_query_and_identity_bound_diagnostics(self):
+        from collections import Counter
+        fields = parse_qs(urlsplit(dila_query(CITY, insee="2A004")).query)
+        self.assertEqual(fields["where"], ['code_insee_commune = "2A004" AND categorie = "SL"'])
+        for code in ("123", '1" OR true', True):
+            with self.assertRaises(ValueError):
+                dila_query(CITY, insee=code)
+        for data, code, reason in (
+            (payload(), "12345", "dila_empty_response"),
+            (payload(mairie()), "99999", "dila_mairie_unmatched"),
+            (payload(mairie(site="http://ville-les-bois.fr/")), "12345", "dila_no_eligible_homepage"),
+            (payload(mairie(), mairie()), "12345", "dila_mairie_ambiguous"),
+        ):
+            counts = Counter()
+            self.assertFalse(municipal_site_hosts(CITY, data, expected_insee=code, diagnostics=counts))
+            self.assertEqual(counts[reason], 1)
+            self.assertNotIn(CITY, str(counts))
+        self.assertEqual(municipal_site_hosts(CITY, payload(mairie()), expected_insee="12345"),
+                         frozenset({"www.ville-les-bois.fr"}))
+
     def test_no_query_injection_from_city(self):
         for city in ('Ville" OR true', 'Saint\\Ville', 'X\nOR true', "", " "):
             with self.subTest(city=city), self.assertRaises(ValueError):

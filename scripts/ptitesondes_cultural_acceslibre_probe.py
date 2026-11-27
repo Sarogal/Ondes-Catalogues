@@ -233,15 +233,28 @@ def inspect_municipal(lead, *, directory_fetch=None, page_read=None):
     from ptitesondes_open_world_permanent_place_ban import _section_pages
     from ptitesondes_unlisted_source_safe_recheck import read_municipal_https
     from urllib.parse import urlsplit
+    use_code_fallback = directory_fetch is None
     directory_fetch = directory_fetch or fetch_dila
     page_read = page_read or read_municipal_https
     counts = Counter()
     city, venue = identity(lead)
     try:
         directory = directory_fetch(city)
-        hosts = municipal_site_hosts(city, directory)
+        code = lead.get("code_commune")
+        hosts = municipal_site_hosts(city, directory, expected_insee=code, diagnostics=counts)
+        if not hosts and use_code_fallback:
+            counts["municipal_code_fallback_attempted"] += 1
+            directory = fetch_dila(city, insee=code)
+            hosts = municipal_site_hosts(city, directory, expected_insee=code, diagnostics=counts)
+            if hosts:
+                counts["municipal_code_fallback_found"] += 1
         if not hosts:
             counts["municipal_authority_unavailable"] += 1
+            return counts
+        # Subsequent scope checks must also accept the same unambiguous
+        # directory response via the existing exact-name predicate.
+        if hosts != municipal_site_hosts(city, directory):
+            counts["municipal_authority_ambiguous"] += 1
             return counts
 
         def read(url):
