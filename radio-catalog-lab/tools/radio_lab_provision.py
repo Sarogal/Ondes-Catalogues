@@ -85,7 +85,8 @@ def main():
         raise RuntimeError("local owner workstation required")
     if sys.argv[1:] != ["--activate-isolated-lab"] and not (len(sys.argv)==4 and sys.argv[1]=="--launch"):
         raise RuntimeError("explicit local setup or launch flag required")
-    owner = api("user")["login"]
+    user = api("user")
+    owner = user["login"]
     repo = api(BASE)
     if (owner.lower() != "sarogal" or repo["id"] != 1438875064
             or repo["private"] or not repo.get("permissions", {}).get("admin")):
@@ -108,14 +109,21 @@ def main():
                     or [(r["name"], r.get("type", "branch")) for r in rules] != [(BRANCH, "branch")]):
                 raise RuntimeError("existing environment policy differs: "+name)
             if name == "radio-lab-signing":
+                approvals = [r for r in detail.get("protection_rules",[]) if r.get("type")=="required_reviewers"]
+                if not any(any(x.get("type")=="User" and x.get("reviewer",{}).get("id")==user["id"]
+                           for x in rule.get("reviewers",[])) for rule in approvals):
+                    raise RuntimeError("existing signing environment lacks owner approval")
                 names = {s["name"] for s in api(BASE+"/environments/"+name+"/secrets")["secrets"]}
                 if KEY_NAMES & names:
                     raise RuntimeError("existing or partial signing key; do not overwrite")
     for name in ENVIRONMENTS:
         if name not in envs:
             path = BASE+"/environments/"+name
-            api(path, "PUT", {"deployment_branch_policy":{
-                "protected_branches":False, "custom_branch_policies":True}})
+            protection = {"deployment_branch_policy":{
+                "protected_branches":False, "custom_branch_policies":True}}
+            if name == "radio-lab-signing":
+                protection.update(reviewers=[{"type":"User","id":user["id"]}], prevent_self_review=False)
+            api(path, "PUT", protection)
             api(path+"/deployment-branch-policies", "POST", {"name":BRANCH,"type":"branch"})
         path = BASE+"/environments/"+name
         rules = api(path+"/deployment-branch-policies")["branch_policies"]
