@@ -263,6 +263,48 @@ def propose(row, catalogue, today, *, fetch=probe.safe_fetch):
     return event, site_approval
 
 
+def _prioritize_previous_pair(chosen, eligible_rows, prior, signed_ids, limit):
+    """One immediate fresh replay of a previous proposed pair, not a signature.
+
+    Preserve both genre cohorts and the total network limit. An already
+    retried pair returns to normal rotation even if its new proof succeeds.
+    Legacy reports may seed a retry only on a unique candidate ID/date.
+    """
+    if (limit < 2 or not isinstance(prior, dict) or prior.get("schema") != SCHEMA
+            or prior.get("publicationAllowed") is not False
+            or prior.get("privateApprovalApplied") is not False
+            or not isinstance(prior.get("candidateChecks"), list)):
+        return chosen, set()
+    selected = list(chosen)
+    for check in prior["candidateChecks"]:
+        if (not isinstance(check, dict)
+                or check.get("state") != "publisher_bound_openagenda_event_site_pair"
+                or check.get("immediatePairRetry") is True
+                or (isinstance(check.get("proposedEventId"), str)
+                    and check["proposedEventId"] in signed_ids)):
+            continue
+        key = check.get("reviewKey")
+        matches = [
+            row for row in eligible_rows
+            if row[2].get("candidateId") == check.get("candidateId")
+            and row[0] == check.get("date")
+            and (key is None or geography.site_review_key(row) == key)
+        ]
+        if len(matches) != 1:
+            continue
+        row = matches[0]
+        if row in selected:
+            return selected, {geography.site_review_key(row)}
+        tagged = row[2]["reviewBucket"] == "genre_tag_review"
+        # Replace one ordinary check in the SAME cohort, not its opposite.
+        same_cohort = [i for i, r in enumerate(selected)
+                       if (r[2]["reviewBucket"] == "genre_tag_review") == tagged]
+        if same_cohort:
+            selected[same_cohort[-1]] = row
+            return selected, {geography.site_review_key(row)}
+    return selected, set()
+
+
 def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
           fetch=probe.safe_fetch, prior=None):
     require(isinstance(before, dict) and
@@ -306,11 +348,16 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
                   if isinstance(a, dict)}
     signed_sites = {a.get("venue", {}).get("id") for a in before["venueApprovals"]
                     if isinstance(a, dict)}
+    chosen, retried = _prioritize_previous_pair(
+        chosen, selected, prior, signed_ids, limit)
     states, reasons, checks = Counter(), Counter(), []
     geo_diagnostics = Counter()
     for row in chosen:
+        key = geography.site_review_key(row)
         check = {"candidateId": str(row[2].get("candidateId", ""))[:120],
-                 "date": row[0]}
+                 "date": row[0], "reviewKey": key}
+        if key in retried:
+            check["immediatePairRetry"] = True
         try:
             event, site = propose(row, current, today, fetch=fetch)
             eid, vid = event["event"]["id"], site["venue"]["id"]
@@ -325,6 +372,7 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
             current["artists"].extend({**a, "aliases": []}
                                       for a in event["newArtists"])
             check["state"] = "publisher_bound_openagenda_event_site_pair"
+            check["proposedEventId"] = eid
         except (ValueError, KeyError, IndexError, TypeError, OSError,
                 TimeoutError) as exc:
             check["state"] = "held_original_or_named_site_unverified"
@@ -351,6 +399,7 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
     return output, {
         "schema": SCHEMA, "asOf": today.isoformat(), "scanSlot": slot,
         "eligibleUnknownSites": len(selected), "examined": len(chosen),
+        "immediatePairRetries": len(retried),
         "stateCounts": dict(states), "rejectionReasons": dict(reasons),
         "candidateChecks": checks,
         "reviewMemory": geography.remember_site_reviews(memory, chosen),
