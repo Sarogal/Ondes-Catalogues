@@ -17,54 +17,58 @@ def _text(value, limit):
     return value.strip()
 
 
-def directory_identity(city, venue, row):
+def directory_identity(city, venue, row, diagnostics=None):
     """Exact name/alias, commune, INSEE, postcode and numbered street.
 
     Do not infer missing postal digits, municipality codes, age, or GPS.
     Both structured street and complete address must agree when present.
     Numberless venues remain in the existing independent OSM pathway.
     """
+    def reject(reason):
+        if diagnostics is not None:
+            diagnostics[reason] += 1
+        return None
     try:
         if not isinstance(row, dict):
-            return None
+            return reject('directory_record_missing')
         city, venue = _text(city, 180), _text(venue, 180)
         town = _text(row.get("commune"), 180)
         aliases = [_text(row.get(field), 180)
                    for field in ("nom_du_lieu", "nom_usuel_du_lieu")]
         if (not city or not venue or not town or norm_text(city) != norm_text(town)
                 or not any(a and norm_text(a) == norm_text(venue) for a in aliases)):
-            return None
+            return reject('name_or_commune_mismatch')
         insee = row.get("code_commune")
         postcode = row.get("code_postal")
         if (not isinstance(insee, str)
                 or not re.fullmatch(r"(?:[0-9]{5}|2[AB][0-9]{3})", insee)
                 or not isinstance(postcode, str) or not re.fullmatch(r"[0-9]{5}", postcode)):
-            return None
+            return reject("administrative_code_format")
         street_raw = _text(row.get("numero_et_libelle_voie"), 180)
         full_raw = _text(row.get("adresse_complete"), 300)
         if not street_raw or not full_raw:
-            return None
+            return reject("address_field_missing_or_invalid")
         street = norm_text(street_raw)
         m = re.fullmatch(r"([0-9]{1,4}(?: (?:bis|ter|quater|[a-z]))?) (.{3,120})", street)
         if not m or not HOUSE.fullmatch(m.group(1)):
-            return None
+            return reject("numbered_street_missing")
         number, road = m.groups()
         expected = f"{number} {road} {postcode} {norm_text(city)}"
         if norm_text(full_raw) != expected:
-            return None
+            return reject("complete_address_mismatch")
         # When an entrance address is explicitly present, a differing
         # entrance must not be silently replaced by the postal address.
         entrance = row.get("adresse_entree_public")
         if entrance not in (None, ""):
             text = _text(entrance, 300)
             if not text or norm_text(text) != expected:
-                return None
+                return reject("entrance_address_mismatch")
         return {"city": city, "venue": venue, "insee": insee,
                 "postcode": postcode, "housenumber": number, "street": road,
                 "address_query": f"{number} {road} {postcode} {city}",
                 "public_eligible": False}
     except (ValueError, TypeError, KeyError, AttributeError, OverflowError, UnicodeError):
-        return None
+        return reject("invalid_record")
 
 
 def same_official_address(identity, facts):
@@ -76,3 +80,45 @@ def same_official_address(identity, facts):
                and isinstance(facts.get(k), str) and facts[k]
                and norm_text(identity[k]) == norm_text(facts[k])
                for k in required)
+
+
+def live_address_probe():
+    """Inspect up to 240 public rows; emit counts, never venue data."""
+    from collections import Counter
+    from urllib.parse import urlencode
+    from ptitesondes_national_cultural_directory_probe import URL, _fetch, directory_website_hints
+    from ptitesondes_cultural_directory_discovery import PAGE_SIZE, parse_page, identity, is_family_lead
+    counts = Counter()
+    family_counts = Counter()
+    examined = 0
+    for page in range(1, 13):
+        doc = _fetch(URL.split("?")[0] + "?" + urlencode({"page": page, "page_size": PAGE_SIZE}))
+        _, total = parse_page(doc, page)
+        for row in doc["data"]:
+            examined += 1
+            pair = identity(row)
+            local = Counter()
+            if pair is None:
+                local["discovery_identity_missing"] += 1
+            elif directory_identity(*pair, row, local) is not None:
+                local["address_verified"] += 1
+            counts.update(local)
+            if is_family_lead(row):
+                family_counts.update(local)
+                family_counts["family_rows"] += 1
+                urls = directory_website_hints(row)
+                family_counts["website_unique" if len(urls) == 1 else
+                              "website_missing" if not urls else "website_multiple"] += 1
+        if page * PAGE_SIZE >= total:
+            break
+    return {"rows_examined": examined, "address_counts": dict(counts),
+            "family_counts": dict(family_counts), "publication_ready": False, "public_writes": 0}
+
+
+if __name__ == "__main__":
+    import json
+    try:
+        print(json.dumps(live_address_probe(), sort_keys=True))
+    except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
+        print("::error::National address probe unavailable")
+        raise SystemExit(1) from None
