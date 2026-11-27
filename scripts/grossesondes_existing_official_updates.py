@@ -755,8 +755,11 @@ class Page(HTMLParser):
         return []
 
 
-def page(html):
-    if not isinstance(html, str) or not 0 < len(html) <= 650_000:
+def page(html, *, rendered=False):
+    # Ordinary HTTPS remains capped at 650 KB. The separate isolated
+    # browser artifact already admits at most 1.4 MB per entry.
+    limit = 1_400_000 if rendered else 650_000
+    if not isinstance(html, str) or not 0 < len(html.encode("utf-8")) <= limit:
         raise ValueError("Untrusted official HTML")
     out = Page()
     out.feed(html)
@@ -1984,7 +1987,7 @@ def apply_independently_verified_updates(
                 if (not isinstance(root_html, str)
                         or not 0 < len(root_html.encode("utf-8")) <= 1_400_000):
                     raise ValueError("Invalid browser HTML")
-                root = page(root_html)
+                root = page(root_html, rendered=True)
                 report["rechecked_pages"] += 1
                 report["browser_recoveries"] += 1
             except (OSError, TimeoutError, ValueError, UnicodeError, TypeError,
@@ -2025,7 +2028,7 @@ def apply_independently_verified_updates(
                 and site in browser_sites):
             try:
                 rendered_root = browser_fetch(site)
-                rendered_doc = page(rendered_root)
+                rendered_doc = page(rendered_root, rendered=True)
                 rendered_links = linked_pages(site, rendered_doc, prefer_programme=True)
                 if rendered_links:
                     selected_links = rendered_links
@@ -2040,6 +2043,7 @@ def apply_independently_verified_updates(
             try:
                 try:
                     linked_html = fetch(link)
+                    linked_doc = page(linked_html)
                 except (OSError, TimeoutError, ValueError, UnicodeError) as exc:
                     if isinstance(exc, OfficialHTTPStatusError) and exc.status_code == 429:
                         poster_rate_limited_hosts.add(site)
@@ -2050,7 +2054,7 @@ def apply_independently_verified_updates(
                     # Only same-origin links proven by the parsed home DOM;
                     # the loader separately checks their exact provenance.
                     linked_html = browser_fetch(link)
-                linked_doc = page(linked_html)
+                    linked_doc = page(linked_html, rendered=True)
                 pages.append((link, linked_doc))
                 html_pages.append((link, linked_html))
                 report["rechecked_pages"] += 1
