@@ -957,7 +957,7 @@ def daily_programme_artists(doc, html, row, today):
             # Only the explicit concert portion of a mixed daily paragraph.
             billing = re.search(
                 r"(?:^|\s)concerts?\s*:\s*([^|]{2,1200})\s*\|\s*"
-                r"(?:salle|sc[eè]ne|lieu)\s+[^|]{2,120}$",
+                r"(?:salle|sc[eè]ne|lieu)\s+[^|]{1,120}$",
                 block["text"], re.I)
             if not billing:
                 continue
