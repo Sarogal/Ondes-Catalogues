@@ -8,6 +8,8 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from grossesondes_official_browser_probe import (
     compare_proof, request_allowed, trusted_parent, probe_sources,
+    bounded_rendered_html, BrowserEvidenceError, MAX_DOM_BYTES,
+    MAX_COMPACTION_INPUT_BYTES,
 )
 
 PARENT = {
@@ -120,6 +122,51 @@ class BrowserPreflightTests(unittest.TestCase):
         self.assertFalse(compare_proof(
             PARENT, 2027, today, SCRIPT_ONLY, "<h1>Festival 666 2027</h1>"
         )["rendered_candidate"])
+
+
+    def test_small_dom_stays_byte_for_byte_identical(self):
+        html = VISIBLE + "<script>var a = 1;</script>"
+        self.assertEqual(bounded_rendered_html(html), html)
+
+    def test_oversized_executable_payload_preserves_all_evidence(self):
+        prefix = ('<html><head><style>.old{display:none}</style>'
+                  '<script type="application/ld+json">'
+                  '{"@type":"MusicEvent","name":"Festival 666 2027"}'
+                  '</script><script type="application/json">{"edition":2027}</script>'
+                  '<script type="module" data-marker="keep">')
+        suffix = ('</script></head><body><main><h1>Festival 666</h1>'
+                  '<h2>13 - 14 - 15 | AOUT | 2027</h2>'
+                  '<p class="old" hidden>13 AOUT 2028</p>'
+                  '<div aria-hidden="true"><a href="/old">Old band</a></div>'
+                  '<p style="display:none">999 euros</p>'
+                  '<a href="/lineup">Programmation</a>'
+                  '<img src="/poster.png" alt="Affiche 2027">'
+                  '</main></body></html>')
+        html = prefix + ("//é\n" * 400_000) + suffix
+        reduced = bounded_rendered_html(html)
+        self.assertEqual(reduced, prefix + " " + suffix)
+        # Hidden contradictory dates must not be promoted by compaction.
+        self.assertEqual(compare_proof(PARENT, 2027, date(2026, 11, 19),
+                                       SCRIPT_ONLY, reduced)["verdict"],
+                         "RENDERED_DOM_CANDIDATE_ONLY")
+
+    def test_raw_text_cannot_be_reinterpreted_as_script_markup(self):
+        raw = '<xmp><script>' + 'x' * 2000 + '</script></xmp>'
+        html = '<script>' + 'x' * MAX_DOM_BYTES + '</script>' + raw + VISIBLE
+        self.assertEqual(bounded_rendered_html(html),
+                         '<script> </script>' + raw + VISIBLE)
+
+    def test_structured_data_and_visible_overflow_fail_closed(self):
+        for html in (
+                '<script type="application/ld+json">' + 'x' * MAX_DOM_BYTES + '</script>',
+                '<script type="application/json">' + 'x' * MAX_DOM_BYTES + '</script>',
+                '<script language="unknown">' + 'x' * MAX_DOM_BYTES + '</script>',
+                '<main>' + 'é' * MAX_DOM_BYTES + '</main>',
+                '<script>' + 'x' * MAX_COMPACTION_INPUT_BYTES + '</script>',
+                ''):
+            with self.subTest(size=len(html)):
+                with self.assertRaisesRegex(BrowserEvidenceError, "invalid_bounded_dom"):
+                    bounded_rendered_html(html)
 
 
 if __name__ == "__main__":

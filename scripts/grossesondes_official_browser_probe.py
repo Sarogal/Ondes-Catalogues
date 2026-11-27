@@ -6,6 +6,7 @@ credentials, candidate fields or coordinates. A positive result is a hint,
 never independent publisher revalidation or automatic publication.
 """
 import argparse
+from html.parser import HTMLParser
 from datetime import date
 import json
 from pathlib import Path
@@ -100,6 +101,90 @@ class BrowserEvidenceError(ValueError):
         super().__init__(self.reason)
 
 
+
+MAX_DOM_BYTES = 1_400_000
+# Processing ceiling only; the accepted evidence limit is unchanged.
+MAX_COMPACTION_INPUT_BYTES = 8_000_000
+
+
+class _ExecutableScriptBodies(HTMLParser):
+    """Locate already-executed script payloads without reserializing HTML."""
+
+    # Do not interpret apparent tags inside other serialized raw/RCDATA elements.
+    CDATA_CONTENT_ELEMENTS = (
+        "script", "style", "textarea", "title", "xmp", "iframe",
+        "noembed", "noframes", "noscript", "plaintext",
+    )
+
+    def __init__(self, html):
+        super().__init__(convert_charrefs=False)
+        self.html = html
+        self.line = 1
+        self.line_offset = 0
+        self.script_start = None
+        self.spans = []
+
+    def offset(self):
+        line, column = self.getpos()
+        while self.line < line:
+            self.line_offset = self.html.index("\n", self.line_offset) + 1
+            self.line += 1
+        return self.line_offset + column
+
+    def handle_starttag(self, tag, attrs):
+        if tag != "script":
+            return
+        types = [v for k, v in attrs if k == "type"]
+        # Preserve structured data, unknown types and legacy declarations.
+        executable = (not any(k == "language" for k, _ in attrs)
+                      and (not types or (len(types) == 1 and
+                           (types[0] or "").strip().lower() in (
+                               "text/javascript", "application/javascript",
+                               "module", ""))))
+        self.script_start = (self.offset() + len(self.get_starttag_text())
+                             if executable else None)
+
+    def handle_startendtag(self, tag, attrs):
+        # A self-closing foreign-element script has no payload.
+        pass
+
+    def handle_endtag(self, tag):
+        if tag == "script" and self.script_start is not None:
+            end = self.offset()
+            if end - self.script_start >= 1024:
+                self.spans.append((self.script_start, end))
+            self.script_start = None
+
+
+def bounded_rendered_html(html):
+    """Keep original evidence unless oversized; strip only executable JS bodies."""
+    if not isinstance(html, str):
+        raise BrowserEvidenceError("invalid_bounded_dom")
+    size = len(html.encode("utf-8"))
+    if 0 < size <= MAX_DOM_BYTES:
+        return html
+    if not MAX_DOM_BYTES < size <= MAX_COMPACTION_INPUT_BYTES:
+        raise BrowserEvidenceError("invalid_bounded_dom")
+    parser = _ExecutableScriptBodies(html)
+    try:
+        parser.feed(html)
+        parser.close()
+    except (AssertionError, ValueError):
+        raise BrowserEvidenceError("invalid_bounded_dom") from None
+    # Preserve every node, attribute, stylesheet, link, JSON-LD and image.
+    # Keep one whitespace character rather than creating :empty.
+    pieces = []
+    previous = 0
+    for start, end in parser.spans:
+        pieces.extend((html[previous:start], " "))
+        previous = end
+    pieces.append(html[previous:])
+    compact = "".join(pieces)
+    if not 0 < len(compact.encode("utf-8")) <= MAX_DOM_BYTES:
+        raise BrowserEvidenceError("invalid_bounded_dom")
+    return compact
+
+
 def rendered_html(official_site):
     """Browser is isolated: no secrets, off-origin requests or storage."""
     from playwright.sync_api import sync_playwright
@@ -132,10 +217,7 @@ def rendered_html(official_site):
             page.wait_for_timeout(1600)
             if not request_allowed(page.url, official_site):
                 raise BrowserEvidenceError("unsafe_destination")
-            result = page.content()
-            if not 0 < len(result.encode("utf-8")) <= 1_400_000:
-                raise BrowserEvidenceError("invalid_bounded_dom")
-            return result
+            return bounded_rendered_html(page.content())
         finally:
             browser.close()
 
