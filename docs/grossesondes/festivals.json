@@ -6148,7 +6148,7 @@
       "notes": "Lien vers le site du festival retrouvé dans un annuaire public puis dates et genre revérifiés directement sur le site officiel. Lieu exact, artistes et coordonnées à confirmer.",
       "price": "Préventes annoncées à partir du 12/12/2026 — Pass 1 jour : pas de prévente, après prévente 15 € ; Pass 2 jours : prévente 18 €, après prévente 25 € ; Moins de 12 ans accompagnés : gratuit",
       "startDate": "2027-06-25",
-      "lon": null,
+      "lon": 4.7453,
       "bands": 0,
       "region": null,
       "lineup": [],
@@ -6159,16 +6159,29 @@
       "venue": null,
       "verificationStatus": "Provenance et édition revérifiées indépendamment",
       "source": "https://www.festibarockin.fr/",
-      "city": null,
+      "city": "Monthermé",
       "name": "Festibarock'in 2027",
       "dateRangeIsContinuous": false,
-      "showOnMap": false,
-      "lastVerified": "2026-11-25",
+      "showOnMap": true,
+      "lastVerified": "2026-11-27",
       "slug": "festibarock-in-2027",
-      "lat": null,
+      "lat": 49.8996,
       "auditSources": [
-        "https://www.festibarockin.fr/festibarockin-billetterie/"
-      ]
+        "https://www.festibarockin.fr/festibarockin-billetterie/",
+        "https://www.festibarockin.fr/",
+        "https://www.festibarockin.fr/festibarockin-plan-du-site/"
+      ],
+      "geoCity": "Monthermé",
+      "geoPrecision": "commune",
+      "geoInsee": "08302",
+      "geoSource": "https://geo.api.gouv.fr/communes?nom=Montherm%C3%A9&fields=nom%2Ccode%2CcodeDepartement%2Cdepartement%2Ccentre&format=geojson&geometry=centre&zone=metro%2Cdrom%2Ccom",
+      "geoVerification": {
+        "proofMode": "current-edition-commune-direct-official.v1",
+        "firstObserved": "2026-11-27",
+        "verifiedAt": "2026-11-27",
+        "officialSite": "https://www.festibarockin.fr/",
+        "markerMeaning": "centre_indicatif_de_commune"
+      }
     },
     {
       "officialSite": "https://xtremefest.fr/",
