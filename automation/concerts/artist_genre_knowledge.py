@@ -219,6 +219,40 @@ def _node_types(node):
     return {str(t).rstrip("/").rsplit("/", 1)[-1] for t in kinds}
 
 
+# Explicit musician roles, not generic "artist", author, producer, DJ or
+# a style found on an event. This is a vocabulary of roles, not artists.
+_MUSICIAN_ROLES = frozenset({
+    "musician", "musicien", "musicienne", "singer", "chanteur", "chanteuse",
+    "vocalist", "guitarist", "guitariste", "bassist", "bassiste",
+    "drummer", "batteur", "batteuse", "singer songwriter",
+    "auteur compositeur interprete", "autrice compositrice interprete",
+    "auteur compositeur", "autrice compositrice",
+})
+
+
+def _is_musical_profile(node):
+    kinds = _node_types(node)
+    if "MusicGroup" in kinds:
+        return True
+    if "Person" not in kinds:
+        return False
+    titles = node.get("jobTitle")
+    if isinstance(titles, str):
+        titles = [titles]
+    if isinstance(titles, list) and len(titles) <= 12 and any(
+            isinstance(title, str) and words(title) in _MUSICIAN_ROLES
+            for title in titles):
+        return True
+    occupations = node.get("hasOccupation")
+    if isinstance(occupations, dict):
+        occupations = [occupations]
+    return (isinstance(occupations, list) and len(occupations) <= 12
+            and any(isinstance(item, dict) and "Occupation" in _node_types(item)
+                    and isinstance(item.get("name"), str)
+                    and words(item["name"]) in _MUSICIAN_ROLES
+                    for item in occupations))
+
+
 def _genre_labels(value):
     if isinstance(value, str):
         value = [value]
@@ -278,9 +312,7 @@ def independently_verify_artist_profile(source, catalogue, html, actual_url, che
         except (ValueError, TypeError):
             continue
         for node in _nodes(parsed):
-            if ("MusicGroup" not in _node_types(node)
-                    and not ("Person" in _node_types(node)
-                             and words(node.get("jobTitle")) in {"musician", "musicien", "singer", "chanteur"})):
+            if not _is_musical_profile(node):
                 continue
             if words(node.get("name")) not in known_names:
                 continue
