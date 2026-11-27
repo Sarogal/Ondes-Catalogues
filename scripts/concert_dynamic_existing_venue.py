@@ -1046,9 +1046,72 @@ def _replay_reason(exc):
     return "invalid_event_node"
 
 
+def _official_incomplete_venue_address(raw, event, venue):
+    """A known official room need not wait for its historical pin correction.
+
+    Only an explicitly incomplete, already-published municipal/unchecked
+    site may use its own complete French postal address. This is concert
+    identity evidence, NOT permission to alter the venue or its coordinates.
+    Populated catalogue fields and explicit source fields must still agree.
+    """
+    import existing_venue_geo_evidence as geo
+    from venue_address_osm_source import eligible_address
+
+    missing = {"", "a verifier", "adresse exacte a verifier"}
+    old_street, old_postal = venue.get("address"), venue.get("postalCode")
+    if (not geo.eligible(venue)
+            or not (normal(old_street) in missing or normal(old_postal) in missing)
+            or raw.get("url") != event.get("officialUrl")):
+        return False
+    place = raw.get("location")
+    if (not isinstance(place, dict)
+            or not bridge._event_types(place.get("@type")) & {"Place", "MusicVenue"}):
+        return False
+    address = place.get("address")
+    if (not isinstance(address, dict)
+            or "PostalAddress" not in bridge._event_types(address.get("@type"))):
+        return False
+    street, postal, city = (address.get(k) for k in
+                            ("streetAddress", "postalCode", "addressLocality"))
+    if (not all(isinstance(x, str) for x in (street, postal, city))
+            or not normal(city) or normal(city) != normal(venue.get("city"))
+            or not re.fullmatch(r"[0-9]{5}", postal)
+            or not eligible_address(dict(venue, address=street, postalCode=postal))
+            or not geo.STREET.fullmatch(street.strip())
+            or geo.NONVENUE.search(normal(street))):
+        return False
+    # Check the department when its postal prefix is unambiguous. Corsica's
+    # postal codes do not distinguish the two administrative departments.
+    department = venue.get("department")
+    prefix = ("20" if department in {"2A", "2B"} else department)
+    if (not isinstance(prefix, str) or not re.fullmatch(r"[0-9]{2,3}", prefix)
+            or not postal.startswith(prefix)):
+        return False
+    for old, fresh in ((old_street, street), (old_postal, postal)):
+        if normal(old) not in missing and normal(old) != normal(fresh):
+            return False
+    country = address.get("addressCountry")
+    if isinstance(country, dict):
+        country = country.get("name") or country.get("@id")
+    if normal(country) not in {"fr", "france", "republique francaise"}:
+        return False
+    for field, expected in (("streetAddress", street), ("postalCode", postal),
+                            ("addressLocality", city)):
+        if place.get(field) not in (None, "") and normal(place[field]) != normal(expected):
+            return False
+    for country in (place.get("country"), place.get("addressCountry")):
+        if country in (None, ""):
+            continue
+        if isinstance(country, dict):
+            country = country.get("name") or country.get("@id")
+        if normal(country) not in {"fr", "france", "republique francaise"}:
+            return False
+    return True
+
+
 def _event(raw, event, venue, artists, *, accept_generic=False,
            fetch=None, cache=None, html=None, allow_visible_address=False,
-           profile_scan_day=None):
+           allow_incomplete_official_venue=False, profile_scan_day=None):
     """Verify one complete first-party concert event; never join evidence."""
     types = bridge._event_types(raw.get("@type")) if isinstance(raw, dict) else set()
     require("MusicEvent" in types or (accept_generic and "Event" in types),
@@ -1077,7 +1140,10 @@ def _event(raw, event, venue, artists, *, accept_generic=False,
             normal(location.get("name")) == normal(venue["name"]),
             "first-party event names another venue")
     addr = location.get("address")
-    if addr is None and allow_visible_address and accept_generic:
+    if (allow_incomplete_official_venue
+            and _official_incomplete_venue_address(raw, event, venue)):
+        pass  # No venue mutation; the separate geographic preflight owns it.
+    elif addr is None and allow_visible_address and accept_generic:
         require(_missing_address_from_own_visible_event(raw, event, venue, html),
                 "physical venue address absent")
     else:
@@ -1286,6 +1352,7 @@ def validate(approval, venues, artists, today, *, fetch=None):
                                 accept_generic=(is_single_osm or is_address or is_official),
                                 fetch=fetch, cache=cache, html=html,
                                 allow_visible_address=_unique_address_event(events, event["officialUrl"]),
+                                allow_incomplete_official_venue=is_official,
                                 profile_scan_day=checked))
         except (ValueError, KeyError, TypeError) as exc:
             rejected.add(_replay_reason(exc))

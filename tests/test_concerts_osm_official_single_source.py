@@ -157,6 +157,76 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
                 self.assertEqual(eligible[0][2], fixture.VENUE_ID)
                 self.assertEqual(eligible[0][0], URL)
 
+    def test_official_concert_can_publish_before_incomplete_venue_pin_is_corrected(self):
+        catalogue = copy.deepcopy(BASE)
+        site = next(v for v in catalogue["venues"] if v["id"] == fixture.VENUE_ID)
+        site.update(address="Adresse exacte à vérifier", postalCode="À vérifier",
+                    geoPrecision="centre de commune (position indicative, pas la salle)",
+                    geoSource="Géolocalisation indicative par commune")
+        old_site = copy.deepcopy(site)
+        with tempfile.TemporaryDirectory() as directory:
+            sources = Path(directory) / "sources.json"
+            sources.write_text(json.dumps({
+                "schema": "grossesondes.concert.sourcelist.v1",
+                "venues": [{"kind": "official_venue_agenda_candidate",
+                            "name": site["name"], "city": site["city"],
+                            "url": "https://nouveau-domaine-independant.fr/"}]
+            }), encoding="utf-8")
+            # Exercise a complete, unnumbered postal street, as used by
+            # venues with a municipal pin. The Bikini fixture's additional
+            # business-park suffix is intentionally outside this strict route.
+            def official_page(**kwargs):
+                return fixture.page(URL, **kwargs).replace(
+                    json.dumps(next(v for v in BASE["venues"]
+                                    if v["id"] == fixture.VENUE_ID)["address"]),
+                    json.dumps("Allée François Mitterrand"))
+            original = official_page()
+            def only_official(body):
+                def fetch(url, cache):
+                    self.assertEqual(url, URL)
+                    return body
+                return fetch
+            with mock.patch.object(pipeline.official_source, "SOURCES", sources), \
+                 mock.patch.object(identity.official_source, "SOURCES", sources):
+                proposals, report = pipeline.build(
+                    registry(), catalogue, {"schema": publisher.SCHEMA, "approvals": []},
+                    TODAY, fetch=only_official(original))
+                self.assertEqual(len(proposals["approvals"]), 1, report)
+                signed = proposals["approvals"][0]
+                self.assertEqual(signed["officialEvidence"][0]["proofType"],
+                                 identity.OFFICIAL_SOURCE_PROFILE)
+                venues = {v["id"]: v for v in catalogue["venues"]}
+                artists = {a["id"]: a for a in catalogue["artists"]}
+                with mock.patch.object(identity, "safe_fetch", side_effect=only_official(original)):
+                    merged, counts = publisher.merge(catalogue, catalogue, proposals, TODAY)
+                    self.assertEqual(counts["newEvents"], 1, counts)
+                    self.assertEqual(next(v for v in merged["venues"] if v["id"] == site["id"]), old_site)
+                self.assertEqual(site, old_site)
+                for body in (
+                    official_page(city="Paris"),
+                    official_page(country="BE"),
+                    official_page(postal="75000"),
+                    official_page(postal="À vérifier"),
+                    official_page(venue_name="Other Room"),
+                    official_page(date="2027-03-06"),
+                    official_page(status="EventCancelled"),
+                    official_page(genres=False),
+                    original.replace('"url": "' + URL + '"', '"url": null'),
+                    fixture.page(URL),  # compound street/park address stays held
+                    original.replace(json.dumps("Allée François Mitterrand"),
+                                     json.dumps("Adresse exacte à vérifier")),
+                ):
+                    with self.subTest(body=body[:160]), self.assertRaises(ValueError):
+                        identity.validate(signed, venues, artists, TODAY, fetch=only_official(body))
+                for changed in (
+                    dict(site, address="19 rue Autre"),
+                    dict(site, postalCode="31999"),
+                    dict(site, geoPrecision="named-site-point"),
+                ):
+                    with self.subTest(changed=changed), self.assertRaises(ValueError):
+                        identity.validate(signed, {**venues, site["id"]: changed},
+                                          artists, TODAY, fetch=only_official(original))
+
     def test_unknown_site_does_not_bypass_geography_via_candidate_claim(self):
         catalogue = copy.deepcopy(BASE)
         site = next(v for v in catalogue["venues"]
