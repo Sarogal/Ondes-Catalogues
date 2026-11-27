@@ -23,9 +23,10 @@ def require(ok, reason):
         raise ValueError("OpenAgenda bill identity: " + reason)
 
 
-def possible(name):
+def possible(name, venue=None):
     return isinstance(name, str) and (
         bridge.is_unnamed_performer(name) or
+        oa.unnamed_venue_suffix(name, venue) or
         oa._named_guest(name) != " ".join(name.split()) or
         bool(re.search(r"\s+\|\s+", name)))
 
@@ -56,9 +57,11 @@ def source(original, catalogue):
                     and oa.normalized(artists[aid]["name"]) == oa.normalized(n)
                     for aid, n in zip(ids, old_names)),
             "original artist identities missing or altered")
+    venues = [v for v in catalogue["venues"] if v["id"] == event.get("venueId")]
+    require(len(venues) == 1, "missing published physical venue")
     names = []
     for name in old_names:
-        if bridge.is_unnamed_performer(name):
+        if bridge.is_unnamed_performer(name) or oa.unnamed_venue_suffix(name, venues[0]):
             continue
         name = oa._named_guest(name)
         parts = re.split(r"\s+\|\s+", name)
