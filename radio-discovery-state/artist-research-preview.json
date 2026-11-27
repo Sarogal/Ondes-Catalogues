@@ -3,11 +3,11 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 172,
+  "observedNameCount": 176,
   "dueNameCount": 57,
-  "attemptedCount": 4,
+  "attemptedCount": 3,
   "serviceFailure": "http_503",
-  "retryAfterKey": "talco",
+  "retryAfterKey": "tefy clouds",
   "entries": {
     "2000 fm": {
       "artistName": "2000 FM",
@@ -1314,6 +1314,38 @@
       "source": "musicbrainz",
       "sourceUrl": "https://musicbrainz.org/artist/4e622511-68d1-4544-ab6b-ffdd843f1c2b",
       "status": "name_hypothesis"
+    },
+    "tarakany!": {
+      "status": "not_found",
+      "artistName": "Tarakany!",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "tears for fears": {
+      "status": "name_hypothesis",
+      "mbid": "7c7f9c94-dee8-4903-892b-6cf44652e2de",
+      "genres": [
+        "art pop",
+        "electronic",
+        "new wave",
+        "pop",
+        "pop rock",
+        "psychedelic pop",
+        "rock",
+        "sophisti-pop",
+        "synth-pop"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/7c7f9c94-dee8-4903-892b-6cf44652e2de",
+      "artistName": "Tears for Fears",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
     },
     "television": {
       "artistName": "Television",

@@ -803,6 +803,20 @@
       "publicationAllowed": false
     },
     {
+      "stationuuid": "2b049e48-45b4-4f56-85c8-3329b08995be",
+      "streamSha256": "cc27fda30508d4f15b61b1b1b7e790be40c0efbddb926f0b269ceb95db6f2b1a",
+      "audioEvidenceDates": [
+        "2026-11-27"
+      ],
+      "liveFrameEvidenceDates": [],
+      "lastObservedDate": "2026-11-27",
+      "lastVerdict": "audio_sample_ok",
+      "repeatAudioSample": false,
+      "repeatLiveFrameEvidence": false,
+      "technicalQualified": false,
+      "publicationAllowed": false
+    },
+    {
       "stationuuid": "2d8f653c-0709-42b0-bc76-71434a8d31b7",
       "streamSha256": "d1acc08808177d77aa6a3dc02df4f7c699172cf867d4579205efa763b5255f72",
       "audioEvidenceDates": [

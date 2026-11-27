@@ -3,7 +3,7 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "technicallyQualifiedCount": 0,
-  "attemptedCount": 1,
+  "attemptedCount": 0,
   "advancingManifestCount": 4,
   "audioFrameCount": 2,
   "records": [
@@ -12,7 +12,7 @@
       "streamSha256": "a2310c074aaab7312ae96bf08593709cbac88651f1c8a0a9990d957a8cb8386e",
       "observedDate": "2026-11-27",
       "positiveObservationDates": [],
-      "observedInScan": true,
+      "observedInScan": false,
       "technicalQualified": false,
       "publicationAllowed": false,
       "verdict": "unsupported_hls_features"

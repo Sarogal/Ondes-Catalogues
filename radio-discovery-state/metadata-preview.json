@@ -4,8 +4,8 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
-  "stationsWithArtistHints": 109,
-  "distinctArtistHints": 172,
+  "stationsWithArtistHints": 110,
+  "distinctArtistHints": 176,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -15,7 +15,7 @@
       "stationuuid": "00033833-88e0-4d4c-bde6-3e7856f03eb8",
       "streamSha256": "eedfd32ae63ae382e4c0400d74255971160178dfd86305d72bbb84778b324d15",
       "observedDate": "2026-11-27",
-      "observedInScan": true,
+      "observedInScan": false,
       "approved": false,
       "publicationAllowed": false,
       "verdict": "metadata_no_parseable_title",
@@ -27,7 +27,7 @@
       "stationuuid": "00afce9b-b2f7-11e8-afe1-52543be04c81",
       "streamSha256": "ac7504b849059b0c617a229af0a5379df35583d97a85111520213c2002fdb523",
       "observedDate": "2026-11-27",
-      "observedInScan": true,
+      "observedInScan": false,
       "approved": false,
       "publicationAllowed": false,
       "verdict": "metadata_no_parseable_title",
@@ -62,7 +62,7 @@
       "stationuuid": "01c95dd5-7c23-43d2-be3e-6ae88a49dc26",
       "streamSha256": "d80f539a23b5dc575634359a2b8eae933abcb3807192e2fc1768f5189b14be09",
       "observedDate": "2026-11-27",
-      "observedInScan": true,
+      "observedInScan": false,
       "approved": false,
       "publicationAllowed": false,
       "verdict": "icy_artist_title_hint",
@@ -112,6 +112,24 @@
       "verdict": "metadata_no_parseable_title"
     },
     {
+      "stationuuid": "05412426-3d22-4e8e-bee0-92b71dac20ff",
+      "streamSha256": "bf1810018392cb47db73befc7e7017085f55a36af5b1605d6407cce9112ec745",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
+      "observations": [
+        {
+          "date": "2026-11-27",
+          "artistHint": "Jack Punk Rock Demonstration",
+          "titleSha256": "f58e3c58c3b217679fcda3d3673fbe4662f151541aab6b574073e6767fdf91ab"
+        }
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
+    },
+    {
       "alternativeAttempted": false,
       "alternativeVersion": 0,
       "approved": false,
@@ -157,6 +175,18 @@
       "stationuuid": "0cd363a2-d26f-4957-bc69-9b1f85b5f173",
       "streamSha256": "0e61f2ea0afc5d375fa933b4e03084c37d10bacb40505709ffa8e2d9d5eb7a51",
       "verdict": "hls_no_parseable_id3"
+    },
+    {
+      "stationuuid": "10d01aca-f5de-4591-b4e0-441ce8e1ddfe",
+      "streamSha256": "557aaa2ff12b76757fa71e73ac8c531052135e5f5927e64558aa2af1165fd00f",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "alternativeAttempted": false,
@@ -544,7 +574,7 @@
       "stationuuid": "2d8f653c-0709-42b0-bc76-71434a8d31b7",
       "streamSha256": "d1acc08808177d77aa6a3dc02df4f7c699172cf867d4579205efa763b5255f72",
       "observedDate": "2026-11-27",
-      "observedInScan": true,
+      "observedInScan": false,
       "approved": false,
       "publicationAllowed": false,
       "verdict": "icy_artist_title_hint",
@@ -1109,7 +1139,7 @@
       "stationuuid": "575c08a2-4325-4173-8373-b922c7438436",
       "streamSha256": "da95f8dfefcfb2cba1e77a27368b78c9ccc1b20a6055a347dcd23644e3ebadb9",
       "observedDate": "2026-11-27",
-      "observedInScan": true,
+      "observedInScan": false,
       "approved": false,
       "publicationAllowed": false,
       "verdict": "icy_artist_title_hint",
@@ -1378,7 +1408,7 @@
       "stationuuid": "76200b90-939a-46ad-9b37-069f32ba4366",
       "streamSha256": "d4533161a11fed9e2f4e982f99d3d385c7ff3c2f87f8ed161777ea7ed1d96ca8",
       "observedDate": "2026-11-27",
-      "observedInScan": true,
+      "observedInScan": false,
       "approved": false,
       "publicationAllowed": false,
       "verdict": "icy_artist_title_hint",
@@ -1831,40 +1861,50 @@
       "alternativeAttempted": false
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "981237b0-253c-4be9-81ce-6fcb86006733",
+      "streamSha256": "c73342d4af203f124e3209b0b1f19dc58d3aa6441959a24a97a50a97b0db7857",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "Tears for Fears",
           "date": "2026-11-26",
           "titleSha256": "786649fe89a3e308a5dea81184d5e66ab8892739fdd1beea22e9f8f5d359a0f5"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Weezer",
+          "titleSha256": "60834f90d7f7c599dfbf491a851dd7fcb17b228614e6639993d8f8146b808f86"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "981237b0-253c-4be9-81ce-6fcb86006733",
-      "streamSha256": "c73342d4af203f124e3209b0b1f19dc58d3aa6441959a24a97a50a97b0db7857",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "98e39928-1801-414c-b6e7-dd7b58614dd6",
+      "streamSha256": "4566531dbd4311deaf0cac5b8c4b1848f5232820ffe9ead59ca6a58b9208aff2",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "Saxon",
           "date": "2026-11-26",
           "titleSha256": "e1d2cd1d08470ea5550bc7d6506dfe64c807c3b231e89c7e208d3cf74a564f9c"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Scorpions",
+          "titleSha256": "0d7a70d27e73857ebad48de995dc6081c3a509e6ae6f5fa59ab59624b7f412fc"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "98e39928-1801-414c-b6e7-dd7b58614dd6",
-      "streamSha256": "4566531dbd4311deaf0cac5b8c4b1848f5232820ffe9ead59ca6a58b9208aff2",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "alternativeAttempted": false,
@@ -1885,40 +1925,50 @@
       "verdict": "icy_artist_title_hint"
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "9c634ba6-a5f2-47e5-858b-d4deff8071b8",
+      "streamSha256": "3aa0ad7bdd1da97b23357424f97f458c1ec7df16543dc61b9825a4124e84d481",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "The Rolling Stones",
           "date": "2026-11-26",
           "titleSha256": "548ab0b248bd11f36381755faceff7674a9eb65c7d3cf6cd2e13f82ed525a4e7"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Scorpions",
+          "titleSha256": "992b3299061eb2b2e226baccfbb2ba6c122d1e0a85c66a1b9aee3bac5f9c76b3"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "9c634ba6-a5f2-47e5-858b-d4deff8071b8",
-      "streamSha256": "3aa0ad7bdd1da97b23357424f97f458c1ec7df16543dc61b9825a4124e84d481",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "a2d00de3-cd16-46c8-ac30-9e79e294cf47",
+      "streamSha256": "1defbb4eae2761c2f2a362187998d4d326a8480245dc7ba13cd89a4e985ea588",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "Foreigner",
           "date": "2026-11-26",
           "titleSha256": "c489b0b5619745358e07f83af1d745f9e1679465cbf496f3ae29fe255347e1f3"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Last Autumn's Dream",
+          "titleSha256": "5c0db6c969177d38a3e49f6fda4829ea2cf6004e92b4cec281aac18b20920109"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "a2d00de3-cd16-46c8-ac30-9e79e294cf47",
-      "streamSha256": "1defbb4eae2761c2f2a362187998d4d326a8480245dc7ba13cd89a4e985ea588",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "alternativeAttempted": false,
@@ -2298,7 +2348,7 @@
         }
       ],
       "observedDate": "2026-11-26",
-      "observedInScan": true,
+      "observedInScan": false,
       "publicationAllowed": false,
       "stationuuid": "d342e328-81bb-4026-9822-cd6c02313be0",
       "streamSha256": "bc56ddb29c4eff514166cbd9fa14d3d40c9679c76588cfd5a0979f8d182b593d",
@@ -2664,7 +2714,7 @@
         }
       ],
       "observedDate": "2026-11-26",
-      "observedInScan": true,
+      "observedInScan": false,
       "publicationAllowed": false,
       "stationuuid": "ed02a49b-11e2-4de3-b279-279529290257",
       "streamSha256": "4e27e4d6738f20999869a79a2470b349aa03f07f91b60abd99443bce0f4e76cb",

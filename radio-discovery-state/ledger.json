@@ -3,9 +3,9 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "automaticallyApprovedCount": 0,
-  "newCandidateCount": 1000,
-  "reobservedCandidateCount": 275,
-  "notSeenTodayCount": 1,
+  "newCandidateCount": 1,
+  "reobservedCandidateCount": 269,
+  "notSeenTodayCount": 1007,
   "records": [
     {
       "stationuuid": "00033833-88e0-4d4c-bde6-3e7856f03eb8",
@@ -321,10 +321,10 @@
       "lastSeen": "2026-11-27",
       "seenDays": 3,
       "name": "Punk Rock Demonstration",
-      "lastStatus": "needs_duplicate_review",
-      "duplicateRisk": true,
+      "lastStatus": "candidate_requires_qualification",
+      "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "05b390fc-7e45-46ac-bcac-35febc95b970",
@@ -937,10 +937,10 @@
       "lastSeen": "2026-11-27",
       "seenDays": 3,
       "name": "FIP Metal",
-      "lastStatus": "needs_duplicate_review",
-      "duplicateRisk": true,
+      "lastStatus": "candidate_requires_qualification",
+      "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "0f98ed94-dfc5-4f77-85ea-0b0766dca061",
@@ -1003,10 +1003,10 @@
       "lastSeen": "2026-11-27",
       "seenDays": 3,
       "name": "WYML 99.9",
-      "lastStatus": "needs_duplicate_review",
-      "duplicateRisk": true,
+      "lastStatus": "candidate_requires_qualification",
+      "duplicateRisk": false,
       "editorialSignal": "mixed_genre_review",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "10e3e11c-e10c-4347-851a-357ac2d95e96",
@@ -2439,6 +2439,17 @@
       "repeatedObservation": false
     },
     {
+      "stationuuid": "2b049e48-45b4-4f56-85c8-3329b08995be",
+      "firstSeen": "2026-11-27",
+      "lastSeen": "2026-11-27",
+      "seenDays": 1,
+      "name": "RadioBob",
+      "lastStatus": "candidate_requires_qualification",
+      "duplicateRisk": false,
+      "editorialSignal": "target_genre_indication",
+      "repeatedObservation": false
+    },
+    {
       "stationuuid": "2b6f002c-4a0b-4d9c-890a-c7df651ede9b",
       "firstSeen": "2026-11-27",
       "lastSeen": "2026-11-27",
@@ -3192,10 +3203,10 @@
       "lastSeen": "2026-11-27",
       "seenDays": 3,
       "name": "Nocturne Vault Radio",
-      "lastStatus": "needs_duplicate_review",
-      "duplicateRisk": true,
+      "lastStatus": "candidate_requires_qualification",
+      "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "3a26efde-8b70-11e9-ad01-52543be04c81",
@@ -4193,10 +4204,10 @@
       "lastSeen": "2026-11-27",
       "seenDays": 3,
       "name": "RADIO BOB Classic Rock",
-      "lastStatus": "needs_duplicate_review",
-      "duplicateRisk": true,
+      "lastStatus": "candidate_requires_qualification",
+      "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "4dc92838-01a2-4ed2-aec7-a03d66d37843",
@@ -6690,10 +6701,10 @@
       "lastSeen": "2026-11-27",
       "seenDays": 3,
       "name": "MaximusRockFM",
-      "lastStatus": "needs_duplicate_review",
-      "duplicateRisk": true,
+      "lastStatus": "candidate_requires_qualification",
+      "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "7a891923-9713-4577-a71f-d02a72001aee",
@@ -10177,10 +10188,10 @@
       "lastSeen": "2026-11-27",
       "seenDays": 3,
       "name": "ROCK FM METAL",
-      "lastStatus": "needs_duplicate_review",
-      "duplicateRisk": true,
+      "lastStatus": "candidate_requires_qualification",
+      "duplicateRisk": false,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": false
+      "repeatedObservation": true
     },
     {
       "stationuuid": "b31955c2-91a7-42ba-ba62-dc2d86b98967",
@@ -13510,10 +13521,10 @@
       "lastSeen": "2026-11-27",
       "seenDays": 3,
       "name": "Radio Caprice - Nu Metal",
-      "lastStatus": "candidate_requires_qualification",
-      "duplicateRisk": false,
+      "lastStatus": "needs_duplicate_review",
+      "duplicateRisk": true,
       "editorialSignal": "target_genre_indication",
-      "repeatedObservation": true
+      "repeatedObservation": false
     },
     {
       "stationuuid": "f65738f3-ddd7-49fc-bf72-15a1ad472338",
