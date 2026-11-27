@@ -85,12 +85,16 @@ An unchanged accepted release does not allocate another sequence.
 
 Before any rehearsal using actual credentials:
 
-- Replace the reserved `https://radio-preview.example.org/` placeholder
-  with an explicitly approved isolated public endpoint. The signed logo URLs
-  and verifier must use the same destination; do not silently rewrite signed
-  bytes or repoint the existing production Pages deployment.
-- Define how the dedicated laboratory ref is deployed to that endpoint and
-  how the independent deployment ID is obtained. A Git push is not deployment.
+- The proposed isolated rehearsal endpoint is now
+  `https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/refs/heads/radio-lab-publisher-rehearsal/`.
+  No production Pages settings are changed. The branch must be created by the
+  exact signed sequence-8 root transfer, never from main or the code branch.
+  GitHub Raw is only the rehearsal distribution endpoint, not a production
+  hosting decision. No signed bytes may be rewritten after signing.
+- A trusted deployment job must record the actual isolated ref/commit in
+  GitHub Deployments and independently verify the public pointer, body and
+  artwork. Raw CDN propagation can lag; retry the same commit and sequence.
+  A Git push or a successful deployment record alone is not acceptance.
 - Wire trusted manual jobs to transfer exact public snapshot material, verify
   the accepted deployment and atomically persist migrated evidence against the
   retained predecessor. Retain the previous accepted context on any failure.
