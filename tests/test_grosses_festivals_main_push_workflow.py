@@ -22,7 +22,7 @@ class FestivalTrustedPushTests(unittest.TestCase):
 
     def test_optional_ocr_cache_is_private_and_cannot_publish(self):
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        start = workflow.index("      - name: OCR statique borné")
+        start = workflow.index("      - name: OCR statique et DOM transportés")
         finish = workflow.index("      - name: Enregistrer exclusivement", start)
         step = workflow[start:finish]
         self.assertIn("continue-on-error: true", step)
@@ -35,10 +35,31 @@ class FestivalTrustedPushTests(unittest.TestCase):
         self.assertNotIn("secrets.", step)
         self.assertNotIn("--browser", step)
         self.assertNotIn("upload-artifact", step)
+        self.assertIn("--rendered-evidence", step)
+        self.assertIn("POSTER_DOM_TICK", step)
+        self.assertIn("report[\'review_only\'] is True", step)
         self.assertIn("git add -- automation-intake/grossesondes/official-poster-ocr-cache.json",
                       workflow[finish:])
         self.assertIn("push origin HEAD:automation/grossesondes-intake", workflow[finish:])
         self.assertNotIn("git add -- docs/", workflow)
+
+    def test_dynamic_poster_dom_job_has_no_private_access(self):
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        start = workflow.index("  poster_dom_readonly:\n")
+        end = workflow.index("\n  watch:\n", start)
+        browser = workflow[start:end]
+        self.assertIn("contents: read", browser)
+        self.assertIn("persist-credentials: false", browser)
+        self.assertIn("continue-on-error: true", browser)
+        self.assertIn("chromium_sandbox=True", browser)
+        self.assertIn("--capture-rendered-evidence", browser)
+        self.assertIn("--browser", browser)
+        self.assertIn("retention-days: 1", browser)
+        for forbidden in ("secrets.", "private-cache", "automation-intake/", "contents: write"):
+            self.assertNotIn(forbidden, browser)
+        self.assertIn("needs: [poster_dom_readonly]", workflow[end:])
+        self.assertIn("!cancelled()", workflow[end:])
+        self.assertIn("name: grossesondes-public-poster-dom", workflow[end:])
 
     def test_trusted_push_wakes_only_independent_publisher(self):
         publisher = PUBLISHER.read_text(encoding="utf-8")
