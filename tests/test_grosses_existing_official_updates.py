@@ -1125,6 +1125,51 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
                 ["Foo", "Foo Fighters"], ["Foo Fighters"]),
             ["Foo", "Foo Fighters"])
 
+    def test_large_isolated_root_and_programme_survive_full_publisher(self):
+        site = "https://festival-exemple.fr/"
+        url = site + "en/lineup"
+        row = festival("festival-exemple-2027", site, dates=("2027-06-17", "2027-06-20"))
+        row["name"] = "Festival Exemple"
+        row.pop("lineup")
+        row["bands"] = None
+        padding = "<script>" + "x" * 700_000 + "</script>"
+        root = '<main><a href="/en/lineup">Line up</a></main>'
+        grid = ('<main><h1>Festival Exemple 2027</h1><h2>Line-Up</h2>'
+                '<p>Thursday 17 June Friday 18 June Saturday 19 June Sunday 20 June</p>'
+                '<a href="/en/artist/alpha-band">Alpha Band</a>'
+                '<a href="/en/artist/beta-band">Beta Band</a></main>')
+        original = doc(row)
+        for raw_root in (None, "<main>Loading</main>", root):
+            with self.subTest(raw_root=raw_root):
+                def fetch(address):
+                    if address == site and raw_root is not None:
+                        return raw_root
+                    raise ValueError("Unbounded HTML body")
+                calls = []
+                def browser(address):
+                    calls.append(address)
+                    return {site: padding + root, url: padding + grid}[address]
+                updated, report = apply_independently_verified_updates(
+                    original, original, DAY, tick=0, fetch=fetch,
+                    browser_fetch=browser, browser_sites=(site,),
+                    commune_resolver=lambda *_: None)
+                self.assertEqual(updated["festivals"][0]["lineup"], ["Alpha Band", "Beta Band"])
+                self.assertIn(url, calls)
+                self.assertEqual(report["official_edition_diagnostics"][0]["linked_pages_fetched"], 1)
+
+    def test_large_optional_ocr_dom_cannot_abort_publisher(self):
+        from grossesondes_existing_official_updates import independently_read_posters
+        site = "https://festival-exemple.fr/"
+        row = festival("festival-exemple-2027", site, dates=("2027-06-17", "2027-06-20"))
+        root = '<main><p>Festival Exemple 2027</p></main>'
+        for size in (700_000, 1_500_000):
+            with self.subTest(size=size):
+                rendered = "<script>" + "x" * size + "</script>" + root
+                def unexpected_reader(*args, **kwargs):
+                    self.fail("No official poster candidate")
+                self.assertEqual(independently_read_posters(
+                    site, row, root, rendered, unexpected_reader, [1]), ([], None, []))
+
     def test_linkless_raw_root_recovers_only_signed_rendered_programme(self):
         site = "https://festival-exemple.fr/"
         url = site + "en/lineup"
