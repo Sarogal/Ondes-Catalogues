@@ -43,17 +43,42 @@ def identity(row):
     return city.strip(), name.strip()
 
 
+def _bounded_cultural_text(value):
+    """Read structured descriptions only as discovery hints, never proof."""
+    import json
+    stack = [(value, 0)]
+    seen = 0
+    while stack and seen < 200:
+        item, depth = stack.pop()
+        seen += 1
+        if depth > 5:
+            continue
+        if isinstance(item, str) and len(item) <= 30000:
+            stripped = item.strip()
+            if stripped.startswith(("[", "{")):
+                try:
+                    nested = json.loads(stripped)
+                except (ValueError, RecursionError):
+                    continue
+                if isinstance(nested, (list, dict)):
+                    stack.append((nested, depth + 1))
+                continue
+            yield item
+        elif isinstance(item, list) and len(item) <= 100:
+            stack.extend((child, depth + 1) for child in reversed(item))
+        elif isinstance(item, dict) and len(item) <= 30:
+            # Do not match metadata keys, language labels or unknown objects.
+            stack.extend((child, depth + 1) for key, child in reversed(list(item.items()))
+                         if isinstance(key, str) and norm_text(key) in
+                         ("value", "valeur", "text", "texte", "description",
+                          "label", "libelle", "titre", "name", "nom", "fr", "fr fr",
+                          "content", "contenu"))
+
+
 def is_family_lead(row):
-    for key in CULTURAL_FIELDS:
-        value = row.get(key)
-        if isinstance(value, str) and len(value) <= 30000:
-            if FAMILY.search(norm_text(value)):
-                return True
-        elif isinstance(value, list) and len(value) <= 100:
-            if any(isinstance(v, str) and len(v) <= 1000
-                   and FAMILY.search(norm_text(v)) for v in value):
-                return True
-    return False
+    return any(FAMILY.search(norm_text(text))
+               for key in CULTURAL_FIELDS
+               for text in _bounded_cultural_text(row.get(key)))
 
 
 def parse_page(doc, page):

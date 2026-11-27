@@ -54,6 +54,22 @@ class CulturalDiscoveryTests(unittest.TestCase):
         self.assertEqual(counts["accessible_au_public"], {"boolean_text": 1, "boolean": 1})
         self.assertNotIn("secret", str(counts))
 
+    def test_structured_descriptions_and_json_domain_labels(self):
+        for value in ([{"lang": "fr", "value": "Ateliers pour enfants"}],
+                      '[{"libelle": "Éveil musical"}]',
+                      {"fr": {"texte": "Spectacles jeune public"}}):
+            row = dict(fixture(1), nom_du_lieu="Musée municipal", description=value)
+            result = scan(fetch=lambda _: {"meta": {"total": 1}, "data": [row]})
+            self.assertEqual(len(result["records"]), 1)
+            self.assertFalse(result["records"][0]["public_eligible"])
+
+    def test_structured_metadata_is_not_family_evidence(self):
+        row = dict(fixture(1), nom_du_lieu="Musée municipal",
+                   description=[{"url": "https://example.org/enfants", "enfants": True,
+                                 "value": "Expositions temporaires"}])
+        result = scan(fetch=lambda _: {"meta": {"total": 1}, "data": [row]})
+        self.assertEqual(result["records"], [])
+
     def test_generic_culture_not_assumed_family_relevant(self):
         row = dict(fixture(1), nom_du_lieu="Musée municipal")
         result = scan(fetch=lambda _: {"meta": {"total": 1}, "data": [row]})
