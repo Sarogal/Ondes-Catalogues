@@ -221,7 +221,7 @@ jobs:
       - name: Read durable discovery state
         uses: actions/checkout@v4
         with:
-          ref: state/go-radio-discovery-preview
+          ref: state/go-radio-autonomous
           path: go-radio-state-checkout
           persist-credentials: false
           sparse-checkout: |
@@ -287,11 +287,8 @@ jobs:
               cp "$state/stream-evidence.json" "$previous/stream-evidence.json"
             fi
           else
-            # Bootstrap from the last verified v8 reconciliation, never
-            # silently reset an existing state on a transport error.
-            gh run download 45606141697 --repo "$GITHUB_REPOSITORY" \
-              --name go-radio-discovery-45606141697 --dir "$previous"
-            test -f "$previous/ledger.json"
+            echo "Autonomous state missing; refusing V8 fallback" >&2
+            exit 1
           fi
       - name: Scan Radio Browser without UUID allowlist
         shell: bash
@@ -325,58 +322,55 @@ jobs:
               --retry-state "$prior_retry" --retry-output "$retry" \
               --output "$RUNNER_TEMP/go-radio-discovery/candidates.json"
           fi
-      - name: Select signed bootstrap and reconcile candidates (read-only)
+      - name: Authenticate current real catalogue and reconcile candidates
         shell: bash
         env:
-          BOOTSTRAP_SHA256: f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40
+          GH_TOKEN: ${{ github.token }}
+          RADIO_LAB_PUBLIC_KEY: ${{ vars.RADIO_LAB_PUBLIC_KEY }}
+          RADIO_LAB_KEY_ID: ${{ vars.RADIO_LAB_KEY_ID }}
         run: |
           set -euo pipefail
-          baseline="$RUNNER_TEMP/go-radio-selected-baseline.json"
-          curl --fail --silent --show-error --max-time 45 --max-filesize 2000000 \
-            "https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/feature/go-radio-test-v2-isolated-20261123/grossesondes/radio-test-v2/releases/${BOOTSTRAP_SHA256}.json" \
-            --output "$baseline"
-          printf '%s  %s\n' "$BOOTSTRAP_SHA256" "$baseline" | sha256sum --check --strict
-          pointer="$RUNNER_TEMP/go-radio-selected-pointer.json"
-          curl --fail --silent --show-error --max-time 45 --max-filesize 16384 \
-            "https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/feature/go-radio-test-v2-isolated-20261123/grossesondes/radio-test-v2/current.json" \
-            --output "$pointer"
-          # A persisted signed anchor must authenticate against the pinned bootstrap.
-          # A missing anchor is allowed only during this explicit v8 bootstrap rollout.
-          anchor=go-radio-state-checkout/radio-discovery-state/release-anchor.json
-          if [[ -e "$anchor" ]]; then
-            PYTHONPATH=radio-catalog-lab/tools python - "$anchor" <<'PY'
-          import sys
+          PYTHONPATH=radio-catalog-lab/tools python - <<'PY'
+          import os, json, subprocess, datetime
           from pathlib import Path
-          from radio_daily_baseline_verify import verify_pointer
-          path=Path(sys.argv[1])
-          if not path.is_file() or path.stat().st_size > 16384:
-              raise ValueError("invalid durable release anchor")
-          verify_pointer(path.read_bytes())
+          from radio_daily_baseline_verify import cli_anchor, verify_baseline, strict_json
+          from radio_daily_release_context import prepare, STATE_FILES
+          from radio_daily_v9_generator import encode
+          state=Path("go-radio-state-checkout/radio-discovery-state")
+          tmp=Path(os.environ["RUNNER_TEMP"])
+          root=tmp/"go-radio-discovery"
+          pointer=(state/"release-anchor.json").read_bytes()
+          body=(state/"release-baseline.json").read_bytes()
+          old=strict_json((state/"release-context.json").read_bytes())
+          p=strict_json(pointer)
+          seq=p["release_sequence"]
+          sha=p["content_sha256"]
+          assert seq>=9 and old["selectedSequence"]==seq and old["selectedSha256"]==sha
+          assert old["remoteReadbackVerified"] is True and old["deploymentVerified"] is True and old["simulated"] is False
+          anchor=cli_anchor(sha,seq)
+          verify_baseline(pointer,body,**anchor)
+          # Never scan from a stale accepted state after an interrupted publication.
+          head=json.loads(subprocess.check_output(["gh","api","repos/Sarogal/Ondes-Catalogues/git/ref/heads/radio-lab-publisher-rehearsal"]))["object"]["sha"]
+          assert head==old["gitCommit"], "remote release differs from accepted state"
+          day=datetime.datetime.now(datetime.timezone.utc).date().isoformat()
+          evidence={key:strict_json((state/name).read_bytes()) for key,name in STATE_FILES.items()}
+          raw,selected,migrated,context=prepare(pointer,lambda path,length:body,
+              day=day,state=evidence,prior_pointer=pointer,prior_body=body,**anchor)
+          assert not migrated and selected["advanced"] is False
+          context.update({k:old[k] for k in ("gitCommit","deploymentId","remoteReadbackVerified","deploymentVerified","simulated","mirroredLegacyArtwork")})
+          (tmp/"go-radio-selected-pointer.json").write_bytes(pointer)
+          (tmp/"go-radio-selected-baseline.json").write_bytes(raw)
+          (root/"release-anchor.json").write_bytes(pointer)
+          (root/"baseline-selection.json").write_bytes(encode(selected))
+          (root/"release-context.json").write_bytes(encode(context))
+          with open(os.environ["GITHUB_ENV"],"a") as env:
+              for k,v in {"BASELINE_SHA256":sha,"BASELINE_SEQUENCE":seq,
+                          "RADIO_LAB_PUBLIC_KEY":anchor["public_key"],"RADIO_LAB_KEY_ID":anchor["key_id"]}.items():
+                  print(f"{k}={v}",file=env)
+          print("REAL_RADIO_BASELINE",seq,sha,head)
           PY
-          fi
-          python radio-catalog-lab/tools/radio_daily_release_context.py \
-            --pointer "$pointer" --baseline "$baseline" \
-            --previous-dir "$RUNNER_TEMP/go-radio-previous" \
-            --day "$(date -u +%F)" \
-            --selection-report "$RUNNER_TEMP/go-radio-discovery/baseline-selection.json" \
-            --report "$RUNNER_TEMP/go-radio-discovery/release-context.json"
-          python - <<'PY'
-          import json, os, re
-          from pathlib import Path
-          context=json.loads((Path(os.environ["RUNNER_TEMP"])/"go-radio-discovery/release-context.json").read_text())
-          assert context["signatureVerified"] is True and context["publicationAllowed"] is False
-          sha=context["selectedSha256"]
-          seq=context["selectedSequence"]
-          assert re.fullmatch("[0-9a-f]{64}",sha) and type(seq) is int and seq>=8
-          with open(os.environ["GITHUB_ENV"],"a") as f:
-              f.write(f"BASELINE_SHA256={sha}\nBASELINE_SEQUENCE={seq}\n")
-          PY
-          # The verified pointer is public material, not a signing key.
-          cp "$pointer" "$RUNNER_TEMP/go-radio-discovery/release-anchor.json"
-          # Digest is pinned to the previously signed TEST v8. This is a
-          # classification-only report, not authority to admit or sign.
           python radio-catalog-lab/tools/radio_catalog_daily_candidate_reconcile.py \
-            --catalog "$baseline" \
+            --catalog "$RUNNER_TEMP/go-radio-selected-baseline.json" \
             --discovery "$RUNNER_TEMP/go-radio-discovery/candidates.json" \
             --output "$RUNNER_TEMP/go-radio-discovery/reconciliation-v8.json"
       - name: Retain cross-day candidates without approving any stream
@@ -589,7 +583,7 @@ jobs:
             --decisions "$root/decision-preview.json" --programme "$root/programme-preview.json" \
             --baseline-sha256 "$BASELINE_SHA256" \
             --output "$root/qualification-v3-preview.json"
-      - name: Sample existing TEST v8 streams for maintenance review
+      - name: Sample current signed catalogue streams for maintenance review
         if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
         shell: bash
         run: |
@@ -812,7 +806,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: state/go-radio-discovery-preview
+          ref: state/go-radio-autonomous
       - name: Require exact collection artifact identity
         shell: bash
         env:
@@ -844,8 +838,10 @@ jobs:
           pointer = json.loads(anchor.read_bytes())
           context = json.loads((src / "release-context.json").read_bytes())
           if (context.get("signatureVerified") is not True or context.get("publicationAllowed") is not False
-                  or context.get("advanced") is not False or pointer.get("release_sequence") != 8
-                  or pointer.get("content_sha256") != "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40"
+                  or context.get("advanced") is not False or pointer.get("release_sequence",0) < 9
+                  or context.get("remoteReadbackVerified") is not True or context.get("deploymentVerified") is not True
+                  or context.get("simulated") is not False
+                  or anchor.read_bytes() != Path("radio-discovery-state/release-anchor.json").read_bytes()
                   or pointer.get("release_sequence") != context.get("selectedSequence")
                   or pointer.get("content_sha256") != context.get("selectedSha256")):
               raise ValueError("release anchor does not match verified context")
@@ -951,7 +947,7 @@ jobs:
                   assert first <= last <= day and last < next_day <= last+dt.timedelta(days=7)
                   assert type(row["attemptCount"]) is int and 1 <= row["attemptCount"] <= 20
               (dst / "discovery-retry.json").write_text(json.dumps(queue,ensure_ascii=False,indent=2)+"\n")
-          # Only exact objects named by the pinned authenticated v8 may be
+          # Only exact objects named by the authenticated current catalogue may be
           # retained. Never copy an arbitrary artifact subtree into Git.
           cache_report = src / "inherited-artwork-cache.json"
           if cache_report.exists():
@@ -993,6 +989,7 @@ jobs:
                           f.write(data)
           # Persist the public signed reference with the evidence in one Git commit.
           (dst / "release-anchor.json").write_bytes(anchor.read_bytes())
+          (dst / "release-context.json").write_bytes((src / "release-context.json").read_bytes())
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -1000,6 +997,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Durable evidence already up to date"
           else
-            git commit -m "state(radio-preview): retain discovery evidence"
-            git push origin HEAD:refs/heads/state/go-radio-discovery-preview
+            git commit -m "state(radio-autonomous): retain discovery evidence"
+            git push origin HEAD:refs/heads/state/go-radio-autonomous
           fi
