@@ -1606,6 +1606,11 @@ class DailyProgrammeTests(unittest.TestCase):
             commune_resolver=lambda *_: None)
         self.assertEqual(new["festivals"][0]["lineup"], expected)
         self.assertTrue(_verified_official_update_delta(row, new["festivals"][0]))
+        dated_opening = html.replace("Programme 2027", "Programme").replace(
+            "EXPOSITION : Peintre", "EXPOSITION : Vernissage le 13 août 2027")
+        self.assertEqual(daily_programme_artists(page(dated_opening), dated_opening, row, DAY), expected)
+        no_year = dated_opening.replace("13 août 2027", "13 août")
+        self.assertEqual(daily_programme_artists(page(no_year), no_year, row, DAY), [])
         for altered in (
             html.replace("Programme 2027", "Programme 2026"),
             html.replace("dimanche 15", "lundi 15"),
