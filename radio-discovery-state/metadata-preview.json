@@ -1078,7 +1078,7 @@
     {
       "stationuuid": "542c83b8-7465-46e9-a083-c2cc417d315d",
       "streamSha256": "4477bed328d8490928df46a3ec2023cbe492cce000c9e3d9d31566172770020f",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1090,7 +1090,7 @@
     {
       "stationuuid": "54645bcf-0356-4680-bbae-457a9906dcbe",
       "streamSha256": "7a93a28815bab62002dca36586a81f9a3dfb217e2459fed63e833f514dd12697",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1135,7 +1135,7 @@
     {
       "stationuuid": "5c8f8628-58bd-433b-b3a2-9bdd63e64cef",
       "streamSha256": "3e297cdb425f47ba6944c96fb68ece4e35db6e95374c581fabde0dc8e7164ea4",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1150,6 +1150,11 @@
           "date": "2026-11-26",
           "artistHint": "Ratt",
           "titleSha256": "346dd7d6c276e845e06ddcdf030ce0e1069f941fc6aacd3411238d1a8a48867c"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Judas Priest",
+          "titleSha256": "7d2d03b72b1f6f6a43258d2238f5ed4661b903c49d42eb8c5ac636b13c9ad448"
         }
       ],
       "alternativeVersion": 0,
@@ -1186,11 +1191,11 @@
     {
       "stationuuid": "62ef2552-35e9-433a-b747-efdae52bfe4f",
       "streamSha256": "ed7da234ceab2923c1e84a6e7772716502e28ea3d6684d4b2027145fe61de218",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
-      "verdict": "icy_artist_title_hint",
+      "verdict": "metadata_connection_review",
       "observations": [
         {
           "date": "2026-11-25",
@@ -1203,13 +1208,13 @@
           "titleSha256": "da2348e8889f055a2ff5223632b77b11dfc520ad014373bde42ca9c7fb32e60a"
         }
       ],
-      "alternativeVersion": 0,
-      "alternativeAttempted": false
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "652a2fa1-d3fe-4724-a3eb-3d6b7fb1e687",
       "streamSha256": "d7735960dc083e55ebbcf7c294be2faf0e517ed4355da8d8c7459963cdebd976",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1221,7 +1226,7 @@
     {
       "stationuuid": "679e5c4f-740d-4c92-9d22-0d7948c5910d",
       "streamSha256": "73ab626bf03ab3f1b73fee1a89930ef24bfd4bd30f673d9a042b2da2370de07d",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,

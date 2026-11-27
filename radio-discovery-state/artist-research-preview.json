@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 153,
   "dueNameCount": 44,
-  "attemptedCount": 1,
+  "attemptedCount": 4,
   "serviceFailure": "http_503",
-  "retryAfterKey": "les touffes kretiennes",
+  "retryAfterKey": "minor threat",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -704,6 +704,28 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "lower class brats": {
+      "status": "name_hypothesis",
+      "mbid": "1f77b76b-91c3-4f9e-bb60-336e7012b769",
+      "genres": [],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/1f77b76b-91c3-4f9e-bb60-336e7012b769",
+      "artistName": "Lower Class Brats",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "luma sol": {
+      "status": "not_found",
+      "artistName": "Luma Sol",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "maluma": {
       "status": "name_hypothesis",
       "mbid": "e8979f75-9110-4df8-ac70-898898d080d1",
@@ -719,6 +741,15 @@
       "artistName": "Maluma",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "marble carrion (новосибирск)": {
+      "status": "not_found",
+      "artistName": "Marble Carrion (Новосибирск)",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
       "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false

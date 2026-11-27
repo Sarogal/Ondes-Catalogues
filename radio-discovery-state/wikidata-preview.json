@@ -5,9 +5,9 @@
   "approvedCount": 0,
   "observedNameCount": 153,
   "dueNameCount": 13,
-  "attemptedCount": 1,
-  "serviceFailure": "service_or_response_held",
-  "retryAfterKey": "marble carrion (новосибирск)",
+  "attemptedCount": 6,
+  "serviceFailure": null,
+  "retryAfterKey": null,
   "entries": {
     "2000 fm": {
       "status": "identity_held",
@@ -93,6 +93,15 @@
       "status": "not_found",
       "artistName": "Ali X, Ximena & PVLOMO",
       "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "andy taylor": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Andy Taylor",
+      "checkedAt": "2026-11-27",
       "source": "wikidata",
       "researchVersion": 2,
       "identityVerified": false,
@@ -768,6 +777,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "minutemen": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Minutemen",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "mlkuz": {
       "status": "not_found",
       "artistName": "MLKUZ",
@@ -844,6 +862,29 @@
       "status": "not_found",
       "artistName": "One and a half dog",
       "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "ozzy osbourne": {
+      "status": "name_hypothesis",
+      "qid": "Q133151",
+      "genresById": {
+        "Q1133657": "traditional heavy metal",
+        "Q186170": "doom metal",
+        "Q188539": "glam metal",
+        "Q2045695": "shock rock",
+        "Q38848": "heavy metal music",
+        "Q83270": "hard rock"
+      },
+      "musicbrainzIds": [
+        "8aa5b65a-5b3c-4029-92bf-47a544356934"
+      ],
+      "sourceUrl": "https://www.wikidata.org/wiki/Q133151",
+      "genreSource": "wikidata-P136",
+      "artistName": "Ozzy Osbourne",
+      "checkedAt": "2026-11-27",
       "source": "wikidata",
       "researchVersion": 2,
       "identityVerified": false,
@@ -1125,10 +1166,47 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "talco": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Talco",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "tarakany!": {
+      "status": "name_hypothesis",
+      "qid": "Q499757",
+      "genresById": {
+        "Q11366": "alternative rock",
+        "Q487914": "pop-punk"
+      },
+      "musicbrainzIds": [
+        "6e2f63bf-c1eb-473f-a2aa-cd2daf08f5ec"
+      ],
+      "sourceUrl": "https://www.wikidata.org/wiki/Q499757",
+      "genreSource": "wikidata-P136",
+      "artistName": "Tarakany!",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "tears for fears": {
       "status": "identity_held",
       "artistName": "Tears for Fears",
       "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "tefy clouds": {
+      "status": "not_found",
+      "artistName": "Tefy Clouds",
+      "checkedAt": "2026-11-27",
       "source": "wikidata",
       "researchVersion": 2,
       "identityVerified": false,

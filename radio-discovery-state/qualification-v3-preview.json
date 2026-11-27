@@ -13,9 +13,9 @@
     "advanced_candidate": 1,
     "already_known": 82,
     "declared_and_observed_target_review": 1,
-    "editorial_review": 117,
+    "editorial_review": 115,
     "identity_review": 29,
-    "observed_music_candidate": 31,
+    "observed_music_candidate": 33,
     "programme_conflict_review": 2,
     "programme_context_review": 7,
     "source_recheck": 5,
@@ -27,8 +27,8 @@
     "no_observed_music": 32,
     "other_genre_observed_hints": 7,
     "source_conflict": 2,
-    "target_observed_hints": 27,
-    "unclassified_observations": 69
+    "target_observed_hints": 29,
+    "unclassified_observations": 67
   },
   "records": [
     {
@@ -2124,29 +2124,29 @@
       "stationuuid": "32955656-5a38-40c0-ab1f-e059496bfda6",
       "streamSha256": "ed2a3274edc9092547074120bac8f194320d86bfaa21989d4dd89c5cde525d1c",
       "v2Decision": "editorial_review",
-      "shadowDecision": "editorial_review",
+      "shadowDecision": "observed_music_candidate",
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope"
       ],
       "nextActions": [
-        "collect_more_programme_observations"
+        "resolve_remaining_station_and_technical_gates"
       ],
-      "programmeEvidenceStatus": "unclassified_observations",
+      "programmeEvidenceStatus": "target_observed_hints",
       "programmeBound": true,
       "programmeEvidence": {
         "artistHints": {
-          "target_hint": 0,
+          "target_hint": 1,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 2
+          "unclassified_hint": 1
         },
         "pairHints": {
-          "target_hint": 0,
+          "target_hint": 1,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 2
+          "unclassified_hint": 1
         },
         "collaborationMemberHints": {
           "target_hint": 0,
@@ -2155,7 +2155,8 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "no_usable_source": 2
+          "no_usable_source": 1,
+          "wikidata_only": 1
         },
         "independentObservationDays": [
           "2026-11-26",
@@ -2598,7 +2599,7 @@
       "stationuuid": "3a40f5fc-8ba3-4177-a145-b1f90dfb06d5",
       "streamSha256": "dd30406461d941b61cc5c3c9e0cdba561a7062b93da113034e70735e044481e4",
       "v2Decision": "editorial_review",
-      "shadowDecision": "editorial_review",
+      "shadowDecision": "observed_music_candidate",
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
@@ -2606,22 +2607,22 @@
         "resolve_mixed_or_electronic_format"
       ],
       "nextActions": [
-        "collect_more_programme_observations"
+        "resolve_remaining_station_and_technical_gates"
       ],
-      "programmeEvidenceStatus": "unclassified_observations",
+      "programmeEvidenceStatus": "target_observed_hints",
       "programmeBound": true,
       "programmeEvidence": {
         "artistHints": {
-          "target_hint": 0,
+          "target_hint": 1,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 3
+          "unclassified_hint": 2
         },
         "pairHints": {
-          "target_hint": 0,
+          "target_hint": 1,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 3
+          "unclassified_hint": 2
         },
         "collaborationMemberHints": {
           "target_hint": 0,
@@ -2630,7 +2631,8 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "no_usable_source": 3
+          "no_usable_source": 2,
+          "wikidata_only": 1
         },
         "independentObservationDays": [
           "2026-11-25",
@@ -3697,8 +3699,8 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "musicbrainz_only": 1,
-          "no_usable_source": 2
+          "musicbrainz_only": 2,
+          "no_usable_source": 1
         },
         "independentObservationDays": [
           "2026-11-25",
@@ -4094,13 +4096,13 @@
       "programmeBound": true,
       "programmeEvidence": {
         "artistHints": {
-          "target_hint": 1,
+          "target_hint": 2,
           "other_hint": 0,
           "mixed_hint": 0,
           "unclassified_hint": 1
         },
         "pairHints": {
-          "target_hint": 1,
+          "target_hint": 2,
           "other_hint": 0,
           "mixed_hint": 0,
           "unclassified_hint": 1
@@ -4112,16 +4114,17 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "musicbrainz_only": 1,
+          "musicbrainz_only": 2,
           "no_usable_source": 1
         },
         "independentObservationDays": [
           "2026-11-25",
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "reportedBroadcastDays": [],
-        "distinctArtistHints": 2,
-        "distinctArtistTitleHints": 2
+        "distinctArtistHints": 3,
+        "distinctArtistTitleHints": 3
       },
       "crossSourcePairHintCount": 0,
       "stationEditorialHint": true,
@@ -4763,8 +4766,7 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -5008,8 +5010,7 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format",
-        "repeat_continuity_on_distinct_days"
+        "resolve_mixed_or_electronic_format"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -5084,8 +5085,7 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format",
-        "repeat_continuity_on_distinct_days"
+        "resolve_mixed_or_electronic_format"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -5139,8 +5139,7 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -5195,8 +5194,7 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format",
-        "repeat_continuity_on_distinct_days"
+        "resolve_mixed_or_electronic_format"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -5270,8 +5268,7 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"

@@ -4,14 +4,14 @@
   "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
   "approvedCount": 0,
   "publicationAllowed": false,
-  "eligibleStationCount": 75,
-  "dueStationCount": 43,
+  "eligibleStationCount": 78,
+  "dueStationCount": 42,
   "attemptedCount": 4,
   "serviceFailureCount": 0,
   "stationsWithFreshHints": 2,
   "counts": {
     "candidates_observed": 3,
-    "no_candidate_observed": 81
+    "no_candidate_observed": 84
   },
   "records": [
     {
@@ -509,9 +509,9 @@
     },
     {
       "goStationId": "go-station-000145",
-      "lastAttemptDate": "2026-11-26",
+      "lastAttemptDate": "2026-11-27",
       "searchStatus": "no_candidate_observed",
-      "hintsObservedDate": "2026-11-26",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
       "approved": false,
       "publicationAllowed": false,
@@ -543,6 +543,39 @@
           "publicationAllowed": false
         }
       ],
+      "approved": false,
+      "publicationAllowed": false,
+      "maintenanceEligible": true,
+      "hintsFresh": true
+    },
+    {
+      "goStationId": "go-station-000168",
+      "lastAttemptDate": "2026-11-27",
+      "searchStatus": "no_candidate_observed",
+      "hintsObservedDate": "2026-11-27",
+      "hints": [],
+      "approved": false,
+      "publicationAllowed": false,
+      "maintenanceEligible": true,
+      "hintsFresh": true
+    },
+    {
+      "goStationId": "go-station-000169",
+      "lastAttemptDate": "2026-11-27",
+      "searchStatus": "no_candidate_observed",
+      "hintsObservedDate": "2026-11-27",
+      "hints": [],
+      "approved": false,
+      "publicationAllowed": false,
+      "maintenanceEligible": true,
+      "hintsFresh": true
+    },
+    {
+      "goStationId": "go-station-000170",
+      "lastAttemptDate": "2026-11-27",
+      "searchStatus": "no_candidate_observed",
+      "hintsObservedDate": "2026-11-27",
+      "hints": [],
       "approved": false,
       "publicationAllowed": false,
       "maintenanceEligible": true,
