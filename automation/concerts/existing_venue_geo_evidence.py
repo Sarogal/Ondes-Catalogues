@@ -9,6 +9,7 @@ This never edits the catalogue or produces a signed approval.
 from __future__ import annotations
 
 import datetime as dt
+import json
 from collections import Counter
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlsplit
@@ -592,6 +593,60 @@ def verify(event, venue, *, fetch=probe.safe_fetch, cache=None):
             "publisherAuthorityGranted": False}
 
 
+def registered_venue_source(venue):
+    """Select one existing identity-bound official source, never a fuzzy match."""
+    try:
+        rows = json.loads(official.SOURCES.read_text(encoding="utf-8"))["venues"]
+        matches = {
+            row["url"] for row in rows
+            if isinstance(row, dict) and isinstance(row.get("url"), str)
+            and official.official_origin(venue, row["url"]) == row["url"]
+        }
+    except (OSError, ValueError, TypeError, KeyError):
+        return None
+    return next(iter(matches)) if len(matches) == 1 else None
+
+
+def verify_venue_source(source, venue, *, fetch=probe.safe_fetch, cache=None):
+    """Correct an existing coarse pin without needing a published concert.
+
+    Only the exact independently registered official origin, one explicitly
+    named physical address and a fresh independent BAN/OSM match qualify.
+    A generic contact address, a discovered URL or a city pin cannot qualify.
+    """
+    require(isinstance(venue, dict) and eligible(venue)
+            and isinstance(source, str)
+            and registered_venue_source(venue) == source,
+            "unbound or ambiguous venue source")
+    cache = {} if cache is None else cache
+    try:
+        html = fetch(source, cache)
+        require(isinstance(html, str) and 0 < len(html) <= probe.MAX_BYTES,
+                "invalid venue page")
+        site = _named_footer_address(html, venue)
+    except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
+        raise EvidenceHeld("standalone_named_address_unconfirmed") from exc
+    def bounded(endpoint, limit):
+        body = fetch(endpoint, cache)
+        require(isinstance(body, str) and 0 < len(body) <= min(limit, probe.MAX_BYTES),
+                "independent geographical evidence unavailable")
+        return body, endpoint
+    try:
+        feature, lat, lon, precision = geo.verify(
+            site, bounded, official_website=source)
+    except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
+        raise EvidenceHeld("standalone_independent_geo_unconfirmed") from exc
+    require(precision in {"named-site-point", "named-site-area"},
+            "no independent named physical site")
+    return {"schema": SCHEMA, "venueId": venue["id"], "eventId": None,
+            "eventDate": None, "officialUrl": source,
+            "officialVenueSourceUrl": source, "originalVenue": dict(venue),
+            "venuePatch": {"address": site["address"], "postalCode": site["postalCode"],
+                           "latitude": lat, "longitude": lon, "geoSource": feature,
+                           "geoPrecision": precision},
+            "publicationAllowed": False, "publisherAuthorityGranted": False}
+
+
 def _recent_keys(raw, active):
     """Keep only unique active IDs, oldest to newest; advisory scheduling."""
     if not isinstance(raw, list):
@@ -605,7 +660,7 @@ def _recent_keys(raw, active):
     return list(reversed(result))
 
 
-def _review_history(prior, groups, today):
+def _review_history(prior, groups, today, standalone=()):
     if (not isinstance(prior, dict)
             or prior.get("schema") != SCHEMA + ".scan"
             or prior.get("publicationAllowed") is not False
@@ -616,7 +671,7 @@ def _review_history(prior, groups, today):
             return [], {}
     except (KeyError, TypeError, ValueError):
         return [], {}
-    active = {vid for vid, rows in groups.items() if rows}
+    active = {vid for vid, rows in groups.items() if rows} | set(standalone)
     venues = _recent_keys(prior.get("recentVenueIds"), active)
     saved = prior.get("recentEventIdsByVenue")
     events = {}
@@ -640,7 +695,8 @@ def _touch(recent, key):
     recent.append(key)
 
 
-def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify, prior=None):
+def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify,
+         prior=None, verify_standalone=verify_venue_source):
     """Bounded private research. Rotate over all eligible venues and their events.
 
     A permanent hold at the first room cannot starve the remaining rooms.
@@ -671,14 +727,18 @@ def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify, p
             continue
         if day >= today:
             groups[event["venueId"]].append(event)
-    ordered = sorted((vid for vid in groups if groups[vid]),
+    standalone = {vid: source for vid, rows in groups.items() if not rows
+                  if (source := registered_venue_source(venues[vid])) is not None}
+    ordered = sorted((vid for vid in groups if groups[vid] or vid in standalone),
                      key=lambda vid: (-len(groups[vid]), vid))
     cycle = today.toordinal() * 3 + slot
     start = (cycle * limit) % len(ordered) if ordered else 0
-    recent_venues, recent_events = _review_history(prior, groups, today)
+    recent_venues, recent_events = _review_history(prior, groups, today, standalone)
     chosen = _least_recent(ordered[start:] + ordered[:start], recent_venues)[:limit]
     report = {"schema": SCHEMA + ".scan", "asOf": today.isoformat(),
-              "eligibleVenues": len(groups), "venuesWithFutureOfficialEvents": len(ordered),
+              "eligibleVenues": len(groups),
+              "venuesWithFutureOfficialEvents": sum(bool(rows) for rows in groups.values()),
+              "venuesWithStandaloneSource": len(standalone), "standaloneSourcesExamined": 0,
               "examinedVenues": len(chosen), "eventPagesExamined": 0,
               "proposals": [], "held": [], "reasonCounts": {},
               "publicationAllowed": False, "publisherAuthorityGranted": False}
@@ -686,6 +746,17 @@ def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify, p
     reasons = Counter()
     for vid in chosen:
         _touch(recent_venues, vid)
+        if vid in standalone:
+            report["standaloneSourcesExamined"] += 1
+            try:
+                report["proposals"].append(verify_standalone(
+                    standalone[vid], venues[vid], cache=cache))
+            except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
+                code = exc.code if isinstance(exc, EvidenceHeld) else "other_evidence_unconfirmed"
+                reasons[code] += 1
+                report["held"].append({"venueId": vid, "reason": "no_verified_address",
+                                       "reasonCounts": {code: 1}})
+            continue
         rows = sorted(groups[vid], key=lambda e: (e["date"], e["id"]))
         # Avoid retrying only the same event page for a room indefinitely.
         offset = cycle % len(rows)
