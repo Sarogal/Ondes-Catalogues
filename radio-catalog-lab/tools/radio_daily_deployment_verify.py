@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 from radio_daily_baseline_verify import strict_json, verify_baseline
 from radio_daily_git_lab_reader import read_snapshot
-from radio_daily_logo_plan import PREVIEW_BASE
+from radio_daily_logo_plan import PREVIEW_BASE, EXTENSIONS
 from radio_daily_publication_simulator import check_logo, inventory
 from radio_daily_v9_generator import digest
 
@@ -42,7 +42,12 @@ def verify_deployment(transport, *, deployment_commit, deployment_status,
         expected_commit=expected_commit, public_key=public_key, key_id=key_id)
 
 
-def verify_public_snapshot(selected, head, *, fetch, expected_commit, public_key, key_id):
+def mirror_url(logo):
+    return ROOT + "objects/sha256/" + logo["sha256"] + "." + EXTENSIONS[logo["mime_type"]]
+
+
+def verify_public_snapshot(selected, head, *, fetch, expected_commit, public_key, key_id,
+                           mirror_legacy=False):
     """Verify visible bytes only after a caller has independently verified Git history."""
     calls = 0
 
@@ -85,7 +90,7 @@ def verify_public_snapshot(selected, head, *, fetch, expected_commit, public_key
         expected_sequence=selected["sequence"], public_key=public_key, key_id=key_id)
     checked = {}
     for logo, _ in inventory(doc):
-        url = logo["url"]
+        url = mirror_url(logo) if mirror_legacy else logo["url"]
         if url not in checked:
             checked[url] = read(url, logo["byte_size"], logo["mime_type"])
         check_logo(logo, checked[url])
@@ -96,4 +101,4 @@ def verify_public_snapshot(selected, head, *, fetch, expected_commit, public_key
     return dict(schemaVersion=1, publicationAllowed=False, deploymentVerified=True,
                 gitCommit=expected_commit, selectedSequence=selected["sequence"],
                 selectedSha256=digest(body), verifiedLogoUrls=len(checked),
-                publicReads=calls, simulated=True)
+                publicReads=calls, mirroredLegacyArtwork=mirror_legacy, simulated=True)
