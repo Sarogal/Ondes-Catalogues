@@ -295,7 +295,6 @@ class OfficialPlaceBANTests(unittest.TestCase):
         self.assertEqual(drafts[0]["official_url"], url)
         self.assertEqual((drafts[0]["lat"], drafts[0]["lng"]), (45.1, 3.1))
         for changed in (
-            dict(record, site_internet_et_autres_liens=[url, "https://other.example/"]),
             dict(record, adresse_complete=f"14 Rue des Jeux, 12345 {CITY}"),
             dict(record, site_internet_et_autres_liens="https://127.0.0.1/"),
         ):
@@ -304,6 +303,28 @@ class OfficialPlaceBANTests(unittest.TestCase):
                        page_read=lambda _: self.fail("unverified URL must not be read"))))
         drafts, summary = review_drafts(state, day, **dict(kwargs, cultural_lookup=lambda *_: None))
         self.assertEqual(drafts, [])
+
+    def test_multiple_cultural_links_require_exact_consistent_proof(self):
+        from ptitesondes_open_world_permanent_place_ban import discover_independent_cultural_ban
+        a, b = "https://a.example/lieu", "https://b.example/lieu"
+        row = {"city": CITY, "venue": VENUE}
+        record = {"commune": CITY, "nom_du_lieu": VENUE, "code_commune": "12345",
+                  "code_postal": "12345", "numero_et_libelle_voie": "12 Rue des Jeux",
+                  "adresse_complete": f"12 Rue des Jeux, 12345 {CITY}",
+                  "site_internet_et_autres_liens": [a, b]}
+        def find(other, ban_fetch=lambda _: BAN):
+            return discover_independent_cultural_ban(row, cultural_lookup=lambda *_: record,
+                page_read=lambda url: HTML if url == a else other,
+                ban_fetch=ban_fetch, admin_fetch=lambda *_: ADMIN)
+        self.assertEqual(find(HTML.replace(VENUE, "Autre lieu"))["official_url"], a)
+        self.assertEqual(find(HTML)["official_url"], a)
+        for contradictory in (HTML.replace("12 Rue", "14 Rue"),
+                              HTML.replace("</main>", "<p>Fermeture définitive</p></main>"),
+                              HTML.replace("Ouverte à tous", "Pas ouverte à tous")):
+            self.assertIsNone(find(contradictory, lambda _: self.fail("contradiction before BAN")))
+        record["site_internet_et_autres_liens"] = [f"https://a{i}.example/lieu" for i in range(5)]
+        self.assertIsNone(discover_independent_cultural_ban(row, cultural_lookup=lambda *_: record,
+            page_read=lambda _: self.fail("bounded list must not be read")))
 
     def test_ban_unavailable_is_not_publication_permission(self):
         def down(_):
