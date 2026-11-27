@@ -34,6 +34,31 @@ class CulturalDirectoryGeoProbeTests(unittest.TestCase):
         self.assertIsNone(nearby_exact_node(row, {"elements": [obj, obj]}))
         self.assertIsNone(nearby_exact_node(row, {"elements": [obj], "remark": "partial"}))
 
+    def test_reverse_poi_exact_identity_distance_and_scope(self):
+        from collections import Counter
+        from urllib.parse import urlsplit, parse_qs
+        from ptitesondes_cultural_directory_geo_probe import reverse_poi_url, reverse_exact_point
+        row = {"latitude": 48.5, "longitude": 2.2,
+               "coordonnees_geographiques_lieu": "48.5,2.2",
+               "coordonnees_geographiques_commune_lieu": "48.6,2.2",
+               "nom_du_lieu": "Ludothèque A", "commune": "Les Bois",
+               "code_commune": "01234", "code_postal": "01230"}
+        q = parse_qs(urlsplit(reverse_poi_url(row)).query)
+        self.assertEqual(q["index"], ["poi"])
+        self.assertEqual(q["citycode"], ["01234"])
+        feature = {"type": "Feature", "properties": {"name": "Ludothèque A",
+                   "city": "Les Bois", "citycode": "01234", "postcode": "01230",
+                   "category": ["culture"], "score": 0.99},
+                   "geometry": {"type": "Point", "coordinates": [2.2, 48.5]}}
+        doc = {"type": "FeatureCollection", "features": [feature]}
+        d = Counter()
+        self.assertEqual(reverse_exact_point(row, doc, d), (48.5, 2.2))
+        feature["geometry"]["coordinates"] = [2.2, 48.51]
+        self.assertIsNone(reverse_exact_point(row, doc, d))
+        self.assertEqual(d["poi_distance"], 1)
+        feature["properties"]["name"] = "Autre"
+        self.assertIsNone(reverse_exact_point(row, doc, d))
+
     def test_invalid_coordinate_rejected(self):
         for lat, lng in ((0, 0), (91, 1), (float("nan"), 1), (True, 2), (1, 181)):
             self.assertIsNone(point(lat, lng))

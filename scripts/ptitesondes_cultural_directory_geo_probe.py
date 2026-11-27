@@ -107,7 +107,48 @@ def nearby_exact_node(row, doc):
     return loc
 
 
-def probe(*, fetch=_fetch, nearby=None, pages=(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)):
+def reverse_poi_url(row):
+    import re
+    if classify(row) != "distinct_directory_point_unverified":
+        raise ValueError("invalid_directory_point")
+    code = row.get("code_commune")
+    if not isinstance(code, str) or not re.fullmatch(r"(?:[0-9]{5}|2[AB][0-9]{3})", code):
+        raise ValueError("invalid_directory_code")
+    lat, lng = point(row["latitude"], row["longitude"])
+    return "https://data.geopf.fr/geocodage/reverse?" + urlencode({
+        "index": "poi", "lat": lat, "lon": lng, "citycode": code,
+        "limit": 5, "searchgeom": json.dumps({"type": "Circle",
+            "coordinates": [lng, lat], "radius": 100}, separators=(",", ":"))})
+
+
+def fetch_reverse_poi(row, opener=None):
+    from urllib.request import Request, build_opener
+    from ptitesondes_national_cultural_directory_probe import NoRedirect
+    url = reverse_poi_url(row)
+    reader = opener or build_opener(NoRedirect()).open
+    with reader(Request(url, headers={"Accept": "application/json",
+            "User-Agent": "PtitesOndesPOIProbe/1.0"}), timeout=20) as response:
+        if response.status != 200 or response.geturl() != url:
+            raise ValueError("invalid_reverse_poi_response")
+        raw = response.read(200001)
+    if not raw or len(raw) > 200000:
+        raise ValueError("invalid_reverse_poi_size")
+    return json.loads(raw)
+
+
+def reverse_exact_point(row, doc, diagnostics):
+    from ptitesondes_ign_poi_probe import exact_poi_point
+    if classify(row) != "distinct_directory_point_unverified":
+        diagnostics["invalid_directory_point"] += 1
+        return None
+    loc = exact_poi_point(row, doc, diagnostics)
+    if loc is not None and distance(loc, point(row["latitude"], row["longitude"])) > 65:
+        diagnostics["poi_distance"] += 1
+        return None
+    return loc
+
+
+def probe(*, fetch=_fetch, nearby=None, reverse=None, pages=(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)):
     counts, family, numberless, shapes = Counter(), Counter(), Counter(), Counter()
     candidates = []
     for page in pages[:12]:
@@ -138,15 +179,26 @@ def probe(*, fetch=_fetch, nearby=None, pages=(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
                 map_counts["exact_node_hint" if result is not None else "no_exact_node"] += 1
             except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
                 map_counts["map_unavailable"] += 1
+    reverse_counts, reverse_rejections = Counter(), Counter()
+    if reverse is not None:
+        for _, row in sorted(candidates, key=lambda x: x[0])[:5]:
+            reverse_counts["attempted"] += 1
+            try:
+                doc = reverse(row)
+                loc = reverse_exact_point(row, doc, reverse_rejections)
+                reverse_counts["exact_point_hint" if loc is not None else "no_exact_point"] += 1
+            except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
+                reverse_counts["provider_unavailable"] += 1
     return {"rows_examined": sum(counts.values()), "point_counts": dict(counts),
             "family_counts": dict(family), "numberless_family_counts": dict(numberless),
-            "field_shapes": dict(shapes), "nearby_map_counts": dict(map_counts), "publication_ready": False, "public_writes": 0}
+            "field_shapes": dict(shapes), "nearby_map_counts": dict(map_counts),
+            "reverse_poi_counts": dict(reverse_counts), "reverse_poi_rejections": dict(reverse_rejections), "publication_ready": False, "public_writes": 0}
 
 
 if __name__ == "__main__":
     try:
         from ptitesondes_generic_venue_osm_preflight import fetch_overpass, osm_transport_diagnostics
-        result = probe(nearby=fetch_overpass)
+        result = probe(nearby=fetch_overpass, reverse=fetch_reverse_poi)
         result["map_transport"] = osm_transport_diagnostics()
         print(json.dumps(result, sort_keys=True))
     except (OSError, ValueError, TypeError, KeyError, UnicodeError, OverflowError):
