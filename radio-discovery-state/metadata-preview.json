@@ -1,9 +1,15 @@
 {
+  "schemaVersion": 1,
+  "scanDate": "2026-11-27",
+  "publicationAllowed": false,
   "approvedCount": 0,
   "attemptedCount": 6,
+  "stationsWithArtistHints": 109,
+  "distinctArtistHints": 163,
   "attemptedHlsCount": 0,
-  "distinctArtistHints": 158,
-  "publicationAllowed": false,
+  "stationsWithHlsId3Hints": 0,
+  "stationsWithHistoryHints": 0,
+  "stationsWithAlternativeHints": 0,
   "records": [
     {
       "alternativeAttempted": false,
@@ -1419,106 +1425,131 @@
       "verdict": "icy_artist_title_hint"
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "795e1e3f-8b5a-414a-bb28-a53164c27c71",
+      "streamSha256": "792b0e94ee0667d2833b2f0125a87b57b31f43013715b16ecddd5663f1ea4dd0",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "Nochnoj Prospekt",
           "date": "2026-11-26",
           "titleSha256": "b29e1084fd33710fcb024766850bcb88a43a4fd10c4b6457ef1269ea3a4f9b3d"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Tom Verlaine",
+          "titleSha256": "2a2d585d27b334fce2205a757788a5fa0dbac470ff4ff3040783ce512674c2c5"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "795e1e3f-8b5a-414a-bb28-a53164c27c71",
-      "streamSha256": "792b0e94ee0667d2833b2f0125a87b57b31f43013715b16ecddd5663f1ea4dd0",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "7a2996c6-adf0-4f1d-8eb9-225bc90e7a34",
+      "streamSha256": "4905ac699fbd51f4a5e4f98447f27c3c812b7463246ad0796b9cf909621d9bd0",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "One and a half dog",
           "date": "2026-11-26",
           "titleSha256": "6fba0ab78ef8adb61daeeccbffcdee56f1e31cacb79baf1672d67bc72782fad4"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "The Black Halos",
+          "titleSha256": "54286201cc658dd30f6382043dae3fc33d09061f3343eb21eed3694452d1ebb1"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "7a2996c6-adf0-4f1d-8eb9-225bc90e7a34",
-      "streamSha256": "4905ac699fbd51f4a5e4f98447f27c3c812b7463246ad0796b9cf909621d9bd0",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "7bb4134f-99c9-4b72-ad72-5a03380d1270",
+      "streamSha256": "5cf0d299349864b9cd81061b34baec0700d2857f2b35db479e72788cb7614ef8",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "Joy Division",
           "date": "2026-11-26",
           "titleSha256": "e329ff55271cb3a2697bf1dd9b275d2f12ceb877a24c949d0fb7848681ceb5c7"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "The Wave Pictures",
+          "titleSha256": "3bc51062973c458d5a6f2d8d64a023246354ad7e064b1e4e009ec8a0699a3043"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "7bb4134f-99c9-4b72-ad72-5a03380d1270",
-      "streamSha256": "5cf0d299349864b9cd81061b34baec0700d2857f2b35db479e72788cb7614ef8",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "7e8fd698-c935-4b56-8808-d4aafcef38eb",
+      "streamSha256": "d7348572336110b900839f8108e8e2d873b3f3a5889a5a99516439ab01237e87",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "Led Zeppelin",
           "date": "2026-11-26",
           "titleSha256": "531101b46acc9a6ad3f009af465889a676e3d02aa6e7a31b87b062302078bfd5"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Motley Crue",
+          "titleSha256": "a2c7ee064c2930991e7308ce859e98310dea3b49e6220ee31cb72b33802ba5af"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "7e8fd698-c935-4b56-8808-d4aafcef38eb",
-      "streamSha256": "d7348572336110b900839f8108e8e2d873b3f3a5889a5a99516439ab01237e87",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "80747ce9-cb13-44f5-9691-b68d03cdd05e",
+      "streamSha256": "dd0810f5b1b406c43f3b3e40e75b90611b1f7355938e6e842a11d394a40fd65f",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "Behemoth",
           "date": "2026-11-26",
           "titleSha256": "4c77e200dcf70dfc0576cfe778a4c13b9ff97b432dcbd2177681901b68f3c38d"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Vanden Plas",
+          "titleSha256": "7d3db3fa0cecbe0720184ea50b38c8a870014ea83eddc4a1e1a34ebf5a964009"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "80747ce9-cb13-44f5-9691-b68d03cdd05e",
-      "streamSha256": "dd0810f5b1b406c43f3b3e40e75b90611b1f7355938e6e842a11d394a40fd65f",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
-      "alternativeAttempted": true,
-      "alternativeVersion": 3,
-      "approved": false,
-      "observations": [],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
       "stationuuid": "84d6bcb6-493b-43f8-aea4-1289fccfecb8",
       "streamSha256": "04ddc354c50813f888b5121bc77ab677b815da0a7b22dcc2dcb23a3bea594f0a",
-      "verdict": "metadata_no_parseable_title"
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "alternativeAttempted": false,
@@ -1951,24 +1982,6 @@
       "stationuuid": "b4d40bd6-311f-42cf-b8db-595e4b64053f",
       "streamSha256": "461ae75dc6e089eb805352a1f03e6efd9a22d1f4c0cd8fc4e8a3cbb74a0ce8f4",
       "verdict": "metadata_no_parseable_title"
-    },
-    {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
-      "approved": false,
-      "observations": [
-        {
-          "artistHint": "AC/DC",
-          "date": "2026-11-26",
-          "titleSha256": "dc63fa95d0a90117ff8c8bb591ad54c9ce53dcc6b9be81a1fe88b3d67fdc70bb"
-        }
-      ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "b5a3e6e2-c26d-420f-ac46-d26e04382f7b",
-      "streamSha256": "8075cc137c75baa02a371778be5272dc3876f4a23a563e243e342f3bd0eb5fb3",
-      "verdict": "icy_artist_title_hint"
     },
     {
       "alternativeAttempted": false,
@@ -2672,11 +2685,5 @@
       "streamSha256": "53948485098b57585dda110ae9c67bcf5fca741c1335e4b93742af7f7b973ef9",
       "verdict": "icy_artist_title_hint"
     }
-  ],
-  "scanDate": "2026-11-27",
-  "schemaVersion": 1,
-  "stationsWithAlternativeHints": 0,
-  "stationsWithArtistHints": 110,
-  "stationsWithHistoryHints": 0,
-  "stationsWithHlsId3Hints": 0
+  ]
 }

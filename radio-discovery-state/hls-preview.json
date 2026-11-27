@@ -1,8 +1,11 @@
 {
-  "advancingManifestCount": 4,
-  "attemptedCount": 0,
-  "audioFrameCount": 2,
+  "schemaVersion": 1,
+  "scanDate": "2026-11-27",
   "publicationAllowed": false,
+  "technicallyQualifiedCount": 0,
+  "attemptedCount": 0,
+  "advancingManifestCount": 4,
+  "audioFrameCount": 2,
   "records": [
     {
       "firstLastSequence": 179863842,
@@ -80,8 +83,5 @@
       "technicalQualified": false,
       "verdict": "advancing_hls_audio_frame_indication"
     }
-  ],
-  "scanDate": "2026-11-27",
-  "schemaVersion": 1,
-  "technicallyQualifiedCount": 0
+  ]
 }

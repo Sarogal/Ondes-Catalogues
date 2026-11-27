@@ -1,7 +1,13 @@
 {
+  "schemaVersion": 1,
+  "scanDate": "2026-11-27",
+  "publicationAllowed": false,
   "approvedCount": 0,
-  "attemptedCount": 6,
-  "dueNameCount": 12,
+  "observedNameCount": 163,
+  "dueNameCount": 11,
+  "attemptedCount": 1,
+  "serviceFailure": "service_or_response_held",
+  "retryAfterKey": "lower class brats",
   "entries": {
     "2000 fm": {
       "artistName": "2000 FM",
@@ -1556,11 +1562,5 @@
       "source": "wikidata",
       "status": "not_found"
     }
-  },
-  "observedNameCount": 158,
-  "publicationAllowed": false,
-  "retryAfterKey": null,
-  "scanDate": "2026-11-27",
-  "schemaVersion": 1,
-  "serviceFailure": null
+  }
 }

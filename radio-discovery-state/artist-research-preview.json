@@ -1,7 +1,13 @@
 {
+  "schemaVersion": 1,
+  "scanDate": "2026-11-27",
+  "publicationAllowed": false,
   "approvedCount": 0,
-  "attemptedCount": 4,
-  "dueNameCount": 46,
+  "observedNameCount": 163,
+  "dueNameCount": 48,
+  "attemptedCount": 2,
+  "serviceFailure": "http_503",
+  "retryAfterKey": "sellout",
   "entries": {
     "2000 fm": {
       "artistName": "2000 FM",
@@ -1100,6 +1106,28 @@
       "sourceUrl": "https://musicbrainz.org/artist/e0827234-3be3-4973-be59-1aa9575b9c76",
       "status": "name_hypothesis"
     },
+    "red hot chili peppers": {
+      "status": "name_hypothesis",
+      "mbid": "8bfac288-ccc5-448d-9573-c33ea2aa5c30",
+      "genres": [
+        "alternative rock",
+        "funk",
+        "funk metal",
+        "funk rock",
+        "pop rock",
+        "punk",
+        "rap rock",
+        "rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/8bfac288-ccc5-448d-9573-c33ea2aa5c30",
+      "artistName": "Red Hot Chili Peppers",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "rock antenne": {
       "artistName": "ROCK ANTENNE",
       "checkedAt": "2026-11-26",
@@ -1516,11 +1544,5 @@
       "source": "musicbrainz",
       "status": "not_found"
     }
-  },
-  "observedNameCount": 158,
-  "publicationAllowed": false,
-  "retryAfterKey": "queens of the stone age",
-  "scanDate": "2026-11-27",
-  "schemaVersion": 1,
-  "serviceFailure": "http_503"
+  }
 }
