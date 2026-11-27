@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-26",
+  "updatedAt": "2026-11-27",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -2580,6 +2580,16 @@
     {
       "id": "je-t-aime",
       "name": "JE T'AIME",
+      "aliases": []
+    },
+    {
+      "id": "stick-to-your-guns",
+      "name": "STICK TO YOUR GUNS",
+      "aliases": []
+    },
+    {
+      "id": "any-given-day",
+      "name": "ANY GIVEN DAY",
       "aliases": []
     }
   ],
@@ -16166,6 +16176,64 @@
       "history": [
         {
           "date": "2026-11-26",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270216-wasquehal-stick-to-your-guns",
+      "title": "STICK TO YOUR GUNS",
+      "date": "2027-02-16",
+      "artistIds": [
+        "stick-to-your-guns"
+      ],
+      "venueId": "the-black-lab-wasquehal",
+      "genres": [
+        "hardcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://theblacklab.fr/agenda/stick-to-your-guns-2/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "The Black Lab",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-27",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-27",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20271009-paris-any-given-day",
+      "title": "ANY GIVEN DAY",
+      "date": "2027-10-09",
+      "artistIds": [
+        "any-given-day"
+      ],
+      "venueId": "backstage-by-the-mill-paris",
+      "genres": [
+        "Metalcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.backstage-btm.com/agenda/any-given-day/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Backstage By The Mill",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-27",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-27",
           "change": "Ajout après revue des preuves officielles"
         }
       ]
