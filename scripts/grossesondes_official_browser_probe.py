@@ -94,7 +94,8 @@ def compare_proof(parent, year, today, raw, rendered):
 class BrowserEvidenceError(ValueError):
     """Fixed diagnostic categories; never include remote response data."""
     REASONS = frozenset(("unsafe_origin", "navigation_failed", "unsafe_destination",
-                         "invalid_bounded_dom", "http_429", "http_rejected"))
+                         "invalid_bounded_dom", "dom_input_over_limit",
+                         "dom_compaction_insufficient", "http_429", "http_rejected"))
 
     def __init__(self, reason):
         self.reason = reason if reason in self.REASONS else "navigation_failed"
@@ -163,8 +164,10 @@ def bounded_rendered_html(html):
     size = len(html.encode("utf-8"))
     if 0 < size <= MAX_DOM_BYTES:
         return html
-    if not MAX_DOM_BYTES < size <= MAX_COMPACTION_INPUT_BYTES:
+    if size == 0:
         raise BrowserEvidenceError("invalid_bounded_dom")
+    if size > MAX_COMPACTION_INPUT_BYTES:
+        raise BrowserEvidenceError("dom_input_over_limit")
     parser = _ExecutableScriptBodies(html)
     try:
         parser.feed(html)
@@ -181,7 +184,7 @@ def bounded_rendered_html(html):
     pieces.append(html[previous:])
     compact = "".join(pieces)
     if not 0 < len(compact.encode("utf-8")) <= MAX_DOM_BYTES:
-        raise BrowserEvidenceError("invalid_bounded_dom")
+        raise BrowserEvidenceError("dom_compaction_insufficient")
     return compact
 
 

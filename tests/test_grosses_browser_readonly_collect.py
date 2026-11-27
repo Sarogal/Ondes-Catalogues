@@ -264,6 +264,17 @@ class IsolatedBrowserCollectionTests(unittest.TestCase):
         self.assertNotIn("/lineup", str(diagnostics))
         self.assertNotIn("/billetterie", str(diagnostics))
 
+    def test_linkless_root_diagnostic_counts_hidden_programme_without_admitting_it(self):
+        diagnostics = []
+        html = ('<main><div hidden><a href="/private/lineup">Old programme</a></div>'
+                '<a href="/shop">Shop</a></main>')
+        result = collect([HOME], renderer=lambda _: html, diagnostics=diagnostics)
+        self.assertEqual(len(result["entries"]), 1)
+        self.assertEqual(diagnostics[0]["markup_programme_anchors"], 1)
+        self.assertEqual(diagnostics[0]["parsed_programme_anchors"], 0)
+        self.assertEqual(diagnostics[0]["selected_links"], 0)
+        self.assertNotIn("/private/", str(diagnostics))
+
     def test_reject_unsafe_unsigned_url(self):
         with self.assertRaises(ValueError):
             collect(["http://localhost/"], renderer=lambda _: HTML)
