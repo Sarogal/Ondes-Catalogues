@@ -1158,6 +1158,46 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
             commune_resolver=lambda *_: None)
         self.assertEqual(unchanged["festivals"][0], row)
 
+    def test_current_access_plan_proves_postal_town_not_exact_pin(self):
+        from grossesondes_existing_official_updates import current_official_access_city
+        site = "https://festival-exemple.fr/"
+        access_url = site + "plan-du-site/"
+        row = festival("festival-exemple-2027", site, dates=("2027-06-25", "2027-06-26"))
+        row["name"] = "Festival Exemple 2027"
+        home = ('<main><h1>Festival Exemple</h1><p>25 &amp; 26 juin 2027</p>'
+                '<a href="/plan-du-site/">Plan du site</a></main>')
+        access = ('<main><h2>Le Festival Exemple se déroule sur l’esplanade du centre à Ville-Test.</h2>'
+                  '<p>3 rue des Musiques, 08123 Ville-Test</p>'
+                  '<p>Le plan officiel du Festival Exemple pour la 13ème édition (2027) est en cours de finalisation.</p>'
+                  '<footer><p>75000 Paris</p></footer></main>')
+        self.assertEqual(current_official_access_city(home, access, row, DAY),
+                         ("Ville-Test", "08123"))
+        for invalid in (access.replace("édition (2027)", "édition (2026)"),
+                        access.replace("08123 Ville-Test", "08123 Autreville"),
+                        access.replace("<h2>Le Festival", "<h2 hidden>Le Festival"),
+                        access.replace("se déroule", "a eu lieu")):
+            self.assertIsNone(current_official_access_city(home, invalid, row, DAY))
+        self.assertIsNone(current_official_access_city(
+            home.replace("25 &amp; 26", "26 &amp; 27"), access, row, DAY))
+        signed = doc(row)
+        def admin(city, department):
+            return {"city": city, "lat": 49.0, "lon": 4.0,
+                    "codeInsee": "08123", "geoSource": "https://geo.api.gouv.fr/communes?nom=Ville-Test"}
+        output, report = apply_independently_verified_updates(
+            signed, signed, DAY, limit=1, tick=0,
+            fetch={site: home, access_url: access}.__getitem__, commune_resolver=admin)
+        updated = output["festivals"][0]
+        self.assertEqual(updated["city"], "Ville-Test")
+        self.assertEqual(updated["geoPrecision"], "commune")
+        self.assertIn(access_url, updated["auditSources"])
+        self.assertTrue(_verified_official_update_delta(row, updated))
+        def wrong_admin(city, department):
+            return dict(admin(city, department), codeInsee="75101")
+        unchanged, _ = apply_independently_verified_updates(
+            signed, signed, DAY, limit=1, tick=0,
+            fetch={site: home, access_url: access}.__getitem__, commune_resolver=wrong_admin)
+        self.assertIsNone(unchanged["festivals"][0]["lat"])
+
     def test_official_access_links_are_publisher_research_not_ocr_targets(self):
         site = "https://festival-exemple.fr/"
         html = ('<main><a href="/festival-plan-du-site/">Plan du site</a>'
