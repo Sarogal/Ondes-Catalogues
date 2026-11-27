@@ -17,13 +17,13 @@
   "blockingReasonCounts": {
     "bind_broadcaster_to_stream": 156,
     "confirm_station_level_programme_scope": 163,
-    "obtain_current_continuity_evidence": 42,
+    "obtain_current_continuity_evidence": 43,
     "obtain_station_bound_editorial_evidence": 147,
     "refresh_current_reconciliation": 5,
-    "repeat_continuity_on_distinct_days": 104,
+    "repeat_continuity_on_distinct_days": 97,
     "resolve_duplicate_or_legacy_identity": 29,
     "resolve_mixed_or_electronic_format": 40,
-    "resolve_recent_negative_technical_observation": 42
+    "resolve_recent_negative_technical_observation": 43
   },
   "records": [
     {
@@ -474,15 +474,15 @@
       "programmeScopeEvidence": false,
       "continuityIndication": true,
       "positiveContinuityDays": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format",
-        "repeat_continuity_on_distinct_days"
+        "resolve_mixed_or_electronic_format"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -516,14 +516,14 @@
       "programmeScopeEvidence": false,
       "continuityIndication": true,
       "positiveContinuityDays": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -539,15 +539,15 @@
       "programmeScopeEvidence": false,
       "continuityIndication": true,
       "positiveContinuityDays": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format",
-        "repeat_continuity_on_distinct_days"
+        "resolve_mixed_or_electronic_format"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -586,14 +586,14 @@
       "programmeScopeEvidence": false,
       "continuityIndication": true,
       "positiveContinuityDays": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": true,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -671,14 +671,14 @@
       "programmeScopeEvidence": false,
       "continuityIndication": true,
       "positiveContinuityDays": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -732,15 +732,15 @@
       "programmeScopeEvidence": false,
       "continuityIndication": true,
       "positiveContinuityDays": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format",
-        "repeat_continuity_on_distinct_days"
+        "resolve_mixed_or_electronic_format"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1884,7 +1884,7 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": true,
+      "continuityIndication": false,
       "positiveContinuityDays": [
         "2026-11-25",
         "2026-11-26"
@@ -1895,7 +1895,8 @@
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
         "resolve_mixed_or_electronic_format",
-        "repeat_continuity_on_distinct_days"
+        "obtain_current_continuity_evidence",
+        "resolve_recent_negative_technical_observation"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -1933,7 +1934,7 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": true,
+      "continuityIndication": false,
       "positiveContinuityDays": [
         "2026-11-25",
         "2026-11-26"
@@ -1943,7 +1944,8 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "obtain_current_continuity_evidence",
+        "resolve_recent_negative_technical_observation"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2357,7 +2359,7 @@
       "broadcasterStreamLink": false,
       "structuredProgrammeEvidence": false,
       "programmeScopeEvidence": false,
-      "continuityIndication": false,
+      "continuityIndication": true,
       "positiveContinuityDays": [
         "2026-11-26"
       ],
@@ -2366,8 +2368,7 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "obtain_current_continuity_evidence",
-        "resolve_recent_negative_technical_observation"
+        "repeat_continuity_on_distinct_days"
       ],
       "approved": false,
       "publicationAllowed": false

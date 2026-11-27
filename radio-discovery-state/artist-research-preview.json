@@ -3,11 +3,11 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 133,
-  "dueNameCount": 30,
-  "attemptedCount": 2,
+  "observedNameCount": 136,
+  "dueNameCount": 32,
+  "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "epica",
+  "retryAfterKey": "foreigner",
   "entries": {
     "2000 fm": {
       "status": "not_found",

@@ -5,7 +5,7 @@
   "approvedCount": 0,
   "attemptedCount": 6,
   "stationsWithArtistHints": 110,
-  "distinctArtistHints": 133,
+  "distinctArtistHints": 136,
   "attemptedHlsCount": 1,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -241,7 +241,7 @@
     {
       "stationuuid": "14516140-aa4b-4462-997e-bb6a36ae7780",
       "streamSha256": "5917f32faa0f7c2288fd7e5395b80a1fd9869d0290918aa1805d43b28e59cc15",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -251,6 +251,11 @@
           "date": "2026-11-26",
           "artistHint": "BrainDead",
           "titleSha256": "ef34da880c73046092f9e05e7ac128e4fd3e280bfc8657fd1b857b1497c0d175"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Skinflick",
+          "titleSha256": "350da1be155c95beff208865fd1e6a05207ef807e341cf3ee229ad44889887a2"
         }
       ],
       "alternativeVersion": 0,
@@ -259,7 +264,7 @@
     {
       "stationuuid": "14bd61af-81e2-44ea-b1cc-8d8a940e0386",
       "streamSha256": "646318f179d2c53f05c08d49ec787afa60b732f3aa19788db744da2e5917a041",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -269,6 +274,11 @@
           "date": "2026-11-26",
           "artistHint": "The Misfits",
           "titleSha256": "a65dd475d7bf6164ca2c012af022d98b3101060fdbb3de4fae3f9fbed5543787"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "The Fright",
+          "titleSha256": "afa7235aa5705943026726c3719de97481326d6dd6511f9557652713789ffd81"
         }
       ],
       "alternativeVersion": 0,
@@ -277,7 +287,7 @@
     {
       "stationuuid": "158a3876-cbad-406c-b69e-edac38ae71d6",
       "streamSha256": "a6ca0ecea5a93b5af1c7810c9768a173e36814192b234e449f4719dcdb535c27",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -289,7 +299,7 @@
     {
       "stationuuid": "16166094-b6d7-4382-bcb4-8a61f63a8427",
       "streamSha256": "1ebde3c9ba1ec407c86afda30c05ee5ffcb2e49af186a39e596ad9f25bd7b758",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -299,6 +309,11 @@
           "date": "2026-11-26",
           "artistHint": "VERTICAL67",
           "titleSha256": "c5ea12e39c58a2bba07041a0f224d2f611a8569141eb5f45c6a03d86ebc18e90"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Begräbnis",
+          "titleSha256": "47805cdcd94a3c2ddc0557b54af1e814384a339370888a0d101352bb4c059df2"
         }
       ],
       "alternativeVersion": 0,
@@ -307,7 +322,7 @@
     {
       "stationuuid": "1628187c-e965-4593-8f36-719c3dd9ad9b",
       "streamSha256": "82f293eacbefd38fedcc6ecf22cf301aa75392588e9f4bd1a537039c2c40a128",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1876,7 +1891,7 @@
     {
       "stationuuid": "c16ffe2f-a305-4f11-9d85-0aa615b9ed04",
       "streamSha256": "3f86508357456841a1d6c279e22b25814645649f6b65f238d4a1bdda0befde8b",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,

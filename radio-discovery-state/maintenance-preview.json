@@ -9,8 +9,8 @@
   "checkedCount": 20,
   "everObservedStreamCount": 358,
   "sampleCounts": {
-    "audio_hint": 13,
-    "inconclusive": 7
+    "audio_hint": 16,
+    "inconclusive": 4
   },
   "hlsAttemptedCount": 0,
   "hlsDeferredCount": 0,
@@ -861,6 +861,11 @@
           "date": "2026-11-26",
           "outcome": "inconclusive",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "inconclusive",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -874,6 +879,11 @@
           "date": "2026-11-26",
           "outcome": "inconclusive",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -885,6 +895,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -900,6 +915,11 @@
           "date": "2026-11-26",
           "outcome": "inconclusive",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "inconclusive",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -911,6 +931,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -926,6 +951,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -939,6 +969,11 @@
           "date": "2026-11-26",
           "outcome": "inconclusive",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -950,6 +985,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -965,6 +1005,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -976,6 +1021,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -991,6 +1041,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -1002,6 +1057,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -1017,6 +1077,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -1028,6 +1093,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -1043,6 +1113,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -1056,6 +1131,11 @@
           "date": "2026-11-26",
           "outcome": "inconclusive",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -1067,6 +1147,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -1082,6 +1167,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "inconclusive",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -1095,6 +1185,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -1106,6 +1201,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "inconclusive",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "inconclusive",
           "route": "direct"
         }
@@ -5439,9 +5539,9 @@
       "catalogueStatus": "active",
       "streamCount": 1,
       "recentStreamCount": 1,
-      "positiveStreamCount": 0,
+      "positiveStreamCount": 1,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "inconclusive",
+      "reviewStatus": "audio_sample_observed",
       "approved": false,
       "publicationAllowed": false
     },
@@ -5483,7 +5583,7 @@
       "catalogueStatus": "active",
       "streamCount": 2,
       "recentStreamCount": 2,
-      "positiveStreamCount": 1,
+      "positiveStreamCount": 2,
       "repeatedFailureStreamCount": 0,
       "reviewStatus": "audio_sample_observed",
       "approved": false,
@@ -5571,7 +5671,7 @@
       "catalogueStatus": "active",
       "streamCount": 3,
       "recentStreamCount": 3,
-      "positiveStreamCount": 2,
+      "positiveStreamCount": 3,
       "repeatedFailureStreamCount": 0,
       "reviewStatus": "audio_sample_observed",
       "approved": false,
@@ -5582,9 +5682,9 @@
       "catalogueStatus": "active",
       "streamCount": 1,
       "recentStreamCount": 1,
-      "positiveStreamCount": 1,
+      "positiveStreamCount": 0,
       "repeatedFailureStreamCount": 0,
-      "reviewStatus": "audio_sample_observed",
+      "reviewStatus": "inconclusive",
       "approved": false,
       "publicationAllowed": false
     },
