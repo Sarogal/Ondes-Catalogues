@@ -49,6 +49,17 @@ class CulturalDirectoryProbeTests(unittest.TestCase):
             "https://example.fr/lieu"])}
         self.assertEqual(directory_website_hints(row), ["https://example.fr/lieu"])
 
+    def test_https_upgrade_is_opt_in_exact_host_and_never_http(self):
+        from ptitesondes_national_cultural_directory_probe import directory_website_hints
+        row = {"site_internet_et_autres_liens": [
+            "http://culture.example/lieu", "https://culture.example/lieu",
+            "http://autre.example/jeunesse", "http://autre.example:80/lieu",
+            "http://user:pass@autre.example/", "http://127.0.0.1/",
+            "http://autre.example/lieu?secret=1", "http://autre.example/#a"]}
+        self.assertEqual(directory_website_hints(row), ["https://culture.example/lieu"])
+        self.assertEqual(directory_website_hints(row, try_https_upgrade=True),
+                         ["https://autre.example/jeunesse", "https://culture.example/lieu"])
+
     def test_no_redirect_or_noncanonical_endpoint(self):
         class Response:
             status = 200

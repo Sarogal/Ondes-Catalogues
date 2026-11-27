@@ -404,7 +404,7 @@ def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=No
                 code = "culture_independent_" + ("record_missing" if reason == "directory_record_missing" else reason)
                 _note(code)
             return _note("culture_independent_identity_unmatched")
-        listed = directory_website_hints(record)
+        listed = directory_website_hints(record, try_https_upgrade=True)
         urls = [url for url in listed if _host(url)]
         if not 1 <= len(urls) <= 4:
             _note("culture_independent_url_missing" if not listed else
