@@ -220,6 +220,41 @@ class PosterOCRTests(unittest.TestCase):
             self.assertEqual(result["artists"], [])
             self.assertEqual(result["passes"], {})
 
+    def test_stacked_calendar_dates_require_adjacent_aligned_date_only_lines(self):
+        row = {"name": "Festival Exemple 2027", "startDate": "2027-08-13",
+               "endDate": "2027-08-15"}
+        def reading(segments):
+            words = []
+            for phrase, x, y, confidence in segments:
+                for token in phrase.split():
+                    width = len(token) * 10
+                    words.append({"text": token, "confidence": confidence,
+                                  "box": [x, y, width, 25], "review_only": True})
+                    x += width + 8
+            return {"status": "review_only", "review_only": True, "words": words}
+        base = [("FESTIVAL EXEMPLE", 20, 0, 98)]
+        fields = [("Artistes : Alpha, Beta", 20, 200, 98), ("Pass 3J : 75 €", 20, 240, 98)]
+        dates = [("13 au 15", 40, 40, 98), ("août 2027", 40, 80, 98)]
+        result = structured_poster_candidates(row, reading(base + dates + fields))
+        self.assertEqual(result["artists"], ["Alpha", "Beta"])
+        self.assertEqual(result["passes"], {"3": "75"})
+        three = [("13 au 15", 40, 40, 98), ("août", 60, 80, 98), ("2027", 60, 120, 98)]
+        self.assertEqual(structured_poster_candidates(row, reading(base + three + fields))["artists"],
+                         ["Alpha", "Beta"])
+        for wrong in (
+            [dates[0], ("août 2027", 400, 80, 98)],
+            [dates[0], ("août 2027", 40, 140, 98)],
+            [dates[0], ("août 2027", 40, 80, 40)],
+            [dates[0], ("Sponsor août 2027", 40, 80, 98)],
+            [dates[0], ("août", 40, 80, 98)],
+            [dates[0], ("août 2027", 40, 80, 98),
+             ("14 au 16", 40, 120, 40), ("août 2027", 40, 160, 40)],
+        ):
+            with self.subTest(wrong=wrong):
+                result = structured_poster_candidates(row, reading(base + wrong + fields))
+                self.assertEqual(result["artists"], [])
+                self.assertEqual(result["passes"], {})
+
     def test_failed_recognition_not_cached(self):
         cache = {}
         recognize = Mock(side_effect=FileNotFoundError())
