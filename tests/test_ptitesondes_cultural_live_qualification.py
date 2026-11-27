@@ -18,6 +18,7 @@ class CulturalLiveQualificationTests(unittest.TestCase):
         self.assertEqual(result["counts"], {"attempted": 8, "candidate_unavailable": 1,
                          "proof_found": 1, "valid_draft": 1, "not_qualified": 6})
         self.assertNotIn("Private", str(result))
+        self.assertIn("read_failures", result)
         self.assertEqual(result["public_writes"], 0)
         self.assertFalse(result["publication_ready"])
 
