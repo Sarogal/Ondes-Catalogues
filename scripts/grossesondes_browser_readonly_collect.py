@@ -293,6 +293,9 @@ def collect(urls, renderer=rendered_html, *, diagnostics=None):
                         "network_error" if isinstance(exc, OSError) else
                         "invalid_evidence" if isinstance(exc, ValueError) else "browser_error")
                     diagnostics.append(dict(detail, status=reason))
+                    # Do not consume another link request after an explicit 429.
+                    if reason == "http_429":
+                        break
                     continue
         except Exception as exc:
             # Log only the already signed URL and fixed error categories, not

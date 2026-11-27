@@ -278,6 +278,24 @@ class IsolatedBrowserCollectionTests(unittest.TestCase):
         self.assertEqual(diagnostics[0]["selected_links"], 0)
         self.assertNotIn("/private/", str(diagnostics))
 
+    def test_browser_stops_following_origin_links_after_http_429(self):
+        from grossesondes_official_browser_probe import BrowserEvidenceError
+        home = ('<main><a href="/fr/lineup">Programmation</a>'
+                '<a href="/fr/billetterie">Billetterie</a></main>')
+        called = []
+        diagnostics = []
+        def render(url):
+            called.append(url)
+            if url == HOME:
+                return home
+            if url == OTHER:
+                return HTML
+            raise BrowserEvidenceError("http_429")
+        result = collect([HOME, OTHER], renderer=render, diagnostics=diagnostics)
+        self.assertEqual(called, [HOME, "https://www.mozhell.fr/fr/lineup", OTHER])
+        self.assertEqual(len(result["entries"]), 2)
+        self.assertEqual(diagnostics[1]["status"], "http_429")
+
     def test_reject_unsafe_unsigned_url(self):
         with self.assertRaises(ValueError):
             collect(["http://localhost/"], renderer=lambda _: HTML)
