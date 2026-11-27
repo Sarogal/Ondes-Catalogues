@@ -1,0 +1,30 @@
+name: P'tites Ondes — répétition réelle de qualification culturelle
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_cultural_live_qualification.py'
+      - 'tests/test_ptitesondes_cultural_live_qualification.py'
+      - '.github/workflows/ptitesondes-cultural-live-qualification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sample:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test bounded and redacted probe
+        env:
+          PYTHONPATH: scripts
+        run: python -m unittest discover -s tests -p 'test_ptitesondes_cultural_live_qualification.py' -v
+      - name: Real production qualification route on discovered cultural leads
+        run: python scripts/ptitesondes_cultural_live_qualification.py
