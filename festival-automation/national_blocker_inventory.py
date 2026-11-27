@@ -214,8 +214,52 @@ def route_observations(reports, today, ids):
     return result
 
 
+def persistent_openagenda_observations(state, dossiers, today):
+    """Join recent private attempts by exact current source URL, not names.
+
+    Last attempt status is diagnostic only: rate limiting and lack of proof
+    never become a definitive exclusion. No URLs or proof digest are copied.
+    """
+    if state is None:
+        return {}
+    if not isinstance(state, dict) or state.get("schema") != "grossesondes.source-watch.v1":
+        raise ValueError("Invalid private route diagnostics")
+    saved = state.get("national_openagenda_linked_first_party_observations_private", {})
+    if not isinstance(saved, dict) or len(saved) > 200:
+        raise ValueError("Invalid private route diagnostics")
+    current = date.fromisoformat(today)
+    result = {}
+    for dossier in dossiers:
+        for source in dossier.get("sources", []):
+            if not isinstance(source, dict) or source.get("kind") != "OPENAGENDA_PUBLIC_RESEARCH_ONLY":
+                continue
+            url = source.get("url")
+            entry = saved.get(url) if isinstance(url, str) else None
+            if not isinstance(entry, dict):
+                continue
+            try:
+                checked = date.fromisoformat(entry.get("lastChecked"))
+            except (ValueError, TypeError):
+                continue
+            if not 0 <= (current - checked).days <= 7:
+                continue
+            status = entry.get("lastResultStatus")
+            if not isinstance(status, str) or not re.fullmatch(r"[A-Z][A-Z0-9_]{0,99}", status):
+                continue
+            item = {"route": "openagenda", "last_checked": checked.isoformat(), "status": status}
+            for key, field in (("lastProfessionalStatus", "professional_status"),
+                               ("lastProfessionalDetailStatus", "professional_detail_status")):
+                code = entry.get(key)
+                if isinstance(code, str) and re.fullmatch(r"[A-Z][A-Z0-9_]{0,99}", code):
+                    item[field] = code
+            found = result.setdefault(dossier["id"], [])
+            if item not in found:
+                found.append(item)
+    return result
+
+
 def build_inventory(reports, catalogue, today, patch=None, municipal_history=(),
-                    route_reports=None):
+                    route_reports=None, watch_state=None):
     if (not isinstance(catalogue, dict) or catalogue.get("schema") != 1
             or not isinstance(catalogue.get("festivals"), list)):
         raise ValueError("Signed public catalogue required")
@@ -265,6 +309,7 @@ def build_inventory(reports, catalogue, today, patch=None, municipal_history=(),
             raise ValueError("Unmatched concert referral")
         referrals.setdefault(ref["dossierId"], []).append(ref.get("classification"))
     route_checks = route_observations(route_reports or {}, today, set(ids))
+    persisted_checks = persistent_openagenda_observations(watch_state, rows, today)
     output = []
     for d in rows:
         ident = d["id"]
@@ -317,6 +362,7 @@ def build_inventory(reports, catalogue, today, patch=None, municipal_history=(),
             ),
             "editorial_fit": "UNASSESSED_BY_AUTOMATION",
             "current_route_observations_review_only": route_checks.get(ident, []),
+            "recent_persisted_route_attempts_review_only": persisted_checks.get(ident, []),
             "publication_authorized": False,
         })
     names = {(_name(d["name"]), d["edition_year"]) for d in output}
@@ -375,6 +421,15 @@ def build_inventory(reports, catalogue, today, patch=None, municipal_history=(),
         "unpublished_dossiers_with_current_route_observations": sum(
             r["generic_proposal_missing"] and bool(r["current_route_observations_review_only"])
             for r in output),
+        "unpublished_dossiers_with_recent_route_attempts": sum(
+            r["generic_proposal_missing"] and bool(r["recent_persisted_route_attempts_review_only"]
+                                                    or r["current_route_observations_review_only"])
+            for r in output),
+        "unpublished_dossiers_with_professional_rate_limit": sum(
+            r["generic_proposal_missing"] and any(
+                x.get("professional_status") == "PROFESSIONAL_RATE_LIMITED"
+                for x in r["recent_persisted_route_attempts_review_only"])
+            for r in output),
         "unpublished_dossiers_with_tour_referral": sum(
             r["generic_proposal_missing"] and "EXPLICIT_TOURING_CONCERT_STOP" in r["concert_referral_types"]
             for r in output),
@@ -405,7 +460,8 @@ def main():
                      if (args.intake / file).is_file()}
     inventory = build_inventory(reports, catalogue, today, patch=private_patch,
                                 municipal_history=municipal_history,
-                                route_reports=route_reports)
+                                route_reports=route_reports,
+                                watch_state=json.loads((args.intake / 'source-watch-state.json').read_text(encoding='utf-8')))
     output = args.intake / "national-festival-blocker-inventory.json"
     output.write_text(json.dumps(inventory, ensure_ascii=False, indent=2) + "\n",
                       encoding="utf-8")

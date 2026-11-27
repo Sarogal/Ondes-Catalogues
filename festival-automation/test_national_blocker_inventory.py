@@ -174,6 +174,37 @@ class BlockerInventoryTests(TestCase):
             with self.assertRaisesRegex(ValueError, "Invalid private route diagnostics"):
                 build_inventory(reports, catalogue, TODAY, route_reports={"openagenda": invalid})
 
+    def test_persisted_attempts_are_diagnostic_and_bound_to_current_source(self):
+        reports, catalogue = fixture()
+        url = "https://openagenda.com/example/events/test"
+        target = reports["discovery"]["dossiers"][0]
+        target["sources"] = [{"kind": "OPENAGENDA_PUBLIC_RESEARCH_ONLY", "url": url}]
+        entry = {"lastChecked": TODAY, "lastResultStatus": "OPENAGENDA_OFFICIAL_LINK_UNPROVEN",
+                 "lastProfessionalStatus": "PROFESSIONAL_RATE_LIMITED",
+                 "lastProfessionalDetailStatus": "NO_OFFICIAL_DETAIL_PROOF",
+                 "digest": "secret-private-proof"}
+        state = {"schema": "grossesondes.source-watch.v1",
+                 "national_openagenda_linked_first_party_observations_private": {url: entry}}
+        result = build_inventory(reports, catalogue, TODAY, watch_state=state)
+        self.assertEqual(result["unpublished_dossiers_with_recent_route_attempts"], 1)
+        self.assertEqual(result["unpublished_dossiers_with_professional_rate_limit"], 1)
+        self.assertEqual(result["dossiers_without_generic_proposal"], 2)
+        self.assertEqual(result["dossiers"][0]["recent_persisted_route_attempts_review_only"],
+                         [{"route": "openagenda", "last_checked": TODAY,
+                           "status": "OPENAGENDA_OFFICIAL_LINK_UNPROVEN",
+                           "professional_status": "PROFESSIONAL_RATE_LIMITED",
+                           "professional_detail_status": "NO_OFFICIAL_DETAIL_PROOF"}])
+        self.assertNotIn("secret-private-proof", str(result))
+        self.assertFalse(result["publication_authorized"])
+        for bad_day in ("2026-11-13", "2026-11-22", "invalid"):
+            entry["lastChecked"] = bad_day
+            self.assertEqual(build_inventory(reports, catalogue, TODAY, watch_state=state)
+                             ["unpublished_dossiers_with_recent_route_attempts"], 0)
+        entry["lastChecked"] = TODAY
+        target["sources"][0]["url"] += "-other"
+        self.assertEqual(build_inventory(reports, catalogue, TODAY, watch_state=state)
+                         ["unpublished_dossiers_with_recent_route_attempts"], 0)
+
     def test_unfamiliar_festival_is_never_dropped_by_a_closed_registry(self):
         reports, catalogue = fixture()
         target = reports["discovery"]["dossiers"][0]
