@@ -4,6 +4,7 @@ import argparse
 import base64
 import hashlib
 import json
+import os
 import re
 from pathlib import Path
 
@@ -14,6 +15,28 @@ KEY_ID = "go-apk-test-20261122-v2"
 PUBLIC_KEY = "mxOGcUsk4/HFKkhNWVTpToPEuAEuc8SNZ68Y68v0KMw="
 FIELDS = ("schema_version", "catalog_id", "release_sequence", "published_at",
           "content_sha256", "content_length", "content_path")
+
+def cli_anchor(expected_sha, expected_sequence):
+    """Explicitly select the isolated real key for successor collector CLIs.
+
+    Offline tests and the original sequence-8 TEST bootstrap keep the
+    immutable TEST pin. Real successors must never fall back to that pin.
+    """
+    if expected_sequence == 8:
+        return dict(expected_sha=expected_sha,expected_sequence=expected_sequence,
+                    public_key=PUBLIC_KEY,key_id=KEY_ID)
+    if (os.environ.get("GITHUB_REPOSITORY")!="Sarogal/Ondes-Catalogues"
+            or os.environ.get("GITHUB_REF")!="refs/heads/feature/radio-daily-discovery-lab-20261120"):
+        raise ValueError("isolated real catalogue context required")
+    public=os.environ["RADIO_LAB_PUBLIC_KEY"]
+    key_id=os.environ["RADIO_LAB_KEY_ID"]
+    decoded=base64.b64decode(public,validate=True)
+    if (len(decoded)!=32 or public==PUBLIC_KEY
+            or key_id!="radio-lab-"+hashlib.sha256(decoded).hexdigest()[:24]):
+        raise ValueError("independent laboratory key pin required")
+    return dict(expected_sha=expected_sha,expected_sequence=expected_sequence,
+                public_key=public,key_id=key_id)
+
 
 def strict_json(raw):
     def pairs(items):
