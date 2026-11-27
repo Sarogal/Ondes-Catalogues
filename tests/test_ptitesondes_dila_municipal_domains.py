@@ -50,7 +50,7 @@ class DILAMunicipalDomainsTests(unittest.TestCase):
     def test_code_query_and_identity_bound_diagnostics(self):
         from collections import Counter
         fields = parse_qs(urlsplit(dila_query(CITY, insee="2A004")).query)
-        self.assertEqual(fields["where"], ['code_insee_commune = "2A004" AND categorie = "SL"'])
+        self.assertEqual(fields["where"], ['code_insee_commune = "2A004" AND categorie = "SL" AND startswith(nom, "Mairie - ")'])
         for code in ("123", '1" OR true', True):
             with self.assertRaises(ValueError):
                 dila_query(CITY, insee=code)

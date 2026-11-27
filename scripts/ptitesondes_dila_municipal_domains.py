@@ -84,7 +84,8 @@ def dila_query(city, *, insee=None):
             raise ValueError("invalid_municipality_code")
         # Search by administrative identifier, then recheck exact name and
         # mairie pivot against the complete returned record set.
-        condition = 'code_insee_commune = "' + insee + '" AND categorie = "SL"'
+        condition = ('code_insee_commune = "' + insee + '" AND categorie = "SL"'
+                     ' AND startswith(nom, "Mairie - ")')
     return DILA_RECORDS + "?" + urlencode({
         "where": condition, "limit": MAX_RECORDS,
         "select": ("nom,pivot,code_insee_commune,adresse,categorie,"
