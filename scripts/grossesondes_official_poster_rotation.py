@@ -30,6 +30,12 @@ MAX_DOM_BYTES = 1_400_000
 DOM_SCHEMA = 'grossesondes.poster-rendered-review.v1'
 
 
+def scheduled_poster_tick(now):
+    # Two scheduled cycles per UTC day, not six. The scheduled morning
+    # and evening runs advance by exactly one slot, whatever the batch count.
+    return int(now.timestamp() // 43200)
+
+
 def capture_rendered_evidence(catalogue, today, tick, limit, *, fetch=fetch_public_html, renderer):
     """Only signed rotation roots, public DOM only; never read private state."""
     if type(limit) is not int or not 1 <= limit <= MAX_HOSTS:
@@ -37,7 +43,7 @@ def capture_rendered_evidence(catalogue, today, tick, limit, *, fetch=fetch_publ
     entries = []
     attempted = 0
     deadline = monotonic() + MAX_RUN_SECONDS
-    for site, rows in signed_rotation(catalogue, today, limit, tick):
+    for site, rows in signed_rotation(catalogue, today, limit, tick, alternate_order=True):
         if attempted >= MAX_BROWSER_HOSTS or monotonic() >= deadline:
             break
         active = [r for r in rows if not r.get('cancelled')
@@ -77,7 +83,7 @@ def validated_rendered_evidence(path, catalogue, today, tick, limit):
                 or data['tick'] != tick or not isinstance(data.get('entries'), list)
                 or len(data['entries']) > MAX_BROWSER_HOSTS):
             return {}
-        sites = {site for site, _ in signed_rotation(catalogue, today, limit, tick)}
+        sites = {site for site, _ in signed_rotation(catalogue, today, limit, tick, alternate_order=True)}
         result = {}
         for entry in data['entries']:
             if not isinstance(entry, dict) or not isinstance(entry.get('site'), str):
@@ -126,7 +132,7 @@ def contextual_poster_match(site, url, row, page_date_match, reading, result):
 
 def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
          fetch=fetch_public_html, reader=read_official_poster, slug=None,
-         browser_fetch=None):
+         browser_fetch=None, browser_sites=None):
     """Use only URLs from the public catalogue and their freshly read DOM.
 
     No new URLs supplied by CLI, no edits, no publication authority.
@@ -141,7 +147,7 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
     artist_names = {name for entry in public_rows if isinstance(entry, dict)
                     for name in (entry.get("lineup") if isinstance(entry.get("lineup"), list) else [])
                     if isinstance(name, str)}
-    selected = signed_rotation(catalogue, today, limit, tick)
+    selected = signed_rotation(catalogue, today, limit, tick, alternate_order=True)
     if slug is not None:
         # Manual diagnostic selects an existing catalogue slug, not a URL.
         selected = [(site, [r for r in rows if r.get("slug") == slug])
@@ -179,6 +185,7 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
         if (active and browser_fetch is not None
                 and not any(current_official_poster_candidates(html, site, row)
                             for row in active)
+                and (browser_sites is None or site in browser_sites)
                 and report["browser_hosts"] < MAX_BROWSER_HOSTS
                 and monotonic() < deadline):
             report["browser_hosts"] += 1
@@ -265,7 +272,7 @@ def main():
         raise ValueError("Catalogue exceeds budget")
     catalogue = json.loads(args.catalogue.read_text(encoding="utf-8"))
     today = date.today().isoformat()
-    tick = args.tick if args.tick is not None else int(datetime.now(timezone.utc).timestamp() // 14400)
+    tick = args.tick if args.tick is not None else scheduled_poster_tick(datetime.now(timezone.utc))
     cache = load_ocr_cache(args.private_cache) if args.private_cache else {}
     if args.capture_rendered_evidence and (not args.browser or args.private_cache
             or args.rendered_evidence or args.slug):
@@ -283,13 +290,15 @@ def main():
         args.capture_rendered_evidence.write_text(json.dumps(evidence, ensure_ascii=False), encoding="utf-8")
         print("Public rendered roots:", len(evidence["entries"]))
         return
+    browser_sites = None
     if args.rendered_evidence:
         evidence = validated_rendered_evidence(args.rendered_evidence, catalogue,
                                               today, tick, args.limit)
+        browser_sites = set(evidence)
         if evidence:
             browser_fetch = lambda site: evidence[site]
     report = scan(catalogue, today, tick=tick, limit=args.limit, slug=args.slug,
-                  cache=cache, browser_fetch=browser_fetch)
+                  cache=cache, browser_fetch=browser_fetch, browser_sites=browser_sites)
     if args.private_cache:
         save_ocr_cache(args.private_cache, cache)
     print(json.dumps(report, ensure_ascii=False, indent=2))
