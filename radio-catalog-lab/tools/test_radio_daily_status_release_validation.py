@@ -17,12 +17,13 @@ from test_radio_daily_repair_plan import DAY, SID
 
 
 class IndependentStatusGateTests(unittest.TestCase):
-    def fixture(self, quarantined=False, redirect=False, count=1, synthetic=False, approved=True):
+    def fixture(self, quarantined=False, redirect=False, count=1, synthetic=False, approved=True, stream_state='verified'):
         self.signer = EphemeralLabSigner()
         raw, _ = setup(quarantined=quarantined, redirect=redirect, count=count)
         doc = json.loads(raw)
         for row in doc["stations"]:
             row["logo"] = None
+            row["streams"][0]["state"] = stream_state
             if approved:
                 row["editorial"].update(admission_state="approved", reviewed_at=DAY+"T00:00:00Z")
         if synthetic:
@@ -68,6 +69,33 @@ class IndependentStatusGateTests(unittest.TestCase):
         self.fixture(quarantined=True)
         self.assertEqual(self.verify(), digest(self.candidate))
         self.assertEqual(json.loads(self.candidate)["stations"][0]["status"]["state"], "active")
+
+    def test_real_legacy_quarantine_candidate_is_promoted_before_activation(self):
+        self.fixture(quarantined=True, approved=False, stream_state="candidate")
+        row=self.publish_current()["stations"][0]
+        old=json.loads(self.raw)["stations"][0]
+        self.assertEqual(row["status"]["state"],"active")
+        self.assertEqual(row["streams"][0],dict(old["streams"][0],
+            state="verified",last_checked_at=DAY+"T00:00:00Z"))
+        self.assertEqual(row["legacy_aliases"],old["legacy_aliases"])
+        self.assertEqual(row["editorial"],old["editorial"])
+
+    def test_candidate_verified_is_promoted_on_recovery(self):
+        self.fixture(quarantined=True, approved=False, stream_state="candidate_verified")
+        self.assertEqual(self.verify(),digest(self.candidate))
+        self.assertEqual(json.loads(self.candidate)["stations"][0]["streams"][0]["state"],"verified")
+
+    def test_disabled_stream_does_not_restore(self):
+        self.fixture(quarantined=True, approved=False, stream_state="disabled")
+        self.assertIsNone(self.candidate)
+        self.assertEqual(self.evidence["status"]["proposalCount"],0)
+
+    def test_status_only_recovery_with_unverified_stream_is_refused(self):
+        self.fixture(quarantined=True, approved=False, stream_state="candidate")
+        doc=json.loads(self.candidate)
+        doc["stations"][0]["streams"]=json.loads(self.raw)["stations"][0]["streams"]
+        with self.assertRaises(ValueError):
+            self.verify(encode(doc))
 
     def test_forged_proposal_refused(self):
         self.fixture()
