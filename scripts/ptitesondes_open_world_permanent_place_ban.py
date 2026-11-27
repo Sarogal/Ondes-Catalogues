@@ -37,6 +37,11 @@ BAN_DIAGNOSTIC_CODES = (
     "culture_independent_address_conflict", "culture_independent_proof_found",
     "culture_independent_multi_url_attempted", "culture_independent_multi_url_conflict",
     "culture_independent_multi_url_resolved",
+    "culture_independent_record_missing", "culture_independent_name_or_commune_mismatch",
+    "culture_independent_administrative_code_format", "culture_independent_address_field_missing_or_invalid",
+    "culture_independent_numbered_street_missing", "culture_independent_complete_address_mismatch",
+    "culture_independent_entrance_address_mismatch", "culture_independent_invalid_record",
+    "culture_independent_url_missing", "culture_independent_url_unsafe", "culture_independent_url_budget",
 )
 _BAN_DIAGNOSTICS = Counter()
 
@@ -392,11 +397,18 @@ def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=No
     try:
         city, venue = row["city"], row["venue"]
         record = cultural_lookup(city, venue)
-        identity = directory_identity(city, venue, record)
+        identity_counts = Counter()
+        identity = directory_identity(city, venue, record, identity_counts)
         if identity is None:
+            for reason in identity_counts:
+                code = "culture_independent_" + ("record_missing" if reason == "directory_record_missing" else reason)
+                _note(code)
             return _note("culture_independent_identity_unmatched")
-        urls = [url for url in directory_website_hints(record) if _host(url)]
+        listed = directory_website_hints(record)
+        urls = [url for url in listed if _host(url)]
         if not 1 <= len(urls) <= 4:
+            _note("culture_independent_url_missing" if not listed else
+                  "culture_independent_url_unsafe" if not urls else "culture_independent_url_budget")
             return _note("culture_independent_url_ambiguous")
         if len(urls) > 1:
             _note("culture_independent_multi_url_attempted")
