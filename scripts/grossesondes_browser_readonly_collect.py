@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import os
+import re
 from datetime import datetime, date
 from hashlib import sha256
 import json
@@ -123,14 +124,15 @@ def signed_targets(published, history, today, slot, limit=MAX_ENTRIES, *,
 
 
 def prioritize_unavailable(published, history, today, slot, *,
-                           event_name="", fetch=fetch_public_html):
+                           event_name="", fetch=fetch_public_html, rotation_tick=None):
     """Use ordinary HTTPS probes of the Publisher's own signed batch.
 
     All probes run in the secretless job. Failures only prioritize ordinary
     browser navigation; they cannot authorize an unsigned URL or publication.
     Leave at least three slots for the rotating cohorts, including archives.
     """
-    baseline = signed_targets(published, history, today, slot)
+    rotation = slot if rotation_tick is None else rotation_tick
+    baseline = signed_targets(published, history, today, rotation)
     budget = MAX_RAW_PROBES if event_name == "push" else 24
     candidates = [
         url for url, _ in signed_rotation(
@@ -166,17 +168,17 @@ def prioritize_unavailable(published, history, today, slot, *,
     missing_geo = [(url, url) for url in failures if url in unlocated]
     other = [(url, url) for url in failures if url not in unlocated]
     geo_quota = min(len(missing_geo), MAX_FAILURE_SLOTS - min(2, len(other)))
-    selected = [url for _, url in _rotate(missing_geo, slot, geo_quota)]
+    selected = [url for _, url in _rotate(missing_geo, rotation, geo_quota)]
     selected += [url for _, url in _rotate(
-        other, slot, MAX_FAILURE_SLOTS - len(selected))]
+        other, rotation, MAX_FAILURE_SLOTS - len(selected))]
     selected += [url for _, url in _rotate(
-        [(url, url) for url in linkless], slot, MAX_FAILURE_SLOTS - len(selected))]
+        [(url, url) for url in linkless], rotation, MAX_FAILURE_SLOTS - len(selected))]
     if not selected:
         return baseline, len(candidates), len(failures)
     # Reserve one rotating root from each cohort before filling spare
     # capacity. In particular, a full unlocated cohort must not displace
     # the archive root merely because baseline was completed with fallbacks.
-    reserved = signed_targets(published, history, today, slot, limit=3,
+    reserved = signed_targets(published, history, today, rotation, limit=3,
                               quotas=(1, 1, 1))
     for url in reserved + baseline:
         if len(selected) >= MAX_ENTRIES:
@@ -186,9 +188,11 @@ def prioritize_unavailable(published, history, today, slot, *,
     return selected, len(candidates), len(failures)
 
 
-def collect(urls, renderer=rendered_html):
+def collect(urls, renderer=rendered_html, *, diagnostics=None):
     """Visit signed roots, then at most two safely discovered official links."""
     result, seen = [], set()
+    if diagnostics is None:
+        diagnostics = []
     for url in urls:
         if url in seen:
             continue
@@ -198,10 +202,13 @@ def collect(urls, renderer=rendered_html):
             html = renderer(url)
             if (not isinstance(html, str)
                     or not 0 < len(html.encode("utf-8")) <= MAX_BYTES):
+                diagnostics.append({"url": url, "status": "invalid_bounded_dom"})
                 continue
             result.append({"officialSite": url, "sha256": sha256(
                 html.encode("utf-8")).hexdigest(), "html": html})
             seen.add(url)
+            diagnostics.append({"url": url, "status": "root_rendered",
+                                "bytes": len(html.encode("utf-8"))})
             # A link is only a bounded research target discovered in CURRENT
             # same-host rendered HTML; it cannot grant publication authority.
             links = linked_pages(url, page(html, rendered=True), prefer_programme=True)[:MAX_LINKS_PER_SITE]
@@ -218,8 +225,14 @@ def collect(urls, renderer=rendered_html):
                         linked.encode("utf-8")).hexdigest(), "html": linked})
                 except Exception:
                     continue
-        except Exception:
-            # Deliberately omit URL, exception message and page body from logs.
+        except Exception as exc:
+            # Log only the already signed URL and fixed error categories, not
+            # exception text, response HTML, redirected URLs or credentials.
+            from grossesondes_official_browser_probe import BrowserEvidenceError
+            reason = exc.reason if isinstance(exc, BrowserEvidenceError) else (
+                "network_error" if isinstance(exc, OSError) else
+                "invalid_evidence" if isinstance(exc, ValueError) else "browser_error")
+            diagnostics.append({"url": url, "status": reason})
             continue
     return {"schema": SCHEMA, "entries": result}
 
@@ -234,12 +247,19 @@ def main():
     published = json.loads(args.published.read_text(encoding="utf-8"))
     history = json.loads(args.history.read_text(encoding="utf-8"))
     slot = now.date().toordinal() * 2 + (now.hour >= 15)
+    # Repeated pushes/retries in the same half-day must not select the
+    # same scarce browser slots. Keep the raw batch anchored to its date.
+    run_number = os.environ.get("GITHUB_RUN_NUMBER", "")
+    rotation = int(run_number) if re.fullmatch(r"[0-9]{1,10}", run_number) else slot
     targets, raw_probed, raw_unavailable = prioritize_unavailable(
         published, history, now.date(), slot,
-        event_name=os.environ.get("GITHUB_EVENT_NAME", ""))
+        event_name=os.environ.get("GITHUB_EVENT_NAME", ""), rotation_tick=rotation)
     print("SIGNED_BROWSER_RAW_PROBES:", raw_probed)
     print("SIGNED_BROWSER_RAW_UNAVAILABLE:", raw_unavailable)
-    report = collect(targets)
+    diagnostics = []
+    report = collect(targets, diagnostics=diagnostics)
+    print("SIGNED_BROWSER_ROTATION:", rotation)
+    print("SIGNED_BROWSER_DIAGNOSTICS:", json.dumps(diagnostics, ensure_ascii=True))
     report["date"] = now.date().isoformat()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False) + "\n", encoding="utf-8")
