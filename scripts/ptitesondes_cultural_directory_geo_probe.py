@@ -107,6 +107,9 @@ def nearby_exact_node(row, doc):
     return loc
 
 
+REVERSE_LIMIT = 20
+
+
 def reverse_poi_url(row):
     import re
     if classify(row) != "distinct_directory_point_unverified":
@@ -117,7 +120,7 @@ def reverse_poi_url(row):
     lat, lng = point(row["latitude"], row["longitude"])
     return "https://data.geopf.fr/geocodage/reverse?" + urlencode({
         "index": "poi", "lat": lat, "lon": lng, "citycode": code,
-        "limit": 5, "searchgeom": json.dumps({"type": "Circle",
+        "limit": REVERSE_LIMIT, "searchgeom": json.dumps({"type": "Circle",
             "coordinates": [lng, lat], "radius": 100}, separators=(",", ":"))})
 
 
@@ -141,7 +144,7 @@ def reverse_exact_point(row, doc, diagnostics):
     if classify(row) != "distinct_directory_point_unverified":
         diagnostics["invalid_directory_point"] += 1
         return None
-    loc = exact_poi_point(row, doc, diagnostics)
+    loc = exact_poi_point(row, doc, diagnostics, limit=REVERSE_LIMIT)
     if loc is not None and distance(loc, point(row["latitude"], row["longitude"])) > 65:
         diagnostics["poi_distance"] += 1
         return None
