@@ -241,6 +241,24 @@ class OfficialPlaceBANTests(unittest.TestCase):
         self.assertEqual(proof["official_url"], PAGE)
         self.assertEqual(reads, [home, canonical_page])
 
+    def test_national_directory_hint_requires_authenticated_municipal_scope(self):
+        seen = []
+        def read(url):
+            seen.append(url)
+            self.assertEqual(url, PAGE)
+            return HTML
+        def lookup(city, venue):
+            self.assertEqual((city, venue), (CITY, VENUE))
+            return {"site_internet_et_autres_liens": [
+                "https://external.example/lieu", PAGE]}
+        proof = discover_official_ban({"city": CITY, "venue": VENUE},
+            directory_fetch=lambda _: DIR, page_read=read,
+            cultural_lookup=lookup, ban_fetch=lambda _: BAN,
+            admin_fetch=lambda *_: ADMIN)
+        self.assertIsNotNone(proof)
+        self.assertEqual(seen, [PAGE])
+        self.assertFalse(proof["public_eligible"])
+
     def test_ban_unavailable_is_not_publication_permission(self):
         def down(_):
             raise OSError("provider unavailable")
