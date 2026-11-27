@@ -3,6 +3,18 @@ from ptitesondes_cultural_acceslibre_probe import compare
 
 
 class CulturalAcceslibreProbeTests(unittest.TestCase):
+    def test_numberless_official_content_requires_visible_exact_facts(self):
+        from ptitesondes_cultural_acceslibre_probe import inspect_official_content
+        lead = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois",
+                "code_commune": "01234", "code_postal": "01230",
+                "numero_et_libelle_voie": "Rue des Jeux", "adresse_complete": "Rue des Jeux"}
+        html = "<main><h1>Ludothèque A</h1><address>Rue des Jeux 01230 Les Bois</address><p>Jeux pour enfants</p><p>Accès libre</p></main>"
+        self.assertEqual(inspect_official_content(lead, html), "page_content_concordant_unverified")
+        self.assertEqual(inspect_official_content(lead, html.replace("Ludothèque A", "Autre lieu")), "page_identity_unconfirmed")
+        self.assertEqual(inspect_official_content(lead, html.replace("Rue des Jeux", "Rue Autre")), "page_address_unconfirmed")
+        self.assertEqual(inspect_official_content(lead, html.replace("Jeux pour enfants", "Activités")), "page_family_service_unconfirmed")
+        self.assertEqual(inspect_official_content(lead, html.replace("Accès libre", "Accès réservé")), "page_access_restricted")
+
     def test_exact_identity_and_concordance_are_only_hints(self):
         lead = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois",
                 "code_commune": "01234", "code_postal": "01230",

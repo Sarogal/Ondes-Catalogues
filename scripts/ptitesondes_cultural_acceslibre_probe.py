@@ -33,7 +33,80 @@ def candidates(fetch=_fetch):
     return [row for row in found.values() if row is not None]
 
 
-def compare(leads, rows):
+def inspect_official_content(lead, html):
+    """Read-only explicit identity, address and family evidence stages."""
+    from ptitesondes_open_world_permanent_place_ban import (
+        _parse_place_main, ACTIVITIES, ACCESS, RESTRICTED, CLOSED, MAX_HTML,
+    )
+    from ptitesondes_cultural_directory_identity import address_format
+    if not isinstance(html, str) or not 50 <= len(html) <= MAX_HTML:
+        return "page_invalid"
+    parser = _parse_place_main(html, allow_role_main=True)
+    names = {norm_text(lead.get(k)) for k in ("nom_du_lieu", "nom_usuel_du_lieu")} - {""}
+    if not parser.seen_main or len(parser.headings) != 1 or parser.headings[0] not in names:
+        return "page_identity_unconfirmed"
+    if any(RESTRICTED.search(b) or CLOSED.search(b) for b in parser.blocks):
+        return "page_access_restricted"
+    city, postcode = lead["commune"], lead["code_postal"]
+    street = lead.get("numero_et_libelle_voie")
+    if not isinstance(street, str) or not norm_text(street):
+        return "directory_street_missing"
+    if not address_format(lead.get("adresse_complete"), street, postcode, city):
+        return "directory_address_conflict"
+    if lead.get("adresse_entree_public") not in (None, "") and not address_format(
+            lead["adresse_entree_public"], street, postcode, city):
+        return "directory_entrance_conflict"
+    expected = norm_text(street) + " " + postcode + " " + norm_text(city)
+    if expected not in parser.blocks:
+        return "page_address_unconfirmed"
+    import re
+    if not any(re.search(pattern, b) for pattern, _ in ACTIVITIES for b in parser.blocks):
+        return "page_family_service_unconfirmed"
+    if not any(re.search(pattern, b) for pattern, _ in ACCESS for b in parser.blocks):
+        return "page_public_access_unconfirmed"
+    return "page_content_concordant_unverified"
+
+
+def inspect_official(lead, hit, page_read=None):
+    from ptitesondes_national_cultural_directory_probe import directory_website_hints
+    from ptitesondes_unlisted_source_safe_recheck import read_cultural_https, same_cultural_authority
+    from ptitesondes_open_world_permanent_place_ban import _cultural_named_page
+    from ptitesondes_dila_municipal_domains import _host
+    from urllib.parse import urlsplit
+    page_read = page_read or read_cultural_https
+    listed = [url for url in directory_website_hints(lead, try_https_upgrade=True) if _host(url)]
+    counts = Counter()
+    hint = hit.get("website_hint")
+    if hint:
+        counts["acceslibre_website_present"] += 1
+        if any(same_cultural_authority(url, hint) for url in listed):
+            counts["both_directories_website_agree"] += 1
+    if not 1 <= len(listed) <= 4:
+        counts["directory_website_missing_or_ambiguous"] += 1
+        return counts
+    city, venue = identity(lead)
+    aliases = tuple(lead[k] for k in ("nom_du_lieu", "nom_usuel_du_lieu")
+                    if isinstance(lead.get(k), str) and 2 <= len(lead[k]) <= 180)
+    for url in listed:
+        try:
+            final, html = page_read(url)
+            if not same_cultural_authority(url, final) or urlsplit(final).query or urlsplit(final).fragment:
+                raise ValueError("unexpected_authority")
+            reason = inspect_official_content(lead, html)
+            if reason == "page_identity_unconfirmed":
+                target = _cultural_named_page(venue, final, html, verified_aliases=aliases)
+                if target:
+                    final, html = page_read(target)
+                    if not same_cultural_authority(url, final) or urlsplit(final).query or urlsplit(final).fragment:
+                        raise ValueError("unexpected_authority")
+                    reason = inspect_official_content(lead, html)
+            counts[reason] += 1
+        except (OSError, ValueError, TypeError, KeyError, UnicodeError, OverflowError):
+            counts["page_unavailable"] += 1
+    return counts
+
+
+def compare(leads, rows, *, inspect=None):
     targets = {}
     buckets = [dict() for _ in leads]
     for i, row in enumerate(leads):
@@ -59,7 +132,8 @@ def compare(leads, rows):
                 bucket["conflict"] = None
             else:
                 bucket[rid] = parsed
-    counts, numberless = Counter(), Counter()
+    counts, numberless, official = Counter(), Counter(), Counter()
+    inspected = 0
     for lead, bucket in zip(leads, buckets):
         if not bucket:
             reason = "no_exact_match"
@@ -75,13 +149,20 @@ def compare(leads, rows):
                 reason = "point_conflict"
             else:
                 reason = "concordant_directory_hint"
+                if inspect is not None and inspected < 5:
+                    inspected += 1
+                    try:
+                        official.update(inspect(lead, hit))
+                    except (OSError, ValueError, TypeError, KeyError, UnicodeError, OverflowError):
+                        official["inspection_unavailable"] += 1
         counts[reason] += 1
         d = Counter()
         directory_identity(*identity(lead), lead, d)
         if d.get("numbered_street_missing"):
             numberless[reason] += 1
     return {"leads": len(leads), "rows_scanned": scanned, "counts": dict(counts),
-            "numberless_counts": dict(numberless), "publication_ready": False, "public_writes": 0}
+            "numberless_counts": dict(numberless), "official_inspected": inspected,
+            "official_counts": dict(official), "publication_ready": False, "public_writes": 0}
 
 
 def probe():
@@ -99,7 +180,7 @@ def probe():
             fields = reader.fieldnames or []
             if not COLUMNS.issubset(fields) or len(fields) != len(set(fields)):
                 raise ValueError("invalid_export_schema")
-            return compare(leads, reader)
+            return compare(leads, reader, inspect=inspect_official)
 
 
 if __name__ == "__main__":
