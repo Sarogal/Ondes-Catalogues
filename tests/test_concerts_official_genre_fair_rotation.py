@@ -377,6 +377,29 @@ class FairGenreReviewSlots(unittest.TestCase):
                                         limit=16, prior={**prior, "publicationAllowed": True})
             self.assertEqual(invalid["changedExtractorPriorityChecks"], 0)
 
+    def test_venue_identity_holds_migrate_and_retry_only_after_code_change(self):
+        queue = [row("unknown", i) for i in range(60)]
+        for reason in sorted(pipeline._VENUE_IDENTITY_REPLAY_REASONS):
+            with self.subTest(reason=reason), \
+                 mock.patch.object(pipeline, "eligible", return_value=queue), \
+                 mock.patch.object(pipeline, "propose", side_effect=ValueError(reason)):
+                with mock.patch.object(pipeline, "_extractor_revision", return_value="a"*64):
+                    _, first = pipeline.build({}, CATALOGUE, BEFORE, TODAY, limit=16)
+                    self.assertEqual(len(first["extractionRetryMemory"]), 16)
+                    prior = {**first, "extractionRetryMemory": {}}
+                    _, unchanged = pipeline.build({}, CATALOGUE, BEFORE, TODAY, limit=16, prior=prior)
+                    self.assertEqual(unchanged["changedExtractorPriorityChecks"], 0)
+                with mock.patch.object(pipeline, "_extractor_revision", return_value="b"*64):
+                    out, retry = pipeline.build({}, CATALOGUE, BEFORE, TODAY, limit=16, prior=prior)
+                    self.assertEqual(retry["changedExtractorRetryPendingBefore"], 16)
+                    self.assertEqual(retry["changedExtractorPriorityChecks"], 4)
+                    self.assertEqual(retry["changedExtractorRetryPendingAfter"], 12)
+                    self.assertEqual(out, BEFORE)
+                    self.assertFalse(retry["publicationAllowed"])
+                    _, again = pipeline.build({}, CATALOGUE, BEFORE, TODAY, limit=16, prior=retry)
+                    self.assertLess(again["changedExtractorRetryPendingAfter"], 12)
+                    self.assertLessEqual(again["changedExtractorPriorityChecks"], 4)
+
     def test_extraction_revision_ignores_unrelated_failure_reasons(self):
         queue = [row("unknown", i) for i in range(40)]
         with mock.patch.object(pipeline, "eligible", return_value=queue), \
