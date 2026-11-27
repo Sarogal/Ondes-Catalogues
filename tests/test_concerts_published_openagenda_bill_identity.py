@@ -96,6 +96,47 @@ class PublishedOpenAgendaBillRepair(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     contract.plan(bad, ledger["approvals"][0], current, fixture.TODAY)
 
+    def test_city_suffix_at_new_site_reconciles_existing_artist_and_replays(self):
+        base, current, ledger, fetch = self.initial(
+            ["KAMELOT - TOURS"], "KAMELOT - TOURS",
+            "Kamelot est un groupe de metal.")
+        report = builder.build_promotional(current, ledger, fixture.TODAY, fetch=fetch)
+        self.assertEqual(len(report["proposals"]), 1, report)
+        row = report["proposals"][0]
+        self.assertEqual(row["artistIds"], ["kamelot"])
+        self.assertEqual(row["newArtists"], [])
+        self.assertEqual(row["officialEvidence"][0]["proofType"], contract.PROMOTIONAL_PROOF)
+        with mock.patch.object(contract, "network_fetch",
+                               side_effect=lambda url: fetch(url, {})):
+            proposed, status = preflight.select(ledger, report, base, current, fixture.TODAY)
+            self.assertTrue(status["validatedByPublisher"], status)
+            after, counts = sync.merge(base, current, proposed, fixture.TODAY)
+        self.assertEqual(counts["correctedEvents"], 1)
+        self.assertEqual(counts["newEvents"], 0)
+        self.assertEqual(counts["newArtists"], 0)
+        self.assertEqual(after["events"][-1]["artistIds"], ["kamelot"])
+        self.assertEqual(after["venues"], current["venues"])
+        self.assertEqual(proposed["approvals"], ledger["approvals"])
+        self.assertEqual(proposed["venueApprovals"], ledger["venueApprovals"])
+        with mock.patch.object(contract, "network_fetch",
+                               side_effect=AssertionError("offline historical replay")):
+            replay, counts = sync.merge(base, after, proposed, fixture.TODAY)
+        self.assertEqual(replay, after)
+        self.assertEqual(counts["correctedEvents"], 0)
+        from scripts import concert_retired_artist_identity as retirement
+        bad_id = row["oldArtistIds"][0]
+        self.assertIn(bad_id, retirement.candidates(base, after, proposed, fixture.TODAY))
+        forged = copy.deepcopy(ledger["approvals"][0])
+        forged["officialEvidence"][1]["namedOsmUrl"] = "https://www.openstreetmap.org/node/123"
+        with self.assertRaises(ValueError):
+            contract.plan(row, forged, current, fixture.TODAY)
+        unavailable, _ = fixture.official_get(changes={
+            "title": {"fr": "KAMELOT - TOURS"},
+            "longDescription": {"fr": "KAMELOT - TOURS"},
+        })
+        self.assertFalse(builder.build_promotional(
+            current, ledger, fixture.TODAY, fetch=unavailable)["proposals"])
+
     def test_preflight_composes_independent_maintenance_deltas(self):
         base, current, ledger, fetch = self.initial(
             ["Example Band", "guests : Other Band"],
