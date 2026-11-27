@@ -378,6 +378,39 @@ class OpenAgendaNewNamedSitePublisherTests(unittest.TestCase):
                 self.assertNotIn("latitude", place)
                 self.assertNotIn("longitude", place)
 
+    def test_same_slot_repeated_runs_advance_new_site_review_memory(self):
+        from automation.concerts import dynamic_self_attributed_new_site_proposals as own
+        leads = [(DAY, "https://example.org/events/" + str(i),
+                  {"candidateId": "lead-" + str(i),
+                   "reviewBucket": "genre_tag_review" if i < 9 else "genre_unknown"})
+                 for i in range(12)]
+        for module in (producer, own):
+            with self.subTest(module=module.__name__), \
+                 mock.patch.object(module, "eligible", return_value=leads), \
+                 mock.patch.object(module, "propose", side_effect=ValueError("test only")):
+                prior = None
+                seen = set()
+                for _ in range(3):
+                    result, report = module.build(
+                        observation(), geo_fixture.test_catalogue(),
+                        geo_fixture.before(), TODAY, slot=1, limit=4, prior=prior)
+                    ids = {row["candidateId"] for row in report["candidateChecks"]}
+                    self.assertEqual(len(ids), 4)
+                    self.assertFalse(ids & seen)
+                    self.assertEqual(report["firstReviewInMemory"], 4)
+                    self.assertEqual(result, geo_fixture.before())
+                    self.assertFalse(report["publicationAllowed"])
+                    seen.update(ids)
+                    prior = report
+                self.assertEqual(len(seen), 12)
+                self.assertEqual(len(prior["reviewMemory"]), 12)
+                self.assertTrue(all(len(k) == 64 for k in prior["reviewMemory"]))
+                _, report = module.build(
+                    observation(), geo_fixture.test_catalogue(), geo_fixture.before(),
+                    TODAY, slot=1, limit=4, prior=prior)
+                self.assertEqual(report["examined"], 4)
+                self.assertEqual(report["firstReviewInMemory"], 0)
+
     def test_priority_and_unknown_genres_both_rotate_without_starvation(self):
         leads = []
         for bucket in ("genre_tag_review", "genre_unknown"):
