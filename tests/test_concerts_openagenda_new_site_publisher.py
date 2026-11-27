@@ -497,6 +497,38 @@ class OpenAgendaNewNamedSitePublisherTests(unittest.TestCase):
         self.assertEqual(second["examined"], 1)
         self.assertTrue(second["candidateChecks"][0]["immediatePairRetry"])
 
+    def test_pair_retry_rebuilds_changed_named_bill_without_stale_signature(self):
+        base, previous = geo_fixture.test_catalogue(), geo_fixture.before()
+        first_names = ["Example Headliner"]
+        first_fetch, _ = official_get(changes={
+            "title": {"fr": first_names[0]}, "keywords": {"fr": ["metal"]}})
+        registry = observation(name=first_names[0], leadArtist=first_names[0])
+        proposed, first = producer.build(
+            registry, base, previous, TODAY, fetch=first_fetch, limit=4)
+        self.assertEqual(len(proposed["approvals"]), 1, first)
+        self.assertEqual(proposed["approvals"][0]["officialEvidence"][1]
+                         ["officialArtistNames"], first_names)
+        names = first_names + ["Example Support A", "Example Support B"]
+        fresh_fetch, reads = official_get(changes={
+            "title": {"fr": " + ".join(names)},
+            "keywords": {"fr": ["metal", "punk"]}})
+        rebuilt, second = producer.build(
+            registry, base, previous, TODAY, fetch=fresh_fetch, limit=4, prior=first)
+        self.assertEqual(second["immediatePairRetries"], 1)
+        self.assertIn(OFFICIAL_EXPORT, reads)
+        self.assertEqual(len(rebuilt["approvals"]), 1, second)
+        self.assertEqual(rebuilt["approvals"][0]["officialEvidence"][1]
+                         ["officialArtistNames"], names)
+        self.assertEqual(len(rebuilt["approvals"][0]["event"]["artistIds"]), 3)
+        self.assertEqual(len(rebuilt["venueApprovals"]), 1)
+        self.assertEqual(proposed["approvals"][0]["officialEvidence"][1]
+                         ["officialArtistNames"], first_names)
+        self.assertEqual(previous, geo_fixture.before())
+        with mock.patch.object(signer.probe, "safe_fetch", side_effect=fresh_fetch):
+            stats = approval_preflight.validate_proposal(
+                previous, rebuilt, base, base, TODAY, publisher.merge)
+        self.assertTrue(stats["validatedByPublisher"])
+
     def test_priority_and_unknown_genres_both_rotate_without_starvation(self):
         leads = []
         for bucket in ("genre_tag_review", "genre_unknown"):
