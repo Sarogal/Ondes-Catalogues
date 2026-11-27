@@ -380,6 +380,54 @@ def poster_known_artist_candidates(reading, artist_names):
     return sorted(matches)
 
 
+def poster_calendar_ranges(lines, year, *, confidence=None):
+    """Read full dates or a tightly aligned stack of date-only segments.
+
+    Never join two columns, skip intervening segments or invent a missing
+    year. All OCR segments (including weak ones) are checked for conflicts.
+    """
+    from grossesondes_official_html_edition import explicit_ranges, fold, MONTH_WORD
+    def text(line):
+        return fold(" ".join(w["text"] for w in line))
+    def confident(line):
+        return confidence is None or all(w["confidence"] >= confidence for w in line)
+    def bounds(line):
+        return (min(w["box"][0] for w in line),
+                min(w["box"][1] for w in line),
+                max(w["box"][0] + w["box"][2] for w in line),
+                max(w["box"][1] + w["box"][3] for w in line))
+    def adjacent(first, second):
+        a, b = bounds(first), bounds(second)
+        gap = b[1] - a[3]
+        h = max(a[3] - a[1], b[3] - b[1])
+        overlap = min(a[2], b[2]) - max(a[0], b[0])
+        return (0 <= gap <= h and overlap >= .5 * min(a[2]-a[0], b[2]-b[0])
+                and abs((a[0]+a[2]) - (b[0]+b[2])) <= 2*h)
+    dates = {(a,b) for line in lines if confident(line)
+             for _,_,a,b in explicit_ranges(text(line), year)}
+    # Each piece must consist entirely of date vocabulary. In particular
+    # "Pass", a sponsor heading, prices and artist names cannot be joined.
+    date_piece = re.compile(r"(?:(?:\d{1,4}|au|a|et|" + MONTH_WORD +
+                            r"|[-–—&,./])\s*)+", re.I)
+    for index in range(len(lines)):
+        for count in (2, 3):
+            stack = lines[index:index+count]
+            if len(stack) != count or not all(confident(l) for l in stack):
+                continue
+            if not all(adjacent(a,b) for a,b in zip(stack, stack[1:])):
+                continue
+            pieces = [text(line) for line in stack]
+            if not all(date_piece.fullmatch(piece) for piece in pieces):
+                continue
+            joined = " ".join(pieces)
+            # A complete date expression must span the entire stack. Do not
+            # silently reinterpret e.g. a separate isolated day as a range.
+            for first, last, a, b in explicit_ranges(joined, year):
+                if first == 0 and last == len(joined):
+                    dates.add((a,b))
+    return dates
+
+
 def poster_review_claims(row, reading):
     """Edition-bound diagnostic claims; no publication authority.
 
@@ -423,9 +471,8 @@ def poster_review_claims(row, reading):
               if all(w["confidence"] >= MIN_REVIEW_CONFIDENCE for w in line)]
     name_pattern = " " + " ".join(brand_words) + " "
     brand_ok = any(name_pattern in " " + " ".join(tokens(line)) + " " for line in strong)
-    ranges = {(a,b) for line in strong for _,_,a,b in explicit_ranges(fold(line), start.year)}
-    all_ranges = {(a,b) for line in texts for _,_,a,b in
-                  explicit_ranges(fold(" ".join(w["text"] for w in line)), start.year)}
+    ranges = poster_calendar_ranges(texts, start.year, confidence=MIN_REVIEW_CONFIDENCE)
+    all_ranges = poster_calendar_ranges(texts, start.year)
     out["diagnostics"].update(
         brand_matches=brand_ok,
         strong_date_range_count=len(ranges),
