@@ -188,9 +188,23 @@ def bounded_rendered_html(html):
     return compact
 
 
+def wait_for_linkless_dom(page, timeout_error):
+    """Give a linkless dynamic shell a bounded chance to finish rendering.
+
+    No clicks, arbitrary navigation, network-idle waits or origin exceptions.
+    Ordinary pages with an anchor retain the original timing.
+    """
+    anchors = page.locator("a[href]")
+    if anchors.count() == 0:
+        try:
+            anchors.first.wait_for(state="attached", timeout=4000)
+        except timeout_error:
+            pass
+
+
 def rendered_html(official_site):
     """Browser is isolated: no secrets, off-origin requests or storage."""
-    from playwright.sync_api import sync_playwright
+    from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
 
     # Browser DNS must resolve to the exact globally validated IP. Same-host
     # request filtering alone would allow DNS rebinding to private addresses.
@@ -218,6 +232,9 @@ def rendered_html(official_site):
             if response.status != 200:
                 raise BrowserEvidenceError("http_429" if response.status == 429 else "http_rejected")
             page.wait_for_timeout(1600)
+            if not request_allowed(page.url, official_site):
+                raise BrowserEvidenceError("unsafe_destination")
+            wait_for_linkless_dom(page, PlaywrightTimeout)
             if not request_allowed(page.url, official_site):
                 raise BrowserEvidenceError("unsafe_destination")
             return bounded_rendered_html(page.content())
