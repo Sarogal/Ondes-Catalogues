@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 172,
-  "dueNameCount": 14,
-  "attemptedCount": 6,
-  "serviceFailure": null,
-  "retryAfterKey": null,
+  "dueNameCount": 11,
+  "attemptedCount": 1,
+  "serviceFailure": "service_or_response_held",
+  "retryAfterKey": "default",
   "entries": {
     "2000 fm": {
       "artistName": "2000 FM",

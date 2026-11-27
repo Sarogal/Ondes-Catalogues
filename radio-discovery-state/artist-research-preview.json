@@ -4,10 +4,10 @@
   "publicationAllowed": false,
   "approvedCount": 0,
   "observedNameCount": 172,
-  "dueNameCount": 56,
-  "attemptedCount": 2,
+  "dueNameCount": 57,
+  "attemptedCount": 4,
   "serviceFailure": "http_503",
-  "retryAfterKey": "spiewac kazdy moze",
+  "retryAfterKey": "talco",
   "entries": {
     "2000 fm": {
       "artistName": "2000 FM",
@@ -1259,6 +1259,48 @@
       "source": "musicbrainz",
       "sourceUrl": "https://musicbrainz.org/artist/3a787e76-2879-4306-bc04-66aa7373be72",
       "status": "name_hypothesis"
+    },
+    "stone sour": {
+      "status": "name_hypothesis",
+      "mbid": "4ca783b7-5bf7-4348-b494-46680660050f",
+      "genres": [
+        "alternative metal",
+        "alternative rock",
+        "hard rock",
+        "heavy metal",
+        "nu metal",
+        "post-grunge"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/4ca783b7-5bf7-4348-b494-46680660050f",
+      "artistName": "Stone Sour",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "suicidas": {
+      "status": "name_hypothesis",
+      "mbid": "99c903dc-599d-4f7a-b4ca-ceef3ecc22c9",
+      "genres": [],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/99c903dc-599d-4f7a-b4ca-ceef3ecc22c9",
+      "artistName": "suicidas",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "suicide machines": {
+      "status": "not_found",
+      "artistName": "Suicide Machines",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
     },
     "t3nors": {
       "artistName": "T3nors",

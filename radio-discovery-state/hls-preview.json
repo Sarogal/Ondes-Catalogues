@@ -3,10 +3,20 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "technicallyQualifiedCount": 0,
-  "attemptedCount": 0,
+  "attemptedCount": 1,
   "advancingManifestCount": 4,
   "audioFrameCount": 2,
   "records": [
+    {
+      "stationuuid": "015e8049-ffc2-44d4-a817-3d24341dd72f",
+      "streamSha256": "a2310c074aaab7312ae96bf08593709cbac88651f1c8a0a9990d957a8cb8386e",
+      "observedDate": "2026-11-27",
+      "positiveObservationDates": [],
+      "observedInScan": true,
+      "technicalQualified": false,
+      "publicationAllowed": false,
+      "verdict": "unsupported_hls_features"
+    },
     {
       "firstLastSequence": 179863842,
       "firstManifestSha256": "ceefddcda79b068d5b96c0d4ed50e89ec2354ab7813a94b3b51a2bf00d96e5f7",
