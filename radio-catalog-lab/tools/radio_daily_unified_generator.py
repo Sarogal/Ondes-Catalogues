@@ -11,7 +11,7 @@ from pathlib import Path
 from radio_daily_v9_generator import BASELINE, build as add_build, digest, encode, check_catalog, load_bytes
 from radio_daily_baseline_verify import strict_json, validate_shape, verify_baseline, cli_anchor
 from radio_daily_repair_plan import plan as repair_plan, simulate as repair_simulate
-from radio_daily_status_preview import build as status_build, MAX_CHECKS
+from radio_daily_status_preview import build as status_build, MAX_CHECKS, promote_recovery_stream
 from radio_daily_logo_plan import plan as logo_plan, stage as logo_stage
 from radio_daily_logo_maintenance import SOURCE_PREFIX, source_reference
 from radio_daily_merge_plan import plan as merge_plan, apply as merge_apply, undo as merge_undo
@@ -81,6 +81,7 @@ def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation
         recomputed["attemptedCount"] = status_report["attemptedCount"]
         if recomputed != status_report:
             raise ValueError("unified status report mismatch")
+        recovery_records = {r["goStationId"]: r for r in recomputed["records"]}
         repair_ids = {p["goStationId"] for p in checked["proposals"]}
         redirect_ids = {t.get("redirect_to") for t in old["tombstones"]}
         for p in sorted(recomputed["proposals"], key=lambda x: x["goStationId"]):
@@ -100,10 +101,16 @@ def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation
             if digest(encode(before)) != p["stationSha256"] or station["status"]["state"] != p["from"]:
                 raise ValueError("status station changed")
             previous_status = copy.deepcopy(station["status"])
+            previous_streams = copy.deepcopy(station["streams"])
+            if p["to"] == "active":
+                promote_recovery_stream(station, recovery_records[sid], day)
             station["status"].update(state=p["to"],
                 reason_code="experimental_recovery_review" if p["to"] == "active" else "experimental_unavailability_review",
                 changed_at=day + "T00:00:00Z")
-            transitions.append(dict(p, previousStatus=previous_status, proposedStatus=copy.deepcopy(station["status"])))
+            transition = dict(p, previousStatus=previous_status, proposedStatus=copy.deepcopy(station["status"]))
+            if previous_streams != station["streams"]:
+                transition.update(previousStreams=previous_streams, proposedStreams=copy.deepcopy(station["streams"]))
+            transitions.append(transition)
         if recomputed["massTransitionHeld"]:
             status_deferred.append({"reason": "mass_transition_held"})
     else:
@@ -176,6 +183,10 @@ def build(raw, discovery, dossiers, decisions, maintenance, repair, confirmation
         if station["status"] != p["proposedStatus"]:
             raise ValueError("unexpected status delta")
         station["status"] = p["previousStatus"]
+        if "previousStreams" in p:
+            if station["streams"] != p["proposedStreams"]:
+                raise ValueError("unexpected recovery stream delta")
+            station["streams"] = p["previousStreams"]
     for p in logo_changes:
         station=by_id[p["goStationId"]]
         if station["logo"]!=p["proposedLogo"]:
