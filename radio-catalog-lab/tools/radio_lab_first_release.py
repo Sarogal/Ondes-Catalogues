@@ -7,6 +7,7 @@ the daily preview until the protected multiversion publisher is activated.
 import argparse
 import datetime as dt
 import json
+import time
 import os
 import subprocess
 import tempfile
@@ -31,6 +32,8 @@ from radio_daily_github_executor import transmit_github
 from radio_daily_github_json_reader import GitHubJSONReader
 from radio_daily_github_readback import GitHubReadback, object_limit
 from radio_daily_git_lab_reader import verify_snapshot_entries
+from radio_daily_public_https_reader import PublicHTTPSReader
+from radio_daily_deployment_verify import verify_public_snapshot, mirror_url, ROOT, POINTER_URL
 
 TEST_ANCHOR = dict(expected_sha=BASELINE, expected_sequence=8,
                    public_key=PUBLIC_KEY, key_id=KEY_ID)
@@ -186,10 +189,51 @@ def transport(args):
         print("RADIO_LAB_GIT_TRANSFERRED",head)
 
 
+def readback(args):
+    token = os.environ.pop("RADIO_LAB_JOB_TOKEN")
+    receipt = strict_json(args.receipt.read_bytes())
+    if receipt["sequence"] != 9:
+        raise ValueError("unexpected release sequence")
+    reader = GitHubReadback(GitHubJSONReader(token=token,max_seconds=600))
+    def head():
+        return reader.read_head(DESTINATION,REF)
+    commit = receipt["commit"]
+    files = reader.read_tree(DESTINATION,commit)
+    selected = verify_snapshot_entries({p:len(b) for p,b in files.items()},
+        files.__getitem__,head,expected_commit=commit,bootstrap_sha=BASELINE,
+        expected_sha=BASELINE,expected_sequence=8,**pin())
+    if selected["sequence"] != 9 or selected["sha256"] != receipt["sha256"]:
+        raise ValueError("remote catalogue receipt mismatch")
+    p = strict_json(selected["pointer"])
+    resources = {POINTER_URL:16384,ROOT+p["content_path"]:p["content_length"]}
+    for logo,_ in inventory(strict_json(selected["body"])):
+        url = mirror_url(logo)
+        if url in resources and resources[url] != logo["byte_size"]:
+            raise ValueError("conflicting mirrored artwork metadata")
+        resources[url] = logo["byte_size"]
+    # CDN propagation may lag after an exact Git transfer. A retry reads
+    # the same commit/sequence; never signs or writes another release.
+    for attempt in range(3):
+        try:
+            accepted = verify_public_snapshot(selected,head,
+                fetch=PublicHTTPSReader(resources,max_seconds=300),
+                expected_commit=commit,mirror_legacy=True,**pin())
+            break
+        except (ValueError,OSError):
+            if attempt == 2 or head() != commit:
+                raise
+            time.sleep(15*(attempt+1))
+    accepted.update(simulated=False,remoteReadbackVerified=True,
+                    deploymentVerified=True,distribution="github-raw",
+                    legacyOriginalUrlsVerified=False)
+    args.acceptance.write_bytes(encode(accepted))
+    print("RADIO_LAB_RAW_ACCEPTED",receipt["sha256"],accepted["verifiedLogoUrls"])
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument("mode",choices=("sign","transport"))
-    for name in ("pointer","baseline","reports","bundle","receipt"):
+    p.add_argument("mode",choices=("sign","transport","readback"))
+    for name in ("pointer","baseline","reports","bundle","receipt","acceptance"):
         p.add_argument("--"+name,type=Path)
     p.add_argument("--cache",type=Path,action="append")
     args=p.parse_args()
@@ -197,7 +241,7 @@ def main():
             or os.environ.get("GITHUB_REF") != "refs/heads/feature/radio-daily-discovery-lab-20261120"
             or os.environ.get("GITHUB_ACTIONS") != "true"):
         raise ValueError("reviewed isolated Actions context required")
-    {"sign":sign,"transport":transport}[args.mode](args)
+    {"sign":sign,"transport":transport,"readback":readback}[args.mode](args)
 
 
 if __name__ == "__main__":
