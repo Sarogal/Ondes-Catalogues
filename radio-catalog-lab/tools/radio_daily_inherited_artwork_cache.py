@@ -9,7 +9,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 from concurrent.futures import ThreadPoolExecutor
 
-from radio_daily_baseline_verify import verify_baseline, PUBLIC_KEY, KEY_ID
+from radio_daily_baseline_verify import verify_baseline, PUBLIC_KEY, KEY_ID, cli_anchor
 from radio_daily_publication_simulator import check_logo, inventory
 from radio_daily_logo_plan import EXTENSIONS
 from radio_catalog_logo_pilot_probe import fetch_strict_https, MAX_LOGO_BYTES
@@ -167,8 +167,7 @@ def main():
     p.add_argument("--local-source",type=Path,action="append",default=[])
     args=p.parse_args()
     report=populate(args.pointer.read_bytes(),args.baseline.read_bytes(),
-        anchor=dict(expected_sha=args.baseline_sha256,expected_sequence=args.baseline_sequence,
-                    public_key=PUBLIC_KEY,key_id=KEY_ID),day=args.day,previous=args.previous,
+        anchor=cli_anchor(args.baseline_sha256,args.baseline_sequence),day=args.day,previous=args.previous,
         output=args.output,local_sources=args.local_source)
     with args.report.open("xb") as target:
         target.write(encode(report))
