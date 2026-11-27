@@ -2601,6 +2601,21 @@
       "id": "baraka-freak",
       "name": "Baraka Freak",
       "aliases": []
+    },
+    {
+      "id": "la-dispatch",
+      "name": "LA DISPATCH",
+      "aliases": []
+    },
+    {
+      "id": "bleulointain",
+      "name": "BLEULOINTAIN",
+      "aliases": []
+    },
+    {
+      "id": "golden-format",
+      "name": "Golden Format",
+      "aliases": []
     }
   ],
   "venues": [
@@ -16263,6 +16278,37 @@
       ],
       "status": "confirmed",
       "officialUrl": "https://le106.com/agenda/red-flag-baraka-freak-guest",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le 106",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-27",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-27",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261215-rouen-la-dispatch",
+      "title": "LA DISPATCH + BLEULOINTAIN + Golden Format",
+      "date": "2026-12-15",
+      "artistIds": [
+        "la-dispatch",
+        "bleulointain",
+        "golden-format"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Post Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda/la-dispatch-bleulointain-golden-format",
       "sourceType": "salle",
       "time": null,
       "timeMeaning": "non confirmé",
