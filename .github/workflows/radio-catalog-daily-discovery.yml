@@ -40,6 +40,28 @@ jobs:
           current="$(gh api "repos/$repo/git/ref/heads/$branch" --jq '.object.sha')"
           [[ "$current" == "$APPROVED_SHA" ]] || { echo "Radio code changed; review and re-pin required"; exit 1; }
           [[ "$PROBES" == true || "$PROBES" == false ]]
+          # Do not stack daily runs behind an active or approval-pending cycle.
+          runs="$(gh api "repos/$repo/actions/workflows/radio-catalog-daily-discovery.yml/runs?branch=$branch&per_page=10")"
+          if jq -e '.workflow_runs | any(.status != "completed")' <<<"$runs" >/dev/null; then
+            echo "RADIO_ISOLATED_CYCLE_ALREADY_ACTIVE"
+            exit 0
+          fi
+          # A remote write can succeed before independent acceptance or state
+          # persistence. Retry only the failed jobs of that exact reviewed run.
+          # Never start a new discovery against an unaccepted newer pointer.
+          state_ref="$(gh api "repos/$repo/git/ref/heads/state/go-radio-autonomous" --jq '.object.sha')"
+          accepted="$(gh api "repos/$repo/contents/radio-discovery-state/release-context.json?ref=$state_ref" --jq '.content' | base64 -d | jq -er 'select(.remoteReadbackVerified == true and .deploymentVerified == true and .simulated == false) | .gitCommit')"
+          remote="$(gh api "repos/$repo/git/ref/heads/radio-lab-publisher-rehearsal" --jq '.object.sha')"
+          [[ "$accepted" =~ ^[0-9a-f]{40}$ && "$remote" =~ ^[0-9a-f]{40}$ ]]
+          if [[ "$remote" != "$accepted" ]]; then
+            parent="$(gh api "repos/$repo/git/commits/$remote" --jq 'select(.parents | length == 1) | .parents[0].sha')"
+            [[ "$parent" == "$accepted" ]] || { echo "Unexpected publication ancestry; held"; exit 1; }
+            run="$(jq -er --arg sha "$APPROVED_SHA" '.workflow_runs[0] | select(.head_sha == $sha and .conclusion == "failure" and .run_attempt < 3) | .id' <<<"$runs")"
+            [[ "$run" =~ ^[0-9]+$ ]]
+            gh api --method POST "repos/$repo/actions/runs/$run/rerun-failed-jobs"
+            echo "RADIO_ISOLATED_RECOVERY_REQUESTED $run"
+            exit 0
+          fi
           # workflow_dispatch is an allowed GITHUB_TOKEN event. The branch
           # contains the implementation at this same registered workflow path.
           gh workflow run radio-catalog-daily-discovery.yml --repo "$repo" \
