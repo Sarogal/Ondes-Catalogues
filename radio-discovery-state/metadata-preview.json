@@ -5,8 +5,8 @@
   "approvedCount": 0,
   "attemptedCount": 6,
   "stationsWithArtistHints": 110,
-  "distinctArtistHints": 136,
-  "attemptedHlsCount": 1,
+  "distinctArtistHints": 140,
+  "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
   "stationsWithAlternativeHints": 0,
@@ -334,7 +334,7 @@
     {
       "stationuuid": "165c260d-de4a-4728-a1dc-2ae56cad10ec",
       "streamSha256": "f0511ad93702fc6c07690cc286b7c7f37bb83504237315021030be72353c859b",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -344,6 +344,11 @@
           "date": "2026-11-26",
           "artistHint": "Heaven Shall Burn",
           "titleSha256": "84edb6a537368a4a0780cec78d34024a543475f97ee66f1f14f8a04562608697"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Dominum",
+          "titleSha256": "95ac69ff504ecc9c4b740db24919deb1f7c951032de250e7ac00c5cc80aa839a"
         }
       ],
       "alternativeVersion": 0,
@@ -352,7 +357,7 @@
     {
       "stationuuid": "1914384c-d876-46c7-a6cf-a4ec4853bb2f",
       "streamSha256": "4084285d863d803af403506daf599e1f15e619c4ce538c65a42b6f6de0ace648",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -362,6 +367,11 @@
           "date": "2026-11-26",
           "artistHint": "Jason Derulo; Nicki Minaj; Ty Dolla $ign",
           "titleSha256": "81950a233a7d75d2ff4eee5b8e7e1d561476a5bbe42c30c1472137df0ef68174"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Iced Earth",
+          "titleSha256": "20ae1fbe9bd5410694d9e46545366841b32f9a11a2c66bbd94a478c4bda9d28a"
         }
       ],
       "alternativeVersion": 0,
@@ -370,7 +380,7 @@
     {
       "stationuuid": "193ce893-b2f4-11e8-afe1-52543be04c81",
       "streamSha256": "aab7170bbb95784cb4255057e432c00d8e6bb90c5fc0cc04dd0aa77af0deba82",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -380,6 +390,11 @@
           "date": "2026-11-26",
           "artistHint": "JOURNEY",
           "titleSha256": "197f602e26773859dfdd23052cc0e4c7fff26ef44eb0eecec241e6efe1e84d5b"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "FM",
+          "titleSha256": "d4200b6cd01c7f516f6fbc34bed3a501fab78f7d68e8b22633ff28f8e178b605"
         }
       ],
       "alternativeVersion": 0,
@@ -418,7 +433,7 @@
     {
       "stationuuid": "1f951feb-544e-447b-8143-8b9656a46cf2",
       "streamSha256": "46f041d06693161d3d591762b00e4c31baedad602ba255617dd2ef0cc1251930",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -428,6 +443,11 @@
           "date": "2026-11-26",
           "artistHint": "Nazareth",
           "titleSha256": "c7bc5043fff7b017cc8aaf8dc60c5055202f51d28fbaeeb10c26d47c1af89db2"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Badlands",
+          "titleSha256": "dacd2bf9a66362e428bf3c2182ac0ed21c75e54330fc4ca942e745b9b928d99e"
         }
       ],
       "alternativeVersion": 0,
@@ -436,7 +456,7 @@
     {
       "stationuuid": "221e04bb-6d8a-4e13-a9b6-621561fc07f8",
       "streamSha256": "f394d77bc4632ffb0cf78070229363f8a3554d8c93cc92c4a221539ac2c4a5a4",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -446,6 +466,11 @@
           "date": "2026-11-26",
           "artistHint": "Upload",
           "titleSha256": "248c0344090baa954cb4d127dcd182a25a8155de01388d9d4fdaa443c2cfe960"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Cad",
+          "titleSha256": "b8f323eb3dc60bafa90b7aa8fe2a90a678e9242281a78a8a300dd5b79c9f6b16"
         }
       ],
       "alternativeVersion": 0,
@@ -454,7 +479,7 @@
     {
       "stationuuid": "24145371-b9df-485d-ac2d-3515899a5e3e",
       "streamSha256": "599105e7b7d3e91984da97018037e1e91c70ce70949f88daff3d692b7038d9f7",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -464,6 +489,11 @@
           "date": "2026-11-26",
           "artistHint": "Billy Squier",
           "titleSha256": "c8e944e49f85e6c6ba5d2c8b8ec8849efff103f2713d305b9a7f3d24c092ba76"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Poughkeepsie Pop Culture",
+          "titleSha256": "93272170b3d0b607484425f34c9d58360efc2f0fa5f4cc67ddf8d4edfee2f3b4"
         }
       ],
       "alternativeVersion": 0,

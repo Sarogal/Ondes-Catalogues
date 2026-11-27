@@ -3,11 +3,11 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 136,
-  "dueNameCount": 32,
-  "attemptedCount": 1,
+  "observedNameCount": 140,
+  "dueNameCount": 36,
+  "attemptedCount": 4,
   "serviceFailure": "http_503",
-  "retryAfterKey": "foreigner",
+  "retryAfterKey": "heaven shall burn",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -345,6 +345,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "genesis": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Genesis",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "gojira": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Gojira",
@@ -372,6 +381,31 @@
       "artistName": "Good Charlotte",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "hackeboda": {
+      "status": "not_found",
+      "artistName": "Hackeboda",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "hanson brothers": {
+      "status": "name_hypothesis",
+      "mbid": "e9209056-7eaf-40ff-a858-82e6744bb279",
+      "genres": [
+        "punk",
+        "punk rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/e9209056-7eaf-40ff-a858-82e6744bb279",
+      "artistName": "Hanson Brothers",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
       "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false

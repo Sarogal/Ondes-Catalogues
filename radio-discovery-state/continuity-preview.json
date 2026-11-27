@@ -4,7 +4,7 @@
   "publicationAllowed": false,
   "technicallyQualifiedCount": 0,
   "attemptedCount": 6,
-  "continuousIcyCount": 139,
+  "continuousIcyCount": 138,
   "finiteResponseCount": 3,
   "records": [
     {
@@ -423,9 +423,10 @@
     {
       "stationuuid": "193ce893-b2f4-11e8-afe1-52543be04c81",
       "streamSha256": "aab7170bbb95784cb4255057e432c00d8e6bb90c5fc0cc04dd0aa77af0deba82",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "positiveObservationDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "observedInScan": true,
       "technicalQualified": false,
@@ -444,20 +445,20 @@
     {
       "stationuuid": "1e27d1d8-7720-46b7-ab9e-f456a432420a",
       "streamSha256": "51fad199b6a5e50e2afe7496aae847bee2699886efa0148caa836c1f858f8dc3",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "positiveObservationDates": [
         "2026-11-26"
       ],
       "observedInScan": true,
       "technicalQualified": false,
       "publicationAllowed": false,
-      "verdict": "continuous_icy_frame_indication",
+      "verdict": "insufficient_continuity_evidence",
       "windowCount": 3,
       "sampleBytes": 12288,
       "elapsedMs": 4000,
-      "coherentWindowCount": 3,
+      "coherentWindowCount": 0,
       "distinctWindowCount": 3,
-      "frameCodec": "mpeg_layer3",
+      "frameCodec": null,
       "finiteResponse": false,
       "icyHeaderPresent": true,
       "earlyEnd": false
@@ -505,9 +506,10 @@
     {
       "stationuuid": "221e04bb-6d8a-4e13-a9b6-621561fc07f8",
       "streamSha256": "f394d77bc4632ffb0cf78070229363f8a3554d8c93cc92c4a221539ac2c4a5a4",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "positiveObservationDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "observedInScan": true,
       "technicalQualified": false,
@@ -515,7 +517,7 @@
       "verdict": "continuous_icy_frame_indication",
       "windowCount": 3,
       "sampleBytes": 12288,
-      "elapsedMs": 4071,
+      "elapsedMs": 4083,
       "coherentWindowCount": 3,
       "distinctWindowCount": 3,
       "frameCodec": "aac_adts",
@@ -526,9 +528,10 @@
     {
       "stationuuid": "24145371-b9df-485d-ac2d-3515899a5e3e",
       "streamSha256": "599105e7b7d3e91984da97018037e1e91c70ce70949f88daff3d692b7038d9f7",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "positiveObservationDates": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "observedInScan": true,
       "technicalQualified": false,
@@ -536,7 +539,7 @@
       "verdict": "continuous_icy_frame_indication",
       "windowCount": 3,
       "sampleBytes": 12288,
-      "elapsedMs": 4023,
+      "elapsedMs": 4047,
       "coherentWindowCount": 3,
       "distinctWindowCount": 3,
       "frameCodec": "mpeg_layer3",
@@ -613,10 +616,11 @@
     {
       "stationuuid": "2f76081c-dbf0-4b40-bb30-63987abe744e",
       "streamSha256": "1fd1278b4e3b5b760b2afa150d0059c6f3256a2d8f707505f0be8fc0767e0f2c",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "positiveObservationDates": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "observedInScan": true,
       "technicalQualified": false,
@@ -635,10 +639,11 @@
     {
       "stationuuid": "32955656-5a38-40c0-ab1f-e059496bfda6",
       "streamSha256": "ed2a3274edc9092547074120bac8f194320d86bfaa21989d4dd89c5cde525d1c",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "positiveObservationDates": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "observedInScan": true,
       "technicalQualified": false,
@@ -646,7 +651,7 @@
       "verdict": "continuous_icy_frame_indication",
       "windowCount": 3,
       "sampleBytes": 12288,
-      "elapsedMs": 4193,
+      "elapsedMs": 4136,
       "coherentWindowCount": 3,
       "distinctWindowCount": 3,
       "frameCodec": "aac_adts",
