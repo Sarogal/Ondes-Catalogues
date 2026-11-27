@@ -151,6 +151,29 @@ class BlockerInventoryTests(TestCase):
         self.assertFalse(out["dossiers"][0]["publication_authorized"])
         self.assertEqual(out["publications"], 0)
 
+    def test_current_route_diagnostics_distinguish_unchecked_and_failed(self):
+        reports, catalogue = fixture()
+        route = {"schema": "grossesondes.national-openagenda-linked-private.v1",
+                 "as_of": TODAY, "review_only": True, "safe_to_publish": False,
+                 "publication_authorized": False, "rows": [
+                     {"dossier_id": "national-colombin-2027",
+                      "review_only": True, "publication_authorized": False,
+                      "status": "OPENAGENDA_OFFICIAL_LINK_UNPROVEN"}]}
+        out = build_inventory(reports, catalogue, TODAY, route_reports={"openagenda": route})
+        self.assertEqual(out["unpublished_dossiers_with_current_route_observations"], 1)
+        self.assertEqual(out["unpublished_dossiers_with_tour_referral"], 1)
+        self.assertEqual(out["dossiers"][0]["current_route_observations_review_only"],
+                         [{"route": "openagenda", "status": "OPENAGENDA_OFFICIAL_LINK_UNPROVEN"}])
+        self.assertEqual(out["dossiers"][1]["current_route_observations_review_only"], [])
+        self.assertEqual(out["dossiers_without_generic_proposal"], 2)
+        self.assertFalse(out["publication_authorized"])
+        for mutation in ({"as_of": "2026-11-20"}, {"publication_authorized": True},
+                         {"rows": [dict(route["rows"][0], dossier_id="unknown")]},
+                         {"rows": [dict(route["rows"][0], status="private raw text")]}):
+            invalid = dict(route, **mutation)
+            with self.assertRaisesRegex(ValueError, "Invalid private route diagnostics"):
+                build_inventory(reports, catalogue, TODAY, route_reports={"openagenda": invalid})
+
     def test_unfamiliar_festival_is_never_dropped_by_a_closed_registry(self):
         reports, catalogue = fixture()
         target = reports["discovery"]["dossiers"][0]

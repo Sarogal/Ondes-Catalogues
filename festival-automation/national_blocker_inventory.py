@@ -165,7 +165,57 @@ def municipal_git_history(intake, today):
     return out
 
 
-def build_inventory(reports, catalogue, today, patch=None, municipal_history=()):
+ROUTE_REPORTS = {
+    "openagenda": ("national-openagenda-linked-edition-review.json",
+                   "grossesondes.national-openagenda-linked-private.v1"),
+    "primary_domain": ("national-generic-primary-date-review.json",
+                       "grossesondes.national-generic-domain-dates-private.v1"),
+}
+
+
+def route_observations(reports, today, ids):
+    """Private diagnostic join only; missing observations mean not checked.
+    
+    Never accept stale data as a current verification, or use an absence of
+    evidence to exclude an event. Multiple URLs may belong to one dossier.
+    Only bounded status codes are copied; no HTML or source text is exposed.
+    """
+    result = {}
+    for route, report in reports.items():
+        if (route not in ROUTE_REPORTS or not isinstance(report, dict)
+                or report.get("schema") != ROUTE_REPORTS[route][1]
+                or report.get("as_of") != today
+                or report.get("review_only") is not True
+                or report.get("safe_to_publish") is not False
+                or report.get("publication_authorized") is not False
+                or not isinstance(report.get("rows"), list)
+                or len(report["rows"]) > 4):
+            raise ValueError("Invalid private route diagnostics")
+        for row in report["rows"]:
+            if (not isinstance(row, dict)
+                    or row.get("dossier_id") not in ids
+                    or row.get("review_only") is not True
+                    or row.get("publication_authorized") is not False):
+                raise ValueError("Invalid private route diagnostics")
+            codes = {}
+            for field in ("status", "diagnostic_code", "diagnostic_surface"):
+                value = row.get(field)
+                if value is not None:
+                    if (not isinstance(value, str) or
+                            not re.fullmatch(r"[A-Z][A-Z0-9_]{0,99}", value)):
+                        raise ValueError("Invalid private route diagnostics")
+                    codes[field] = value
+            if "status" not in codes:
+                raise ValueError("Invalid private route diagnostics")
+            item = dict(route=route, **codes)
+            found = result.setdefault(row["dossier_id"], [])
+            if item not in found:
+                found.append(item)
+    return result
+
+
+def build_inventory(reports, catalogue, today, patch=None, municipal_history=(),
+                    route_reports=None):
     if (not isinstance(catalogue, dict) or catalogue.get("schema") != 1
             or not isinstance(catalogue.get("festivals"), list)):
         raise ValueError("Signed public catalogue required")
@@ -214,6 +264,7 @@ def build_inventory(reports, catalogue, today, patch=None, municipal_history=())
         if not isinstance(ref, dict) or ref.get("dossierId") not in ids:
             raise ValueError("Unmatched concert referral")
         referrals.setdefault(ref["dossierId"], []).append(ref.get("classification"))
+    route_checks = route_observations(route_reports or {}, today, set(ids))
     output = []
     for d in rows:
         ident = d["id"]
@@ -265,6 +316,7 @@ def build_inventory(reports, catalogue, today, patch=None, municipal_history=())
                 f.get("independent_publisher_recheck_completed") is True
             ),
             "editorial_fit": "UNASSESSED_BY_AUTOMATION",
+            "current_route_observations_review_only": route_checks.get(ident, []),
             "publication_authorized": False,
         })
     names = {(_name(d["name"]), d["edition_year"]) for d in output}
@@ -320,6 +372,12 @@ def build_inventory(reports, catalogue, today, patch=None, municipal_history=())
         "dossiers_already_in_public_snapshot": counts["EXACT_EDITION_IN_PUBLIC_SNAPSHOT"],
         "dossiers_with_first_party_dates_without_proposal": sum(
             r["first_party_dates_without_generic_proposal"] for r in output),
+        "unpublished_dossiers_with_current_route_observations": sum(
+            r["generic_proposal_missing"] and bool(r["current_route_observations_review_only"])
+            for r in output),
+        "unpublished_dossiers_with_tour_referral": sum(
+            r["generic_proposal_missing"] and "EXPLICIT_TOURING_CONCERT_STOP" in r["concert_referral_types"]
+            for r in output),
         "municipal_intermediate_leads_count": len(extra),
         "municipal_current_cycle_leads_count": current_municipal,
         "municipal_historical_carryover_count": len(extra) - current_municipal,
@@ -342,8 +400,12 @@ def main():
     private_patch = json.loads((args.intake / f"patch-{today}.json").read_text(
         encoding="utf-8"))
     municipal_history = municipal_git_history(args.intake, today)
+    route_reports = {name: json.loads((args.intake / file).read_text(encoding="utf-8"))
+                     for name, (file, _) in ROUTE_REPORTS.items()
+                     if (args.intake / file).is_file()}
     inventory = build_inventory(reports, catalogue, today, patch=private_patch,
-                                municipal_history=municipal_history)
+                                municipal_history=municipal_history,
+                                route_reports=route_reports)
     output = args.intake / "national-festival-blocker-inventory.json"
     output.write_text(json.dumps(inventory, ensure_ascii=False, indent=2) + "\n",
                       encoding="utf-8")
@@ -383,6 +445,7 @@ def safe_failure_code(exc):
         ("Invalid or duplicate private dossier", "DUPLICATE_DOSSIER"),
         ("Invalid dossier source list", "DOSSIER_SOURCES_INVALID"),
         ("Invalid editorial blockers", "EDITORIAL_BLOCKERS_INVALID"),
+        ("Invalid private route diagnostics", "ROUTE_DIAGNOSTICS_INVALID"),
         ("Malformed public edition date", "PUBLIC_DATE_INVALID"),
         ("Signed public catalogue required", "PUBLIC_CATALOGUE_INVALID"),
     )
