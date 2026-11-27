@@ -382,11 +382,39 @@ class IndependentUnknownVenuePublisherTests(unittest.TestCase):
                                   sourcePage=url, sourceUrl=url, eventDetailUrl=url)
         self.assertEqual(producer.eligible(registry, test_catalogue(), TODAY), [])
 
+    def test_single_discovery_can_reach_publisher_only_with_fresh_independent_proofs(self):
+        base = test_catalogue()
+        pending = before()
+        fetch, seen = fetch_for()
+        result, report = producer.build(
+            lead(observations=1), base, pending, TODAY, fetch=fetch)
+        self.assertEqual(report["eligibleUnknownSites"], 1)
+        self.assertEqual(len(result["approvals"]), 1, report)
+        self.assertEqual(len(result["venueApprovals"]), 1, report)
+        self.assertTrue(any("data.geopf.fr" in url for url in seen))
+        self.assertTrue(any("openstreetmap.org" in url for url in seen))
+        with mock.patch.object(signer.probe, "safe_fetch", side_effect=fetch):
+            self.assertEqual(len(approval_preflight.check_append_only(
+                pending, result, TODAY)), 1)
+            published, stats = publisher.merge(base, base, result, TODAY)
+        self.assertEqual(stats["newEvents"], 1, stats)
+        self.assertEqual(stats["newVenues"], 1, stats)
+        self.assertEqual(published["events"][-1]["officialUrl"], URL)
+        for bad in (dict(government=ban(city="Paris")),
+                    dict(osm=osm_xml(website="https://unrelated.example/"))):
+            with self.subTest(bad=bad):
+                denied_fetch, _ = fetch_for(**bad)
+                denied, diagnostic = producer.build(
+                    lead(observations=1), base, pending, TODAY, fetch=denied_fetch)
+                self.assertEqual(denied, pending, diagnostic)
+
     def test_already_known_sites_and_unstable_source_are_quarantined(self):
-        no_stability, _ = producer.build(
-            lead(observations=1), test_catalogue(), before(),
-            TODAY, fetch=lambda *_: self.fail("not eligible"))
-        self.assertEqual(no_stability, before())
+        for invalid in (0, -1, True, None, "1"):
+            with self.subTest(observations=invalid):
+                no_stability, _ = producer.build(
+                    lead(observations=invalid), test_catalogue(), before(),
+                    TODAY, fetch=lambda *_: self.fail("not eligible"))
+                self.assertEqual(no_stability, before())
         already = test_catalogue()
         _, site_review, *_ = fixture.fixture()
         already["venues"].append(site_review["venue"])
