@@ -108,8 +108,45 @@ def describe_osm(discovery, archive):
     }
 
 
+def describe_preflight(report):
+    """Distinguish all-lane proposal, validation and ledger counts from publication.
+
+    Absent, blocked or malformed reports never imply zero proposals or a
+    successful validation. The actual Publisher delta remains separate.
+    """
+    unknown = {"publisherPreflightStatus": "unavailable",
+               "publisherProposals": None, "publisherValidatedApprovals": None,
+               "publisherAppliedApprovals": None, "publisherRejectedProposals": None}
+    if not isinstance(report, dict):
+        return unknown
+    status = report.get("status")
+    if status == "blocked" and report.get("applied") is False and report.get("validatedByPublisher") is False:
+        return {**unknown, "publisherPreflightStatus": "blocked",
+                "publisherValidatedApprovals": 0, "publisherAppliedApprovals": 0}
+    if status not in {"no_changes", "validated", "partially_validated"}:
+        return unknown
+    proposed, accepted, publishable, rejected = (
+        report.get(k) for k in ("proposedApprovals", "newApprovals",
+                                "publishableEvents", "rejectedCount"))
+    if not all(type(v) is int and 0 <= v <= 100_000
+               for v in (proposed, accepted, publishable, rejected)):
+        return unknown
+    if (proposed != accepted + rejected or accepted != publishable
+            or report.get("validatedByPublisher") is not bool(accepted)
+            or type(report.get("applied")) is not bool
+            or (report["applied"] and not accepted)
+            or status != ("partially_validated" if rejected else
+                          "validated" if accepted else "no_changes")):
+        return unknown
+    return {"publisherPreflightStatus": status,
+            "publisherProposals": proposed,
+            "publisherValidatedApprovals": accepted,
+            "publisherAppliedApprovals": accepted if report["applied"] else 0,
+            "publisherRejectedProposals": rejected}
+
+
 def build(discovery, tours, registry, official, watch, archive_summaries, when,
-          organizers=None, osm_venues=None, osm_archive=None):
+          organizers=None, osm_venues=None, osm_archive=None, preflight=None):
     if discovery.get("schema") != "grossesondes.concert.discovery.v1":
         raise ValueError("Invalid venue discovery")
     if tours.get("schema") != "grossesondes.concert.discovery.v1":
@@ -138,6 +175,7 @@ def build(discovery, tours, registry, official, watch, archive_summaries, when,
     return {
         "schema": "grossesondes.concert.intake.metrics.v1",
         **osm_metrics,
+        **describe_preflight(preflight),
         "generatedAt": when,
         "publicCatalogueEventsObservedAtDiscovery": discovery.get(
             "catalogue", {}).get("events"),
@@ -187,6 +225,7 @@ def build(discovery, tours, registry, official, watch, archive_summaries, when,
             x.get("status") in ("approved", "rejected", "superseded") for x in items),
         "officialEvaluated": official.get("evaluated", 0),
         "officialHeld": len(official.get("held", [])),
+        # Legacy lane only; all-lane counts are in publisherProposals.
         "approvalsProposed": len(official.get("newApprovals", [])),
         "expiredSkipped": official.get("expiredSkipped", 0),
         "publishedWatchChecked": watch.get("checked", 0),
@@ -206,6 +245,12 @@ def main():
     parser.add_argument("--organizer-archive", required=True)
     parser.add_argument("--osm-venues")
     parser.add_argument("--osm-archive")
+    parser.add_argument("--preflight")
+    def read_preflight(path):
+        try:
+            return read(path) if path else None
+        except (OSError, ValueError):
+            return None
     args = parser.parse_args()
     data = build(read(args.discovery), read(args.tours), read(args.registry),
                  read(args.official), read(args.watch),
@@ -214,7 +259,8 @@ def main():
                  dt.datetime.now(dt.timezone.utc).isoformat(),
                  organizers=read(args.organizers),
                  osm_venues=read(args.osm_venues) if args.osm_venues else None,
-                 osm_archive=read(args.osm_archive) if args.osm_archive else None)
+                 osm_archive=read(args.osm_archive) if args.osm_archive else None,
+                 preflight=read_preflight(args.preflight))
     target = Path(args.out)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(
