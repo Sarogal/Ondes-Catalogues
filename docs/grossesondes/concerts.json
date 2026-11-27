@@ -2616,6 +2616,16 @@
       "id": "golden-format",
       "name": "Golden Format",
       "aliases": []
+    },
+    {
+      "id": "downterra",
+      "name": "Downterra",
+      "aliases": []
+    },
+    {
+      "id": "guest-brat-cave-lille",
+      "name": "guest - Brat Cave, Lille",
+      "aliases": []
     }
   ],
   "venues": [
@@ -3840,6 +3850,19 @@
       "longitude": 3.1896607777777777,
       "geoPrecision": "named-site-area",
       "id": "go-site-3cd862e28529bcb1d84d"
+    },
+    {
+      "name": "La Brat Cave",
+      "city": "Lille",
+      "address": "113 Rue Barthélémy Delespaul",
+      "postalCode": "59000",
+      "department": "59",
+      "region": "Hauts-de-France",
+      "geoSource": "https://www.openstreetmap.org/node/7532357892",
+      "latitude": 50.624221,
+      "longitude": 3.0649215,
+      "geoPrecision": "named-site-point",
+      "id": "go-site-c4a2f339ee92bd635e08"
     }
   ],
   "events": [
@@ -16368,6 +16391,37 @@
         {
           "date": "2026-11-27",
           "change": "Identité artistique rectifiée après nouvelle vérification de la fiche officielle"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261212-lille-downterra",
+      "title": "Downterra + guest - Brat Cave, Lille",
+      "date": "2026-12-12",
+      "artistIds": [
+        "downterra",
+        "guest-brat-cave-lille"
+      ],
+      "venueId": "go-site-c4a2f339ee92bd635e08",
+      "genres": [
+        "metal",
+        "metalcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://openagenda.com/shotgun/events/downterra-guest-brat-cave-lille",
+      "sourceType": "organisateur",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Brat Cave",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-27",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-27",
+          "change": "Ajout après revue des preuves officielles"
         }
       ]
     }
