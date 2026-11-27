@@ -208,7 +208,10 @@ class IsolatedBrowserCollectionTests(unittest.TestCase):
             return HTML
         report = collect([HOME, OTHER], renderer=render, diagnostics=diagnostics)
         self.assertEqual(diagnostics, [
-            {"url": HOME, "status": "root_rendered", "bytes": len(HTML.encode())},
+            {"url": HOME, "status": "root_rendered", "bytes": len(HTML.encode()),
+             "markup_anchors": 0, "markup_programme_anchors": 0,
+             "parsed_anchors": 0, "parsed_programme_anchors": 0,
+             "selected_links": 0, "selected_programme_links": 0},
             {"url": OTHER, "status": "invalid_bounded_dom"}])
         self.assertNotIn("diagnostics", report)
         diagnostics = []
