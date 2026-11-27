@@ -6428,27 +6428,41 @@
     },
     {
       "city": "Toulouse",
-      "lat": null,
+      "lat": 43.6007,
       "officialSite": "https://setmanasanta.fr/",
-      "showOnMap": false,
+      "showOnMap": true,
       "price": null,
       "dateRangeIsContinuous": false,
       "name": "SETMANA SANTA 2026",
       "slug": "setmana-santa-2026",
-      "lastVerified": "2026-11-26",
+      "lastVerified": "2026-11-27",
       "source": "https://setmanasanta.fr/",
       "sourceConfidence": "Domaine du festival + annonce officielle revérifiée",
       "notes": "Édition et dates revérifiées directement sur le site officiel du festival. Aucun recoupement extérieur des dates n'est requis. Adresse exacte et GPS à compléter.",
       "endDate": "2026-12-06",
       "startDate": "2026-12-01",
-      "lon": null,
+      "lon": 1.4328,
       "bands": 0,
       "department": null,
       "region": null,
       "venue": null,
       "status": "Annoncé",
       "lineup": [],
-      "verificationStatus": "Site et édition officielle revérifiés"
+      "verificationStatus": "Site et édition officielle revérifiés",
+      "geoCity": "Toulouse",
+      "geoPrecision": "commune",
+      "geoInsee": "31555",
+      "geoSource": "https://geo.api.gouv.fr/communes?nom=Toulouse&fields=nom%2Ccode%2CcodeDepartement%2Cdepartement%2Ccentre&format=geojson&geometry=centre&zone=metro%2Cdrom%2Ccom",
+      "geoVerification": {
+        "proofMode": "current-edition-commune-direct-official.v1",
+        "firstObserved": "2026-11-27",
+        "verifiedAt": "2026-11-27",
+        "officialSite": "https://setmanasanta.fr/",
+        "markerMeaning": "centre_indicatif_de_commune"
+      },
+      "auditSources": [
+        "https://setmanasanta.fr/"
+      ]
     }
   ]
 }
