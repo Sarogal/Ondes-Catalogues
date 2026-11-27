@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-27T19:10:28+01:00",
+  "updated_at": "2026-11-27T23:45:18+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -22085,6 +22085,26 @@
       "geo_precision": "venue",
       "lat": 46.800676,
       "lng": 0.527157
+    },
+    {
+      "id": "openagenda-11553313-2027-05-29",
+      "title": "Babilbeloola",
+      "category": "concert",
+      "category_label": "Concert",
+      "date_start": "2027-05-29",
+      "date_end": "2027-05-29",
+      "time": "11:00 ; 16:00",
+      "city": "Bordeaux",
+      "department": "Gironde",
+      "region": "Nouvelle-Aquitaine",
+      "venue": "Grand Théâtre - Foyer rouge",
+      "source_url": "https://openagenda.com/operanationalbordeaux/events/11553313_babilbeloola-7354652",
+      "source_label": "Opéra National de Bordeaux — Licence Ouverte 2.0 — données mises à jour le 09/06/2026",
+      "verified_at": "2026-11-27",
+      "geo_verified_at": "2026-11-27",
+      "geo_precision": "venue",
+      "lat": 44.842873,
+      "lng": -0.574592
     }
   ]
 }
