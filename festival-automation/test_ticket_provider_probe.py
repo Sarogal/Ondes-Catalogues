@@ -9,6 +9,7 @@ from urllib.parse import urlsplit
 sys.path.insert(0, str(Path(__file__).parent))
 from official_watch import run
 from ticket_provider_probe import (provider_snapshot, select_provider_checks,
+                                   provider_edition_location,
                                    provider_conflict_reason)
 from ticket_candidates import withdraw_contradicted_ticket_proposals
 
@@ -37,6 +38,26 @@ class ProviderReviewTests(unittest.TestCase):
             {"category": "Pass samedi", "availability": "sold_out"}])
         self.assertNotIn("ticketAvailability", found)
         self.assertNotIn("publication_authorized", found)
+
+    def test_vendor_location_is_exact_event_review_only(self):
+        event = {"@type": "MusicEvent", "name": "UNFEST #3 2026",
+                 "startDate": "2026-11-06", "endDate": "2026-11-07",
+                 "location": {"@type": "Place", "name": "Salle des Arts",
+                              "address": {"@type": "PostalAddress", "addressCountry": "FR",
+                                          "addressLocality": "Douai", "postalCode": "59500"}}}
+        def html(obj):
+            return '<script type="application/ld+json">' + json.dumps(obj) + '</script>'
+        self.assertEqual(provider_edition_location(html(event), edition()),
+                         {"city": "Douai", "venue": "Salle des Arts", "postalCode": "59500"})
+        for patch in ({"name": "UNFEST #4"}, {"name": "UNFEST #3 2025"},
+                      {"startDate": "2025-11-06"}, {"endDate": "2026-11-08"},
+                      {"eventStatus": "https://schema.org/EventCancelled"},
+                      {"location": None}, {"location": {"@type": "Organization",
+                                                         "address": event["location"]["address"]}}):
+            self.assertIsNone(provider_edition_location(html({**event, **patch}), edition()))
+        self.assertIsNone(provider_edition_location(html(event), {**edition(), "city": "Lille"}))
+        other = {**event, "location": {**event["location"], "name": "Autre salle"}}
+        self.assertIsNone(provider_edition_location(html([event, other]), edition()))
 
     def test_wrong_title_date_or_unstructured_sold_out_is_not_a_hint(self):
         for raw in (event_html(title="UNFEST #4"),

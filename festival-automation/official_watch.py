@@ -19,7 +19,7 @@ from ticket_candidates import (ticket_proposal, merge_ticket_proposals,
                                withdraw_contradicted_ticket_proposals)
 from official_ticket_links import ticket_link_leads
 from official_ticket_offer_links import structured_offer_links
-from ticket_provider_probe import (select_provider_checks, provider_snapshot,
+from ticket_provider_probe import (provider_edition_location, select_provider_checks, provider_snapshot,
                                    provider_conflict_reason)
 from future_editions import edition_candidate, stable_candidate, merge_edition_candidates
 
@@ -561,6 +561,10 @@ def run(folder, today, phase="primary", limit=24, download_json=get_json, downlo
         try:
             html = vendor_fetch(lead["ticket_url"])
             snapshot = provider_snapshot(html, edition)
+            if snapshot.get("result") in ("MATCHED_NO_STOCK", "EXPLICIT_CATEGORY_HINTS"):
+                location = provider_edition_location(html, edition)
+                if location is not None:
+                    snapshot["edition_location_review_only"] = location
         except (OSError, ValueError, UnicodeError):
             # HTTP 403, dynamic pages and oversized documents are unknown,
             # never interpreted as a sold-out or sold-in state.
