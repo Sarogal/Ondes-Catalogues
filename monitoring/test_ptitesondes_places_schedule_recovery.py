@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from ptitesondes_places_schedule_recovery import (
     decide, trusted, place_job_result, REPO, INPUTS, PLACE_STEP, WRITE_STEP, RESEARCH_STEP,
-    revision_floor, RESEARCH_PATHS,
+    revision_floor, RESEARCH_PATHS, contains_revisions,
 )
 
 NOW = datetime(2026, 11, 26, 21, tzinfo=timezone.utc)
@@ -43,6 +43,22 @@ class PlaceScheduleRecoveryTests(unittest.TestCase):
             (False, "trusted_intake_active"))
         self.assertEqual(decide([run(5)], NOW, lambda _: job(research="skipped"),
             research_since=since), (False, "failure_retry_grace"))
+
+    def test_recent_premerge_head_does_not_hide_new_research(self):
+        self.assertEqual(decide([run(5)], NOW, lambda _: job(),
+            research_since=NOW-timedelta(minutes=10), contains_current=lambda _: False),
+            (True, "places_cycle_due"))
+        self.assertEqual(decide([run(5)], NOW, lambda _: job(),
+            research_since=NOW-timedelta(minutes=10), contains_current=lambda _: True),
+            (False, "recent_places_write"))
+
+    def test_ancestry_requires_all_revisions(self):
+        a, b, c = "a"*40, "b"*40, "c"*40
+        self.assertTrue(contains_revisions(c, [a, c], lambda *_: {"status": "ahead"}))
+        self.assertFalse(contains_revisions(c, [a, b], lambda base, _: {
+            "status": "behind" if base == b else "ahead"}))
+        with self.assertRaises(ValueError):
+            contains_revisions(c, [a], lambda *_: {"status": "unknown"})
 
     def test_revision_floor_only_reads_research_paths(self):
         read = []

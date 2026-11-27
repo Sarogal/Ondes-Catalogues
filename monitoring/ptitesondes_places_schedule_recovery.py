@@ -10,6 +10,7 @@ import argparse
 from datetime import datetime, timedelta, timezone
 import json
 import os
+import re
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
@@ -29,6 +30,7 @@ RESEARCH_PATHS = (
     "scripts/ptitesondes_open_world_permanent_place_ban.py",
     "scripts/ptitesondes_open_world_permanent_place_evidence.py",
     "scripts/ptitesondes_open_world_permanent_place_draft.py",
+    "scripts/ptitesondes_cultural_directory_discovery.py",
 )
 
 
@@ -115,7 +117,24 @@ def revision_floor(read_commits):
     return max(times)
 
 
-def decide(rows, now, read_jobs, research_since=None):
+def contains_revisions(head, revisions, compare):
+    """Verify ancestry, not the author/committer date of a pre-merge commit."""
+    if not isinstance(head, str) or not re.fullmatch(r"[0-9a-f]{40}", head):
+        raise ValueError("invalid_intake_head")
+    for revision in set(revisions):
+        if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
+            raise ValueError("invalid_research_revision")
+        if revision == head:
+            continue
+        doc = compare(revision, head)
+        if not isinstance(doc, dict) or doc.get("status") not in ("identical", "ahead", "behind", "diverged"):
+            raise ValueError("invalid_revision_comparison")
+        if doc["status"] not in ("identical", "ahead"):
+            return False
+    return True
+
+
+def decide(rows, now, read_jobs, research_since=None, contains_current=None):
     if (not isinstance(rows, list) or len(rows) > MAX_HISTORY
             or not isinstance(now, datetime) or now.tzinfo is None):
         raise ValueError("invalid_run_history")
@@ -150,7 +169,8 @@ def decide(rows, now, read_jobs, research_since=None):
             # A previously persisted cycle is not evidence that newly
             # merged research code has run. Still suppress active jobs and
             # keep the existing failure grace; only one new cycle is due.
-            if research_since is None or when >= research_since:
+            if ((research_since is None or when >= research_since)
+                    and (contains_current is None or contains_current(row))):
                 return False, "recent_places_write"
         if result in ("places_failure", "unknown_or_failed") and age < FAILURE_GAP:
             return False, "failure_retry_grace"
@@ -178,9 +198,14 @@ def main():
     def commits(path):
         return request(token, API + "/commits?" + urlencode(
             {"sha": "main", "path": path, "per_page": 1}))
-    since = revision_floor(commits)
+    revisions_by_path = {path: commits(path) for path in RESEARCH_PATHS}
+    since = revision_floor(revisions_by_path.__getitem__)
+    revisions = [value[0]["sha"] for value in revisions_by_path.values()]
+    def current(row):
+        return contains_revisions(row.get("head_sha"), revisions, lambda base, head:
+            request(token, API + "/compare/" + base + "..." + head + "?per_page=1"))
     due, reason = decide(data["workflow_runs"], datetime.now(timezone.utc), jobs,
-                         research_since=since)
+                         research_since=since, contains_current=current)
     print("places:", reason, "dispatch=", due)
     if due and args.execute:
         request(token, API + "/actions/workflows/" + TARGET + "/dispatches",
