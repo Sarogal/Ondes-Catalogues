@@ -145,9 +145,18 @@ class BrowserPreflightTests(unittest.TestCase):
         html = prefix + ("//é\n" * 400_000) + suffix
         reduced = bounded_rendered_html(html)
         self.assertEqual(reduced, prefix + " " + suffix)
-        # Hidden contradictory dates must not be promoted by compaction.
+        # Compaction must preserve the independent validator's verdict,
+        # not force a positive result for an ambiguous synthetic fixture.
+        baseline = prefix + " " + suffix
         self.assertEqual(compare_proof(PARENT, 2027, date(2026, 11, 19),
-                                       SCRIPT_ONLY, reduced)["verdict"],
+                                       SCRIPT_ONLY, reduced),
+                         compare_proof(PARENT, 2027, date(2026, 11, 19),
+                                       SCRIPT_ONLY, baseline))
+        # Also exercise a known positive fixture independently.
+        positive = bounded_rendered_html(
+            VISIBLE + "<script>" + "x" * MAX_DOM_BYTES + "</script>")
+        self.assertEqual(compare_proof(PARENT, 2027, date(2026, 11, 19),
+                                       SCRIPT_ONLY, positive)["verdict"],
                          "RENDERED_DOM_CANDIDATE_ONLY")
 
     def test_raw_text_cannot_be_reinterpreted_as_script_markup(self):
