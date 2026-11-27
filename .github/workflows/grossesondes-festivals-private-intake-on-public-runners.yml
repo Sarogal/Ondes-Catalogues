@@ -122,7 +122,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tick="$(( $(date -u +%s) / 14400 ))"
+          tick="$(( $(date -u +%s) / 43200 ))"
           python scripts/grossesondes_official_poster_rotation.py --catalogue docs/grossesondes/festivals.json --limit 4 --tick "$tick" --browser --capture-rendered-evidence "$RUNNER_TEMP/poster-dom/evidence.json"
           echo "tick=$tick" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v7

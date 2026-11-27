@@ -1243,7 +1243,7 @@ def home_matches_edition(doc, row, today):
 
 
 def signed_rotation(published, today, limit=MAX_HOSTS, tick=None,
-                    browser_sites=()):
+                    browser_sites=(), *, alternate_order=False):
     if (not isinstance(published, dict) or published.get("schema") != 1 or
             type(limit) is not int or not 0 <= limit <= 60):
         raise ValueError("Invalid signed source rotation")
@@ -1288,6 +1288,10 @@ def signed_rotation(published, today, limit=MAX_HOSTS, tick=None,
     browser_extra = [url for url in urls
                      if url in browser_sites and url not in selected][:8]
     selected += browser_extra[:max(0, 60 - len(selected))]
+    # OCR uses a smaller browser budget than the raw batch. Reverse each
+    # complete rotation so the tail is not permanently starved.
+    if alternate_order and (batch // ceil(len(urls) / limit)) % 2:
+        selected.reverse()
     return [(url, grouped[url]) for url in selected]
 
 

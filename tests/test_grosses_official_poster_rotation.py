@@ -153,6 +153,49 @@ class RotationTests(unittest.TestCase):
             self.assertFalse(third["publication_authorized"])
             self.assertEqual(ROW["lineup"], [])
 
+    def test_twice_daily_schedule_covers_every_raw_and_browser_host(self):
+        from datetime import datetime, timedelta, timezone
+        from grossesondes_official_poster_rotation import (
+            capture_rendered_evidence, scheduled_poster_tick)
+        from grossesondes_existing_official_updates import signed_rotation
+        catalog = {"schema": 1, "festivals": [
+            dict(ROW, slug=f"festival-exemple-{i}-2027",
+                 officialSite=f"https://festival-exemple-{i}.fr/")
+            for i in range(12)]}
+        sites = {r["officialSite"] for r in catalog["festivals"]}
+        start = datetime(2026, 11, 26, 6, 24, tzinfo=timezone.utc)
+        ticks = [scheduled_poster_tick(start + timedelta(hours=12*i))
+                 for i in range(6)]
+        self.assertEqual(ticks, list(range(ticks[0], ticks[0]+6)))
+        raw_sites, browser_sites = set(), set()
+        for tick in ticks:
+            batch = signed_rotation(catalog, "2026-11-26", 4, tick,
+                                    alternate_order=True)
+            raw_sites.update(site for site, _ in batch)
+            evidence = capture_rendered_evidence(catalog, "2026-11-26", tick, 4,
+                    fetch=lambda _: "<main>Loading</main>", renderer=lambda _: HTML)
+            self.assertLessEqual(len(evidence["entries"]), 2)
+            browser_sites.update(entry["site"] for entry in evidence["entries"])
+        self.assertEqual(raw_sites, sites)
+        self.assertEqual(browser_sites, sites)
+
+    def test_transported_browser_budget_only_spent_on_available_roots(self):
+        from grossesondes_existing_official_updates import signed_rotation
+        catalog = {"schema": 1, "festivals": [
+            dict(ROW, slug=f"festival-exemple-{i}-2027",
+                 officialSite=f"https://festival-exemple-{i}.fr/")
+            for i in range(4)]}
+        batch = signed_rotation(catalog, "2026-11-26", 4, 0, alternate_order=True)
+        transported = {site for site, _ in batch[2:]}
+        browser = Mock(return_value=HTML)
+        reader = Mock(return_value={"status": "review_only", "review_only": True, "words": []})
+        report = scan(catalog, "2026-11-26", tick=0, limit=4,
+                      fetch=lambda _: "<main>Loading</main>", reader=reader,
+                      browser_fetch=browser, browser_sites=transported)
+        self.assertEqual({c.args[0] for c in browser.call_args_list}, transported)
+        self.assertEqual(report["browser_hosts"], 2)
+        self.assertEqual(report["images_read"], 4)
+
     def test_transported_dom_rejects_tampering_wrong_root_stale_tick_and_429(self):
         import json
         from tempfile import TemporaryDirectory
