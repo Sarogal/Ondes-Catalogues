@@ -26,6 +26,45 @@ class RotationTests(unittest.TestCase):
         self.assertFalse(report["publication_authorized"])
         self.assertEqual(CAT, original)
 
+    def test_linked_programme_poster_fills_private_cache_and_reuses_hash(self):
+        from grossesondes_official_poster_ocr import read_official_poster
+        programme = SITE + "programmation/"
+        root = '<main><a href="/programmation/">Programmation</a></main>'
+        detail = '<main><img src="exemple-2027.jpg"></main>'
+        pages = {SITE: root, programme: detail}
+        fetch = Mock(side_effect=pages.__getitem__)
+        recognize = Mock(return_value=[])
+        image = Mock(return_value=("image/jpeg", b"example-image"))
+        cache = {}
+        def reader(site, url, *, cache):
+            return read_official_poster(site, url, cache=cache, fetch=image,
+                                        recognize=recognize)
+        first = scan(CAT, "2026-11-26", tick=0, cache=cache,
+                     fetch=fetch, reader=reader)
+        self.assertEqual(first["images_read"], 1)
+        self.assertEqual(first["rows"][0]["linked_candidates"], 1)
+        self.assertEqual(len(cache), 1)
+        image.assert_called_once()
+        self.assertEqual(image.call_args.args[1], programme + "exemple-2027.jpg")
+        second = scan(CAT, "2026-11-26", tick=0, cache=cache,
+                      fetch=fetch, reader=reader)
+        self.assertTrue(second["rows"][0]["images"][0]["cache_hit"])
+        recognize.assert_called_once()
+        self.assertFalse(second["publication_authorized"])
+
+    def test_linked_page_rate_limit_stops_further_host_requests(self):
+        from dns_pinned_https import OfficialHTTPStatusError
+        root = ('<main><a href="/affiche/">Affiche</a>'
+                '<a href="/programmation/">Programmation</a>'
+                '<a href="https://external.fr/affiche/">Affiche</a></main>')
+        fetch = Mock(side_effect=[root, OfficialHTTPStatusError(429)])
+        reader = Mock()
+        result = scan(CAT, "2026-11-26", tick=0, fetch=fetch, reader=reader)
+        self.assertEqual(fetch.call_count, 2)
+        self.assertEqual(fetch.call_args.args[0], SITE + "affiche/")
+        self.assertEqual(result["images_read"], 0)
+        reader.assert_not_called()
+
     def test_rate_limit_stops_remaining_images_on_host(self):
         reader = Mock(return_value={"status": "rate_limited"})
         report = scan(CAT, "2026-11-26", tick=0, fetch=lambda _: HTML, reader=reader)
