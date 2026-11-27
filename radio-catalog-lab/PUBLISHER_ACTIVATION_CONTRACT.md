@@ -67,8 +67,35 @@ No protected environments, tokens or remote branches are created by this code.
 ## Remaining proof
 
 Local push tests do not establish GitHub permissions, branch protection,
-actual secret availability, Pages consistency, Android compatibility with a
-new trust anchor, or a real admitted station. The exact destination URL,
+actual secret availability, Pages consistency or Android compatibility with a
+new trust anchor. Runs 253 and 254 qualified real discovered stations and
+rehearsed publication locally; neither published a signed catalogue remotely. The exact destination URL,
 branch and public key must be approved before an actual remote adapter is
 connected. A failed deployment must retain the previous verified release;
 a retry must not allocate another sequence for the same signed bytes.
+
+## Remote acceptance and state transition
+
+`tools/radio_daily_remote_acceptance.py::prepare_remote` connects the
+independent Git history and HTTPS deployment acceptance to the existing
+release context/migration contract. It consumes the same verified snapshot,
+requires complete predecessor evidence for an advancing release, and rechecks
+the Git head before returning. It does not persist state or activate a job.
+An unchanged accepted release does not allocate another sequence.
+
+Before any rehearsal using actual credentials:
+
+- Replace the reserved `https://radio-preview.example.org/` placeholder
+  with an explicitly approved isolated public endpoint. The signed logo URLs
+  and verifier must use the same destination; do not silently rewrite signed
+  bytes or repoint the existing production Pages deployment.
+- Define how the dedicated laboratory ref is deployed to that endpoint and
+  how the independent deployment ID is obtained. A Git push is not deployment.
+- Wire trusted manual jobs to transfer exact public snapshot material, verify
+  the accepted deployment and atomically persist migrated evidence against the
+  retained predecessor. Retain the previous accepted context on any failure.
+- Approve the independent public key pin and protected role environments.
+  No private key or write credential is provisioned here.
+
+A real rehearsal, then a separately authorized trust transition to Android,
+are required before unattended publication can be enabled.
