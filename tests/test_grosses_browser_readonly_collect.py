@@ -237,6 +237,21 @@ class IsolatedBrowserArtifactTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.read()
 
+    def test_large_rendered_dom_preserves_link_provenance_but_raw_limit_stays(self):
+        from grossesondes_existing_official_updates import page, linked_pages
+        link = "https://www.mozhell.fr/fr/billetterie"
+        homepage = ('<script>' + 'x' * 700_000 + '</script>'
+                    '<main><a href="/fr/billetterie">Billetterie</a></main>')
+        with self.assertRaises(ValueError):
+            page(homepage)
+        with self.assertRaises(ValueError):
+            page("é" * 710_000, rendered=True)
+        self.assertEqual(linked_pages(HOME, page(homepage, rendered=True)), [link])
+        collected = collect([HOME], renderer=lambda url: homepage if url == HOME else HTML)
+        self.assertEqual([x["officialSite"] for x in collected["entries"]], [HOME, link])
+        self.payload["entries"] = collected["entries"]
+        self.assertEqual(self.read()[link], HTML)
+
     def test_signed_home_link_may_enter_only_if_actually_discovered(self):
         link = "https://www.mozhell.fr/fr/billetterie"
         homepage = '<main><a href="/fr/billetterie">Billetterie</a></main>'
