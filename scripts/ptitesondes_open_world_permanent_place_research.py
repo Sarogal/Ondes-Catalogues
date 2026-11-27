@@ -12,7 +12,9 @@ from collections import Counter
 from time import monotonic
 
 from ptitesondes_family_national_source_preflight import norm_text
-from ptitesondes_cultural_directory_discovery import scan as scan_directory, MAX_TOTAL
+from ptitesondes_cultural_directory_discovery import (
+    scan as scan_directory, MAX_TOTAL, MAX_ROWS_PER_SCAN,
+)
 from ptitesondes_generic_venue_osm_preflight import (
     fetch_osm_query, MAX_ELEMENTS, osm_transport_diagnostics,
     OSM_ENDPOINT_LABELS, OSM_CATEGORIES,
@@ -384,7 +386,7 @@ def directory_cycle(report, previous, today, *, directory_scan=None, **kwargs):
                 or type(found.get("next_page")) is not int
                 or not 1 <= found["next_page"] <= MAX_TOTAL
                 or type(found.get("rows_examined")) is not int
-                or not 0 <= found["rows_examined"] <= 80):
+                or not 0 <= found["rows_examined"] <= MAX_ROWS_PER_SCAN):
             raise ValueError("invalid_directory_scan")
         incoming = _directory_leads(found.get("records"))
         incoming = {k: v for k, v in incoming.items()

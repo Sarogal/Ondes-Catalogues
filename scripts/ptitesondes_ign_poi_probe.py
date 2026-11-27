@@ -207,7 +207,7 @@ def discover_probe_sample():
     records = {}
     page = 1
     for _ in range(3):
-        result = scan(page)
+        result = scan(page, budget=4)
         for row in result["records"]:
             records[(norm_text(row["city"]), norm_text(row["venue"]))] = row
         page = result["next_page"]
