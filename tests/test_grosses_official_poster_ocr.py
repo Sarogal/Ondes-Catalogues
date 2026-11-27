@@ -294,6 +294,26 @@ class PosterOCRTests(unittest.TestCase):
         conflict = base + price + [("Pass 3J : 90 €", 20, 240, 98)]
         self.assertEqual(structured_poster_candidates(row, reading(conflict))["passes"], {})
 
+    def test_ambiguous_vertical_geometry_requires_unique_horizontal_neighbour(self):
+        from grossesondes_official_poster_ocr import poster_word_lines
+        def word(text, x, y, w, h):
+            return {"text": text, "confidence": 98,
+                    "box": [x, y, w, h], "review_only": True}
+        # Different word heights create two possible vertical matches
+        # for a later word, but only one local horizontal neighbour.
+        first = word("Alpha", 20, 10, 50, 40)   # centre 30
+        second = word("Gamma", 300, 30, 50, 10) # centre 35
+        third = word("Beta", 78, 17, 40, 40)    # centre 37
+        lines = poster_word_lines([first, second, third])
+        self.assertIsNotNone(lines)
+        self.assertIn(["Alpha", "Beta"], [[w["text"] for w in line] for line in lines])
+        self.assertIn(["Gamma"], [[w["text"] for w in line] for line in lines])
+        # Two adjacent candidates or no adjacent candidate stay ambiguous.
+        nearby = word("Gamma", 125, 30, 50, 10)
+        self.assertIsNone(poster_word_lines([first, nearby, third]))
+        remote = word("Beta", 600, 17, 40, 40)
+        self.assertIsNone(poster_word_lines([first, second, remote]))
+
     def test_failed_recognition_not_cached(self):
         cache = {}
         recognize = Mock(side_effect=FileNotFoundError())

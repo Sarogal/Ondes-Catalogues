@@ -317,12 +317,27 @@ def poster_word_lines(words):
         center = y + height/2
         choices = [line for line in lines
                    if abs(center - line["center"]) <= .30 * min(height, line["height"])]
-        if len(choices) == 1:
+        if len(choices) > 1:
+            # A vertical match alone can be ambiguous on multi-column
+            # artwork. Resolve only when EXACTLY one candidate line has
+            # a spatially neighbouring, non-overlapping word. Never choose
+            # the nearest of several plausible columns.
+            local = []
+            for line in choices:
+                for other in line["words"]:
+                    ox, oy, ow, oh = other["box"]
+                    gap = max(x - ox - ow, ox - x - width)
+                    if (0 <= gap <= 1.5 * min(height, oh)
+                            and abs(center - (oy + oh/2)) <= .30 * min(height, oh)):
+                        local.append(line)
+                        break
+            if len(local) != 1:
+                return None
+            choices = local
+        if choices:
             choices[0]["words"].append(word)
-        elif not choices:
-            lines.append({"center": center, "height": height, "words": [word]})
         else:
-            return None
+            lines.append({"center": center, "height": height, "words": [word]})
     texts = []
     for line in lines:
         ordered = sorted(line["words"], key=lambda w: w["box"][0])
