@@ -844,7 +844,7 @@ jobs:
               --candidate "$RUNNER_TEMP/concerts-official-approvals-preview.json" \
               --output "$OUTPUT" \
               --report confidential/automation/concerts/intake/self-attributed-new-site-proposals.json \
-              --scan-slot "$SCAN_SLOT" --limit 4 \
+              --scan-slot "$SCAN_SLOT" --limit 6 \
               > "$RUNNER_TEMP/concerts-private-logs/self-attributed-new-site-proposals.log" 2>&1; then
             mv "$OUTPUT" "$RUNNER_TEMP/concerts-official-approvals-preview.json"
             echo "New concert venues: independently verified private pairs sent to real Publisher."
@@ -871,7 +871,7 @@ jobs:
               --candidate "$RUNNER_TEMP/concerts-official-approvals-preview.json" \
               --output "$OUTPUT" \
               --report confidential/automation/concerts/intake/openagenda-new-site-proposals.json \
-              --scan-slot "$SCAN_SLOT" --limit 4 \
+              --scan-slot "$SCAN_SLOT" --limit 6 \
               > "$RUNNER_TEMP/concerts-private-logs/openagenda-new-site-proposals.log" 2>&1; then
             mv "$OUTPUT" "$RUNNER_TEMP/concerts-official-approvals-preview.json"
             echo "OpenAgenda: nouvelles salles vérifiées proposées au Publisher."
