@@ -24,7 +24,7 @@ if _AUTOMATION_DIR not in sys.path:
 
 from dns_pinned_https import safe_public_url, fetch_public_html
 from grossesondes_archived_html_intake import organizer_homepage
-from grossesondes_official_browser_probe import rendered_html
+from grossesondes_official_browser_probe import rendered_html, BrowserEvidenceError
 from grossesondes_existing_official_updates import linked_pages, page, signed_rotation
 
 SCHEMA = "grossesondes.browser-official-evidence.v1"
@@ -212,23 +212,38 @@ def collect(urls, renderer=rendered_html, *, diagnostics=None):
             # A link is only a bounded research target discovered in CURRENT
             # same-host rendered HTML; it cannot grant publication authority.
             links = linked_pages(url, page(html, rendered=True), prefer_programme=True)[:MAX_LINKS_PER_SITE]
-            for link in links:
-                if link in seen or safe_public_url(link) is None:
+            for index, link in enumerate(links, 1):
+                # Never disclose an untrusted discovered URL in diagnostics.
+                detail = {"url": url, "link_slot": index,
+                          "role": "programme" if re.search(
+                              r"/(?:lineup|line-up|programmation|programme|program|artists|artistes)/?$",
+                              link, re.I) else "other"}
+                if link in seen:
+                    diagnostics.append(dict(detail, status="link_already_seen"))
+                    continue
+                if safe_public_url(link) is None:
+                    diagnostics.append(dict(detail, status="unsafe_destination"))
                     continue
                 seen.add(link)
                 try:
                     linked = renderer(link)
                     if (not isinstance(linked, str)
                             or not 0 < len(linked.encode("utf-8")) <= MAX_BYTES):
+                        diagnostics.append(dict(detail, status="invalid_bounded_dom"))
                         continue
                     result.append({"officialSite": link, "sha256": sha256(
                         linked.encode("utf-8")).hexdigest(), "html": linked})
-                except Exception:
+                    diagnostics.append(dict(detail, status="link_rendered",
+                                            bytes=len(linked.encode("utf-8"))))
+                except Exception as exc:
+                    reason = exc.reason if isinstance(exc, BrowserEvidenceError) else (
+                        "network_error" if isinstance(exc, OSError) else
+                        "invalid_evidence" if isinstance(exc, ValueError) else "browser_error")
+                    diagnostics.append(dict(detail, status=reason))
                     continue
         except Exception as exc:
             # Log only the already signed URL and fixed error categories, not
             # exception text, response HTML, redirected URLs or credentials.
-            from grossesondes_official_browser_probe import BrowserEvidenceError
             reason = exc.reason if isinstance(exc, BrowserEvidenceError) else (
                 "network_error" if isinstance(exc, OSError) else
                 "invalid_evidence" if isinstance(exc, ValueError) else "browser_error")
