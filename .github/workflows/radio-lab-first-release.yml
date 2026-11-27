@@ -1,0 +1,228 @@
+name: Grosses Ondes — first isolated signed radio release
+
+on:
+  push:
+    branches: [feature/radio-daily-discovery-lab-20261120]
+    paths: [radio-catalog-lab/activation/first-release.json]
+
+permissions: {}
+concurrency:
+  group: radio-lab-first-signed-release
+  cancel-in-progress: false
+
+jobs:
+  authorize:
+    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      run-id: ${{ steps.guard.outputs.run-id }}
+      artifact: ${{ steps.guard.outputs.artifact }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED: ${{ vars.RADIO_LAB_APPROVED_SHA }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import datetime, json, os, re, subprocess
+          from pathlib import Path
+          marker = "radio-catalog-lab/activation/first-release.json"
+          approved = os.environ["APPROVED"]
+          assert re.fullmatch(r"[a-f0-9]{40}", approved)
+          assert subprocess.check_output(["git","rev-parse","HEAD^"],text=True).strip()==approved
+          assert subprocess.check_output(["git","diff","--name-only",approved,"HEAD"],text=True).splitlines()==[marker]
+          data = json.loads(Path(marker).read_text())
+          assert set(data)=={"reviewedSha","sourceRunId"}
+          assert data["reviewedSha"]==approved and type(data["sourceRunId"]) is int
+          run = json.loads(subprocess.check_output(["gh","api","repos/Sarogal/Ondes-Catalogues/actions/runs/"+str(data["sourceRunId"])]))
+          assert run["conclusion"]=="success" and run["head_branch"]=="feature/radio-daily-discovery-lab-20261120"
+          assert run["path"]==".github/workflows/radio-catalog-daily-discovery.yml"
+          assert run["head_repository"]["id"]==1438875064
+          assert run["created_at"][:10]==datetime.datetime.now(datetime.timezone.utc).date().isoformat()
+          with open(os.environ["GITHUB_OUTPUT"],"a") as out:
+              print("run-id="+str(run["id"]),file=out)
+              print("artifact=go-radio-discovery-"+str(run["id"])+"-attempt-"+str(run["run_attempt"]),file=out)
+          PY
+
+  sign:
+    needs: authorize
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: radio-lab-signing
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ needs.authorize.outputs.run-id }}
+          name: ${{ needs.authorize.outputs.artifact }}
+          path: ${{ runner.temp }}/reports
+      - uses: actions/checkout@v4
+        with:
+          ref: state/go-radio-discovery-preview
+          path: go-radio-state
+          sparse-checkout: radio-discovery-state/artwork-cache/sha256
+          persist-credentials: false
+      - name: Retrieve immutable TEST predecessor (read only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/feature/go-radio-test-v2-isolated-20261123/grossesondes/radio-test-v2
+          curl --fail --silent --show-error --max-time 45 --max-filesize 16384 "$base/current.json" -o "$RUNNER_TEMP/pointer.json"
+          curl --fail --silent --show-error --max-time 45 --max-filesize 2000000 "$base/releases/f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40.json" -o "$RUNNER_TEMP/baseline.json"
+      - name: Requalify real admissions and sign exact isolated V9
+        env:
+          RADIO_LAB_PUBLIC_KEY: ${{ vars.RADIO_LAB_PUBLIC_KEY }}
+          RADIO_LAB_KEY_ID: ${{ vars.RADIO_LAB_KEY_ID }}
+          RADIO_LAB_ENCRYPTED_KEY: ${{ secrets.RADIO_LAB_ENCRYPTED_KEY }}
+          RADIO_LAB_PASSPHRASE: ${{ secrets.RADIO_LAB_PASSPHRASE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_lab_first_release.py sign \
+            --pointer "$RUNNER_TEMP/pointer.json" --baseline "$RUNNER_TEMP/baseline.json" \
+            --reports "$RUNNER_TEMP/reports" --bundle "$RUNNER_TEMP/public-bundle" \
+            --cache go-radio-state/radio-discovery-state/artwork-cache/sha256 \
+            --cache "$RUNNER_TEMP/reports/inherited-artwork-cache"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: radio-lab-public-signed-bundle
+          path: ${{ runner.temp }}/public-bundle/
+          if-no-files-found: error
+          retention-days: 7
+
+  transport:
+    needs: sign
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: radio-lab-transport
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
+      - uses: actions/download-artifact@v4
+        with:
+          name: radio-lab-public-signed-bundle
+          path: ${{ runner.temp }}/public-bundle
+      - name: Transfer exact signed public bundle, never main
+        env:
+          RADIO_LAB_PUBLIC_KEY: ${{ vars.RADIO_LAB_PUBLIC_KEY }}
+          RADIO_LAB_KEY_ID: ${{ vars.RADIO_LAB_KEY_ID }}
+          RADIO_LAB_JOB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_lab_first_release.py transport \
+            --bundle "$RUNNER_TEMP/public-bundle" --receipt "$RUNNER_TEMP/receipt.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: radio-lab-transfer-receipt
+          path: ${{ runner.temp }}/receipt.json
+          if-no-files-found: error
+          retention-days: 7
+
+  readback:
+    needs: transport
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: radio-lab-readback
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
+      - uses: actions/download-artifact@v4
+        with:
+          name: radio-lab-transfer-receipt
+          path: ${{ runner.temp }}
+      - name: Independent public distribution acceptance
+        env:
+          RADIO_LAB_PUBLIC_KEY: ${{ vars.RADIO_LAB_PUBLIC_KEY }}
+          RADIO_LAB_KEY_ID: ${{ vars.RADIO_LAB_KEY_ID }}
+          RADIO_LAB_JOB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_lab_first_release.py readback \
+            --receipt "$RUNNER_TEMP/receipt.json" --acceptance "$RUNNER_TEMP/acceptance.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: radio-lab-independent-acceptance
+          path: ${{ runner.temp }}/acceptance.json
+          if-no-files-found: error
+          retention-days: 7
+
+  record-deployment:
+    needs: readback
+    runs-on: ubuntu-latest
+    environment: radio-lab-transport
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: radio-lab-independent-acceptance
+          path: ${{ runner.temp }}
+      - name: Record accepted isolated Git commit, without Pages changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, re, subprocess
+          from pathlib import Path
+          def api(path, body=None):
+              cmd = ["gh","api","repos/Sarogal/Ondes-Catalogues/"+path]
+              if body is not None:
+                  cmd += ["--method","POST","--input","-"]
+              return json.loads(subprocess.check_output(cmd,input=None if body is None else json.dumps(body).encode()))
+          accepted = json.loads((Path(os.environ["RUNNER_TEMP"])/"acceptance.json").read_text())
+          assert accepted["simulated"] is False and accepted["remoteReadbackVerified"] is True
+          assert accepted["deploymentVerified"] is True and accepted["selectedSequence"]==9
+          commit=accepted["gitCommit"]
+          assert re.fullmatch(r"[a-f0-9]{40}",commit)
+          ref="radio-lab-publisher-rehearsal"
+          assert api("git/ref/heads/"+ref)["object"]["sha"]==commit
+          deployment=api("deployments",{"ref":ref,"environment":ref,"auto_merge":False,
+              "required_contexts":[],"production_environment":False,"transient_environment":True,
+              "description":"Verified isolated radio GitHub Raw distribution"})
+          assert deployment["sha"]==commit and deployment["ref"]==ref
+          assert api("git/ref/heads/"+ref)["object"]["sha"]==commit
+          status=api("deployments/"+str(deployment["id"])+"/statuses",{
+              "state":"success","environment":ref,
+              "environment_url":"https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/refs/heads/radio-lab-publisher-rehearsal/pointer.json",
+              "description":"Exact signed V9 and public artwork mirrors independently verified"})
+          assert status["state"]=="success"
+          print("RADIO_LAB_DEPLOYMENT_ACCEPTED",deployment["id"],commit)
+          PY
