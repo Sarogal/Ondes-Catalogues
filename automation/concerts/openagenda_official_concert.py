@@ -322,7 +322,7 @@ def _confirmed_promotional_artist(title, record, *, candidate=None):
         content = (value.get("fr") or value.get("en")) if isinstance(value, dict) else None
         if not isinstance(content, str) or not 4 <= len(content) <= 20000:
             continue
-        reader = _VisibleOfficialGenreText()
+        reader = _LongDescriptionText()
         try:
             reader.feed(content)
             reader.close()
