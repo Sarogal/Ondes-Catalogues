@@ -239,7 +239,7 @@ def propose(row, catalogue, today, *, fetch=probe.safe_fetch):
 
 
 def build(registry, catalogue, before, today, *, slot=0,
-          limit=MAX_CHECKS, fetch=probe.safe_fetch):
+          limit=MAX_CHECKS, fetch=probe.safe_fetch, prior=None):
     require(isinstance(before, dict)
             and before.get("schema") == "grossesondes.concert.approvals.v1"
             and isinstance(before.get("approvals"), list)
@@ -248,9 +248,9 @@ def build(registry, catalogue, before, today, *, slot=0,
             and type(limit) is int and 1 <= limit <= 6,
             "private paired approval ledger or network budget invalid")
     available = eligible(registry, catalogue, today)
+    memory = geo_producer.site_review_memory(prior, SCHEMA, available)
     start = ((today - dt.date(2026, 11, 21)).days * 3 + slot) * limit
-    chosen = [available[(start + i) % len(available)]
-              for i in range(min(len(available), limit))] if available else []
+    chosen = geo_producer.rank_site_reviews(available, start, memory)[:limit]
     output = copy.deepcopy(before)
     current = copy.deepcopy(catalogue)
     signed_ids = {x.get("event", {}).get("id")
@@ -308,6 +308,8 @@ def build(registry, catalogue, before, today, *, slot=0,
         "eligibleUnknownSites": len(available), "examined": len(chosen),
         "stateCounts": dict(sorted(states.items())),
         "candidateChecks": checks,
+        "reviewMemory": geo_producer.remember_site_reviews(memory, chosen),
+        "firstReviewInMemory": sum(geo_producer.site_review_key(row) not in memory for row in chosen),
         "geoDiagnostics": dict(sorted(geo_diagnostics.items())),
         "rejectionReasons": dict(sorted(reasons.items())),
         "privateApprovalApplied": False,
@@ -327,7 +329,8 @@ def main():
         json.loads(args.registry.read_text(encoding="utf-8")),
         json.loads(args.catalogue.read_text(encoding="utf-8")),
         json.loads(args.candidate.read_text(encoding="utf-8")),
-        today, slot=args.scan_slot, limit=args.limit)
+        today, slot=args.scan_slot, limit=args.limit,
+        prior=geo_producer.read_site_review_memory(args.report))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(
