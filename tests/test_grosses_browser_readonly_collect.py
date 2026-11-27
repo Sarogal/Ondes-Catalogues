@@ -93,6 +93,29 @@ class IsolatedBrowserCollectionTests(unittest.TestCase):
         self.assertLessEqual(len(targets), 8)
         self.assertEqual(len(targets), len(set(targets)))
 
+    def test_incomplete_linkless_root_can_receive_browser_slot(self):
+        pub, hist = fixtures()
+        pub["festivals"] = [
+            {"slug": f"festival-{i}-2027",
+             "officialSite": f"https://festival-exemple-{i}.fr/",
+             "startDate": "2027-08-19", "lat": 47.0, "lon": 2.0,
+             "showOnMap": True, "bands": 5}
+            for i in range(14)]
+        baseline = signed_targets(pub, hist, date.fromisoformat(DAY), slot=0)
+        candidate = next(row for row in pub["festivals"]
+                         if row["officialSite"] not in baseline)
+        candidate["bands"] = None
+        target = candidate["officialSite"]
+        def fetch(url):
+            return "<main>Loading</main>" if url == target else (
+                '<main><a href="/programmation/">Programme</a></main>')
+        targets, probed, unavailable = prioritize_unavailable(
+            pub, hist, date.fromisoformat(DAY), 0, event_name="push", fetch=fetch)
+        self.assertEqual((probed, unavailable), (14, 0))
+        self.assertEqual(targets[0], target)
+        self.assertIn(OTHER, targets)
+        self.assertLessEqual(len(targets), 8)
+
     def test_no_https_failure_preserves_original_rotation(self):
         pub, hist = fixtures()
         targets, probed, unavailable = prioritize_unavailable(
