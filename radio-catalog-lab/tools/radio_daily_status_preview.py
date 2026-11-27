@@ -25,6 +25,35 @@ MAX_CHECKS=4
 MAX_PROPOSALS=3
 POSITIVE={"continuous_icy_frame_indication","advancing_hls_audio_frame_indication"}
 OUTCOMES=POSITIVE|{"inconclusive"}
+RECOVERABLE_STREAM_STATES={"candidate","candidate_verified","verified"}
+
+
+def recovery_proof(station, record):
+    """Choose one exact, repeatedly observed stream, deterministically.
+
+    A fresh live check must confirm this same proof before publication.
+    Never promote disabled streams or an unobserved alternative.
+    """
+    streams={v["stream_id"]:v for v in station["streams"]}
+    eligible=[]
+    for proof in record["proof"]:
+        v=streams.get(proof["streamId"])
+        if (v is not None and v["state"] in RECOVERABLE_STREAM_STATES
+                and hashlib.sha256(v["url"].encode()).hexdigest()==proof["streamSha256"]
+                and len(set(proof.get("positiveDates",[])))>=2):
+            eligible.append((v["state"]!="verified",v["priority"],v["stream_id"],proof))
+    if not eligible:
+        raise ValueError("no eligible verified recovery proof")
+    return min(eligible,key=lambda x:x[:3])[3]
+
+
+def promote_recovery_stream(station, record, day):
+    proof=recovery_proof(station,record)
+    stream=next(v for v in station["streams"] if v["stream_id"]==proof["streamId"])
+    if stream["state"]!="verified":
+        stream.update(state="verified",last_checked_at=day+"T00:00:00Z")
+    return proof["streamId"]
+
 
 def build(raw,maintenance,repair_plan,*,expected=BASELINE,prior=None,limit=0,icy=None,hls=None):
     day=parse_day(maintenance.get("scanDate"))
@@ -114,6 +143,9 @@ def build(raw,maintenance,repair_plan,*,expected=BASELINE,prior=None,limit=0,icy
         proof=[]
         if stations[sid]=="quarantined":
             for k in own:
+                variant=next(v for v in by_id[sid]["streams"] if v["stream_id"]==k[1])
+                if variant["state"] not in RECOVERABLE_STREAM_STATES:
+                    continue
                 good=[]
                 for o in reversed(histories[k]):
                     if o["verdict"] not in POSITIVE or age(day,o["date"])>7:
