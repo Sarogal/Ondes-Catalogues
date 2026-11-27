@@ -7,7 +7,7 @@ import copy
 from radio_daily_baseline_verify import strict_json
 from radio_daily_lab_signing import validate_candidate
 from radio_daily_repair_plan import plan
-from radio_daily_status_preview import build as status_build, MAX_CHECKS, MAX_PROPOSALS
+from radio_daily_status_preview import build as status_build, MAX_CHECKS, MAX_PROPOSALS, promote_recovery_stream
 from radio_daily_proposal_subset import select_proposals
 from radio_daily_publication_simulator import publish
 from radio_daily_v9_generator import digest, encode
@@ -32,6 +32,7 @@ def expected_status_release(prior_body, *, expected_sha, expected_sequence, day,
     repair_ids = {p["goStationId"] for p in repairs["proposals"]}
     redirect_ids = {t.get("redirect_to") for t in expected["tombstones"]}
     changed = 0
+    records = {r["goStationId"]: r for r in checked["records"]}
     proposals = checked["proposals"]
     if selected is not None:
         proposals = select_proposals(proposals, "goStationId", selected, MAX_PROPOSALS)
@@ -46,6 +47,8 @@ def expected_status_release(prior_body, *, expected_sha, expected_sequence, day,
             raise ValueError("status station identity mismatch")
         if fresh_check is not None:
             fresh_check(proposal)
+        if proposal["to"] == "active":
+            promote_recovery_stream(row, records[sid], day)
         row["status"].update(state=proposal["to"],
             reason_code="experimental_recovery_review" if proposal["to"] == "active"
                         else "experimental_unavailability_review",
