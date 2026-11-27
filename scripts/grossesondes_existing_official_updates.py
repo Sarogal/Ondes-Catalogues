@@ -41,6 +41,7 @@ from grossesondes_official_html_edition import (
 
 MAX_LINKS = 5
 MAX_HOSTS = 8
+MAX_PUBLISHER_POSTERS = 2
 COMMUNE_FIELDS = frozenset((
     "city", "lat", "lon", "showOnMap", "geoCity", "geoPrecision",
     "geoInsee", "geoSource", "geoVerification",
@@ -1591,10 +1592,74 @@ def multivenue_department_from_access(html, row, city, fetch, *, diagnostic=None
         return None
 
 
+def independently_read_posters(site, row, html, rendered, reader, budget):
+    """Fresh bounded image reads from a current first-party page, not private OCR.
+
+    Raw and rendered HTML may both contribute discovery but neither an image
+    filename nor an OCR cache supplies field authority. Require exact page
+    and poster edition evidence, no contradictory current dates, explicit
+    high-confidence artist/pass labels and consistent image claims.
+    """
+    from grossesondes_official_html_edition import visible_official_edition
+    from grossesondes_official_poster_ocr import structured_poster_candidates
+    try:
+        start, end = date.fromisoformat(row["startDate"]), date.fromisoformat(row["endDate"])
+        raw_text = VisibleText()
+        raw_text.feed(html)
+        raw_text.close()
+        raw_words = fold(" ".join(raw_text.parts))
+        ranges = {(a, b) for _, _, a, b in current_visible_ranges(raw_words, start.year)}
+        if ranges - {(start, end)} or OFFICIAL_CANCELLATION.search(raw_words):
+            return [], None, []
+    except (ValueError, TypeError, KeyError, UnicodeError):
+        return [], None, []
+    candidates = []
+    for source in (html, rendered):
+        if (not isinstance(source, str)
+                or not 0 < len(source.encode("utf-8")) <= 650_000
+                or not visible_official_edition(source, row["name"], start, end)):
+            continue
+        for url in current_official_poster_candidates(source, site, row):
+            if url not in candidates:
+                candidates.append(url)
+    rosters, offers, sources = [], [], []
+    for url in candidates:
+        if budget[0] <= 0:
+            break
+        budget[0] -= 1
+        # Never consult an intake cache or accept a private proposal.
+        reading = reader(site, url, cache={})
+        if reading.get("status") == "rate_limited":
+            break
+        if (not isinstance(reading.get("sha256"), str)
+                or not re.fullmatch(r"[0-9a-f]{64}", reading["sha256"])):
+            continue
+        typed = structured_poster_candidates(row, reading)
+        names = typed["artists"]
+        if names and all(good_artist(n) for n in names):
+            rosters.append((names, url))
+        if typed["passes"]:
+            offers.append((typed["passes"], url))
+    names = []
+    if rosters and all({key(n) for n in nameset} == {key(n) for n in rosters[0][0]}
+                       for nameset, _ in rosters):
+        names = rosters[0][0]
+        sources.extend(url for _, url in rosters)
+    summary = None
+    if offers and all(value == offers[0][0] for value, _ in offers):
+        price = "Tarifs annoncés — " + " ; ".join(
+            f"Pass {n} jour{'s' if int(n) > 1 else ''} : {amount} €"
+            for n, amount in sorted(offers[0][0].items(), key=lambda pair: int(pair[0]), reverse=True))
+        if parse_announced_tariffs(price, row):
+            summary = price
+            sources.extend(url for _, url in offers)
+    return names, summary, list(dict.fromkeys(sources))
+
+
 def apply_independently_verified_updates(
         target, published, today, fetch=fetch_public_html, limit=MAX_HOSTS,
         tick=None, commune_resolver=verified_commune, browser_fetch=None,
-        browser_sites=()):
+        browser_sites=(), poster_reader=None):
     """Recheck signed artists/prices and exact first-party city proof.
 
     A commune marker is only an indicative administrative centre: no precise
@@ -1608,6 +1673,7 @@ def apply_independently_verified_updates(
               "official_edition_diagnostics": [], "browser_recoveries": 0,
               "private_proposal_is_authority": False}
     report["browser_roots_checked"] = 0
+    poster_budget = [MAX_PUBLISHER_POSTERS]
     for site, rows in signed_rotation(
             published, today, limit, tick, browser_sites=browser_sites):
         if site in browser_sites:
@@ -1616,9 +1682,11 @@ def apply_independently_verified_updates(
         # These URLs are from the previously signed catalogue, never private
         # suggestions. A bounded diagnostics list makes real omissions auditable.
         report["checked_official_sources"].append(site)
+        raw_root_available = False
         try:
             root_html = fetch(site)
             root = page(root_html)
+            raw_root_available = True
             report["rechecked_pages"] += 1
         except (OSError, TimeoutError, ValueError, UnicodeError) as exc:
             # This callback comes ONLY from a separate no-secret job that
@@ -1800,6 +1868,25 @@ def apply_independently_verified_updates(
                     pass
             tier_summary = (seasonal_ticket_summary(seasonal_offers)
                             if not seasonal_conflict else None)
+            poster_names, poster_price, poster_sources = [], None, []
+            if (poster_reader is not None and poster_budget[0] > 0
+                    and raw_root_available
+                    and (not claims or old.get("price") is None)
+                    and isinstance(old.get("startDate"), str)
+                    and isinstance(old.get("endDate"), str)):
+                rendered = None
+                if browser_fetch is not None and site in browser_sites:
+                    try:
+                        rendered = browser_fetch(site)
+                    except (OSError, TimeoutError, ValueError, UnicodeError, TypeError, KeyError):
+                        pass
+                poster_names, poster_price, poster_sources = independently_read_posters(
+                    site, old, root_html, rendered, poster_reader, poster_budget)
+                # Existing verified HTML roster takes precedence; never merge
+                # conflicting snapshots or displace its explicit billing.
+                if poster_names and not claims:
+                    claims.extend(poster_names)
+                    sources.extend(poster_sources)
             current_lineup = old.get("lineup")
             current_lineup = current_lineup if isinstance(current_lineup, list) else []
             cleaned_lineup = verified_artist_alias_cleanup(current_lineup, claims)
@@ -1883,6 +1970,14 @@ def apply_independently_verified_updates(
                 new["price"] = tier_summary
                 fields.append("price")
                 sources.extend(seasonal_sources)
+            # An advertised poster amount is not evidence of sale availability.
+            # Only fill a missing price when no current HTML price route exists.
+            if (poster_price and old.get("price") is None and new.get("price") is None
+                    and not prices and not seasonal_offers and not seasonal_conflict
+                    and not dated_grids and not announced):
+                new["price"] = poster_price
+                fields.append("price")
+                sources.extend(poster_sources)
             commune_diagnostic = "not_eligible"
             municipal_diagnostic = {}
             # The signed current-edition title may explicitly name the town.
@@ -2251,6 +2346,8 @@ def apply_independently_verified_updates(
                     "official_poster_candidates_review_only": (
                         current_official_poster_candidates(root_html, site, old)
                         if root_ok else []),
+                    "fresh_poster_artist_count": len(poster_names),
+                    "fresh_poster_tariff_found": poster_price is not None,
                     "artist_names_claimed": len(claims),
                     "artist_names_new": len(new_names),
                     "open_pass_categories_found": sorted(prices),
@@ -2305,6 +2402,7 @@ def apply_independently_verified_updates(
             report["accepted_changes"].append({
                 "slug": slug, "fields": fields,
                 "artists_added": len(new_names) if "lineup" in fields else 0})
+    report["fresh_poster_images_read"] = MAX_PUBLISHER_POSTERS - poster_budget[0]
     if report["accepted"]:
         result["generatedAt"] = today
     return result, report

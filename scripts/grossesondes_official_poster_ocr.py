@@ -174,7 +174,10 @@ def recognize_poster(mime, body):
                 raise TimeoutError("OCR time budget")
             completed = subprocess.run(
                 ["tesseract", str(image_path), "stdout", "-l", "fra+eng", "--psm", "11", "tsv"],
-                shell=False, capture_output=True, timeout=remaining, check=True)
+                shell=False, capture_output=True, timeout=remaining, check=True,
+                env={k: os.environ[k] for k in
+                     ("PATH", "LANG", "LC_ALL", "OMP_THREAD_LIMIT", "TESSDATA_PREFIX")
+                     if k in os.environ})
             if len(completed.stdout) > MAX_TSV:
                 raise ValueError("OCR output exceeds budget")
             return parse_tsv(completed.stdout.decode("utf-8", errors="strict"))
