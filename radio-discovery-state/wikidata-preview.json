@@ -1,663 +1,658 @@
 {
-  "schemaVersion": 1,
-  "scanDate": "2026-11-27",
-  "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 158,
-  "dueNameCount": 12,
   "attemptedCount": 6,
-  "serviceFailure": null,
-  "retryAfterKey": null,
+  "dueNameCount": 12,
   "entries": {
     "2000 fm": {
-      "status": "identity_held",
       "artistName": "2000 FM",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "identity_held"
     },
     "3 doors down": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "3 Doors Down",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "38 special": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "38 Special",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "76% uncertain": {
-      "status": "name_hypothesis",
-      "qid": "Q51029144",
+      "artistName": "76% Uncertain",
+      "checkedAt": "2026-11-26",
+      "genreSource": "wikidata-P136",
       "genresById": {
         "Q10922": "hardcore punk"
       },
+      "identityVerified": false,
       "musicbrainzIds": [
         "9987cc36-7018-4a47-81fa-be72a9eb29ab"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q51029144",
-      "genreSource": "wikidata-P136",
-      "artistName": "76% Uncertain",
-      "checkedAt": "2026-11-26",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q51029144",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q51029144",
+      "status": "name_hypothesis"
     },
     "ac/dc": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "AC/DC",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "acdc": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "ACDC",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "aerosmith": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Aerosmith",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "aisyk": {
-      "status": "identity_held",
       "artistName": "Aisyk",
       "checkedAt": "2026-11-25",
-      "source": "wikidata",
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "source": "wikidata",
+      "status": "identity_held"
     },
     "ali x, ximena & pvlomo": {
-      "status": "not_found",
       "artistName": "Ali X, Ximena & PVLOMO",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "andy taylor": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Andy Taylor",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "anti-nowhere league": {
-      "status": "name_hypothesis",
-      "qid": "Q574728",
+      "artistName": "Anti-Nowhere League",
+      "checkedAt": "2026-11-27",
+      "genreSource": "wikidata-P136",
       "genresById": {},
+      "identityVerified": false,
       "musicbrainzIds": [
         "35718ac2-0681-4270-9e16-ad37f9dc6583"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q574728",
-      "genreSource": "wikidata-P136",
-      "artistName": "Anti-Nowhere League",
-      "checkedAt": "2026-11-27",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q574728",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q574728",
+      "status": "name_hypothesis"
     },
     "athena": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Athena",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "axiommaxiom": {
-      "status": "not_found",
       "artistName": "AxiomMaxiom",
       "checkedAt": "2026-11-25",
-      "source": "wikidata",
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "bad buka": {
-      "status": "not_found",
       "artistName": "Bad Buka",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "bad touch": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Bad Touch",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "badlands": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Badlands",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "bates fm": {
-      "status": "not_found",
       "artistName": "Bates FM",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "begräbnis": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Begräbnis",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "behemoth": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Behemoth",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "billy squier": {
-      "status": "name_hypothesis",
-      "qid": "Q863226",
+      "artistName": "Billy Squier",
+      "checkedAt": "2026-11-26",
+      "genreSource": "wikidata-P136",
       "genresById": {
         "Q379033": "arena rock",
         "Q83270": "hard rock"
       },
+      "identityVerified": false,
       "musicbrainzIds": [
         "3792dcb3-036e-45d6-8ee2-ff8d12c6c6c9"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q863226",
-      "genreSource": "wikidata-P136",
-      "artistName": "Billy Squier",
-      "checkedAt": "2026-11-26",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q863226",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q863226",
+      "status": "name_hypothesis"
     },
     "black sabbath": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Black Sabbath",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "blightbeast": {
-      "status": "not_found",
       "artistName": "Blightbeast",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "blodwen": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Blodwen",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "blondinka ksju": {
-      "status": "identity_held",
       "artistName": "Blondinka Ksju",
       "checkedAt": "2026-11-25",
-      "source": "wikidata",
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "source": "wikidata",
+      "status": "identity_held"
     },
     "braindead": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "BrainDead",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "brigadnyj podrjad": {
-      "status": "not_found",
       "artistName": "Brigadnyj podrjad",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "cad": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Cad",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "cats in space": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Cats in Space",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "copper hollow": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Copper Hollow",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "danger danger": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Danger Danger",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "dead end tragedy": {
-      "status": "not_found",
       "artistName": "Dead End Tragedy",
       "checkedAt": "2026-11-25",
-      "source": "wikidata",
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "dispraised": {
-      "status": "not_found",
       "artistName": "Dispraised",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "dominum": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Dominum",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "downtown mystics": {
-      "status": "not_found",
       "artistName": "Downtown Mystics",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "drake white": {
-      "status": "name_hypothesis",
-      "qid": "Q16983376",
+      "artistName": "Drake White",
+      "checkedAt": "2026-11-26",
+      "genreSource": "wikidata-P136",
       "genresById": {
         "Q83440": "country music"
       },
+      "identityVerified": false,
       "musicbrainzIds": [
         "3450511f-aea9-40cd-9618-d26ca7495842"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q16983376",
-      "genreSource": "wikidata-P136",
-      "artistName": "Drake White",
-      "checkedAt": "2026-11-26",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q16983376",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q16983376",
+      "status": "name_hypothesis"
     },
     "dvar": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Dvar",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "elektron": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Elektron",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "emmure": {
-      "status": "name_hypothesis",
-      "qid": "Q1338795",
+      "artistName": "Emmure",
+      "checkedAt": "2026-11-27",
+      "genreSource": "wikidata-P136",
       "genresById": {
         "Q183862": "metalcore",
         "Q263734": "nu metal"
       },
+      "identityVerified": false,
       "musicbrainzIds": [
         "98ef1696-cb7e-4ecc-be1d-22f62bb308a4"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q1338795",
-      "genreSource": "wikidata-P136",
-      "artistName": "Emmure",
-      "checkedAt": "2026-11-27",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q1338795",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q1338795",
+      "status": "name_hypothesis"
     },
     "epica": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Epica",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "eva under fire": {
-      "status": "name_hypothesis",
-      "qid": "Q116055724",
+      "artistName": "EVA UNDER FIRE",
+      "checkedAt": "2026-11-26",
+      "genreSource": "wikidata-P136",
       "genresById": {
         "Q20378": "alternative metal",
         "Q379671": "post-grunge",
         "Q83270": "hard rock"
       },
-      "musicbrainzIds": [],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q116055724",
-      "genreSource": "wikidata-P136",
-      "artistName": "EVA UNDER FIRE",
-      "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "musicbrainzIds": [],
+      "publicationAllowed": false,
+      "qid": "Q116055724",
+      "researchVersion": 2,
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q116055724",
+      "status": "name_hypothesis"
     },
     "fm": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "FM",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "foreigner": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Foreigner",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "fuzz kill radio": {
-      "status": "not_found",
       "artistName": "Fuzz Kill Radio",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "genesis": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Genesis",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "gojira": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Gojira",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "good charlotte": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Good Charlotte",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "hackeboda": {
-      "status": "not_found",
       "artistName": "Hackeboda",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "hanson brothers": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Hanson Brothers",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "heaven shall burn": {
-      "status": "name_hypothesis",
-      "qid": "Q158333",
+      "artistName": "Heaven Shall Burn",
+      "checkedAt": "2026-11-26",
+      "genreSource": "wikidata-P136",
       "genresById": {
         "Q183862": "metalcore",
         "Q253918": "melodic death metal"
       },
+      "identityVerified": false,
       "musicbrainzIds": [
         "d044577e-aa22-43b7-ab29-cabee5f6643c"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q158333",
-      "genreSource": "wikidata-P136",
-      "artistName": "Heaven Shall Burn",
-      "checkedAt": "2026-11-26",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q158333",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q158333",
+      "status": "name_hypothesis"
     },
     "her echo": {
-      "status": "not_found",
       "artistName": "Her Echo",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "howard jones": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Howard Jones",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "iced earth": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "ICED EARTH",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "inminente": {
-      "status": "not_found",
       "artistName": "Inminente",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "jack punk rock demonstration": {
-      "status": "not_found",
       "artistName": "Jack Punk Rock Demonstration",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "jason derulo; nicki minaj; ty dolla $ign": {
-      "status": "not_found",
       "artistName": "Jason Derulo; Nicki Minaj; Ty Dolla $ign",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "jeff beck group": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Jeff Beck Group",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "johnny hates jazz": {
-      "status": "name_hypothesis",
-      "qid": "Q1294961",
+      "artistName": "Johnny Hates Jazz",
+      "checkedAt": "2026-11-26",
+      "genreSource": "wikidata-P136",
       "genresById": {
         "Q187760": "new wave",
         "Q484641": "pop rock"
       },
+      "identityVerified": false,
       "musicbrainzIds": [
         "1cf1db8f-06bc-4c02-a608-4fc7980bbfcc"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q1294961",
-      "genreSource": "wikidata-P136",
-      "artistName": "Johnny Hates Jazz",
-      "checkedAt": "2026-11-26",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q1294961",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q1294961",
+      "status": "name_hypothesis"
     },
     "journey": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "JOURNEY",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "jovian year": {
-      "status": "identity_held",
       "artistName": "Jovian Year",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "identity_held"
     },
     "joy division": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Joy Division",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "judas priest": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Judas Priest",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "kayo dot": {
-      "status": "name_hypothesis",
-      "qid": "Q1420629",
+      "artistName": "Kayo Dot",
+      "checkedAt": "2026-11-26",
+      "genreSource": "wikidata-P136",
       "genresById": {
         "Q8341": "jazz"
       },
+      "identityVerified": false,
       "musicbrainzIds": [
         "3979eee5-c72a-4b0a-9191-a0243881250a"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q1420629",
-      "genreSource": "wikidata-P136",
-      "artistName": "Kayo Dot",
-      "checkedAt": "2026-11-26",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q1420629",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q1420629",
+      "status": "name_hypothesis"
     },
     "kindness": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Kindness",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "klaxons": {
-      "status": "name_hypothesis",
-      "qid": "Q840882",
+      "artistName": "Klaxons",
+      "checkedAt": "2026-11-26",
+      "genreSource": "wikidata-P136",
       "genresById": {
         "Q1643549": "dance-punk",
         "Q183504": "indie rock",
@@ -665,282 +660,282 @@
         "Q1995980": "new rave",
         "Q325504": "electronic rock"
       },
+      "identityVerified": false,
       "musicbrainzIds": [
         "63011a8d-0117-4f7e-9991-1ef1f337ff70"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q840882",
-      "genreSource": "wikidata-P136",
-      "artistName": "Klaxons",
-      "checkedAt": "2026-11-26",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q840882",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q840882",
+      "status": "name_hypothesis"
     },
     "korn": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Korn",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "kornkob95": {
-      "status": "not_found",
       "artistName": "Kornkob95",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "krasnaja plesen'": {
-      "status": "not_found",
       "artistName": "Krasnaja Plesen'",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "la pulqueria": {
-      "status": "not_found",
       "artistName": "La Pulqueria",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "lamb of god": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Lamb of God",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "lana del rey": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Lana Del Rey",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "lars frederiksen and the bastards": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Lars Frederiksen And The Bastards",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "latter day exploits": {
-      "status": "not_found",
       "artistName": "Latter Day Exploits",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "led zeppelin": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Led Zeppelin",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "les touffes kretiennes": {
-      "status": "not_found",
       "artistName": "Les Touffes Kretiennes",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "lionheart": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Lionheart",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "local natives": {
-      "status": "name_hypothesis",
-      "qid": "Q2613632",
+      "artistName": "Local Natives",
+      "checkedAt": "2026-11-26",
+      "genreSource": "wikidata-P136",
       "genresById": {
         "Q183504": "indie rock"
       },
+      "identityVerified": false,
       "musicbrainzIds": [
         "1bbf31dc-dbc0-4a7a-bf3f-48bc665878e1"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q2613632",
-      "genreSource": "wikidata-P136",
-      "artistName": "Local Natives",
-      "checkedAt": "2026-11-26",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q2613632",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q2613632",
+      "status": "name_hypothesis"
     },
     "maluma": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Maluma",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "marc freak": {
-      "status": "not_found",
       "artistName": "Marc Freak",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "megadeth": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Megadeth",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "metallica": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Metallica",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "michael schulte": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Michael Schulte",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "minor threat": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Minor Threat",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "minutemen": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Minutemen",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "mlkuz": {
-      "status": "not_found",
       "artistName": "MLKUZ",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "monster magnet": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Monster Magnet",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "naked eyes": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Naked Eyes",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "nazareth": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Nazareth",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "never obey again": {
-      "status": "not_found",
       "artistName": "Never Obey Again",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "nina hagen": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Nina Hagen",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "nine inch nails": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Nine Inch Nails",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "nochnoj prospekt": {
-      "status": "not_found",
       "artistName": "Nochnoj Prospekt",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "one and a half dog": {
-      "status": "not_found",
       "artistName": "One and a half dog",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "ozzy osbourne": {
-      "status": "name_hypothesis",
-      "qid": "Q133151",
+      "artistName": "Ozzy Osbourne",
+      "checkedAt": "2026-11-27",
+      "genreSource": "wikidata-P136",
       "genresById": {
         "Q1133657": "traditional heavy metal",
         "Q186170": "doom metal",
@@ -949,618 +944,623 @@
         "Q38848": "heavy metal music",
         "Q83270": "hard rock"
       },
+      "identityVerified": false,
       "musicbrainzIds": [
         "8aa5b65a-5b3c-4029-92bf-47a544356934"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q133151",
-      "genreSource": "wikidata-P136",
-      "artistName": "Ozzy Osbourne",
-      "checkedAt": "2026-11-27",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q133151",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q133151",
+      "status": "name_hypothesis"
     },
     "panda bear, cindy lee": {
-      "status": "not_found",
       "artistName": "Panda Bear, Cindy Lee",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "pascow": {
-      "status": "name_hypothesis",
-      "qid": "Q277346",
+      "artistName": "Pascow",
+      "checkedAt": "2026-11-26",
+      "genreSource": "wikidata-P136",
       "genresById": {},
+      "identityVerified": false,
       "musicbrainzIds": [
         "79d4c52d-a904-4bc7-9e4d-17aa99da35d6"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q277346",
-      "genreSource": "wikidata-P136",
-      "artistName": "Pascow",
-      "checkedAt": "2026-11-26",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q277346",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q277346",
+      "status": "name_hypothesis"
     },
     "phinehas": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Phinehas",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "poison": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Poison",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "poughkeepsie pop culture": {
-      "status": "not_found",
       "artistName": "Poughkeepsie Pop Culture",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "pulso roto": {
-      "status": "not_found",
       "artistName": "PULSO ROTO",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "pööloy gläänz": {
-      "status": "name_hypothesis",
-      "qid": "Q31273899",
+      "artistName": "PööLoY GLääNZ",
+      "checkedAt": "2026-11-26",
+      "genreSource": "wikidata-P136",
       "genresById": {},
+      "identityVerified": false,
       "musicbrainzIds": [
         "04f52a1e-5942-4665-90c8-acc03992b08f"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q31273899",
-      "genreSource": "wikidata-P136",
-      "artistName": "PööLoY GLääNZ",
-      "checkedAt": "2026-11-26",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q31273899",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q31273899",
+      "status": "name_hypothesis"
     },
     "queens of the stone age": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Queens Of The Stone Age",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "r.e.m.": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "R.E.M.",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "radioactivo 98 1/2 fm": {
-      "status": "not_found",
       "artistName": "Radioactivo 98 1/2 FM",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "rage": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Rage",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "ratt": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Ratt",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "rock antenne": {
-      "status": "identity_held",
       "artistName": "ROCK ANTENNE",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "identity_held"
     },
     "saxon": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Saxon",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "shadow la sombra": {
-      "status": "not_found",
       "artistName": "Shadow La Sombra",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "shopify.com": {
-      "status": "not_found",
       "artistName": "shopify.com",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "silbermond": {
-      "status": "identity_held",
       "artistName": "Silbermond",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "identity_held"
     },
     "skinflick": {
-      "status": "not_found",
       "artistName": "Skinflick",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "skip the use": {
-      "status": "name_hypothesis",
-      "qid": "Q3486312",
+      "artistName": "Skip the Use",
+      "checkedAt": "2026-11-26",
+      "genreSource": "wikidata-P136",
       "genresById": {
         "Q37073": "pop music"
       },
+      "identityVerified": false,
       "musicbrainzIds": [
         "1c346a43-0fba-4702-bc1b-c198f07e3da4"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q3486312",
-      "genreSource": "wikidata-P136",
-      "artistName": "Skip the Use",
-      "checkedAt": "2026-11-26",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q3486312",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q3486312",
+      "status": "name_hypothesis"
     },
     "sodom": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Sodom",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "soul asylum": {
-      "status": "identity_held",
       "artistName": "SOUL ASYLUM",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "identity_held"
     },
     "ssshhhiiittt!": {
-      "status": "name_hypothesis",
-      "qid": "Q69816236",
+      "artistName": "ssshhhiiittt!",
+      "checkedAt": "2026-11-26",
+      "genreSource": "wikidata-P136",
       "genresById": {
         "Q11366": "alternative rock",
         "Q183504": "indie rock"
       },
+      "identityVerified": false,
       "musicbrainzIds": [
         "6885e4b4-03e6-48c4-8943-cda1658fbe46"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q69816236",
-      "genreSource": "wikidata-P136",
-      "artistName": "ssshhhiiittt!",
-      "checkedAt": "2026-11-26",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q69816236",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q69816236",
+      "status": "name_hypothesis"
     },
     "steamhammer": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Steamhammer",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "stone sour": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Stone Sour",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "suicidas": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "suicidas",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "suicide machines": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Suicide Machines",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "t3nors": {
-      "status": "not_found",
       "artistName": "T3nors",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "talco": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Talco",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "tarakany!": {
-      "status": "name_hypothesis",
-      "qid": "Q499757",
+      "artistName": "Tarakany!",
+      "checkedAt": "2026-11-27",
+      "genreSource": "wikidata-P136",
       "genresById": {
         "Q11366": "alternative rock",
         "Q487914": "pop-punk"
       },
+      "identityVerified": false,
       "musicbrainzIds": [
         "6e2f63bf-c1eb-473f-a2aa-cd2daf08f5ec"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q499757",
-      "genreSource": "wikidata-P136",
-      "artistName": "Tarakany!",
-      "checkedAt": "2026-11-27",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q499757",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q499757",
+      "status": "name_hypothesis"
     },
     "tears for fears": {
-      "status": "identity_held",
       "artistName": "Tears for Fears",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "identity_held"
     },
     "tefy clouds": {
-      "status": "not_found",
       "artistName": "Tefy Clouds",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "television": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Television",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "the ataris": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "The Ataris",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "the blamed": {
-      "status": "name_hypothesis",
-      "qid": "Q20685765",
+      "artistName": "The Blamed",
+      "checkedAt": "2026-11-26",
+      "genreSource": "wikidata-P136",
       "genresById": {},
+      "identityVerified": false,
       "musicbrainzIds": [
         "cd984dc6-cff5-493d-a7fc-42e359e33115"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q20685765",
-      "genreSource": "wikidata-P136",
-      "artistName": "The Blamed",
-      "checkedAt": "2026-11-26",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q20685765",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q20685765",
+      "status": "name_hypothesis"
     },
     "the chemical brothers": {
-      "status": "identity_held",
       "artistName": "The Chemical Brothers",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "identity_held"
     },
     "the fright": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "The Fright",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "the futureheads": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "The Futureheads",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "the gutter twins": {
-      "status": "name_hypothesis",
-      "qid": "Q1781779",
+      "artistName": "The Gutter Twins",
+      "checkedAt": "2026-11-26",
+      "genreSource": "wikidata-P136",
       "genresById": {
         "Q11366": "alternative rock"
       },
+      "identityVerified": false,
       "musicbrainzIds": [
         "19a2a56f-fd53-4dea-8cec-88046efb0fd5"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q1781779",
-      "genreSource": "wikidata-P136",
-      "artistName": "The Gutter Twins",
-      "checkedAt": "2026-11-26",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q1781779",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q1781779",
+      "status": "name_hypothesis"
     },
     "the last dinner party": {
-      "status": "name_hypothesis",
-      "qid": "Q121433613",
+      "artistName": "The Last Dinner Party",
+      "checkedAt": "2026-11-26",
+      "genreSource": "wikidata-P136",
       "genresById": {
         "Q183504": "indie rock",
         "Q217467": "art rock",
         "Q46046": "baroque pop"
       },
+      "identityVerified": false,
       "musicbrainzIds": [
         "2f0c90b1-84d5-47f1-ad75-ad8d30f53f70"
       ],
-      "sourceUrl": "https://www.wikidata.org/wiki/Q121433613",
-      "genreSource": "wikidata-P136",
-      "artistName": "The Last Dinner Party",
-      "checkedAt": "2026-11-26",
-      "source": "wikidata",
+      "publicationAllowed": false,
+      "qid": "Q121433613",
       "researchVersion": 2,
-      "identityVerified": false,
-      "publicationAllowed": false
+      "source": "wikidata",
+      "sourceUrl": "https://www.wikidata.org/wiki/Q121433613",
+      "status": "name_hypothesis"
     },
     "the misfits": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "The Misfits",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "the presidents of the united states of america": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "The Presidents of the United States of America",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "the rolling stones": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "The Rolling Stones",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "the static teeth": {
-      "status": "not_found",
       "artistName": "The Static Teeth",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "the war on drugs": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "The War on Drugs",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "the who": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "The Who",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "u2": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "U2",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "upload": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Upload",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "various artists": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Various Artists",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "vertical67": {
-      "status": "not_found",
       "artistName": "VERTICAL67",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "vinnie moore": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Vinnie Moore",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "vixen": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Vixen",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "wdk": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "WDK",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "wizo": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "WIZO",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "womb": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Womb",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "worker & parasite": {
-      "status": "not_found",
       "artistName": "Worker & Parasite",
       "checkedAt": "2026-11-27",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "zeal & ardor": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Zeal & Ardor",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "zz top": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "ZZ Top",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "ambiguous_or_incomplete"
     },
     "норвежская сказка: читает воронмрак (улан-удэ)": {
-      "status": "not_found",
       "artistName": "Норвежская Сказка: Читает Воронмрак (Улан-Удэ)",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     },
     "тима гранж (томск)": {
-      "status": "not_found",
       "artistName": "тима гранж (Томск)",
       "checkedAt": "2026-11-26",
-      "source": "wikidata",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "wikidata",
+      "status": "not_found"
     }
-  }
+  },
+  "observedNameCount": 158,
+  "publicationAllowed": false,
+  "retryAfterKey": null,
+  "scanDate": "2026-11-27",
+  "schemaVersion": 1,
+  "serviceFailure": null
 }

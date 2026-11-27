@@ -2,10 +2,10 @@
   "approvedCount": 0,
   "attemptedCount": 0,
   "candidateCatalogueWritten": false,
-  "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
+  "catalogBaselineSha256": "08f25acfab1d8dd8617206939f50bb7d2c86d0e7f06d7ccaf064110db732ce67",
   "counts": {
     "await_repeated_continuity": 1,
-    "no_transition": 295
+    "no_transition": 296
   },
   "massTransitionHeld": false,
   "proposalCount": 0,
@@ -2639,6 +2639,15 @@
       "proof": [],
       "publicationAllowed": false,
       "stationSha256": "004f7113fd67a930495c21c4063090037de14ad52db35333ed4a1853ab764664"
+    },
+    {
+      "approved": false,
+      "catalogueStatus": "active",
+      "decision": "no_transition",
+      "goStationId": "go-station-505356862403755",
+      "proof": [],
+      "publicationAllowed": false,
+      "stationSha256": "0aca61740ef206fa85e8c9b872df29050bdbe8d0a0f1343d96c8a5a5837c564a"
     },
     {
       "approved": false,

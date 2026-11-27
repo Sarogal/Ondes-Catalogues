@@ -1,10 +1,10 @@
 {
   "approvedLogoCount": 0,
   "attemptedCount": 0,
-  "catalogBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
+  "catalogBaselineSha256": "08f25acfab1d8dd8617206939f50bb7d2c86d0e7f06d7ccaf064110db732ce67",
   "catalogChanged": false,
   "counts": {
-    "missing_logo": 32,
+    "missing_logo": 33,
     "query_source_held": 10,
     "unchanged": 254
   },
@@ -3516,6 +3516,18 @@
       "sourceSha256": "22470979ab2175f3e87337424d37f45931d1f3581266f36843e917b44ac25947"
     },
     {
+      "catalogueStatus": "active",
+      "changedDates": [],
+      "expectedImageSha256": null,
+      "goStationId": "go-station-505356862403755",
+      "lastObservationDate": null,
+      "logoApproved": false,
+      "observedImageSha256": null,
+      "publicationAllowed": false,
+      "reviewStatus": "missing_logo",
+      "sourceSha256": null
+    },
+    {
       "catalogueStatus": "quarantined",
       "changedDates": [],
       "expectedImageSha256": null,
@@ -6677,5 +6689,5 @@
       "sourceSha256": "fe0e3455845653b1de42b949fa9806208062ef0b9860235ca596134a6796d32b"
     }
   ],
-  "stationCount": 296
+  "stationCount": 297
 }

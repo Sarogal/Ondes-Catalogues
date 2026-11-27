@@ -1,26 +1,21 @@
 {
-  "schemaVersion": 1,
-  "scanDate": "2026-11-27",
-  "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 158,
-  "dueNameCount": 46,
   "attemptedCount": 4,
-  "serviceFailure": "http_503",
-  "retryAfterKey": "queens of the stone age",
+  "dueNameCount": 46,
   "entries": {
     "2000 fm": {
-      "status": "not_found",
       "artistName": "2000 FM",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "3 doors down": {
-      "status": "name_hypothesis",
-      "mbid": "2386cd66-e923-4e8e-bf14-2eebe2e9b973",
+      "artistName": "3 Doors Down",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "acoustic rock",
         "alternative metal",
@@ -32,27 +27,27 @@
         "rock",
         "southern rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/2386cd66-e923-4e8e-bf14-2eebe2e9b973",
-      "artistName": "3 Doors Down",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "2386cd66-e923-4e8e-bf14-2eebe2e9b973",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/2386cd66-e923-4e8e-bf14-2eebe2e9b973",
+      "status": "name_hypothesis"
     },
     "38 special": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "38 Special",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "ac/dc": {
-      "status": "name_hypothesis",
-      "mbid": "66c662b6-6e2f-4930-8610-912e24c63ed1",
+      "artistName": "AC/DC",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "blues rock",
         "classic rock",
@@ -60,96 +55,96 @@
         "rock",
         "rock and roll"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/66c662b6-6e2f-4930-8610-912e24c63ed1",
-      "artistName": "AC/DC",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "66c662b6-6e2f-4930-8610-912e24c63ed1",
+      "publicationAllowed": false,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/66c662b6-6e2f-4930-8610-912e24c63ed1",
+      "status": "name_hypothesis"
     },
     "acdc": {
-      "status": "not_found",
       "artistName": "ACDC",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "aisyk": {
-      "status": "not_found",
       "artistName": "Aisyk",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "ali x, ximena & pvlomo": {
-      "status": "not_found",
       "artistName": "Ali X, Ximena & PVLOMO",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "axiommaxiom": {
-      "status": "not_found",
       "artistName": "AxiomMaxiom",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "bad buka": {
-      "status": "not_found",
       "artistName": "Bad Buka",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-27",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "bates fm": {
-      "status": "not_found",
       "artistName": "Bates FM",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "behemoth": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Behemoth",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "billy squier": {
-      "status": "name_hypothesis",
-      "mbid": "3792dcb3-036e-45d6-8ee2-ff8d12c6c6c9",
+      "artistName": "Billy Squier",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "aor",
         "hard rock",
         "pop rock",
         "rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/3792dcb3-036e-45d6-8ee2-ff8d12c6c6c9",
-      "artistName": "Billy Squier",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "3792dcb3-036e-45d6-8ee2-ff8d12c6c6c9",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/3792dcb3-036e-45d6-8ee2-ff8d12c6c6c9",
+      "status": "name_hypothesis"
     },
     "black sabbath": {
-      "status": "name_hypothesis",
-      "mbid": "5182c1d9-c7d2-4dad-afa0-ccfeada921a8",
+      "artistName": "Black Sabbath",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "blues rock",
         "classic rock",
@@ -160,212 +155,212 @@
         "rock",
         "traditional doom metal"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/5182c1d9-c7d2-4dad-afa0-ccfeada921a8",
-      "artistName": "Black Sabbath",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "5182c1d9-c7d2-4dad-afa0-ccfeada921a8",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/5182c1d9-c7d2-4dad-afa0-ccfeada921a8",
+      "status": "name_hypothesis"
     },
     "blightbeast": {
-      "status": "name_hypothesis",
-      "mbid": "4fb3f6ad-2cfe-419c-b086-9c2988f93986",
-      "genres": [],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/4fb3f6ad-2cfe-419c-b086-9c2988f93986",
       "artistName": "Blightbeast",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
+      "genreSource": "musicbrainz-community",
+      "genres": [],
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "4fb3f6ad-2cfe-419c-b086-9c2988f93986",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/4fb3f6ad-2cfe-419c-b086-9c2988f93986",
+      "status": "name_hypothesis"
     },
     "blodwen": {
-      "status": "name_hypothesis",
-      "mbid": "6b35e88c-d20f-485c-9c51-5b270421ce39",
-      "genres": [],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/6b35e88c-d20f-485c-9c51-5b270421ce39",
       "artistName": "Blodwen",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
+      "genreSource": "musicbrainz-community",
+      "genres": [],
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "6b35e88c-d20f-485c-9c51-5b270421ce39",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/6b35e88c-d20f-485c-9c51-5b270421ce39",
+      "status": "name_hypothesis"
     },
     "blondinka ksju": {
-      "status": "not_found",
       "artistName": "Blondinka Ksju",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "braindead": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "BrainDead",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "brigadnyj podrjad": {
-      "status": "not_found",
       "artistName": "Brigadnyj podrjad",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-27",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "copper hollow": {
-      "status": "not_found",
       "artistName": "Copper Hollow",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "danger danger": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Danger Danger",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "dead end tragedy": {
-      "status": "name_hypothesis",
-      "mbid": "da4474de-a5f3-4f61-ae25-71f70ec3e0bd",
-      "genres": [],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/da4474de-a5f3-4f61-ae25-71f70ec3e0bd",
       "artistName": "Dead End Tragedy",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
+      "genres": [],
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "da4474de-a5f3-4f61-ae25-71f70ec3e0bd",
+      "publicationAllowed": false,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/da4474de-a5f3-4f61-ae25-71f70ec3e0bd",
+      "status": "name_hypothesis"
     },
     "dispraised": {
-      "status": "not_found",
       "artistName": "Dispraised",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-27",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "dominum": {
-      "status": "name_hypothesis",
-      "mbid": "a0385d31-16c4-49b6-ab2c-51877aa653e5",
+      "artistName": "Dominum",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "power metal"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/a0385d31-16c4-49b6-ab2c-51877aa653e5",
-      "artistName": "Dominum",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "a0385d31-16c4-49b6-ab2c-51877aa653e5",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/a0385d31-16c4-49b6-ab2c-51877aa653e5",
+      "status": "name_hypothesis"
     },
     "downtown mystics": {
-      "status": "not_found",
       "artistName": "Downtown Mystics",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "drake white": {
-      "status": "name_hypothesis",
-      "mbid": "3450511f-aea9-40cd-9618-d26ca7495842",
+      "artistName": "Drake White",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "country"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/3450511f-aea9-40cd-9618-d26ca7495842",
-      "artistName": "Drake White",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "3450511f-aea9-40cd-9618-d26ca7495842",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/3450511f-aea9-40cd-9618-d26ca7495842",
+      "status": "name_hypothesis"
     },
     "dvar": {
-      "status": "name_hypothesis",
-      "mbid": "be84006a-c37a-4a4a-866f-f7e0ab3a5f9c",
+      "artistName": "Dvar",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "dark wave"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/be84006a-c37a-4a4a-866f-f7e0ab3a5f9c",
-      "artistName": "Dvar",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "be84006a-c37a-4a4a-866f-f7e0ab3a5f9c",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/be84006a-c37a-4a4a-866f-f7e0ab3a5f9c",
+      "status": "name_hypothesis"
     },
     "elektron": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Elektron",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "eva under fire": {
-      "status": "name_hypothesis",
-      "mbid": "1b09e72f-374a-42aa-8bf7-4eb4b2b6eb59",
+      "artistName": "EVA UNDER FIRE",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/1b09e72f-374a-42aa-8bf7-4eb4b2b6eb59",
-      "artistName": "EVA UNDER FIRE",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "1b09e72f-374a-42aa-8bf7-4eb4b2b6eb59",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/1b09e72f-374a-42aa-8bf7-4eb4b2b6eb59",
+      "status": "name_hypothesis"
     },
     "fuzz kill radio": {
-      "status": "not_found",
       "artistName": "Fuzz Kill Radio",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "genesis": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Genesis",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-27",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "gojira": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Gojira",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "good charlotte": {
-      "status": "name_hypothesis",
-      "mbid": "b267ca80-034e-4dc1-9ed4-ec45f1fed41d",
+      "artistName": "Good Charlotte",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "alternative rock",
         "emo",
@@ -376,52 +371,52 @@
         "punk rock",
         "rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/b267ca80-034e-4dc1-9ed4-ec45f1fed41d",
-      "artistName": "Good Charlotte",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "b267ca80-034e-4dc1-9ed4-ec45f1fed41d",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/b267ca80-034e-4dc1-9ed4-ec45f1fed41d",
+      "status": "name_hypothesis"
     },
     "hackeboda": {
-      "status": "not_found",
       "artistName": "Hackeboda",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-27",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "hanson brothers": {
-      "status": "name_hypothesis",
-      "mbid": "e9209056-7eaf-40ff-a858-82e6744bb279",
+      "artistName": "Hanson Brothers",
+      "checkedAt": "2026-11-27",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "punk",
         "punk rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/e9209056-7eaf-40ff-a858-82e6744bb279",
-      "artistName": "Hanson Brothers",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-27",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "e9209056-7eaf-40ff-a858-82e6744bb279",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/e9209056-7eaf-40ff-a858-82e6744bb279",
+      "status": "name_hypothesis"
     },
     "howard jones": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Howard Jones",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "iced earth": {
-      "status": "name_hypothesis",
-      "mbid": "8a0e10a9-80c7-40e0-bf5b-89f1d57f9537",
+      "artistName": "ICED EARTH",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "heavy metal",
         "metal",
@@ -429,114 +424,114 @@
         "thrash metal",
         "us power metal"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/8a0e10a9-80c7-40e0-bf5b-89f1d57f9537",
-      "artistName": "ICED EARTH",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "8a0e10a9-80c7-40e0-bf5b-89f1d57f9537",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/8a0e10a9-80c7-40e0-bf5b-89f1d57f9537",
+      "status": "name_hypothesis"
     },
     "inminente": {
-      "status": "not_found",
       "artistName": "Inminente",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "jack punk rock demonstration": {
-      "status": "not_found",
       "artistName": "Jack Punk Rock Demonstration",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-27",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "jason derulo; nicki minaj; ty dolla $ign": {
-      "status": "not_found",
       "artistName": "Jason Derulo; Nicki Minaj; Ty Dolla $ign",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "jeff beck group": {
-      "status": "name_hypothesis",
-      "mbid": "a6339659-c879-4f88-9908-206d47963e29",
+      "artistName": "Jeff Beck Group",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "blues rock",
         "hard rock",
         "jazz rock",
         "rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/a6339659-c879-4f88-9908-206d47963e29",
-      "artistName": "Jeff Beck Group",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "a6339659-c879-4f88-9908-206d47963e29",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/a6339659-c879-4f88-9908-206d47963e29",
+      "status": "name_hypothesis"
     },
     "johnny hates jazz": {
-      "status": "name_hypothesis",
-      "mbid": "1cf1db8f-06bc-4c02-a608-4fc7980bbfcc",
+      "artistName": "Johnny Hates Jazz",
+      "checkedAt": "2026-11-25",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "new wave",
         "pop",
         "sophisti-pop"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/1cf1db8f-06bc-4c02-a608-4fc7980bbfcc",
-      "artistName": "Johnny Hates Jazz",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-25",
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "1cf1db8f-06bc-4c02-a608-4fc7980bbfcc",
+      "publicationAllowed": false,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/1cf1db8f-06bc-4c02-a608-4fc7980bbfcc",
+      "status": "name_hypothesis"
     },
     "journey": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "JOURNEY",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "jovian year": {
-      "status": "not_found",
       "artistName": "Jovian Year",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "joy division": {
-      "status": "name_hypothesis",
-      "mbid": "9a58fda3-f4ed-4080-a3a5-f457aac9fcdd",
+      "artistName": "Joy Division",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "gothic rock",
         "new wave",
         "post-punk",
         "rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/9a58fda3-f4ed-4080-a3a5-f457aac9fcdd",
-      "artistName": "Joy Division",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "9a58fda3-f4ed-4080-a3a5-f457aac9fcdd",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/9a58fda3-f4ed-4080-a3a5-f457aac9fcdd",
+      "status": "name_hypothesis"
     },
     "judas priest": {
-      "status": "name_hypothesis",
-      "mbid": "6b335658-22c8-485d-93de-0bc29a1d0349",
+      "artistName": "Judas Priest",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "classic rock",
         "hard rock",
@@ -545,18 +540,18 @@
         "nwobhm",
         "speed metal"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/6b335658-22c8-485d-93de-0bc29a1d0349",
-      "artistName": "Judas Priest",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "6b335658-22c8-485d-93de-0bc29a1d0349",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/6b335658-22c8-485d-93de-0bc29a1d0349",
+      "status": "name_hypothesis"
     },
     "kayo dot": {
-      "status": "name_hypothesis",
-      "mbid": "3979eee5-c72a-4b0a-9191-a0243881250a",
+      "artistName": "Kayo Dot",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "art rock",
         "avant-garde",
@@ -568,90 +563,90 @@
         "post-rock",
         "progressive metal"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/3979eee5-c72a-4b0a-9191-a0243881250a",
-      "artistName": "Kayo Dot",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "3979eee5-c72a-4b0a-9191-a0243881250a",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/3979eee5-c72a-4b0a-9191-a0243881250a",
+      "status": "name_hypothesis"
     },
     "kindness": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Kindness",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-27",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "klaxons": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Klaxons",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "krasnaja plesen'": {
-      "status": "not_found",
       "artistName": "Krasnaja Plesen'",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "la pulqueria": {
-      "status": "not_found",
       "artistName": "La Pulqueria",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "lamb of god": {
-      "status": "name_hypothesis",
-      "mbid": "298909e4-ebcb-47b8-95e9-cc53b087fc65",
+      "artistName": "Lamb of God",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "groove metal",
         "metal",
         "metalcore"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/298909e4-ebcb-47b8-95e9-cc53b087fc65",
-      "artistName": "Lamb of God",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "298909e4-ebcb-47b8-95e9-cc53b087fc65",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/298909e4-ebcb-47b8-95e9-cc53b087fc65",
+      "status": "name_hypothesis"
     },
     "lana del rey": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Lana Del Rey",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "lars frederiksen and the bastards": {
-      "status": "name_hypothesis",
-      "mbid": "f3a090bf-6173-42d7-86f5-7fcdeaabfc58",
-      "genres": [],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/f3a090bf-6173-42d7-86f5-7fcdeaabfc58",
       "artistName": "Lars Frederiksen And The Bastards",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
+      "genres": [],
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "f3a090bf-6173-42d7-86f5-7fcdeaabfc58",
+      "publicationAllowed": false,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/f3a090bf-6173-42d7-86f5-7fcdeaabfc58",
+      "status": "name_hypothesis"
     },
     "led zeppelin": {
-      "status": "name_hypothesis",
-      "mbid": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+      "artistName": "Led Zeppelin",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "arena rock",
         "blues",
@@ -665,27 +660,27 @@
         "rock",
         "rock and roll"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/678d88b2-87b0-403b-b63d-5da7465aecc3",
-      "artistName": "Led Zeppelin",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/678d88b2-87b0-403b-b63d-5da7465aecc3",
+      "status": "name_hypothesis"
     },
     "lionheart": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Lionheart",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "local natives": {
-      "status": "name_hypothesis",
-      "mbid": "1bbf31dc-dbc0-4a7a-bf3f-48bc665878e1",
+      "artistName": "Local Natives",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "folk",
         "freak folk",
@@ -695,40 +690,40 @@
         "pop rock",
         "rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/1bbf31dc-dbc0-4a7a-bf3f-48bc665878e1",
-      "artistName": "Local Natives",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "1bbf31dc-dbc0-4a7a-bf3f-48bc665878e1",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/1bbf31dc-dbc0-4a7a-bf3f-48bc665878e1",
+      "status": "name_hypothesis"
     },
     "lower class brats": {
-      "status": "name_hypothesis",
-      "mbid": "1f77b76b-91c3-4f9e-bb60-336e7012b769",
-      "genres": [],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/1f77b76b-91c3-4f9e-bb60-336e7012b769",
       "artistName": "Lower Class Brats",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-27",
-      "researchVersion": 2,
+      "genreSource": "musicbrainz-community",
+      "genres": [],
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "1f77b76b-91c3-4f9e-bb60-336e7012b769",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/1f77b76b-91c3-4f9e-bb60-336e7012b769",
+      "status": "name_hypothesis"
     },
     "luma sol": {
-      "status": "not_found",
       "artistName": "Luma Sol",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-27",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "maluma": {
-      "status": "name_hypothesis",
-      "mbid": "e8979f75-9110-4df8-ac70-898898d080d1",
+      "artistName": "Maluma",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "latin",
         "latin pop",
@@ -736,39 +731,39 @@
         "reggaeton",
         "trap latino"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/e8979f75-9110-4df8-ac70-898898d080d1",
-      "artistName": "Maluma",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "e8979f75-9110-4df8-ac70-898898d080d1",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/e8979f75-9110-4df8-ac70-898898d080d1",
+      "status": "name_hypothesis"
     },
     "marble carrion (новосибирск)": {
-      "status": "not_found",
       "artistName": "Marble Carrion (Новосибирск)",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-27",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "marc freak": {
-      "status": "name_hypothesis",
-      "mbid": "28e649ec-7c82-4202-a534-121d0883b6fc",
-      "genres": [],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/28e649ec-7c82-4202-a534-121d0883b6fc",
       "artistName": "Marc Freak",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
+      "genres": [],
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "28e649ec-7c82-4202-a534-121d0883b6fc",
+      "publicationAllowed": false,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/28e649ec-7c82-4202-a534-121d0883b6fc",
+      "status": "name_hypothesis"
     },
     "megadeth": {
-      "status": "name_hypothesis",
-      "mbid": "a9044915-8be3-4c7e-b11f-9e2d2ea0a91e",
+      "artistName": "Megadeth",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "hard rock",
         "heavy metal",
@@ -777,18 +772,18 @@
         "speed metal",
         "thrash metal"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/a9044915-8be3-4c7e-b11f-9e2d2ea0a91e",
-      "artistName": "Megadeth",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "a9044915-8be3-4c7e-b11f-9e2d2ea0a91e",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/a9044915-8be3-4c7e-b11f-9e2d2ea0a91e",
+      "status": "name_hypothesis"
     },
     "metallica": {
-      "status": "name_hypothesis",
-      "mbid": "65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab",
+      "artistName": "Metallica",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "hard rock",
         "heavy metal",
@@ -796,34 +791,34 @@
         "rock",
         "thrash metal"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab",
-      "artistName": "Metallica",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab",
+      "status": "name_hypothesis"
     },
     "michael schulte": {
-      "status": "name_hypothesis",
-      "mbid": "5ea48d60-26c9-406c-aed3-a450bb5d8e86",
+      "artistName": "Michael Schulte",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "dance",
         "pop"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/5ea48d60-26c9-406c-aed3-a450bb5d8e86",
-      "artistName": "Michael Schulte",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "5ea48d60-26c9-406c-aed3-a450bb5d8e86",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/5ea48d60-26c9-406c-aed3-a450bb5d8e86",
+      "status": "name_hypothesis"
     },
     "minutemen": {
-      "status": "name_hypothesis",
-      "mbid": "d4ad0149-d8ae-4105-8009-0221fce9ff35",
+      "artistName": "Minutemen",
+      "checkedAt": "2026-11-27",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "acoustic rock",
         "alternative rock",
@@ -833,27 +828,27 @@
         "punk",
         "punk rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/d4ad0149-d8ae-4105-8009-0221fce9ff35",
-      "artistName": "Minutemen",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-27",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "d4ad0149-d8ae-4105-8009-0221fce9ff35",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/d4ad0149-d8ae-4105-8009-0221fce9ff35",
+      "status": "name_hypothesis"
     },
     "mlkuz": {
-      "status": "not_found",
       "artistName": "MLKUZ",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "monster magnet": {
-      "status": "name_hypothesis",
-      "mbid": "a0955511-1324-4e9b-834f-e1e140502850",
+      "artistName": "Monster Magnet",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "desert rock",
         "hard rock",
@@ -864,57 +859,57 @@
         "stoner metal",
         "stoner rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/a0955511-1324-4e9b-834f-e1e140502850",
-      "artistName": "Monster Magnet",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "a0955511-1324-4e9b-834f-e1e140502850",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/a0955511-1324-4e9b-834f-e1e140502850",
+      "status": "name_hypothesis"
     },
     "naked eyes": {
-      "status": "name_hypothesis",
-      "mbid": "d5d477bc-97c5-410c-983b-ff541580566f",
+      "artistName": "Naked Eyes",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "new wave",
         "pop rock",
         "synth-pop"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/d5d477bc-97c5-410c-983b-ff541580566f",
-      "artistName": "Naked Eyes",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "d5d477bc-97c5-410c-983b-ff541580566f",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/d5d477bc-97c5-410c-983b-ff541580566f",
+      "status": "name_hypothesis"
     },
     "nazareth": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Nazareth",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "never obey again": {
-      "status": "name_hypothesis",
-      "mbid": "66aa370c-12de-4f77-8a02-986c1619a52e",
-      "genres": [],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/66aa370c-12de-4f77-8a02-986c1619a52e",
       "artistName": "Never Obey Again",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
+      "genreSource": "musicbrainz-community",
+      "genres": [],
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "66aa370c-12de-4f77-8a02-986c1619a52e",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/66aa370c-12de-4f77-8a02-986c1619a52e",
+      "status": "name_hypothesis"
     },
     "nina hagen": {
-      "status": "name_hypothesis",
-      "mbid": "e4d32f51-bc57-42a4-8165-b80f7a86496d",
+      "artistName": "Nina Hagen",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "neue deutsche welle",
         "new wave",
@@ -923,45 +918,45 @@
         "punk rock",
         "rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/e4d32f51-bc57-42a4-8165-b80f7a86496d",
-      "artistName": "Nina Hagen",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "e4d32f51-bc57-42a4-8165-b80f7a86496d",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/e4d32f51-bc57-42a4-8165-b80f7a86496d",
+      "status": "name_hypothesis"
     },
     "nine inch nails": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Nine Inch Nails",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "nochnoj prospekt": {
-      "status": "not_found",
       "artistName": "Nochnoj Prospekt",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "one and a half dog": {
-      "status": "not_found",
       "artistName": "One and a half dog",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "ozzy osbourne": {
-      "status": "name_hypothesis",
-      "mbid": "8aa5b65a-5b3c-4029-92bf-47a544356934",
+      "artistName": "Ozzy Osbourne",
+      "checkedAt": "2026-11-27",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "alternative metal",
         "glam metal",
@@ -971,125 +966,125 @@
         "pop rock",
         "symphonic rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/8aa5b65a-5b3c-4029-92bf-47a544356934",
-      "artistName": "Ozzy Osbourne",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-27",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "8aa5b65a-5b3c-4029-92bf-47a544356934",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/8aa5b65a-5b3c-4029-92bf-47a544356934",
+      "status": "name_hypothesis"
     },
     "panda bear, cindy lee": {
-      "status": "not_found",
       "artistName": "Panda Bear, Cindy Lee",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-25",
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "pascow": {
-      "status": "name_hypothesis",
-      "mbid": "79d4c52d-a904-4bc7-9e4d-17aa99da35d6",
+      "artistName": "Pascow",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "punk rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/79d4c52d-a904-4bc7-9e4d-17aa99da35d6",
-      "artistName": "Pascow",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "79d4c52d-a904-4bc7-9e4d-17aa99da35d6",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/79d4c52d-a904-4bc7-9e4d-17aa99da35d6",
+      "status": "name_hypothesis"
     },
     "phinehas": {
-      "status": "name_hypothesis",
-      "mbid": "6f6a03c2-f41c-47a8-b5a1-8039f3d33200",
+      "artistName": "Phinehas",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "christian metal",
         "melodic metalcore",
         "metalcore"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/6f6a03c2-f41c-47a8-b5a1-8039f3d33200",
-      "artistName": "Phinehas",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "6f6a03c2-f41c-47a8-b5a1-8039f3d33200",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/6f6a03c2-f41c-47a8-b5a1-8039f3d33200",
+      "status": "name_hypothesis"
     },
     "poison": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Poison",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "poughkeepsie pop culture": {
-      "status": "not_found",
       "artistName": "Poughkeepsie Pop Culture",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-27",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "pulso roto": {
-      "status": "not_found",
       "artistName": "PULSO ROTO",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "pööloy gläänz": {
-      "status": "name_hypothesis",
-      "mbid": "04f52a1e-5942-4665-90c8-acc03992b08f",
-      "genres": [],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/04f52a1e-5942-4665-90c8-acc03992b08f",
       "artistName": "PööLoY GLääNZ",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
+      "genreSource": "musicbrainz-community",
+      "genres": [],
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "04f52a1e-5942-4665-90c8-acc03992b08f",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/04f52a1e-5942-4665-90c8-acc03992b08f",
+      "status": "name_hypothesis"
     },
     "r.e.m.": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "R.E.M.",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "radioactivo 98 1/2 fm": {
-      "status": "not_found",
       "artistName": "Radioactivo 98 1/2 FM",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "rage": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Rage",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "ratt": {
-      "status": "name_hypothesis",
-      "mbid": "e0827234-3be3-4973-be59-1aa9575b9c76",
+      "artistName": "Ratt",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "glam",
         "glam metal",
@@ -1097,87 +1092,87 @@
         "heavy metal",
         "metal"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/e0827234-3be3-4973-be59-1aa9575b9c76",
-      "artistName": "Ratt",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "e0827234-3be3-4973-be59-1aa9575b9c76",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/e0827234-3be3-4973-be59-1aa9575b9c76",
+      "status": "name_hypothesis"
     },
     "rock antenne": {
-      "status": "not_found",
       "artistName": "ROCK ANTENNE",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "saxon": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Saxon",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "shadow la sombra": {
-      "status": "not_found",
       "artistName": "Shadow La Sombra",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "shopify.com": {
-      "status": "not_found",
       "artistName": "shopify.com",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "silbermond": {
-      "status": "name_hypothesis",
-      "mbid": "34d42823-6b56-4861-a675-1565bf40d557",
+      "artistName": "Silbermond",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "pop",
         "pop rock",
         "rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/34d42823-6b56-4861-a675-1565bf40d557",
-      "artistName": "Silbermond",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "34d42823-6b56-4861-a675-1565bf40d557",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/34d42823-6b56-4861-a675-1565bf40d557",
+      "status": "name_hypothesis"
     },
     "skip the use": {
-      "status": "name_hypothesis",
-      "mbid": "1c346a43-0fba-4702-bc1b-c198f07e3da4",
+      "artistName": "Skip the Use",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "dance-punk",
         "indie rock",
         "new rave"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/1c346a43-0fba-4702-bc1b-c198f07e3da4",
-      "artistName": "Skip the Use",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "1c346a43-0fba-4702-bc1b-c198f07e3da4",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/1c346a43-0fba-4702-bc1b-c198f07e3da4",
+      "status": "name_hypothesis"
     },
     "soul asylum": {
-      "status": "name_hypothesis",
-      "mbid": "b10db9ad-b4c3-47f3-a7a4-37864b134f65",
+      "artistName": "SOUL ASYLUM",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "alternative rock",
         "grunge",
@@ -1187,105 +1182,105 @@
         "power pop",
         "punk rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/b10db9ad-b4c3-47f3-a7a4-37864b134f65",
-      "artistName": "SOUL ASYLUM",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "b10db9ad-b4c3-47f3-a7a4-37864b134f65",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/b10db9ad-b4c3-47f3-a7a4-37864b134f65",
+      "status": "name_hypothesis"
     },
     "ssshhhiiittt!": {
-      "status": "name_hypothesis",
-      "mbid": "6885e4b4-03e6-48c4-8943-cda1658fbe46",
+      "artistName": "ssshhhiiittt!",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "garage rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/6885e4b4-03e6-48c4-8943-cda1658fbe46",
-      "artistName": "ssshhhiiittt!",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "6885e4b4-03e6-48c4-8943-cda1658fbe46",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/6885e4b4-03e6-48c4-8943-cda1658fbe46",
+      "status": "name_hypothesis"
     },
     "steamhammer": {
-      "status": "name_hypothesis",
-      "mbid": "3a787e76-2879-4306-bc04-66aa7373be72",
+      "artistName": "Steamhammer",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "blues rock",
         "heavy psych",
         "progressive rock",
         "psychedelic rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/3a787e76-2879-4306-bc04-66aa7373be72",
-      "artistName": "Steamhammer",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "3a787e76-2879-4306-bc04-66aa7373be72",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/3a787e76-2879-4306-bc04-66aa7373be72",
+      "status": "name_hypothesis"
     },
     "t3nors": {
-      "status": "name_hypothesis",
-      "mbid": "4e622511-68d1-4544-ab6b-ffdd843f1c2b",
-      "genres": [],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/4e622511-68d1-4544-ab6b-ffdd843f1c2b",
       "artistName": "T3nors",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
+      "genreSource": "musicbrainz-community",
+      "genres": [],
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "4e622511-68d1-4544-ab6b-ffdd843f1c2b",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/4e622511-68d1-4544-ab6b-ffdd843f1c2b",
+      "status": "name_hypothesis"
     },
     "television": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Television",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "the ataris": {
-      "status": "name_hypothesis",
-      "mbid": "57805d77-f947-4851-b7fb-78baad154451",
+      "artistName": "The Ataris",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "pop punk",
         "punk"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/57805d77-f947-4851-b7fb-78baad154451",
-      "artistName": "The Ataris",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "57805d77-f947-4851-b7fb-78baad154451",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/57805d77-f947-4851-b7fb-78baad154451",
+      "status": "name_hypothesis"
     },
     "the blamed": {
-      "status": "name_hypothesis",
-      "mbid": "cd984dc6-cff5-493d-a7fc-42e359e33115",
+      "artistName": "The Blamed",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "christian rock",
         "hardcore punk"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/cd984dc6-cff5-493d-a7fc-42e359e33115",
-      "artistName": "The Blamed",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "cd984dc6-cff5-493d-a7fc-42e359e33115",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/cd984dc6-cff5-493d-a7fc-42e359e33115",
+      "status": "name_hypothesis"
     },
     "the chemical brothers": {
-      "status": "name_hypothesis",
-      "mbid": "1946a82a-f927-40c2-8235-38d64f50d043",
+      "artistName": "The Chemical Brothers",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "big beat",
         "breakbeat",
@@ -1297,18 +1292,18 @@
         "progressive house",
         "techno"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/1946a82a-f927-40c2-8235-38d64f50d043",
-      "artistName": "The Chemical Brothers",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "1946a82a-f927-40c2-8235-38d64f50d043",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/1946a82a-f927-40c2-8235-38d64f50d043",
+      "status": "name_hypothesis"
     },
     "the futureheads": {
-      "status": "name_hypothesis",
-      "mbid": "0cf9d983-aecf-4d57-9e94-fde2beac014f",
+      "artistName": "The Futureheads",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "alternative rock",
         "indie rock",
@@ -1316,31 +1311,31 @@
         "post-punk revival",
         "rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/0cf9d983-aecf-4d57-9e94-fde2beac014f",
-      "artistName": "The Futureheads",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "0cf9d983-aecf-4d57-9e94-fde2beac014f",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/0cf9d983-aecf-4d57-9e94-fde2beac014f",
+      "status": "name_hypothesis"
     },
     "the gutter twins": {
-      "status": "name_hypothesis",
-      "mbid": "19a2a56f-fd53-4dea-8cec-88046efb0fd5",
-      "genres": [],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/19a2a56f-fd53-4dea-8cec-88046efb0fd5",
       "artistName": "The Gutter Twins",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
+      "genreSource": "musicbrainz-community",
+      "genres": [],
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "19a2a56f-fd53-4dea-8cec-88046efb0fd5",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/19a2a56f-fd53-4dea-8cec-88046efb0fd5",
+      "status": "name_hypothesis"
     },
     "the presidents of the united states of america": {
-      "status": "name_hypothesis",
-      "mbid": "7509421d-1074-442f-be8f-b526167afcb3",
+      "artistName": "The Presidents of the United States of America",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "alternative rock",
         "indie rock",
@@ -1349,36 +1344,36 @@
         "power pop",
         "rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/7509421d-1074-442f-be8f-b526167afcb3",
-      "artistName": "The Presidents of the United States of America",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "7509421d-1074-442f-be8f-b526167afcb3",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/7509421d-1074-442f-be8f-b526167afcb3",
+      "status": "name_hypothesis"
     },
     "the rolling stones": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "The Rolling Stones",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "the static teeth": {
-      "status": "not_found",
       "artistName": "The Static Teeth",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "the who": {
-      "status": "name_hypothesis",
-      "mbid": "9fdaa16b-a6c4-4831-b87c-bc9ca8ce7eaa",
+      "artistName": "The Who",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "art rock",
         "british rhythm & blues",
@@ -1390,39 +1385,39 @@
         "rock",
         "rock opera"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/9fdaa16b-a6c4-4831-b87c-bc9ca8ce7eaa",
-      "artistName": "The Who",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "9fdaa16b-a6c4-4831-b87c-bc9ca8ce7eaa",
+      "publicationAllowed": false,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/9fdaa16b-a6c4-4831-b87c-bc9ca8ce7eaa",
+      "status": "name_hypothesis"
     },
     "upload": {
-      "status": "not_found",
       "artistName": "Upload",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     },
     "vertical67": {
-      "status": "name_hypothesis",
-      "mbid": "425474cf-3afd-4f9f-a083-90fd3cc40cdc",
-      "genres": [],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/425474cf-3afd-4f9f-a083-90fd3cc40cdc",
       "artistName": "VERTICAL67",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
+      "genreSource": "musicbrainz-community",
+      "genres": [],
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "425474cf-3afd-4f9f-a083-90fd3cc40cdc",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/425474cf-3afd-4f9f-a083-90fd3cc40cdc",
+      "status": "name_hypothesis"
     },
     "vinnie moore": {
-      "status": "name_hypothesis",
-      "mbid": "097c1b97-8a50-41b2-89c4-f1ec12d497d2",
+      "artistName": "Vinnie Moore",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "hard rock",
         "heavy metal",
@@ -1430,53 +1425,53 @@
         "neoclassical metal",
         "rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/097c1b97-8a50-41b2-89c4-f1ec12d497d2",
-      "artistName": "Vinnie Moore",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "097c1b97-8a50-41b2-89c4-f1ec12d497d2",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/097c1b97-8a50-41b2-89c4-f1ec12d497d2",
+      "status": "name_hypothesis"
     },
     "vixen": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Vixen",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "wdk": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "WDK",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "wizo": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "WIZO",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "womb": {
-      "status": "ambiguous_or_incomplete",
       "artistName": "Womb",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "ambiguous_or_incomplete"
     },
     "zeal & ardor": {
-      "status": "name_hypothesis",
-      "mbid": "5e90193b-5183-406b-9f3a-b66bb66daccb",
+      "artistName": "Zeal & Ardor",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "avant-garde metal",
         "black metal",
@@ -1484,18 +1479,18 @@
         "experimental",
         "progressive metal"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/5e90193b-5183-406b-9f3a-b66bb66daccb",
-      "artistName": "Zeal & Ardor",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "5e90193b-5183-406b-9f3a-b66bb66daccb",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/5e90193b-5183-406b-9f3a-b66bb66daccb",
+      "status": "name_hypothesis"
     },
     "zz top": {
-      "status": "name_hypothesis",
-      "mbid": "a81259a0-a2f5-464b-866e-71220f2739f1",
+      "artistName": "ZZ Top",
+      "checkedAt": "2026-11-26",
+      "genreSource": "musicbrainz-community",
       "genres": [
         "blues rock",
         "boogie rock",
@@ -1504,23 +1499,28 @@
         "rock",
         "southern rock"
       ],
-      "genreSource": "musicbrainz-community",
-      "sourceUrl": "https://musicbrainz.org/artist/a81259a0-a2f5-464b-866e-71220f2739f1",
-      "artistName": "ZZ Top",
-      "source": "musicbrainz",
-      "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "mbid": "a81259a0-a2f5-464b-866e-71220f2739f1",
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "sourceUrl": "https://musicbrainz.org/artist/a81259a0-a2f5-464b-866e-71220f2739f1",
+      "status": "name_hypothesis"
     },
     "норвежская сказка: читает воронмрак (улан-удэ)": {
-      "status": "not_found",
       "artistName": "Норвежская Сказка: Читает Воронмрак (Улан-Удэ)",
-      "source": "musicbrainz",
       "checkedAt": "2026-11-26",
-      "researchVersion": 2,
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "researchVersion": 2,
+      "source": "musicbrainz",
+      "status": "not_found"
     }
-  }
+  },
+  "observedNameCount": 158,
+  "publicationAllowed": false,
+  "retryAfterKey": "queens of the stone age",
+  "scanDate": "2026-11-27",
+  "schemaVersion": 1,
+  "serviceFailure": "http_503"
 }

@@ -1,0 +1,47 @@
+{
+  "advanced": true,
+  "deploymentId": 8106061515,
+  "deploymentVerified": true,
+  "gitCommit": "85704d48a7f669de79265ff45b39027b55fe27af",
+  "migratedFiles": [
+    "logo-maintenance-preview.json",
+    "maintenance-preview.json",
+    "missing-logo-preview.json",
+    "repair-confirmation-preview.json",
+    "repair-plan-preview.json",
+    "repair-preview.json",
+    "status-transition-preview.json"
+  ],
+  "migration": {
+    "logoSourceHistoriesRetained": 179,
+    "missingLogoRowsRetained": 30,
+    "newBaselineSha256": "08f25acfab1d8dd8617206939f50bb7d2c86d0e7f06d7ccaf064110db732ce67",
+    "newSequence": 9,
+    "oldBaselineSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
+    "oldSequence": 8,
+    "publicationAllowed": false,
+    "recoveryHistoriesRetained": 1,
+    "repairHistoriesRetained": 3,
+    "repairHistoryDeferredForReconciliation": 0,
+    "schemaVersion": 1,
+    "streamHistoriesRetained": 358
+  },
+  "mirroredLegacyArtwork": true,
+  "previousSequence": 8,
+  "previousSha256": "f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40",
+  "publicationAllowed": false,
+  "qualificationReportsToRebuild": [
+    "qualification-dossiers.json",
+    "decision-preview.json",
+    "qualification-v3-preview.json"
+  ],
+  "remoteReadbackVerified": true,
+  "scanDate": "2026-11-27",
+  "schemaVersion": 1,
+  "selectedSequence": 9,
+  "selectedSha256": "08f25acfab1d8dd8617206939f50bb7d2c86d0e7f06d7ccaf064110db732ce67",
+  "signatureVerified": true,
+  "simulated": false,
+  "stateMode": "migrated",
+  "stateReportsChecked": 6
+}

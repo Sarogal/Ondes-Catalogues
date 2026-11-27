@@ -1,27 +1,27 @@
 {
-  "schemaVersion": 1,
-  "scanDate": "2026-11-27",
-  "publicationAllowed": false,
   "approvedCount": 0,
-  "duePairCount": 6,
   "attemptedCount": 0,
-  "genreLookupAttemptedCount": 0,
-  "dueGenreRetryCount": 0,
-  "genreRetryAttemptedCount": 0,
-  "creditGenreEvidenceCount": 0,
   "collaborationGenreEvidenceCount": 0,
   "collaborationMembersResearchedCount": 0,
-  "heldByArtistService": true,
-  "serviceFailure": null,
+  "creditGenreEvidenceCount": 0,
+  "dueGenreRetryCount": 0,
+  "duePairCount": 6,
   "entries": {
     "60fa0906a838dbe0f417c1ec79d7d34c267f7aa3cc270fb1b7be3842ea07f7df": {
-      "status": "no_exact_credit",
       "artistHint": "Lionheart",
-      "titleSha256": "f313edf5505e24a5f0e4141817d9083971c877021ef305d5bb0c769760da9f0b",
-      "source": "musicbrainz-recording-search",
       "checkedAt": "2026-11-26",
       "identityVerified": false,
-      "publicationAllowed": false
+      "publicationAllowed": false,
+      "source": "musicbrainz-recording-search",
+      "status": "no_exact_credit",
+      "titleSha256": "f313edf5505e24a5f0e4141817d9083971c877021ef305d5bb0c769760da9f0b"
     }
-  }
+  },
+  "genreLookupAttemptedCount": 0,
+  "genreRetryAttemptedCount": 0,
+  "heldByArtistService": true,
+  "publicationAllowed": false,
+  "scanDate": "2026-11-27",
+  "schemaVersion": 1,
+  "serviceFailure": null
 }
