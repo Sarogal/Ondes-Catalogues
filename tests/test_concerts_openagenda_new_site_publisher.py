@@ -529,6 +529,37 @@ class OpenAgendaNewNamedSitePublisherTests(unittest.TestCase):
                 previous, rebuilt, base, base, TODAY, publisher.merge)
         self.assertTrue(stats["validatedByPublisher"])
 
+    def test_self_attributed_pair_retry_stays_bounded_and_rechecks_source(self):
+        from automation.concerts import dynamic_self_attributed_new_site_proposals as own
+        from automation.concerts import dynamic_new_site_approval_proposals as geo
+        leads = [(DAY, "https://example.org/events/" + str(i),
+                  {"candidateId": "lead-" + str(i), "reviewBucket": "genre_unknown"})
+                 for i in range(8)]
+        pair = leads[7]
+        prior = {"schema": own.SCHEMA, "publicationAllowed": False,
+                 "privateApprovalApplied": False,
+                 "reviewMemory": [geo.site_review_key(pair)],
+                 "candidateChecks": [{
+                     "candidateId": pair[2]["candidateId"], "date": DAY,
+                     "state": "publisher_bound_event_site_pair",
+                     "reviewKey": geo.site_review_key(pair),
+                 }]}
+        before = geo_fixture.before()
+        base = geo_fixture.test_catalogue()
+        with mock.patch.object(own, "eligible", return_value=leads), \
+             mock.patch.object(own, "propose", side_effect=ValueError("source changed")) as replay:
+            result, report = own.build(
+                observation(), base, before, TODAY, slot=1, limit=4, prior=prior)
+        self.assertEqual(result, before)
+        self.assertEqual(report["examined"], 4)
+        self.assertEqual(report["immediatePairRetries"], 1)
+        self.assertEqual(replay.call_count, 4)
+        self.assertTrue(any(call.args[0] == pair for call in replay.call_args_list))
+        check = next(x for x in report["candidateChecks"] if x.get("immediatePairRetry"))
+        self.assertEqual(check["candidateId"], pair[2]["candidateId"])
+        self.assertEqual(check["state"], "held_source_or_site_unverified")
+        self.assertFalse(report["publicationAllowed"])
+
     def test_priority_and_unknown_genres_both_rotate_without_starvation(self):
         leads = []
         for bucket in ("genre_tag_review", "genre_unknown"):
