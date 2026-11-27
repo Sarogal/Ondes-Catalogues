@@ -104,6 +104,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
+      actions: read
       pages: write
       id-token: write
     environment:
@@ -117,6 +118,25 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: docs/
+      # Upload completion does not guarantee immediate REST visibility.
+      # In the observed failure the artifact existed but Pages listed zero.
+      - name: Wait for the uploaded Pages artifact to be visible
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for attempt in {1..12}; do
+            if count="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" -f name=github-pages --jq '[.artifacts[] | select(.name == "github-pages" and .expired == false)] | length')"; then
+              if [[ "$count" == "1" ]]; then
+                echo "Pages artifact visible in the workflow API."
+                exit 0
+              fi
+            fi
+            sleep 5
+          done
+          echo "::error::Pages artifact not uniquely visible after bounded retries."
+          exit 1
       - uses: actions/deploy-pages@v5
         id: pages
       - uses: actions/setup-python@v7
