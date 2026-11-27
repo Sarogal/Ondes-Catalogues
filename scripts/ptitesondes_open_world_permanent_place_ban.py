@@ -32,6 +32,9 @@ BAN_DIAGNOSTIC_CODES = (
     "section_discovery_attempted", "section_page_unavailable",
     "culture_directory_attempted", "culture_directory_unavailable",
     "culture_directory_no_exact_match", "culture_directory_hints_found",
+    "culture_independent_attempted", "culture_independent_identity_unmatched",
+    "culture_independent_url_ambiguous", "culture_independent_page_unavailable",
+    "culture_independent_address_conflict", "culture_independent_proof_found",
 )
 _BAN_DIAGNOSTICS = Counter()
 
@@ -88,7 +91,19 @@ def official_facts(city, venue, url, html, directory):
         if len(codes) != 1:
             return _note("official_facts_invalid")
         insee = next(iter(codes))
-        if not re.fullmatch(r"(?:[0-9]{5}|2[AB][0-9]{3})", insee):
+        return visible_place_facts(city, venue, url, html, insee)
+    except (ValueError, TypeError, KeyError, AttributeError, OverflowError, UnicodeError):
+        return None
+
+
+def visible_place_facts(city, venue, url, html, insee):
+    """Content only: callers MUST separately authenticate the exact URL."""
+    try:
+        town, name = norm_text(city), norm_text(venue)
+        if (not town or not name or town == name
+                or not isinstance(insee, str)
+                or not re.fullmatch(r"(?:[0-9]{5}|2[AB][0-9]{3})", insee)
+                or not isinstance(html, str) or not 50 <= len(html) <= MAX_HTML):
             return None
         parser = PlaceMain()
         parser.feed(html)
@@ -177,8 +192,18 @@ def exact_ban_point(facts, response):
 def corroborate_official_ban(city, venue, url, html, directory, ban_fetch, admin_fetch):
     """No OSM dependency; return only a private, independently located hint."""
     facts = official_facts(city, venue, url, html, directory)
-    if facts is None:
+    return geocode_place_facts(facts, ban_fetch, admin_fetch,
+                               "dila_official_place_address_plus_ban")
+
+
+BAN_METHODS = ("dila_official_place_address_plus_ban",
+               "culture_directory_official_place_address_plus_ban")
+
+
+def geocode_place_facts(facts, ban_fetch, admin_fetch, method):
+    if facts is None or method not in BAN_METHODS:
         return None
+    city = facts["city"]
     try:
         data = ban_fetch(facts)
     except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
@@ -194,7 +219,7 @@ def corroborate_official_ban(city, venue, url, html, directory, ban_fetch, admin
         _note("proof_found")
         return {**facts, "lat": point[0], "lng": point[1],
                 "department": ident[0], "region": ident[1],
-                "method": "dila_official_place_address_plus_ban",
+                "method": method,
                 "publication_ready": False, "public_writes": 0}
     except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
         return _note("admin_unavailable")
@@ -338,12 +363,69 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
         return _note("official_facts_invalid")
 
 
+def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=None,
+                                      ban_fetch=None, admin_fetch=None):
+    """Fresh national directory link, exact first-party page, independent BAN.
+
+    No DILA dependency. Exactly one safe listed URL is required because the
+    directory field also contains other links; ambiguous links stay private.
+    Do not follow redirects or consume saved coordinates, addresses or URLs.
+    """
+    from ptitesondes_national_cultural_directory_probe import (
+        exact_directory_record, directory_website_hints)
+    from ptitesondes_cultural_directory_identity import directory_identity, same_official_address
+    from ptitesondes_dila_municipal_domains import _host
+    from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
+    from ptitesondes_generic_venue_ign_corroboration import fetch_ign
+    from ptitesondes_open_world_permanent_place_draft import fetch_admin
+    cultural_lookup = cultural_lookup or exact_directory_record
+    page_read = page_read or read_unknown_https
+    ban_fetch = ban_fetch or fetch_ign
+    admin_fetch = admin_fetch or fetch_admin
+    _note("culture_independent_attempted")
+    try:
+        city, venue = row["city"], row["venue"]
+        record = cultural_lookup(city, venue)
+        identity = directory_identity(city, venue, record)
+        if identity is None:
+            return _note("culture_independent_identity_unmatched")
+        urls = directory_website_hints(record)
+        if len(urls) != 1 or not _host(urls[0]):
+            return _note("culture_independent_url_ambiguous")
+        url = urls[0]
+        try:
+            html = page_read(url)
+        except (OSError, ValueError, TypeError, UnicodeError):
+            return _note("culture_independent_page_unavailable")
+        facts = visible_place_facts(city, venue, url, html, identity["insee"])
+        if facts is None:
+            return None
+        if not same_official_address(identity, facts):
+            return _note("culture_independent_address_conflict")
+        historical = row.get("historical_address_unverified")
+        if isinstance(historical, dict) and historical.get("postal_code") not in (None, facts["postcode"]):
+            return _note("historical_postcode_conflict")
+        proof = geocode_place_facts(facts, ban_fetch, admin_fetch,
+                                    "culture_directory_official_place_address_plus_ban")
+        if proof is not None:
+            _note("culture_independent_proof_found")
+        return proof
+    except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError, UnicodeError):
+        return _note("culture_directory_unavailable")
+
+
+def discover_ban_routes(row):
+    # Prefer the independent national route to avoid wasting a municipal
+    # lookup when a fresh directory and first-party page already agree.
+    return discover_independent_cultural_ban(row) or discover_official_ban(row)
+
+
 def build_ban_draft(proof, today):
     """Build only from a freshly reconstructed proof in the Publisher process."""
     from datetime import date
     from ptitesondes_places import validate, ban_place_id, ban_place_source_url
     try:
-        if (type(today) is not date or proof.get("method") != "dila_official_place_address_plus_ban"
+        if (type(today) is not date or proof.get("method") not in BAN_METHODS
                 or proof.get("public_eligible") is not False):
             return None
         address = f'{proof["housenumber"]} {proof["street"]}, {proof["postcode"]} {proof["city"]}'

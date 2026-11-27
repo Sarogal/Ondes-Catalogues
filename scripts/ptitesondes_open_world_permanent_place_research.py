@@ -225,7 +225,9 @@ def research(report, previous, today, *, limit=DEFAULT_BATCH,
             except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
                 alternative = None
             if (isinstance(alternative, dict)
-                    and alternative.get("method") == "dila_official_place_address_plus_ban"
+                    and alternative.get("method") in (
+                        "dila_official_place_address_plus_ban",
+                        "culture_directory_official_place_address_plus_ban")
                     and alternative.get("public_eligible") is False
                     and alternative.get("publication_ready") is False
                     and alternative.get("public_writes") == 0
@@ -357,10 +359,10 @@ def main():
         previous = (_read(args.previous, 6_000_000)[0]
                     if args.previous.exists() or args.previous.is_symlink() else None)
         stage = "research_cycle"
-        from ptitesondes_open_world_permanent_place_ban import discover_official_ban
+        from ptitesondes_open_world_permanent_place_ban import discover_ban_routes
         state, summary = cycle(report, previous, args.date, limit=MAX_BATCH,
                                time_budget=LIVE_BUDGET_SECONDS, stop_on_outage=True,
-                               ban_research=discover_official_ban)
+                               ban_research=discover_ban_routes)
         stage = "persist_result"
         _atomic_json(args.output, state)
     except (ValueError, OSError, TypeError, KeyError, OverflowError, UnicodeError):

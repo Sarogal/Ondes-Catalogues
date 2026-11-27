@@ -259,6 +259,52 @@ class OfficialPlaceBANTests(unittest.TestCase):
         self.assertEqual(seen, [PAGE])
         self.assertFalse(proof["public_eligible"])
 
+    def test_independent_cultural_route_and_fresh_publisher_without_dila(self):
+        from datetime import date
+        from ptitesondes_open_world_permanent_place_ban import discover_independent_cultural_ban
+        from ptitesondes_open_world_permanent_place_research import STATE_SCHEMA, cycle
+        from ptitesondes_open_world_permanent_place_publisher_preview import review_drafts
+        from test_ptitesondes_open_world_permanent_place_research import report, row
+        url = "https://lieu-independant.example/"
+        record = {"commune": CITY, "nom_du_lieu": VENUE, "code_commune": "12345",
+                  "code_postal": "12345", "numero_et_libelle_voie": "12 Rue des Jeux",
+                  "adresse_complete": f"12 Rue des Jeux, 12345 {CITY}",
+                  "site_internet_et_autres_liens": url,
+                  "latitude": 0, "longitude": 0}
+        def read(value):
+            self.assertEqual(value, url)
+            return HTML
+        kwargs = dict(cultural_lookup=lambda *_: record, page_read=read,
+                      ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN)
+        lead = {"city": CITY, "venue": VENUE}
+        proof = discover_independent_cultural_ban(lead, **kwargs)
+        self.assertEqual(proof["method"], "culture_directory_official_place_address_plus_ban")
+        self.assertEqual((proof["lat"], proof["lng"]), (45.1, 3.1))
+        self.assertFalse(proof["public_eligible"])
+        def offline(*_):
+            raise OSError("Overpass unavailable")
+        day = date(2026, 11, 27)
+        state, summary = cycle(report(row(VENUE, CITY)), None, day,
+            osm_fetch=offline, ban_research=lambda r: discover_independent_cultural_ban(r, **kwargs))
+        self.assertEqual(summary["ban_fallback_matches"], 1)
+        state["records"][0]["evidence"].update(lat=0, lng=0, official_url="https://forged.example/")
+        drafts, summary = review_drafts(state, day,
+            directory_fetch=lambda _: self.fail("DILA not needed"),
+            osm_fetch=lambda *_: self.fail("OSM not needed"), **kwargs)
+        self.assertEqual(summary["complete_draft_records"], 1)
+        self.assertEqual(drafts[0]["official_url"], url)
+        self.assertEqual((drafts[0]["lat"], drafts[0]["lng"]), (45.1, 3.1))
+        for changed in (
+            dict(record, site_internet_et_autres_liens=[url, "https://other.example/"]),
+            dict(record, adresse_complete=f"14 Rue des Jeux, 12345 {CITY}"),
+            dict(record, site_internet_et_autres_liens="https://127.0.0.1/"),
+        ):
+            self.assertIsNone(discover_independent_cultural_ban(lead,
+                **dict(kwargs, cultural_lookup=lambda *_: changed,
+                       page_read=lambda _: self.fail("unverified URL must not be read"))))
+        drafts, summary = review_drafts(state, day, **dict(kwargs, cultural_lookup=lambda *_: None))
+        self.assertEqual(drafts, [])
+
     def test_ban_unavailable_is_not_publication_permission(self):
         def down(_):
             raise OSError("provider unavailable")
