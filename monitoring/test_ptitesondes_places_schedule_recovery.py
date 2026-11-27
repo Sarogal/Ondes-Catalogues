@@ -2,6 +2,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from ptitesondes_places_schedule_recovery import (
     decide, trusted, place_job_result, REPO, INPUTS, PLACE_STEP, WRITE_STEP, RESEARCH_STEP,
+    revision_floor, RESEARCH_PATHS,
 )
 
 NOW = datetime(2026, 11, 26, 21, tzinfo=timezone.utc)
@@ -30,6 +31,29 @@ class PlaceScheduleRecoveryTests(unittest.TestCase):
         rows = [run(20, 1), run(80, 2)]
         self.assertEqual(decide(rows, NOW, lambda rid: job(
             place="skipped") if rid == 1 else job()), (False, "recent_places_write"))
+
+    def test_new_research_revision_requires_one_new_write(self):
+        since = NOW - timedelta(minutes=10)
+        self.assertEqual(decide([run(20)], NOW, lambda _: job(), research_since=since),
+                         (True, "places_cycle_due"))
+        self.assertEqual(decide([run(5), run(20, 2)], NOW, lambda _: job(), research_since=since),
+                         (False, "recent_places_write"))
+        self.assertEqual(decide([run(5, status="queued")], NOW,
+            lambda _: self.fail("no jobs read"), research_since=since),
+            (False, "trusted_intake_active"))
+        self.assertEqual(decide([run(5)], NOW, lambda _: job(research="skipped"),
+            research_since=since), (False, "failure_retry_grace"))
+
+    def test_revision_floor_only_reads_research_paths(self):
+        read = []
+        def commits(path):
+            read.append(path)
+            return [{"commit": {"committer": {"date": (
+                NOW - timedelta(minutes=len(read))).isoformat()}}}]
+        self.assertEqual(revision_floor(commits), NOW - timedelta(minutes=1))
+        self.assertEqual(tuple(read), RESEARCH_PATHS)
+        with self.assertRaises(ValueError):
+            revision_floor(lambda _: [])
 
     def test_preview_does_not_count(self):
         self.assertEqual(decide([run(20, event="push")], NOW,

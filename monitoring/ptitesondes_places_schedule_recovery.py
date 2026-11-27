@@ -10,6 +10,7 @@ import argparse
 from datetime import datetime, timedelta, timezone
 import json
 import os
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 REPO = "Sarogal/Ondes-Catalogues"
@@ -23,6 +24,12 @@ ACTIVE = {"requested", "queued", "in_progress", "pending", "waiting"}
 MAX_HISTORY = 30
 SUCCESS_GAP = timedelta(hours=4)
 FAILURE_GAP = timedelta(minutes=90)
+RESEARCH_PATHS = (
+    "scripts/ptitesondes_open_world_permanent_place_research.py",
+    "scripts/ptitesondes_open_world_permanent_place_ban.py",
+    "scripts/ptitesondes_open_world_permanent_place_evidence.py",
+    "scripts/ptitesondes_open_world_permanent_place_draft.py",
+)
 
 
 def trusted(repo, ref, event, pause):
@@ -97,10 +104,24 @@ def place_job_result(doc):
     return "unknown_or_failed"
 
 
-def decide(rows, now, read_jobs):
+def revision_floor(read_commits):
+    """Latest main commit affecting research, not unrelated catalogue writes."""
+    times = []
+    for path in RESEARCH_PATHS:
+        data = read_commits(path)
+        if not isinstance(data, list) or len(data) != 1:
+            raise ValueError("incomplete_research_revision")
+        times.append(timestamp({"created_at": data[0]["commit"]["committer"]["date"]}))
+    return max(times)
+
+
+def decide(rows, now, read_jobs, research_since=None):
     if (not isinstance(rows, list) or len(rows) > MAX_HISTORY
             or not isinstance(now, datetime) or now.tzinfo is None):
         raise ValueError("invalid_run_history")
+    if research_since is not None and (not isinstance(research_since, datetime)
+            or research_since.tzinfo is None or research_since > now + timedelta(minutes=3)):
+        raise ValueError("invalid_research_revision_time")
     eligible = []
     for row in rows:
         if not isinstance(row, dict):
@@ -126,7 +147,11 @@ def decide(rows, now, read_jobs):
             raise ValueError("invalid_run_id")
         result = place_job_result(read_jobs(rid))
         if result == "places_write_success":
-            return False, "recent_places_write"
+            # A previously persisted cycle is not evidence that newly
+            # merged research code has run. Still suppress active jobs and
+            # keep the existing failure grace; only one new cycle is due.
+            if research_since is None or when >= research_since:
+                return False, "recent_places_write"
         if result in ("places_failure", "unknown_or_failed") and age < FAILURE_GAP:
             return False, "failure_retry_grace"
     if len(rows) == MAX_HISTORY and eligible and min(w for w, _ in eligible) > now - SUCCESS_GAP:
@@ -150,7 +175,12 @@ def main():
         raise ValueError("invalid_run_list")
     def jobs(rid):
         return request(token, API + "/actions/runs/" + str(rid) + "/jobs?per_page=30")
-    due, reason = decide(data["workflow_runs"], datetime.now(timezone.utc), jobs)
+    def commits(path):
+        return request(token, API + "/commits?" + urlencode(
+            {"sha": "main", "path": path, "per_page": 1}))
+    since = revision_floor(commits)
+    due, reason = decide(data["workflow_runs"], datetime.now(timezone.utc), jobs,
+                         research_since=since)
     print("places:", reason, "dispatch=", due)
     if due and args.execute:
         request(token, API + "/actions/workflows/" + TARGET + "/dispatches",
