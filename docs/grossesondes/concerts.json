@@ -2616,11 +2616,6 @@
       "id": "golden-format",
       "name": "Golden Format",
       "aliases": []
-    },
-    {
-      "id": "ultra-vomit-roubaix",
-      "name": "ULTRA VOMIT - ROUBAIX",
-      "aliases": []
     }
   ],
   "venues": [
@@ -16396,6 +16391,7 @@
     "gagner-de-l-argent-wtazzz",
     "guests",
     "guests-nexion",
-    "the-locos-ex-ska-p-en-concert"
+    "the-locos-ex-ska-p-en-concert",
+    "ultra-vomit-roubaix"
   ]
 }
