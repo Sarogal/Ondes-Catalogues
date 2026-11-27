@@ -176,6 +176,49 @@ class IsolatedBrowserCollectionTests(unittest.TestCase):
             seen.update(targets[:5])
         self.assertEqual(seen, missing | located)
 
+    def test_repeated_runs_same_half_day_advance_failure_rotation(self):
+        pub, hist = fixtures()
+        pub["festivals"] = [
+            {"slug": f"festival-{i:02d}-2027",
+             "officialSite": f"https://festival-exemple-{i:02d}.fr/",
+             "startDate": "2027-08-19", "lat": None, "lon": None,
+             "showOnMap": False}
+            for i in range(10)]
+        def fetch(url):
+            raise OSError("HTTP unavailable")
+        first, probed, unavailable = prioritize_unavailable(
+            pub, hist, date.fromisoformat(DAY), 0, event_name="push",
+            fetch=fetch, rotation_tick=100)
+        second, _, _ = prioritize_unavailable(
+            pub, hist, date.fromisoformat(DAY), 0, event_name="push",
+            fetch=fetch, rotation_tick=101)
+        self.assertEqual((probed, unavailable), (10, 10))
+        self.assertFalse(set(first[:5]) & set(second[:5]))
+        self.assertIn(OTHER, first)
+        self.assertIn(OTHER, second)
+        self.assertLessEqual(len(first), 8)
+        self.assertLessEqual(len(second), 8)
+
+    def test_browser_diagnostics_only_fixed_categories_and_signed_roots(self):
+        from grossesondes_official_browser_probe import BrowserEvidenceError
+        diagnostics = []
+        def render(url):
+            if url == OTHER:
+                raise BrowserEvidenceError("invalid_bounded_dom")
+            return HTML
+        report = collect([HOME, OTHER], renderer=render, diagnostics=diagnostics)
+        self.assertEqual(diagnostics, [
+            {"url": HOME, "status": "root_rendered", "bytes": len(HTML.encode())},
+            {"url": OTHER, "status": "invalid_bounded_dom"}])
+        self.assertNotIn("diagnostics", report)
+        diagnostics = []
+        def secret_failure(url):
+            raise OSError("DO_NOT_LOG_PRIVATE_EXCEPTION")
+        collect([HOME], renderer=secret_failure, diagnostics=diagnostics)
+        self.assertEqual(diagnostics, [{"url": HOME, "status": "network_error"}])
+        self.assertNotIn("DO_NOT_LOG", str(diagnostics))
+        self.assertEqual(BrowserEvidenceError("private message").reason, "navigation_failed")
+
     def test_failed_network_does_not_serialize_exception_or_html(self):
         urls = [HOME, OTHER]
         def render(url):
