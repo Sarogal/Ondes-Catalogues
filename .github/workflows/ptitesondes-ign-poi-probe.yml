@@ -1,0 +1,27 @@
+name: P'tites Ondes — exploration IGN points d'intérêt
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_ign_poi_probe.py'
+      - 'tests/test_ptitesondes_ign_poi_probe.py'
+      - '.github/workflows/ptitesondes-ign-poi-probe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline query and privacy tests
+        env:
+          PYTHONPATH: scripts
+        run: python -m unittest discover -s tests -p 'test_ptitesondes_ign_poi_probe.py' -v
+      - name: Live official POI schema (aggregate only)
+        run: python scripts/ptitesondes_ign_poi_probe.py
