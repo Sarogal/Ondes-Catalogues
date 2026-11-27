@@ -110,3 +110,70 @@ class RotationTests(unittest.TestCase):
         self.assertNotIn("New Artist", str(report))
         self.assertFalse(report["publication_authorized"])
         self.assertEqual(ROW["lineup"], [])
+
+
+    def test_transported_dom_reuses_private_cache_and_checks_changed_bytes(self):
+        import json
+        from tempfile import TemporaryDirectory
+        from grossesondes_official_poster_rotation import capture_rendered_evidence, validated_rendered_evidence
+        from grossesondes_official_poster_ocr import read_official_poster, load_ocr_cache, save_ocr_cache
+        raw = lambda _: "<main>Loading</main>"
+        renderer = Mock(return_value='<main><img src="/exemple-2027.jpg"></main>')
+        evidence = capture_rendered_evidence(CAT, "2026-11-26", 0, 4,
+                                             fetch=raw, renderer=renderer)
+        renderer.assert_called_once_with(SITE)
+        self.assertEqual(len(evidence["entries"]), 1)
+        recognize = Mock(return_value=[{"text": "EXEMPLE", "confidence": 98,
+                                        "box": [0, 0, 80, 20], "review_only": True}])
+        image = Mock(return_value=("image/jpeg", b"first-image"))
+        def reader(site, url, *, cache):
+            return read_official_poster(site, url, cache=cache, fetch=image, recognize=recognize)
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "dom.json"
+            cache_path = Path(directory) / "cache.json"
+            path.write_text(json.dumps(evidence), encoding="utf-8")
+            dom = validated_rendered_evidence(path, CAT, "2026-11-26", 0, 4)
+            self.assertEqual(set(dom), {SITE})
+            cache = {}
+            first = scan(CAT, "2026-11-26", tick=0, limit=4, fetch=raw,
+                         reader=reader, cache=cache, browser_fetch=dom.__getitem__)
+            self.assertEqual(first["images_read"], 1)
+            self.assertFalse(first["rows"][0]["images"][0]["cache_hit"])
+            save_ocr_cache(cache_path, cache)
+            cache = load_ocr_cache(cache_path)
+            second = scan(CAT, "2026-11-26", tick=0, limit=4, fetch=raw,
+                          reader=reader, cache=cache, browser_fetch=dom.__getitem__)
+            self.assertTrue(second["rows"][0]["images"][0]["cache_hit"])
+            recognize.assert_called_once()
+            image.return_value = ("image/jpeg", b"changed-image")
+            third = scan(CAT, "2026-11-26", tick=0, limit=4, fetch=raw,
+                         reader=reader, cache=cache, browser_fetch=dom.__getitem__)
+            self.assertFalse(third["rows"][0]["images"][0]["cache_hit"])
+            self.assertEqual(recognize.call_count, 2)
+            self.assertFalse(third["publication_authorized"])
+            self.assertEqual(ROW["lineup"], [])
+
+    def test_transported_dom_rejects_tampering_wrong_root_stale_tick_and_429(self):
+        import json
+        from tempfile import TemporaryDirectory
+        from copy import deepcopy
+        from dns_pinned_https import OfficialHTTPStatusError
+        from grossesondes_official_poster_rotation import capture_rendered_evidence, validated_rendered_evidence
+        renderer = Mock(return_value=HTML)
+        skipped = capture_rendered_evidence(CAT, "2026-11-26", 0, 4,
+                    fetch=Mock(side_effect=OfficialHTTPStatusError(429)), renderer=renderer)
+        self.assertEqual(skipped["entries"], [])
+        renderer.assert_not_called()
+        evidence = capture_rendered_evidence(CAT, "2026-11-26", 0, 4,
+                    fetch=lambda _: "<main>Loading</main>", renderer=renderer)
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "dom.json"
+            for field, value in (("html", "tampered"), ("site", "https://external.fr/")):
+                tampered = deepcopy(evidence)
+                tampered["entries"][0][field] = value
+                path.write_text(json.dumps(tampered), encoding="utf-8")
+                self.assertEqual(validated_rendered_evidence(path, CAT, "2026-11-26", 0, 4), {})
+            path.write_text(json.dumps(evidence), encoding="utf-8")
+            self.assertEqual(validated_rendered_evidence(path, CAT, "2026-11-27", 0, 4), {})
+            self.assertEqual(validated_rendered_evidence(path, CAT, "2026-11-26", 1, 4), {})
+            self.assertEqual(validated_rendered_evidence(path, {"festivals": []}, "2026-11-26", 0, 4), {})
