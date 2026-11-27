@@ -13,7 +13,7 @@ from time import monotonic
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "festival-automation"))
 from dns_pinned_https import fetch_public_html, OfficialHTTPStatusError
 from grossesondes_existing_official_updates import (
-    signed_rotation, current_official_poster_candidates, page, home_matches_edition,
+    signed_rotation, current_official_poster_candidates, page, home_matches_edition, linked_pages,
 )
 from grossesondes_official_html_edition import visible_official_edition, fold
 from grossesondes_official_poster_ocr import (
@@ -25,6 +25,7 @@ from grossesondes_official_poster_ocr import (
 MAX_HOSTS = 8
 MAX_IMAGES = 2
 MAX_BROWSER_HOSTS = 2
+MAX_LINKED_POSTER_PAGES = 2
 MAX_RUN_SECONDS = 180
 MAX_DOM_BYTES = 1_400_000
 DOM_SCHEMA = 'grossesondes.poster-rendered-review.v1'
@@ -200,6 +201,8 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
                 browser_status = "unavailable"
         count = 0
         limited = False
+        linked_surfaces = []
+        linked_attempted = False
         for row in rows:
             if row.get("cancelled") or row.get("status") in ("Annulé", "Reporté"):
                 continue
@@ -207,10 +210,39 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
             raw_count = len(candidates)
             if not candidates and rendered is not None:
                 candidates = current_official_poster_candidates(rendered, site, row)
+            rendered_count = len(candidates) if not raw_count else 0
+            linked_count = 0
+            # Only traverse a bounded set of real official anchors. Share
+            # their fetch budget across all editions of the same host.
+            if not candidates and not limited and count < MAX_IMAGES:
+                if not linked_attempted:
+                    linked_attempted = True
+                    links = linked_pages(site, parsed)
+                    if rendered is not None:
+                        links += linked_pages(site, page(rendered))
+                    for link in list(dict.fromkeys(links))[:MAX_LINKED_POSTER_PAGES]:
+                        if monotonic() >= deadline:
+                            break
+                        try:
+                            content = fetch(link)
+                            if isinstance(content, str) and 0 < len(content) <= 650_000:
+                                linked_surfaces.append((link, content))
+                        except OfficialHTTPStatusError as exc:
+                            # No fallback requests after an explicit 429.
+                            if exc.status_code == 429:
+                                limited = True
+                                break
+                        except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+                            continue
+                if not limited:
+                    for link, content in linked_surfaces:
+                        candidates.extend(current_official_poster_candidates(content, link, row))
+                    candidates = list(dict.fromkeys(candidates))[:MAX_IMAGES]
+                    linked_count = len(candidates)
             try:
                 start, end = date.fromisoformat(row["startDate"]), date.fromisoformat(row["endDate"])
                 page_date_match = any(visible_official_edition(source, row["name"], start, end)
-                                      for source in (html, rendered) if source)
+                                      for source in (html, rendered, *(content for _, content in linked_surfaces)) if source)
             except (ValueError, TypeError, KeyError):
                 page_date_match = False
             diagnostic = {"slug": row["slug"], "status": "no_candidate",
@@ -219,7 +251,8 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
                           "raw_candidates": raw_count,
                           "browser_status": browser_status,
                           "rendered_html_chars": len(rendered) if rendered else 0,
-                          "rendered_candidates": len(candidates) if not raw_count else 0,
+                          "rendered_candidates": rendered_count,
+                          "linked_candidates": linked_count,
                           "html_edition_match": home_matches_edition(parsed, row, today),
                           "candidates": len(candidates), "images": []}
             report["rows"].append(diagnostic)
