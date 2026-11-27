@@ -202,6 +202,41 @@ def wait_for_linkless_dom(page, timeout_error):
             pass
 
 
+class BrowserResourceCounts:
+    """Bounded numeric telemetry, without retaining any remote URL or text."""
+    def __init__(self):
+        self.blocked_scripts = 0
+        self.blocked_data = 0
+        self.failed_scripts = 0
+        self.failed_data = 0
+        self.page_errors = 0
+
+    def bump(self, name):
+        setattr(self, name, min(10000, getattr(self, name) + 1))
+
+    def route(self, route, official_site):
+        request = route.request
+        if request_allowed(request.url, official_site):
+            route.continue_()
+        else:
+            if request.resource_type == "script":
+                self.bump("blocked_scripts")
+            elif request.resource_type in ("xhr", "fetch"):
+                self.bump("blocked_data")
+            route.abort()
+
+    def failed(self, request):
+        if request.resource_type == "script":
+            self.bump("failed_scripts")
+        elif request.resource_type in ("xhr", "fetch"):
+            self.bump("failed_data")
+
+    def report(self):
+        return {name: getattr(self, name) for name in (
+            "blocked_scripts", "blocked_data", "failed_scripts",
+            "failed_data", "page_errors")}
+
+
 def rendered_html(official_site):
     """Browser is isolated: no secrets, off-origin requests or storage."""
     from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
@@ -222,10 +257,11 @@ def rendered_html(official_site):
             context = browser.new_context(
                 service_workers="block", accept_downloads=False,
                 java_script_enabled=True)
-            context.route("**/*", lambda route: (
-                route.continue_() if request_allowed(route.request.url, official_site)
-                else route.abort()))
+            counts = BrowserResourceCounts()
+            context.route("**/*", lambda route: counts.route(route, official_site))
             page = context.new_page()
+            page.on("requestfailed", counts.failed)
+            page.on("pageerror", lambda _: counts.bump("page_errors"))
             response = page.goto(official_site, wait_until="domcontentloaded", timeout=20000)
             if response is None:
                 raise BrowserEvidenceError("navigation_failed")
@@ -237,6 +273,11 @@ def rendered_html(official_site):
             wait_for_linkless_dom(page, PlaywrightTimeout)
             if not request_allowed(page.url, official_site):
                 raise BrowserEvidenceError("unsafe_destination")
+            if page.locator("a[href]").count() == 0:
+                # The caller logs the signed root separately. No URLs,
+                # exception messages, response body or script data here.
+                print("BROWSER_LINKLESS_RESOURCE_COUNTS:",
+                      json.dumps(counts.report(), sort_keys=True))
             return bounded_rendered_html(page.content())
         finally:
             browser.close()
