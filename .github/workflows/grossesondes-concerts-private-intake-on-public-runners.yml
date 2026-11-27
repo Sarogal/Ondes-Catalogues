@@ -1137,6 +1137,7 @@ jobs:
               --organizers "$RUNNER_TEMP/concerts-organizers/candidates.json" \
               --registry confidential/automation/concerts/intake/registry.json \
               --official "$RUNNER_TEMP/concerts-official-review.json" \
+              --preflight confidential/automation/concerts/intake/approval-preflight.json \
               --watch "$RUNNER_TEMP/concerts-published-watch.json" \
               --venue-archive "$RUNNER_TEMP/concerts-discovery/archive-summary.json" \
               --tour-archive "$RUNNER_TEMP/concerts-tours/archive-summary.json" \
