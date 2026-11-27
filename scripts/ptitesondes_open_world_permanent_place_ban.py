@@ -230,11 +230,11 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
     """
     from ptitesondes_dila_municipal_domains import fetch_dila, municipal_site_hosts
     from ptitesondes_municipal_venue_link_discovery import exact_named_venue_page
-    from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
+    from ptitesondes_unlisted_source_safe_recheck import read_unknown_https, read_municipal_https
     from ptitesondes_generic_venue_ign_corroboration import fetch_ign
     from ptitesondes_open_world_permanent_place_draft import fetch_admin
     directory_fetch = directory_fetch or fetch_dila
-    page_read = page_read or read_unknown_https
+    use_municipal_reader = page_read is None or page_read is read_unknown_https
     ban_fetch = ban_fetch or fetch_ign
     admin_fetch = admin_fetch or fetch_admin
     try:
@@ -246,6 +246,10 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
         hosts = municipal_site_hosts(city, directory)
         if not hosts:
             return _note("directory_no_authenticated_host")
+        def read_page(url):
+            if use_municipal_reader:
+                return read_municipal_https(url, city, directory)
+            return url, page_read(url)
         hint = row.get("possible_website_unverified")
         pages = []
         if approved_municipal_page_host(hint, city, directory):
@@ -262,7 +266,8 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
         home = "https://" + sorted(hosts)[0] + "/"
         for url in pages:
             try:
-                proof = corroborate_official_ban(city, venue, url, page_read(url),
+                final, html = read_page(url)
+                proof = corroborate_official_ban(city, venue, final, html,
                                                  directory, ban_fetch, admin_fetch)
                 if proof is not None:
                     historical = row.get("historical_address_unverified")
@@ -272,7 +277,7 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
             except (OSError, ValueError, TypeError, UnicodeError):
                 _note("page_unavailable")
         try:
-            homepage = page_read(home)
+            home, homepage = read_page(home)
         except (OSError, ValueError, TypeError, UnicodeError):
             return _note("homepage_unavailable")
         url = exact_named_venue_page(venue, home, homepage, city, directory)
@@ -284,7 +289,8 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
             for section in _section_pages(home, homepage, city, directory):
                 _note("section_discovery_attempted")
                 try:
-                    hit = exact_named_venue_page(venue, section, page_read(section),
+                    section, section_html = read_page(section)
+                    hit = exact_named_venue_page(venue, section, section_html,
                                                  city, directory)
                 except (OSError, ValueError, TypeError, UnicodeError):
                     _note("section_page_unavailable")
@@ -296,7 +302,7 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
         if not url or url in pages:
             return _note("exact_link_missing")
         try:
-            html = page_read(url)
+            url, html = read_page(url)
         except (OSError, ValueError, TypeError, UnicodeError):
             return _note("page_unavailable")
         proof = corroborate_official_ban(city, venue, url, html,
