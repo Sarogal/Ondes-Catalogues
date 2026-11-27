@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": "2026-11-26",
+  "generatedAt": "2026-11-27",
   "festivals": [
     {
       "slug": "ex-tenebris-lux-2026",
@@ -5173,7 +5173,7 @@
       "sourceConfidence": "Billetterie de l’édition 2027 liée depuis le site officiel du festival ; organisateur dans ses mentions légales",
       "ticketAvailability": {
         "source": "https://www.motocultor-festival.com/",
-        "verifiedAt": "2026-11-26",
+        "verifiedAt": "2026-11-27",
         "scope": "per_category_only",
         "categories": [
           {
