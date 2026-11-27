@@ -1913,6 +1913,27 @@ def apply_independently_verified_updates(
                             claim = {"slug": slug, "city": city, "source": site}
                     if claim is not None:
                         claims_city.append(claim)
+                # Reuse the exact direct-edition contract for published
+                # festivals, including daily programmes + official ticket
+                # pages. Only this run's already fetched, same-origin pages
+                # may supply proof; never trust the signed city alone.
+                from grossesondes_first_party_direct_edition import (
+                    PUBLISHED_CONFIDENCE as DIRECT_CONFIDENCE,
+                    verify_first_party_claims,
+                )
+                if old.get("sourceConfidence") == DIRECT_CONFIDENCE:
+                    fetched_pages = dict(html_pages)
+                    def same_run_page(url):
+                        if url not in fetched_pages:
+                            raise OSError("No current official page in bounded batch")
+                        return fetched_pages[url]
+                    direct = verify_first_party_claims(
+                        site, old["name"], today, fetch=same_run_page)
+                    if (direct and tuple(direct[0]) ==
+                            (old.get("startDate"), old.get("endDate"))
+                            and direct[1]):
+                        claims_city.append({"slug": slug, "city": direct[1],
+                                            "source": site})
                 distinct_cities = {
                     normal_city(c["city"]) for c in claims_city}
                 commune_diagnostic = ("no_current_city_proof" if not distinct_cities
