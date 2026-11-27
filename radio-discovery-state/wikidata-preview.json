@@ -3,11 +3,11 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 147,
-  "dueNameCount": 7,
+  "observedNameCount": 150,
+  "dueNameCount": 10,
   "attemptedCount": 1,
   "serviceFailure": "service_or_response_held",
-  "retryAfterKey": "les touffes kretiennes",
+  "retryAfterKey": "luma sol",
   "entries": {
     "2000 fm": {
       "status": "identity_held",

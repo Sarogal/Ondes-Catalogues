@@ -5,13 +5,13 @@
   "approvedCount": 0,
   "publicationAllowed": false,
   "eligibleStationCount": 75,
-  "dueStationCount": 51,
+  "dueStationCount": 47,
   "attemptedCount": 4,
   "serviceFailureCount": 0,
   "stationsWithFreshHints": 2,
   "counts": {
     "candidates_observed": 3,
-    "no_candidate_observed": 80
+    "no_candidate_observed": 81
   },
   "records": [
     {
@@ -410,9 +410,9 @@
     },
     {
       "goStationId": "go-station-000111",
-      "lastAttemptDate": "2026-11-26",
+      "lastAttemptDate": "2026-11-27",
       "searchStatus": "no_candidate_observed",
-      "hintsObservedDate": "2026-11-26",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
       "approved": false,
       "publicationAllowed": false,
@@ -421,9 +421,9 @@
     },
     {
       "goStationId": "go-station-000113",
-      "lastAttemptDate": "2026-11-26",
+      "lastAttemptDate": "2026-11-27",
       "searchStatus": "no_candidate_observed",
-      "hintsObservedDate": "2026-11-26",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
       "approved": false,
       "publicationAllowed": false,
@@ -432,9 +432,9 @@
     },
     {
       "goStationId": "go-station-000118",
-      "lastAttemptDate": "2026-11-26",
+      "lastAttemptDate": "2026-11-27",
       "searchStatus": "no_candidate_observed",
-      "hintsObservedDate": "2026-11-26",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
       "approved": false,
       "publicationAllowed": false,
@@ -446,6 +446,17 @@
       "lastAttemptDate": "2026-11-26",
       "searchStatus": "no_candidate_observed",
       "hintsObservedDate": "2026-11-26",
+      "hints": [],
+      "approved": false,
+      "publicationAllowed": false,
+      "maintenanceEligible": true,
+      "hintsFresh": true
+    },
+    {
+      "goStationId": "go-station-000126",
+      "lastAttemptDate": "2026-11-27",
+      "searchStatus": "no_candidate_observed",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
       "approved": false,
       "publicationAllowed": false,
@@ -482,7 +493,7 @@
       "hints": [],
       "approved": false,
       "publicationAllowed": false,
-      "maintenanceEligible": true,
+      "maintenanceEligible": false,
       "hintsFresh": true
     },
     {

@@ -5,7 +5,7 @@
   "approvedCount": 0,
   "attemptedCount": 6,
   "stationsWithArtistHints": 110,
-  "distinctArtistHints": 147,
+  "distinctArtistHints": 150,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -795,7 +795,7 @@
     {
       "stationuuid": "418b964f-a3df-4b72-a2ff-173ec7e1c1ff",
       "streamSha256": "ee105dc19818e10b108cf9eb99ce662922d5dba7b074ef7aa8f392669dea95b0",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -810,13 +810,20 @@
           "date": "2026-11-26",
           "artistHint": "The Last Dinner Party",
           "titleSha256": "cd9bd5818ea299de775b3b7d4c57b2ae5d8b4d24ffd819a8f067089c46b7b093"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Tefy Clouds",
+          "titleSha256": "179e16d2ba86625cd8cb4208555aad7bd7d6b99885b6ce6f10589217fa2d1e53"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "4340f942-c877-4b60-9d2e-e628db62f761",
       "streamSha256": "a0d2546df73ea61f9f61152087c9a4c5d027a6bf2f74480e1082b0d280e1b18a",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -831,6 +838,11 @@
           "date": "2026-11-26",
           "artistHint": "Gojira",
           "titleSha256": "4684e4836798075f0480d4ab22e8e96a3cab5753f2f486c98d11a0c809def195"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Gojira",
+          "titleSha256": "06c3b236fbcea7df791099f60dc99190deb575df3f4b2d53f57be61141ab75d4"
         }
       ],
       "alternativeVersion": 0,
@@ -839,7 +851,7 @@
     {
       "stationuuid": "44088288-7ad1-44a7-8ec5-d8c210099c12",
       "streamSha256": "3443345152a9d708d5a506c600c8cdee46d235fd1623008431eb37cc985a7b82",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -849,6 +861,11 @@
           "date": "2026-11-26",
           "artistHint": "Silbermond",
           "titleSha256": "9508b2ffcc68a90725cccaee88cb7bfc09379f7573475b41c988720fd2acf146"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "shopify.com",
+          "titleSha256": "2d36510b4d1effc8f6e0550ca7aafb89d8cbf8186a79b4f68e7f2e753e669315"
         }
       ],
       "alternativeVersion": 0,
@@ -857,7 +874,7 @@
     {
       "stationuuid": "4488dc76-a690-4e51-a46c-3600be8195c4",
       "streamSha256": "13f0ecbcfc717ae92707e6769f74c7128294e81ff2254c0e85a8c496c657c32c",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -869,7 +886,7 @@
     {
       "stationuuid": "45c0d067-75b7-4714-a5dd-aeae2e4e9023",
       "streamSha256": "c56a472d7125556b5e0011d993ff1c175f8598c3ae486b64028c87e77771f070",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -884,6 +901,11 @@
           "date": "2026-11-26",
           "artistHint": "Kornkob95",
           "titleSha256": "572b3801d6999b3c8aa48f0950a120e27cf4419dd9395aac28ba066da64a38d8"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Luma Sol",
+          "titleSha256": "479682c90cdf868b9ecef5bde3878bfb14f26aaf0da999b146b2cdcef69b9010"
         }
       ],
       "alternativeVersion": 0,
@@ -892,7 +914,7 @@
     {
       "stationuuid": "4a4f979d-b3e6-48c8-9957-cd3a263023c3",
       "streamSha256": "c23922f43cbedb9e0b05f782bcaf5062c34cf2886d35b772b53731ba5c6d3a4d",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -907,6 +929,11 @@
           "date": "2026-11-26",
           "artistHint": "ICED EARTH",
           "titleSha256": "0544a724fd7c22abaa4206abb153150171bd270dde72b422c3a196ddeda8f70a"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Andy Taylor",
+          "titleSha256": "29716253b2c9c494bac2724bccc3ba96a3fd5071f983048c9384a42cb9ea8967"
         }
       ],
       "alternativeVersion": 0,

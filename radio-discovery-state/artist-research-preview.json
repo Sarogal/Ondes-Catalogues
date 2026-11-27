@@ -3,11 +3,11 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 147,
-  "dueNameCount": 40,
-  "attemptedCount": 3,
+  "observedNameCount": 150,
+  "dueNameCount": 41,
+  "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "kornkob95",
+  "retryAfterKey": "latter day exploits",
   "entries": {
     "2000 fm": {
       "status": "not_found",

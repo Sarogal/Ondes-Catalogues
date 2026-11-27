@@ -1590,7 +1590,7 @@
       "stationuuid": "e0069278-117c-4437-9c41-1ec614b702ca",
       "sourceClass": "same_reported_host",
       "sourceSha256": "96de2de1e3a61975ed917ed0ac6b8356f94bac26406917f785611590b04c49a9",
-      "audioEvidenceRank": 2,
+      "audioEvidenceRank": 0,
       "retrieval": "decoded_unapproved",
       "logoApproved": false,
       "publicationAllowed": false,
