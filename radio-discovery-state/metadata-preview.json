@@ -5,7 +5,7 @@
   "approvedCount": 0,
   "attemptedCount": 6,
   "stationsWithArtistHints": 110,
-  "distinctArtistHints": 153,
+  "distinctArtistHints": 158,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -1238,7 +1238,7 @@
     {
       "stationuuid": "6928b97f-56f2-459e-b7e8-d76997fd9802",
       "streamSha256": "7420bb7ecd89803cc9d82f15696d5af755f543e5265467929b1c1eaf5644e4d2",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1253,6 +1253,11 @@
           "date": "2026-11-26",
           "artistHint": "Brigadnyj podrjad",
           "titleSha256": "76ba276527159e50abaaf215ebe2853747fecf10987681a835c875fb8469ba07"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Sellout",
+          "titleSha256": "d03c396c3cac386c70b84ff23ead44864afed2cd1bb796abff0a40538cda7090"
         }
       ],
       "alternativeVersion": 0,
@@ -1261,7 +1266,7 @@
     {
       "stationuuid": "6fc8bce6-0ab9-4d0a-a703-992634eddf61",
       "streamSha256": "91952bac6ff32ecefb03a9be8829f86c7f873623b54c2c87af06159d675a8bf3",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1276,6 +1281,11 @@
           "date": "2026-11-26",
           "artistHint": "Lionheart",
           "titleSha256": "f313edf5505e24a5f0e4141817d9083971c877021ef305d5bb0c769760da9f0b"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Emmure",
+          "titleSha256": "cbefdb818b4f9087f7b1ecf857069fcf358189890cca90afbad752158c5f1946"
         }
       ],
       "alternativeVersion": 0,
@@ -1284,7 +1294,7 @@
     {
       "stationuuid": "7264e476-09d5-4dc0-8580-bf8cc2070265",
       "streamSha256": "b40accf7a7fe6283ba591d75c0b8b3e5074750f4c55d700d0e550e3729cb6d13",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1299,6 +1309,11 @@
           "date": "2026-11-26",
           "artistHint": "Jeff Beck Group",
           "titleSha256": "1acbc32bc8d6c12cc76d2fba29887d70c31f14528c0eabad995db5f04c970c18"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Red Hot Chili Peppers",
+          "titleSha256": "d83001411e26477c2e00b31fb0a5797c6aa80d6c6d57e9949004be9bf5b345da"
         }
       ],
       "alternativeVersion": 0,
@@ -1325,7 +1340,7 @@
     {
       "stationuuid": "753d2e38-194f-4fb0-9918-4263c6119188",
       "streamSha256": "08e4121484e003dfa9074299b382beb68ab8cfb7021aec650ae9eafa5c2fcafe",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1335,6 +1350,11 @@
           "date": "2026-11-26",
           "artistHint": "Local Natives",
           "titleSha256": "b19d51f2626bebbedb5f6da47ee22b0b5160642d7d9f65b93481daf198e39e56"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Thompson Twins",
+          "titleSha256": "e13e27e2df1e1ba22b990f73d2121f48aa9c1c810f020f9d57256adc26e952aa"
         }
       ],
       "alternativeVersion": 0,
@@ -1361,7 +1381,7 @@
     {
       "stationuuid": "77337406-99c4-11e9-a605-52543be04c81",
       "streamSha256": "48ffa310933f6876dbe66c587facef3fe955482c232973a03202d21c391216de",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1371,6 +1391,11 @@
           "date": "2026-11-26",
           "artistHint": "Minor Threat",
           "titleSha256": "09b8029445a8dc37309c7851238e101db23ba606d8c4cf85f43244e1488e140b"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "shopify.com",
+          "titleSha256": "2d36510b4d1effc8f6e0550ca7aafb89d8cbf8186a79b4f68e7f2e753e669315"
         }
       ],
       "alternativeVersion": 0,
@@ -1379,7 +1404,7 @@
     {
       "stationuuid": "7912f9a4-750e-4575-8718-37a2a2edfb16",
       "streamSha256": "fa209aa8b9a7e6d2896fc8e5a0f4d9400b3de8ba912bbeb7bd1cc46238ddf2ec",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1389,6 +1414,11 @@
           "date": "2026-11-26",
           "artistHint": "Zeal & Ardor",
           "titleSha256": "d8d70bf5c46fa273ec2d71840df195ddce148a86d51778e2163e09177e4268bf"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Korn",
+          "titleSha256": "64c82aaed1b4155efc23d5cfcea6ec22f8ee5826dd26f5f1274e44fe905d4fb1"
         }
       ],
       "alternativeVersion": 0,

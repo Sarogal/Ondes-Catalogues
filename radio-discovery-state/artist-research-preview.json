@@ -3,11 +3,11 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 153,
-  "dueNameCount": 44,
+  "observedNameCount": 158,
+  "dueNameCount": 46,
   "attemptedCount": 4,
   "serviceFailure": "http_503",
-  "retryAfterKey": "minor threat",
+  "retryAfterKey": "queens of the stone age",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -821,6 +821,27 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "minutemen": {
+      "status": "name_hypothesis",
+      "mbid": "d4ad0149-d8ae-4105-8009-0221fce9ff35",
+      "genres": [
+        "acoustic rock",
+        "alternative rock",
+        "pigfuck",
+        "post-hardcore",
+        "post-punk",
+        "punk",
+        "punk rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/d4ad0149-d8ae-4105-8009-0221fce9ff35",
+      "artistName": "Minutemen",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "mlkuz": {
       "status": "not_found",
       "artistName": "MLKUZ",
@@ -938,6 +959,27 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "ozzy osbourne": {
+      "status": "name_hypothesis",
+      "mbid": "8aa5b65a-5b3c-4029-92bf-47a544356934",
+      "genres": [
+        "alternative metal",
+        "glam metal",
+        "hard rock",
+        "heavy metal",
+        "metal",
+        "pop rock",
+        "symphonic rock"
+      ],
+      "genreSource": "musicbrainz-community",
+      "sourceUrl": "https://musicbrainz.org/artist/8aa5b65a-5b3c-4029-92bf-47a544356934",
+      "artistName": "Ozzy Osbourne",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "panda bear, cindy lee": {
       "status": "not_found",
       "artistName": "Panda Bear, Cindy Lee",
@@ -983,6 +1025,15 @@
       "artistName": "Poison",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "poughkeepsie pop culture": {
+      "status": "not_found",
+      "artistName": "Poughkeepsie Pop Culture",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
       "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false

@@ -21,7 +21,7 @@
     "obtain_current_continuity_evidence": 44,
     "obtain_station_bound_editorial_evidence": 147,
     "refresh_current_reconciliation": 5,
-    "repeat_continuity_on_distinct_days": 70,
+    "repeat_continuity_on_distinct_days": 65,
     "resolve_duplicate_or_legacy_identity": 29,
     "resolve_mixed_or_electronic_format": 40,
     "resolve_recent_negative_technical_observation": 44
@@ -2897,14 +2897,14 @@
       "continuityIndication": true,
       "positiveContinuityDays": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": true,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2943,13 +2943,13 @@
       "continuityIndication": true,
       "positiveContinuityDays": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": true,
       "blockingReasons": [
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -2997,15 +2997,15 @@
       "programmeScopeEvidence": false,
       "continuityIndication": true,
       "positiveContinuityDays": [
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format",
-        "repeat_continuity_on_distinct_days"
+        "resolve_mixed_or_electronic_format"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3088,14 +3088,14 @@
       "continuityIndication": true,
       "positiveContinuityDays": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3112,14 +3112,14 @@
       "continuityIndication": true,
       "positiveContinuityDays": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": false,
       "blockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "approved": false,
       "publicationAllowed": false
@@ -3136,7 +3136,8 @@
       "continuityIndication": false,
       "positiveContinuityDays": [
         "2026-11-25",
-        "2026-11-26"
+        "2026-11-26",
+        "2026-11-27"
       ],
       "logoDecodedHint": false,
       "blockingReasons": [
