@@ -57,6 +57,10 @@ def combine_and_rehearse(pointer, raw, *, anchor, day, operations, state=None, c
         raise ValueError("combined digest mismatch")
     report.update(candidateSha256=sha, candidateSequence=anchor["expected_sequence"]+1,
                   outcome="combined_unsigned_validated")
+    # The real successor is signed only by the protected publisher. The old
+    # V8 rehearsal cannot reconstruct a real multiversion history.
+    if anchor["expected_sequence"] >= 9:
+        return report
     # Only a transient key is created. Verify the original predecessor before
     # constructing an experimental trust chain with identical catalogue bytes.
     signer = EphemeralLabSigner()
