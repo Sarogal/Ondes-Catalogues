@@ -166,7 +166,8 @@ def build(registry, today, *, prior=None, limit=MAX_NAMES, request=None,
             or not isinstance(prior.get("entries"), dict)):
         raise ValueError("Invalid directory memory")
     entries = dict(prior["entries"])
-    names = mb.candidate_tasks(registry, today)
+    future_dates = {}
+    names = mb.candidate_tasks(registry, today, future_dates=future_dates)
     due = []
     for key, (priority, day, name) in names.items():
         entry = entries.get(key, {})
@@ -176,7 +177,7 @@ def build(registry, today, *, prior=None, limit=MAX_NAMES, request=None,
             age = 99999
         if age >= (30 if entry.get("status") == "hypothesis" else 7):
             due.append((-age, priority, day, key, name))
-    ordered = sorted(due)
+    ordered = sorted(due, key=lambda row: mb.directory_priority(row, future_dates))
     cursor = prior.get("serviceRetryAfterKey")
     for i, row in enumerate(ordered):
         if row[3] == cursor:
