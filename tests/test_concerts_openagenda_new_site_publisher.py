@@ -128,6 +128,43 @@ class OpenAgendaNewNamedSitePublisherTests(unittest.TestCase):
         self.assertEqual(published["events"][-1]["venueId"],
                          published["venues"][-1]["id"])
 
+    def test_syndicated_event_at_unknown_room_uses_authenticated_origin(self):
+        base = geo_fixture.test_catalogue()
+        previous = geo_fixture.before()
+        alias = "https://openagenda.com/city-agenda/events/eight-unknown-metal-bands"
+        original_url = "https://openagenda.com/shotgun/events/87654321_eight-unknown-metal-bands"
+        permalink = "https://openagenda.com/agendas/9969608/events/87654321"
+        registry = observation(sourceUrl=alias, sourcePage=alias, eventDetailUrl=alias)
+        fetch, reads = official_get(changes={"permalink": permalink})
+        proposed, report = producer.build(registry, base, previous, TODAY, fetch=fetch)
+        self.assertEqual(len(proposed["approvals"]), 1, report)
+        self.assertEqual(len(proposed["venueApprovals"]), 1, report)
+        event = proposed["approvals"][0]
+        site = proposed["venueApprovals"][0]
+        self.assertEqual(event["event"]["officialUrl"], original_url)
+        self.assertEqual(site["eventBinding"]["eventOfficialUrl"], original_url)
+        self.assertEqual(site["eventBinding"]["authoritySourceUrl"], original_url)
+        self.assertTrue(all(proof["url"] == original_url
+                            for proof in event["officialEvidence"]))
+        self.assertNotIn(alias, reads)
+        with mock.patch.object(signer.probe, "safe_fetch", side_effect=fetch):
+            self.assertEqual(len(approval_preflight.check_append_only(
+                previous, proposed, TODAY)), 1)
+            published, stats = publisher.merge(base, base, proposed, TODAY)
+        self.assertEqual(stats["newEvents"], 1, stats)
+        self.assertEqual(stats["newVenues"], 1, stats)
+        self.assertEqual(published["events"][-1]["officialUrl"], original_url)
+
+        for changes in ({}, {"permalink": permalink + "9"},
+                        {"permalink": permalink, "slug": "different-event"},
+                        {"permalink": permalink, "origin": {"uid": 123456, "slug": "shotgun"}},
+                        {"permalink": permalink, "status": 2}):
+            with self.subTest(changes=changes):
+                denied_fetch, _ = official_get(changes=changes)
+                denied, reason = producer.build(
+                    registry, base, previous, TODAY, fetch=denied_fetch)
+                self.assertEqual(denied, previous, reason)
+
     def test_composite_discovery_title_resolves_two_separately_named_acts(self):
         base = geo_fixture.test_catalogue()
         previous = geo_fixture.before()

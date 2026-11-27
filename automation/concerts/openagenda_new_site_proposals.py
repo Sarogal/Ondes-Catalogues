@@ -158,6 +158,11 @@ def propose(row, catalogue, today, *, fetch=probe.safe_fetch):
     require(_site_key(place["name"], place["city"]) ==
             _site_key(candidate["venue"], candidate["city"]),
             "official place changed from discovered location")
+    # A syndicated public agenda is only a discovery hint. Authenticate
+    # the original UID pair, exact event slug and origin permalink from
+    # the fresh export before signing or checking for published duplicates.
+    url = oa.original_event_url_from_export(
+        raw, url, agenda_uid=agenda_uid, event_uid=event_uid)
     names, genres = oa.verified_export(
         raw, url, date, place, agenda_uid=agenda_uid, event_uid=event_uid)
     require(oa.observed_bill_matches(candidate["leadArtist"], names),
