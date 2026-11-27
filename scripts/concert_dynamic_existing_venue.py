@@ -1109,6 +1109,55 @@ def _official_incomplete_venue_address(raw, event, venue):
     return True
 
 
+def official_place_city_suffix(raw, venue, url):
+    """Recognize an exact room name with its own municipality appended.
+
+    Only a canonical event on the independently registered official origin
+    may use this alternative. Require a complete matching physical postal
+    address (or the narrowly defined incomplete historical pin contract).
+    Never infer the place from the hostname or accept a different room.
+    """
+    if (raw.get("url") != url
+            or not official_source.official_origin(venue, url)):
+        return False
+    place = raw.get("location")
+    if not isinstance(place, dict) or not (
+            bridge._event_types(place.get("@type")) & {"Place", "MusicVenue"}):
+        return False
+    name, city = normal(venue.get("name")), normal(venue.get("city"))
+    if not name or not city or normal(place.get("name")) not in {
+            name + " " + city, name + " de " + city}:
+        return False
+    addr = place.get("address")
+    if not isinstance(addr, dict) or "PostalAddress" not in bridge._event_types(addr.get("@type")):
+        return False
+    if _official_incomplete_venue_address(raw, {"officialUrl": url}, venue):
+        return True
+    from venue_address_osm_source import eligible_address
+    if not eligible_address(venue):
+        return False
+    for field, expected in (("streetAddress", venue["address"]),
+                            ("postalCode", venue["postalCode"]),
+                            ("addressLocality", venue["city"])):
+        if not normal(addr.get(field)) or normal(addr[field]) != normal(expected):
+            return False
+        if place.get(field) not in (None, "") and normal(place[field]) != normal(expected):
+            return False
+    country = addr.get("addressCountry")
+    if isinstance(country, dict):
+        country = country.get("name") or country.get("@id")
+    if normal(country) not in {"fr", "france", "republique francaise"}:
+        return False
+    for country in (place.get("country"), place.get("addressCountry")):
+        if country in (None, ""):
+            continue
+        if isinstance(country, dict):
+            country = country.get("name") or country.get("@id")
+        if normal(country) not in {"fr", "france", "republique francaise"}:
+            return False
+    return True
+
+
 def _event(raw, event, venue, artists, *, accept_generic=False,
            fetch=None, cache=None, html=None, allow_visible_address=False,
            allow_incomplete_official_venue=False, profile_scan_day=None):
@@ -1136,8 +1185,10 @@ def _event(raw, event, venue, artists, *, accept_generic=False,
             [normal(artists[aid]["name"]) for aid in event.get("artistIds", [])],
             "artist IDs or names differ from individual official MusicEvent")
     location = raw.get("location")
-    require(isinstance(location, dict) and
-            normal(location.get("name")) == normal(venue["name"]),
+    require(isinstance(location, dict) and (
+            normal(location.get("name")) == normal(venue["name"])
+            or (allow_incomplete_official_venue and
+                official_place_city_suffix(raw, venue, event["officialUrl"]))),
             "first-party event names another venue")
     addr = location.get("address")
     if (allow_incomplete_official_venue

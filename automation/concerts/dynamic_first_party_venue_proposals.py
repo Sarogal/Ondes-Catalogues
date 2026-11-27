@@ -111,7 +111,9 @@ def _individual_event(html, url, when, venue, *, accept_generic=False,
         place = node.get("location")
         if not isinstance(place, dict) or (
                 intake.normalized(place.get("name")) !=
-                intake.normalized(venue["name"])):
+                intake.normalized(venue["name"]) and not (
+                    accept_generic and dynamic.official_place_city_suffix(
+                        node, venue, url))):
             rejected["venue_name_or_location_mismatch"] += 1
             continue
         # Complete the missing schema.org bill only from THIS exact
