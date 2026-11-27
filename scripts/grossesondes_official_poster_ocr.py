@@ -523,10 +523,41 @@ def structured_poster_candidates(row, reading):
     duration = (date.fromisoformat(row["endDate"]) -
                 date.fromisoformat(row["startDate"])).days + 1
     artist_lists, offers, conflicts = [], {}, set()
-    for line in lines:
-        if not all(w["confidence"] >= 95 for w in line):
+    def raw_text(line):
+        return " ".join(w["text"] for w in line).strip()
+    def strong(line):
+        return all(w["confidence"] >= 95 for w in line)
+    def bounds(line):
+        return (min(w["box"][0] for w in line), min(w["box"][1] for w in line),
+                max(w["box"][0] + w["box"][2] for w in line),
+                max(w["box"][1] + w["box"][3] for w in line))
+    def vertically_bound(first, second):
+        a, b = bounds(first), bounds(second)
+        h = max(a[3]-a[1], b[3]-b[1])
+        overlap = min(a[2], b[2]) - max(a[0], b[0])
+        return (0 <= b[1]-a[3] <= h
+                and overlap >= .8 * min(a[2]-a[0], b[2]-b[0])
+                and (abs(a[0]-b[0]) <= h/2
+                     or abs((a[0]+a[2])-(b[0]+b[2])) <= h))
+    candidates = [raw_text(line) for line in lines if strong(line)]
+    for index, (first, second) in enumerate(zip(lines, lines[1:])):
+        if not (strong(first) and strong(second) and vertically_bound(first, second)):
             continue
-        raw = " ".join(w["text"] for w in line).strip()
+        label, value = raw_text(first), raw_text(second)
+        # Require an unambiguous vertical column: a second segment sharing
+        # either baseline could be a neighbouring price or sponsor block.
+        a, b = bounds(first), bounds(second)
+        if any(max(box[1], target[1]) < min(box[3], target[3])
+               for i, other in enumerate(lines) if i not in (index, index+1)
+               for box in (bounds(other),) for target in (a,b)):
+            continue
+        if (re.fullmatch(r"(?:artistes?|groupes?|line[\s-]?up)\s*:", label, re.I)
+                and re.search(r"[,;•]", value)):
+            candidates.append(label + " " + value)
+        if (re.fullmatch(r"pass\s+[1-7]\s*(?:j|jours?|days?)\s*:?", label, re.I)
+                and re.fullmatch(r"[1-9]\d{0,2}(?:[,.]\d{2})?\s*(?:€|euros?|eur)", value, re.I)):
+            candidates.append(label.rstrip(":").rstrip() + " : " + value)
+    for raw in candidates:
         roster = re.fullmatch(r"(?:artistes?|groupes?|line[\s-]?up)\s*:\s*(.+)", raw, re.I)
         if roster:
             # Only explicitly delimited names; no split on 'and' or '&'.
