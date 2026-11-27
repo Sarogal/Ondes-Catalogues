@@ -402,6 +402,67 @@ def signed_municipal_venue_city(html, row, today, fetch=fetch_public_html,
         return None
 
 
+def current_official_access_city(home_html, access_html, row, today):
+    """Bind an explicitly current site plan to a named venue and postal town.
+
+    The signed homepage must independently print the exact future dates.
+    The linked access page must explicitly name the festival in a venue
+    sentence, repeat the town in an adjacent postal address, and identify
+    its plan as the current edition. A historical gallery, footer or
+    parking address cannot establish a commune.
+    """
+    try:
+        start, end = date.fromisoformat(row["startDate"]), date.fromisoformat(row["endDate"])
+        if (start < date.fromisoformat(today) or start.year != end.year
+                or not 0 <= (end-start).days <= 7):
+            return None
+        brand = fold(re.sub(r"\b20[2-4]\d\b", "", row["name"]))
+        if len(brand.replace(" ", "")) < 6:
+            return None
+        from grossesondes_official_html_edition import festival_visible_content
+        home_visible, _ = festival_visible_content(home_html)
+        ranges = {(a, z) for _, _, a, z in current_visible_ranges(home_visible, start.year)}
+        if ranges != {(start, end)} or not re.search(
+                r"\b" + re.escape(brand) + r"\b", fold(home_visible)):
+            return None
+        class AccessPage(Page):
+            def handle_starttag(self, tag, attrs):
+                if tag in ("footer", "nav", "aside", "header", "address"):
+                    attrs = list(attrs) + [("hidden", None)]
+                super().handle_starttag(tag, attrs)
+        parsed = AccessPage()
+        parsed.feed(access_html)
+        parsed.close()
+        blocks = [v["text"] for v in parsed.blocks]
+        normalized = [fold(v) for v in blocks]
+        if SENSITIVE.search(" ".join(normalized)):
+            return None
+        years = set()
+        for value in normalized:
+            if ("plan" in value and re.search(r"\b" + re.escape(brand) + r"\b", value)):
+                years.update(re.findall(r"\bedition\s+(20[2-4]\d)\b", value))
+        if years != {str(start.year)}:
+            return None
+        found = {}
+        for i, value in enumerate(normalized[:-1]):
+            match = re.fullmatch(
+                r"(?:le |la |l )?" + re.escape(brand) +
+                r"\s+(?:se deroule|se tient|a lieu)\s+(?:sur|dans|au|a)\s+.{3,130}\s+a\s+([a-z][a-z ]{1,60})", value)
+            if not match:
+                continue
+            address = re.search(r"\b(\d{5})\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’ -]{1,60})\s*$",
+                                blocks[i+1])
+            if not address or fold(address[2]) != match[1]:
+                continue
+            found[(fold(address[2]), address[1])] = address[2].strip()
+        if len(found) != 1:
+            return None
+        (_, postcode), city = next(iter(found.items()))
+        return city, postcode
+    except (ValueError, TypeError, KeyError, UnicodeError):
+        return None
+
+
 def current_official_ticket_city(html, row):
     """Exact summer-edition locality printed on a CURRENT first-party ticket page.
 
@@ -2265,6 +2326,12 @@ def apply_independently_verified_updates(
                         city = current_official_ticket_city(html, old)
                         if city:
                             claim = {"slug": slug, "city": city, "source": site}
+                    if claim is None and linked_url != site and root_ok:
+                        access = current_official_access_city(root_html, html, old, today)
+                        if access:
+                            city, postcode = access
+                            claim = {"slug": slug, "city": city, "source": site,
+                                     "venue_source": linked_url, "access_postcode": postcode}
                     if claim is not None:
                         claims_city.append(claim)
                 # Reuse the exact direct-edition contract for published
@@ -2333,6 +2400,14 @@ def apply_independently_verified_updates(
                                     municipal_diagnostic["multivenue_postcode"] = "department_selected_admin_unresolved"
                             except (OSError, TimeoutError, ValueError, UnicodeError):
                                 municipal_diagnostic["multivenue_postcode"] = "department_selected_admin_fetch_failed"
+                    # A postal town is independently resolved; reject a
+                    # mismatched mainland administrative department.
+                    access_postcode = claim.get("access_postcode")
+                    if (commune and access_postcode
+                            and not access_postcode.startswith(("20", "97", "98"))
+                            and not str(commune.get("codeInsee", "")).startswith(access_postcode[:2])):
+                        commune = None
+                        commune_diagnostic = "access_postcode_conflict"
                     if (commune and normal_city(commune.get("city")) == normal_city(claim["city"])
                             and type(commune.get("lat")) in (float, int)
                             and type(commune.get("lon")) in (float, int)
