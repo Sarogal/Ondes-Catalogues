@@ -15,8 +15,9 @@ from radio_daily_repair_preview import page_key
 from radio_catalog_logo_pilot_probe import decode_image, MAX_LOGO_BYTES
 
 EXTENSIONS={"image/png":"png","image/jpeg":"jpg","image/webp":"webp"}
-# Reserved example domain: the simulated descriptor cannot be a live endpoint.
-PREVIEW_BASE="https://radio-preview.example.org/objects/sha256/"
+# Dedicated public raw Git ref for the isolated rehearsal only. No production Pages changes.
+# This URL does not activate publication or make the preview workflow write catalogues.
+PREVIEW_BASE="https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/refs/heads/radio-lab-publisher-rehearsal/objects/sha256/"
 
 
 def plan(raw, day, maintenance, missing, *, expected=BASELINE):
