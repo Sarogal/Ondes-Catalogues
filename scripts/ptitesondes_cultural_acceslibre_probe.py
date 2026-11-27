@@ -318,27 +318,70 @@ def compare(leads, rows, *, inspect=None):
             "official_counts": dict(official), "publication_ready": False, "public_writes": 0}
 
 
+class ProbeFailure(Exception):
+    """Fixed diagnostic identifiers only; never expose raw URL or response."""
+    def __init__(self, stage, reason):
+        self.stage = stage
+        self.reason = reason
+        super().__init__(stage + ":" + reason)
+
+
+def run_stage(stage, action, *, retry=False, reset=None, sleep=None):
+    from urllib.error import HTTPError, URLError
+    from time import sleep as default_sleep
+    sleep = sleep or default_sleep
+    for attempt in range(2 if retry else 1):
+        try:
+            return action()
+        except (OSError, ValueError, TypeError, KeyError, UnicodeError, OverflowError, csv.Error) as exc:
+            if isinstance(exc, HTTPError):
+                transient = exc.code in (408, 429, 500, 502, 503, 504)
+                reason = "http_" + str(exc.code) if 100 <= exc.code <= 599 else "http_error"
+            elif isinstance(exc, (TimeoutError, URLError, ConnectionError)):
+                transient, reason = True, "transport"
+            else:
+                transient, reason = False, ("invalid_data" if isinstance(exc, (ValueError, TypeError, KeyError, UnicodeError, OverflowError, csv.Error)) else "io_error")
+            if retry and transient and attempt == 0:
+                if reset is not None:
+                    try:
+                        reset()
+                    except OSError:
+                        raise ProbeFailure(stage, "reset_failed") from None
+                sleep(3)
+                continue
+            raise ProbeFailure(stage, reason) from None
+
+
 def probe():
-    leads = candidates()
+    leads = run_stage("culture_directory", candidates, retry=True)
     with TemporaryDirectory() as tmp:
         path = Path(tmp) / "national.csv"
-        download(path)
-        if not 0 < path.stat().st_size <= MAX_BYTES:
-            raise ValueError("invalid_export")
-        csv.field_size_limit(MAX_FIELD)
-        with path.open(encoding="utf-8-sig", newline="") as stream:
-            header = stream.readline()
-            stream.seek(0)
-            reader = csv.DictReader(stream, delimiter=";" if ";" in header else ",", strict=True)
-            fields = reader.fieldnames or []
-            if not COLUMNS.issubset(fields) or len(fields) != len(set(fields)):
-                raise ValueError("invalid_export_schema")
-            return compare(leads, reader, inspect=inspect_with_municipal_fallback)
+        def fetch_export():
+            download(path)
+            if not 0 < path.stat().st_size <= MAX_BYTES:
+                raise ValueError("invalid_export")
+        run_stage("acceslibre_download", fetch_export, retry=True,
+                  reset=lambda: path.unlink(missing_ok=True))
+
+        def compare_export():
+            csv.field_size_limit(MAX_FIELD)
+            with path.open(encoding="utf-8-sig", newline="") as stream:
+                header = stream.readline()
+                stream.seek(0)
+                reader = csv.DictReader(stream, delimiter=";" if ";" in header else ",", strict=True)
+                fields = reader.fieldnames or []
+                if not COLUMNS.issubset(fields) or len(fields) != len(set(fields)):
+                    raise ValueError("invalid_export_schema")
+                return compare(leads, reader, inspect=inspect_with_municipal_fallback)
+        return run_stage("comparison", compare_export)
 
 
 if __name__ == "__main__":
     try:
         print(json.dumps(probe(), sort_keys=True))
+    except ProbeFailure as exc:
+        print("::error::Acceslibre cultural comparison failed: " + str(exc))
+        raise SystemExit(1) from None
     except (OSError, ValueError, TypeError, KeyError, UnicodeError, OverflowError, csv.Error):
         print("::error::Acceslibre cultural comparison unavailable")
         raise SystemExit(1) from None

@@ -95,6 +95,29 @@ class CulturalAcceslibreProbeTests(unittest.TestCase):
             self.assertEqual(result, {"municipal_research_unavailable": 1})
             self.assertEqual(calls, [home])
 
+    def test_stage_diagnostics_and_bounded_transient_retry(self):
+        from urllib.error import HTTPError
+        from ptitesondes_cultural_acceslibre_probe import run_stage, ProbeFailure
+        calls, delays, resets = [], [], []
+        def temporary():
+            calls.append(1)
+            if len(calls) == 1:
+                raise HTTPError("https://secret.example", 503, "private", {}, None)
+            return 42
+        self.assertEqual(run_stage("culture_directory", temporary, retry=True,
+                                   reset=lambda: resets.append(1), sleep=delays.append), 42)
+        self.assertEqual((len(calls), delays, resets), (2, [3], [1]))
+        def invalid():
+            raise ValueError("secret URL")
+        with self.assertRaisesRegex(ProbeFailure, "^comparison:invalid_data$"):
+            run_stage("comparison", invalid, retry=True, sleep=delays.append)
+        self.assertEqual(delays, [3])
+        def unavailable():
+            raise HTTPError("https://secret.example", 429, "private", {}, None)
+        with self.assertRaisesRegex(ProbeFailure, "^acceslibre_download:http_429$"):
+            run_stage("acceslibre_download", unavailable, retry=True, sleep=delays.append)
+        self.assertEqual(delays, [3, 3])
+
     def test_broader_sample_is_bounded_and_stops_at_directory_end(self):
         from urllib.parse import parse_qs, urlsplit
         from ptitesondes_cultural_acceslibre_probe import candidates, MAX_PROBE_PAGES
