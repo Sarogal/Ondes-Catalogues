@@ -33,6 +33,23 @@ class CulturalIdentityTests(unittest.TestCase):
             self.assertIsNone(directory_identity("Les Bois", "Ludothèque du parc",
                                                  dict(ROW, **changes)), changes)
 
+    def test_exact_component_variants_without_conflicting_information(self):
+        for value in ("12 bis rue des Jeux", "12 bis rue des Jeux 01230",
+                      "12 bis rue des Jeux Les Bois",
+                      "12 bis rue des Jeux Les Bois 01230",
+                      "12 bis rue des Jeux 01230 Les Bois France"):
+            row = dict(ROW, adresse_complete=value, adresse_entree_public=value)
+            facts = directory_identity("Les Bois", "Ludothèque du parc", row)
+            self.assertIsNotNone(facts, value)
+            self.assertEqual(facts["address_query"], "12 bis rue des jeux 01230 Les Bois")
+            self.assertFalse(facts["public_eligible"])
+            self.assertIsNone(directory_identity("Les Bois", "Ludothèque du parc", row,
+                                                 equivalent_formats=False))
+        for value in ("14 rue des Jeux", "12 bis rue des Jeux 99999 Les Bois",
+                      "12 bis rue des Jeux Autre ville", "12 bis rue des Jeux 01230 Les Bois autre bâtiment"):
+            self.assertIsNone(directory_identity("Les Bois", "Ludothèque du parc",
+                                                 dict(ROW, adresse_complete=value)), value)
+
     def test_diagnostics_distinguish_missing_number_and_conflict(self):
         from collections import Counter
         counts = Counter()
