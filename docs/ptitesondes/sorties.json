@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-27T16:11:21+01:00",
+  "updated_at": "2026-11-27T19:10:28+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -22045,6 +22045,46 @@
       "lng": 1.77104,
       "age_min": 8,
       "age_label": "Dès 8 ans"
+    },
+    {
+      "id": "openagenda-45065144-2027-01-27",
+      "title": "Historiettes et Cabanette : bébés lecteurs",
+      "category": "lecture-jeunesse",
+      "category_label": "Lecture jeunesse",
+      "date_start": "2027-01-27",
+      "date_end": "2027-01-27",
+      "time": "10:30",
+      "city": "Châtellerault",
+      "department": "Vienne",
+      "region": "Nouvelle-Aquitaine",
+      "venue": "La Cabane du Lac",
+      "source_url": "https://openagenda.com/grand-chatellerault/events/45065144_historiettes-et-cabanette-bebes-lecteurs-334856",
+      "source_label": "Médiathèques de Grand Châtellerault — Licence Ouverte 2.0 — données mises à jour le 21/11/2026",
+      "verified_at": "2026-11-27",
+      "geo_verified_at": "2026-11-27",
+      "geo_precision": "venue",
+      "lat": 46.800676,
+      "lng": 0.527157
+    },
+    {
+      "id": "openagenda-75082351-2027-05-26",
+      "title": "Historiettes et Cabanette : bébés lecteurs",
+      "category": "lecture-jeunesse",
+      "category_label": "Lecture jeunesse",
+      "date_start": "2027-05-26",
+      "date_end": "2027-05-26",
+      "time": "10:30",
+      "city": "Châtellerault",
+      "department": "Vienne",
+      "region": "Nouvelle-Aquitaine",
+      "venue": "La Cabane du Lac",
+      "source_url": "https://openagenda.com/grand-chatellerault/events/75082351_historiettes-et-cabanette-bebes-lecteurs-2675341",
+      "source_label": "Médiathèques de Grand Châtellerault — Licence Ouverte 2.0 — données mises à jour le 21/11/2026",
+      "verified_at": "2026-11-27",
+      "geo_verified_at": "2026-11-27",
+      "geo_precision": "venue",
+      "lat": 46.800676,
+      "lng": 0.527157
     }
   ]
 }
