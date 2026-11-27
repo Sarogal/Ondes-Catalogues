@@ -125,6 +125,9 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_public_https_reader.py"
       - "radio-catalog-lab/tools/radio_daily_publisher_job_config.py"
       - "radio-catalog-lab/tools/test_radio_daily_publisher_job_config.py"
+      - "radio-catalog-lab/tools/radio_lab_successor_sign.py"
+      - "radio-catalog-lab/tools/radio_lab_successor_transport.py"
+      - "radio-catalog-lab/tools/radio_lab_successor_readback.py"
       - "radio-catalog-lab/tools/radio_lab_first_release.py"
       - "radio-catalog-lab/tools/radio_lab_provision.py"
       - ".github/workflows/radio-lab-first-release.yml"
@@ -197,6 +200,7 @@ jobs:
         run: |
           python -m py_compile radio-catalog-lab/tools/radio_lab_first_release.py radio-catalog-lab/tools/radio_lab_provision.py
           python radio-catalog-lab/tools/radio_lab_first_release.py --help
+          for mode in sign transport readback; do python "radio-catalog-lab/tools/radio_lab_successor_${mode}.py" --help; done
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_daily*.py" -v
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_catalog_daily_candidate_reconcile.py" -v
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_technical_probe.py" -v
@@ -211,6 +215,7 @@ jobs:
     timeout-minutes: 18
     outputs:
       report-name: ${{ steps.report-identity.outputs.name }}
+      candidate: ${{ steps.release-gate.outputs.candidate }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -782,6 +787,21 @@ jobs:
               "suggestedGenreTags": hints,
           }, ensure_ascii=False, indent=2) + "\n")
           PY
+      - name: Determine whether a protected signing job is needed
+        id: release-gate
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os,json
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"go-radio-discovery/strict-live-release-preview.json"
+          candidate=False
+          if p.is_file():
+              report=json.loads(p.read_bytes())
+              candidate=bool(report["combined"]["candidateSha256"])
+          with open(os.environ["GITHUB_OUTPUT"],"a") as out:
+              print("candidate="+str(candidate).lower(),file=out)
+          PY
       - name: Identify this collection attempt
         id: report-identity
         shell: bash
@@ -800,6 +820,8 @@ jobs:
     if: github.ref == 'refs/heads/feature/radio-daily-discovery-lab-20261120'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      state-commit: ${{ steps.state-revision.outputs.sha }}
     permissions:
       contents: write
       actions: read
@@ -1000,3 +1022,157 @@ jobs:
             git commit -m "state(radio-autonomous): retain discovery evidence"
             git push origin HEAD:refs/heads/state/go-radio-autonomous
           fi
+
+      - name: Record exact persisted evidence revision
+        id: state-revision
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  sign-successor:
+    needs: [discovery-preview, persist-preview-state]
+    if: vars.RADIO_LAB_AUTONOMOUS_ENABLED == 'true' && vars.RADIO_LAB_AUTONOMOUS_APPROVED_SHA == github.sha && needs.discovery-preview.outputs.candidate == 'true' && github.ref == 'refs/heads/feature/radio-daily-discovery-lab-20261120'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: radio-lab-signing
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      changed: ${{ steps.sign.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.persist-preview-state.outputs.state-commit }}
+          path: go-autonomous-state
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.discovery-preview.outputs.report-name }}
+          path: ${{ runner.temp }}/reports
+      - name: Independently qualify and sign only a real successor
+        id: sign
+        env:
+          RADIO_LAB_PUBLIC_KEY: ${{ vars.RADIO_LAB_PUBLIC_KEY }}
+          RADIO_LAB_KEY_ID: ${{ vars.RADIO_LAB_KEY_ID }}
+          RADIO_LAB_ENCRYPTED_KEY: ${{ secrets.RADIO_LAB_ENCRYPTED_KEY }}
+          RADIO_LAB_PASSPHRASE: ${{ secrets.RADIO_LAB_PASSPHRASE }}
+          RADIO_LAB_JOB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_lab_successor_sign.py \
+            --state go-autonomous-state/radio-discovery-state --reports "$RUNNER_TEMP/reports" \
+            --bundle "$RUNNER_TEMP/signed-bundle" --receipt "$RUNNER_TEMP/signed-receipt.json" \
+            --next-state "$RUNNER_TEMP/preflight-state"
+          python - <<'PY'
+          import os,json
+          from pathlib import Path
+          receipt=json.loads((Path(os.environ["RUNNER_TEMP"])/"signed-receipt.json").read_bytes())
+          with open(os.environ["GITHUB_OUTPUT"],"a") as f:
+              print("changed="+str(receipt["changed"]).lower(),file=f)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.sign.outputs.changed == 'true'
+        with:
+          name: radio-successor-signed
+          path: |
+            ${{ runner.temp }}/signed-bundle/
+            ${{ runner.temp }}/signed-receipt.json
+          if-no-files-found: error
+          retention-days: 7
+
+  transport-successor:
+    needs: [sign-successor, persist-preview-state]
+    if: needs.sign-successor.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: radio-lab-transport
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.persist-preview-state.outputs.state-commit }}
+          path: go-autonomous-state
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: radio-successor-signed
+          path: ${{ runner.temp }}/signed-input
+      - name: Transfer exact signed public successor
+        env:
+          RADIO_LAB_PUBLIC_KEY: ${{ vars.RADIO_LAB_PUBLIC_KEY }}
+          RADIO_LAB_KEY_ID: ${{ vars.RADIO_LAB_KEY_ID }}
+          RADIO_LAB_JOB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_lab_successor_transport.py \
+            --state go-autonomous-state/radio-discovery-state \
+            --bundle "$RUNNER_TEMP/signed-input/signed-bundle" \
+            --signed-receipt "$RUNNER_TEMP/signed-input/signed-receipt.json" \
+            --transfer-receipt "$RUNNER_TEMP/transfer-receipt.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: radio-successor-transferred
+          path: ${{ runner.temp }}/transfer-receipt.json
+          if-no-files-found: error
+          retention-days: 7
+
+  accept-successor:
+    needs: [transport-successor, persist-preview-state]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: radio-lab-readback
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.persist-preview-state.outputs.state-commit }}
+          path: go-autonomous-state
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: radio-successor-transferred
+          path: ${{ runner.temp }}
+      - name: Independently verify public successor and migrate exact evidence
+        env:
+          RADIO_LAB_PUBLIC_KEY: ${{ vars.RADIO_LAB_PUBLIC_KEY }}
+          RADIO_LAB_KEY_ID: ${{ vars.RADIO_LAB_KEY_ID }}
+          RADIO_LAB_JOB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_lab_successor_readback.py \
+            --state go-autonomous-state/radio-discovery-state \
+            --transfer-receipt "$RUNNER_TEMP/transfer-receipt.json" \
+            --acceptance "$RUNNER_TEMP/acceptance.json" --next-state "$RUNNER_TEMP/next-state"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: radio-successor-accepted
+          path: |
+            ${{ runner.temp }}/acceptance.json
+            ${{ runner.temp }}/next-state/
+          if-no-files-found: error
+          retention-days: 7
