@@ -574,3 +574,34 @@ class StandaloneVenueSourceTests(unittest.TestCase):
                 with self.subTest(bad=bad), self.assertRaises(ValueError):
                     evidence.verify_venue_source(source, VENUE,
                         fetch=lambda url, cache: link if url == source else bad)
+
+    def test_changed_address_extractor_retries_one_held_room_without_starvation(self):
+        day = dt.date(2026, 11, 25)
+        venues = [dict(VENUE, id=f"room-{i}") for i in range(6)]
+        catalogue = {"venues": venues, "events": []}
+        source = "https://unknown-room.fr/"
+        calls = []
+        def held(url, venue, **kw):
+            calls.append(venue["id"])
+            raise evidence.EvidenceHeld("standalone_named_address_unconfirmed")
+        with patch.object(evidence, "registered_venue_source", return_value=source), \
+             patch.object(evidence, "_address_revision", return_value="a"*64):
+            first = evidence.scan(catalogue, day, limit=2, verify_standalone=held)
+        checked = set(calls)
+        self.assertEqual(len(checked), 2)
+        calls.clear()
+        with patch.object(evidence, "registered_venue_source", return_value=source), \
+             patch.object(evidence, "_address_revision", return_value="b"*64):
+            second = evidence.scan(catalogue, day, limit=2, prior=first, verify_standalone=held)
+            self.assertEqual(second["changedAddressPriorityChecks"], 1)
+            self.assertEqual(len(set(calls) & checked), 1)
+            self.assertEqual(second["changedAddressRetryPendingAfter"], 1)
+            self.assertEqual(second["examinedVenues"], 2)
+            calls.clear()
+            third = evidence.scan(catalogue, day, limit=2, prior=second, verify_standalone=held)
+            self.assertEqual(third["changedAddressRetryPendingAfter"], 0)
+            self.assertEqual(third["examinedVenues"], 2)
+            fourth = evidence.scan(catalogue, day, limit=2, prior=third, verify_standalone=held)
+            self.assertEqual(fourth["changedAddressPriorityChecks"], 0)
+            self.assertEqual(fourth["changedAddressRetryPendingBefore"], 0)
+        self.assertFalse(fourth["publicationAllowed"])
