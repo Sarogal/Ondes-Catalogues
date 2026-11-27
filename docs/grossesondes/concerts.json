@@ -2616,6 +2616,11 @@
       "id": "golden-format",
       "name": "Golden Format",
       "aliases": []
+    },
+    {
+      "id": "ultra-vomit-roubaix",
+      "name": "ULTRA VOMIT - ROUBAIX",
+      "aliases": []
     }
   ],
   "venues": [
@@ -3827,6 +3832,19 @@
       "longitude": 4.8357517,
       "geoPrecision": "named-site-point",
       "id": "go-site-75bf7ae552b35d5825a6"
+    },
+    {
+      "name": "La Condition Publique",
+      "city": "Roubaix",
+      "address": "14 Place du Général Faidherbe",
+      "postalCode": "59100",
+      "department": "59",
+      "region": "Hauts-de-France",
+      "geoSource": "https://www.openstreetmap.org/way/79515968",
+      "latitude": 50.69071065,
+      "longitude": 3.1896607777777777,
+      "geoPrecision": "named-site-area",
+      "id": "go-site-3cd862e28529bcb1d84d"
     }
   ],
   "events": [
@@ -16313,6 +16331,35 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Le 106",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-27",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-27",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270219-roubaix-ultra-vomit-roubaix",
+      "title": "ULTRA VOMIT - ROUBAIX",
+      "date": "2027-02-19",
+      "artistIds": [
+        "ultra-vomit-roubaix"
+      ],
+      "venueId": "go-site-3cd862e28529bcb1d84d",
+      "genres": [
+        "metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://openagenda.com/shotgun/events/ultra-vomit-roubaix",
+      "sourceType": "organisateur",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Condition Publique",
       "ticketUrl": null,
       "lastVerified": "2026-11-27",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
