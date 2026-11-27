@@ -61,6 +61,40 @@ class CulturalAcceslibreProbeTests(unittest.TestCase):
                          "page_identity_unconfirmed")
         self.assertEqual(counts["structured_address_concordant_hint"], 1)
 
+    def test_municipal_fallback_requires_exact_authority_and_page(self):
+        from unittest.mock import patch
+        from ptitesondes_cultural_acceslibre_probe import inspect_municipal
+        lead = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois",
+                "code_commune": "01234", "code_postal": "01230",
+                "numero_et_libelle_voie": "Rue des Jeux", "adresse_complete": "Rue des Jeux"}
+        home = "https://mairie.example/"
+        target = home + "ludotheque"
+        body = "<main><h1>Ludothèque A</h1><address>Rue des Jeux 01230 Les Bois</address><p>Jeux pour enfants</p><p>Accès libre</p></main>"
+        directory = {}
+        calls = []
+        def read(url, city, doc):
+            calls.append(url)
+            return url, body if url == target else "<main>Accueil</main>"
+        module = "ptitesondes_dila_municipal_domains."
+        with patch(module + "municipal_site_hosts", return_value={"mairie.example"}), \
+             patch(module + "approved_municipal_page_host", side_effect=lambda u, *_: u.startswith(home)), \
+             patch("ptitesondes_municipal_venue_link_discovery.exact_named_venue_page", return_value=target):
+            result = inspect_municipal(lead, directory_fetch=lambda _: directory, page_read=read)
+            self.assertEqual(result, {"municipal_exact_page_found": 1,
+                                      "municipal_page_content_concordant_unverified": 1})
+            self.assertEqual(calls, [home, target])
+        calls.clear()
+        with patch(module + "municipal_site_hosts", return_value=set()):
+            result = inspect_municipal(lead, directory_fetch=lambda _: directory, page_read=read)
+            self.assertEqual(result, {"municipal_authority_unavailable": 1})
+            self.assertEqual(calls, [])
+        with patch(module + "municipal_site_hosts", return_value={"mairie.example"}), \
+             patch(module + "approved_municipal_page_host", side_effect=lambda u, *_: u.startswith(home)), \
+             patch("ptitesondes_municipal_venue_link_discovery.exact_named_venue_page", return_value="https://foreign.example/venue"):
+            result = inspect_municipal(lead, directory_fetch=lambda _: directory, page_read=read)
+            self.assertEqual(result, {"municipal_research_unavailable": 1})
+            self.assertEqual(calls, [home])
+
     def test_broader_sample_is_bounded_and_stops_at_directory_end(self):
         from urllib.parse import parse_qs, urlsplit
         from ptitesondes_cultural_acceslibre_probe import candidates, MAX_PROBE_PAGES

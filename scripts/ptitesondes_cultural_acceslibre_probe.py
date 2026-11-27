@@ -59,7 +59,7 @@ def structured_place_hint(lead, html):
             self.active = None
             self.count = 0
         def handle_starttag(self, tag, attrs):
-            if tag == "script" and dict(attrs).get("type", "").lower() == "application/ld+json":
+            if tag == "script" and (dict(attrs).get("type") or "").lower() == "application/ld+json":
                 self.count += 1
                 self.active = [] if self.count <= 8 else None
         def handle_data(self, data):
@@ -198,6 +198,67 @@ def inspect_official(lead, hit, page_read=None):
     return counts
 
 
+def inspect_municipal(lead, *, directory_fetch=None, page_read=None):
+    """Research only: fresh DILA authority and exact named municipal page."""
+    from ptitesondes_dila_municipal_domains import (
+        fetch_dila, municipal_site_hosts, approved_municipal_page_host)
+    from ptitesondes_municipal_venue_link_discovery import exact_named_venue_page
+    from ptitesondes_open_world_permanent_place_ban import _section_pages
+    from ptitesondes_unlisted_source_safe_recheck import read_municipal_https
+    from urllib.parse import urlsplit
+    directory_fetch = directory_fetch or fetch_dila
+    page_read = page_read or read_municipal_https
+    counts = Counter()
+    city, venue = identity(lead)
+    try:
+        directory = directory_fetch(city)
+        hosts = municipal_site_hosts(city, directory)
+        if not hosts:
+            counts["municipal_authority_unavailable"] += 1
+            return counts
+
+        def read(url):
+            if not approved_municipal_page_host(url, city, directory):
+                raise ValueError("municipal_scope")
+            final, html = page_read(url, city, directory)
+            if (not approved_municipal_page_host(final, city, directory)
+                    or urlsplit(final).query or urlsplit(final).fragment):
+                raise ValueError("municipal_scope")
+            return final, html
+
+        home, html = read("https://" + sorted(hosts)[0] + "/")
+        names = {venue} | {lead[k] for k in ("nom_du_lieu", "nom_usuel_du_lieu")
+                           if isinstance(lead.get(k), str) and 2 <= len(lead[k]) <= 180}
+        def links(url, content):
+            return {hit for name in names
+                    if (hit := exact_named_venue_page(name, url, content, city, directory))}
+        targets = links(home, html)
+        if not targets:
+            for section in _section_pages(home, html, city, directory):
+                try:
+                    final, section_html = read(section)
+                    targets.update(links(final, section_html))
+                except (OSError, ValueError, TypeError, KeyError, UnicodeError):
+                    counts["municipal_section_unavailable"] += 1
+                    return counts
+        if len(targets) != 1:
+            counts["municipal_exact_page_missing" if not targets else "municipal_exact_page_ambiguous"] += 1
+            return counts
+        final, html = read(next(iter(targets)))
+        counts["municipal_exact_page_found"] += 1
+        counts["municipal_" + inspect_official_content(lead, html)] += 1
+    except (OSError, ValueError, TypeError, KeyError, UnicodeError, OverflowError):
+        counts["municipal_research_unavailable"] += 1
+    return counts
+
+
+def inspect_with_municipal_fallback(lead, hit):
+    counts = inspect_official(lead, hit)
+    if not counts.get("page_content_concordant_unverified"):
+        counts.update(inspect_municipal(lead))
+    return counts
+
+
 def compare(leads, rows, *, inspect=None):
     targets = {}
     buckets = [dict() for _ in leads]
@@ -272,7 +333,7 @@ def probe():
             fields = reader.fieldnames or []
             if not COLUMNS.issubset(fields) or len(fields) != len(set(fields)):
                 raise ValueError("invalid_export_schema")
-            return compare(leads, reader, inspect=inspect_official)
+            return compare(leads, reader, inspect=inspect_with_municipal_fallback)
 
 
 if __name__ == "__main__":
