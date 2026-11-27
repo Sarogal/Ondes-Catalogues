@@ -3,8 +3,8 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 158,
-  "dueNameCount": 12,
+  "observedNameCount": 163,
+  "dueNameCount": 11,
   "attemptedCount": 6,
   "serviceFailure": null,
   "retryAfterKey": null,
@@ -364,6 +364,15 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "eciton": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Eciton",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "elektron": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Elektron",
@@ -468,6 +477,15 @@
       "status": "ambiguous_or_incomplete",
       "artistName": "Good Charlotte",
       "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "gotthard": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Gotthard",
+      "checkedAt": "2026-11-27",
       "source": "wikidata",
       "researchVersion": 2,
       "identityVerified": false,
@@ -794,10 +812,37 @@
       "identityVerified": false,
       "publicationAllowed": false
     },
+    "lower class brats": {
+      "status": "identity_held",
+      "artistName": "Lower Class Brats",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "luma sol": {
+      "status": "not_found",
+      "artistName": "Luma Sol",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "maluma": {
       "status": "ambiguous_or_incomplete",
       "artistName": "Maluma",
       "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "marble carrion (новосибирск)": {
+      "status": "not_found",
+      "artistName": "Marble Carrion (Новосибирск)",
+      "checkedAt": "2026-11-27",
       "source": "wikidata",
       "researchVersion": 2,
       "identityVerified": false,
@@ -981,6 +1026,15 @@
       "genreSource": "wikidata-P136",
       "artistName": "Pascow",
       "checkedAt": "2026-11-26",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "pere ubu": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Pere Ubu",
+      "checkedAt": "2026-11-27",
       "source": "wikidata",
       "researchVersion": 2,
       "identityVerified": false,

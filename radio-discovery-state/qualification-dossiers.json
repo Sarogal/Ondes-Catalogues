@@ -8288,7 +8288,7 @@
         "countryCode": "US",
         "reportedTags": "black metal,doom metal,post-punk,progressive rock,sludge,stoner rock,trash",
         "reportedHomepageHost": "somafm.com",
-        "streamSha256": "8bf124cdd7054aaaf958aca2f97f05315dff826d2c767feffc17f920c58b589c",
+        "streamSha256": "801ba0a196096a5fed117b13648033d2454e2c552512776fbef1165ee422c90c",
         "reportedFaviconSha256": "0ba2e8cf8c1480cf0bf3d3d0a8fc7612d09663702e90866fef161282dfb68283",
         "classification": "already_mapped",
         "existingGoStationId": "go-station-000097",
@@ -11179,14 +11179,15 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "4137672f099a00eba863c3aa0ad092dcf8d2821a4450f54300b48ddde561b545",
-        "observedDate": "2026-11-26",
+        "observedDate": "2026-11-27",
         "verdict": "continuous_icy_frame_indication",
         "positiveObservationDates": [
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "windowCount": 3,
         "sampleBytes": 12288,
-        "elapsedMs": 4001,
+        "elapsedMs": 4000,
         "coherentWindowCount": 3,
         "distinctWindowCount": 3,
         "frameCodec": "mpeg_layer3",
@@ -11282,14 +11283,15 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "6bc179b03dad50e0a25f295f449f464f1d8623ef454ec275512581955e034e70",
-        "observedDate": "2026-11-26",
+        "observedDate": "2026-11-27",
         "verdict": "continuous_icy_frame_indication",
         "positiveObservationDates": [
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "windowCount": 3,
         "sampleBytes": 12288,
-        "elapsedMs": 4010,
+        "elapsedMs": 4009,
         "coherentWindowCount": 3,
         "distinctWindowCount": 3,
         "frameCodec": "mpeg_layer3",
@@ -11513,15 +11515,16 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "f4f1a56e9b309dbba9ca8daabe7f6892f1a524193733940ed9c3dbce3af19e1a",
-        "observedDate": "2026-11-26",
+        "observedDate": "2026-11-27",
         "verdict": "continuous_icy_frame_indication",
         "positiveObservationDates": [
           "2026-11-25",
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "windowCount": 3,
         "sampleBytes": 12288,
-        "elapsedMs": 4806,
+        "elapsedMs": 4404,
         "coherentWindowCount": 3,
         "distinctWindowCount": 3,
         "frameCodec": "mpeg_layer3",
@@ -11690,8 +11693,8 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "ffd43159ad703308a2fa2c3bf95f8a0eb0cc20cfeb3abec28010e6fdb90744b3",
-        "observedDate": "2026-11-26",
-        "verdict": "continuous_icy_frame_indication",
+        "observedDate": "2026-11-27",
+        "verdict": "insufficient_continuity_evidence",
         "positiveObservationDates": [
           "2026-11-25",
           "2026-11-26"
@@ -11699,9 +11702,9 @@
         "windowCount": 3,
         "sampleBytes": 12288,
         "elapsedMs": 4000,
-        "coherentWindowCount": 3,
+        "coherentWindowCount": 0,
         "distinctWindowCount": 3,
-        "frameCodec": "mpeg_layer3",
+        "frameCodec": null,
         "finiteResponse": false,
         "icyHeaderPresent": true,
         "earlyEnd": false
@@ -11839,11 +11842,12 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "77c568b0dc217ce0d3a91aa837a1e0bd62a237a2df76771f6e5f48220022bc73",
-        "observedDate": "2026-11-26",
+        "observedDate": "2026-11-27",
         "verdict": "continuous_icy_frame_indication",
         "positiveObservationDates": [
           "2026-11-25",
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "windowCount": 3,
         "sampleBytes": 12288,
@@ -12278,15 +12282,16 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "728d8a9c5da25b798772fe7765b2b6b6b3b8944dd557e34f3115eeb469ba2607",
-        "observedDate": "2026-11-26",
+        "observedDate": "2026-11-27",
         "verdict": "continuous_icy_frame_indication",
         "positiveObservationDates": [
           "2026-11-25",
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "windowCount": 3,
         "sampleBytes": 12288,
-        "elapsedMs": 4001,
+        "elapsedMs": 4003,
         "coherentWindowCount": 3,
         "distinctWindowCount": 3,
         "frameCodec": "mpeg_layer3",
@@ -12325,7 +12330,7 @@
       "lastSourceObservation": {
         "date": "2026-11-27",
         "countryCode": "US",
-        "reportedTags": "christian,hard rock,christian hard rock,christianhardrock.net,chrdn",
+        "reportedTags": "chrdn,christian,christian hard rock,christianhardrock.net,hard rock",
         "reportedHomepageHost": "www.christianhardrock.net",
         "streamSha256": "3fb5100820dbce72c63887681d35b8d9e63ac9a346d7a990d49cf7c6d3d3cb63",
         "reportedFaviconSha256": "3f6ec40f87537d833c4680db925b3f755dab4dac535016cd1a4dbc1ac07090e1",

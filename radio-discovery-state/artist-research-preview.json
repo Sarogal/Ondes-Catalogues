@@ -3,11 +3,11 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 158,
-  "dueNameCount": 46,
-  "attemptedCount": 4,
+  "observedNameCount": 163,
+  "dueNameCount": 48,
+  "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "queens of the stone age",
+  "retryAfterKey": "red hot chili peppers",
   "entries": {
     "2000 fm": {
       "status": "not_found",

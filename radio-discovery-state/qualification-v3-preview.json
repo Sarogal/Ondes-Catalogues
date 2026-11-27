@@ -4340,7 +4340,7 @@
     },
     {
       "stationuuid": "6424a5b9-1401-415c-a243-6da3fc06dd47",
-      "streamSha256": "8bf124cdd7054aaaf958aca2f97f05315dff826d2c767feffc17f920c58b589c",
+      "streamSha256": "801ba0a196096a5fed117b13648033d2454e2c552512776fbef1165ee422c90c",
       "v2Decision": "already_known",
       "shadowDecision": "already_known",
       "v2BlockingReasons": [],
@@ -5161,13 +5161,13 @@
           "target_hint": 0,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 2
         },
         "pairHints": {
           "target_hint": 0,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 2
         },
         "collaborationMemberHints": {
           "target_hint": 0,
@@ -5176,14 +5176,15 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "no_usable_source": 1
+          "no_usable_source": 2
         },
         "independentObservationDays": [
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "reportedBroadcastDays": [],
-        "distinctArtistHints": 1,
-        "distinctArtistTitleHints": 1
+        "distinctArtistHints": 2,
+        "distinctArtistTitleHints": 2
       },
       "crossSourcePairHintCount": 0,
       "stationEditorialHint": false,
@@ -5216,13 +5217,13 @@
           "target_hint": 0,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 2
         },
         "pairHints": {
           "target_hint": 0,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 2
         },
         "collaborationMemberHints": {
           "target_hint": 0,
@@ -5231,14 +5232,15 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "no_usable_source": 1
+          "no_usable_source": 2
         },
         "independentObservationDays": [
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "reportedBroadcastDays": [],
-        "distinctArtistHints": 1,
-        "distinctArtistTitleHints": 1
+        "distinctArtistHints": 2,
+        "distinctArtistTitleHints": 2
       },
       "crossSourcePairHintCount": 0,
       "stationEditorialHint": false,
@@ -5290,13 +5292,13 @@
           "target_hint": 0,
           "other_hint": 0,
           "mixed_hint": 1,
-          "unclassified_hint": 0
+          "unclassified_hint": 1
         },
         "pairHints": {
           "target_hint": 0,
           "other_hint": 0,
           "mixed_hint": 1,
-          "unclassified_hint": 0
+          "unclassified_hint": 1
         },
         "collaborationMemberHints": {
           "target_hint": 0,
@@ -5305,14 +5307,16 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "musicbrainz_only": 1
+          "musicbrainz_only": 1,
+          "no_usable_source": 1
         },
         "independentObservationDays": [
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "reportedBroadcastDays": [],
-        "distinctArtistHints": 1,
-        "distinctArtistTitleHints": 1
+        "distinctArtistHints": 2,
+        "distinctArtistTitleHints": 2
       },
       "crossSourcePairHintCount": 0,
       "stationEditorialHint": false,
@@ -5390,13 +5394,13 @@
           "target_hint": 0,
           "other_hint": 0,
           "mixed_hint": 1,
-          "unclassified_hint": 0
+          "unclassified_hint": 1
         },
         "pairHints": {
           "target_hint": 0,
           "other_hint": 0,
           "mixed_hint": 1,
-          "unclassified_hint": 0
+          "unclassified_hint": 1
         },
         "collaborationMemberHints": {
           "target_hint": 0,
@@ -5405,14 +5409,16 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "musicbrainz_only": 1
+          "musicbrainz_only": 1,
+          "no_usable_source": 1
         },
         "independentObservationDays": [
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "reportedBroadcastDays": [],
-        "distinctArtistHints": 1,
-        "distinctArtistTitleHints": 1
+        "distinctArtistHints": 2,
+        "distinctArtistTitleHints": 2
       },
       "crossSourcePairHintCount": 0,
       "stationEditorialHint": false,
@@ -5471,13 +5477,13 @@
           "target_hint": 0,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 2
         },
         "pairHints": {
           "target_hint": 0,
           "other_hint": 0,
           "mixed_hint": 0,
-          "unclassified_hint": 1
+          "unclassified_hint": 2
         },
         "collaborationMemberHints": {
           "target_hint": 0,
@@ -5486,14 +5492,15 @@
           "unclassified_hint": 0
         },
         "sourceHints": {
-          "no_usable_source": 1
+          "no_usable_source": 2
         },
         "independentObservationDays": [
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "reportedBroadcastDays": [],
-        "distinctArtistHints": 1,
-        "distinctArtistTitleHints": 1
+        "distinctArtistHints": 2,
+        "distinctArtistTitleHints": 2
       },
       "crossSourcePairHintCount": 0,
       "stationEditorialHint": true,
@@ -5846,8 +5853,7 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -5902,8 +5908,7 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format",
-        "repeat_continuity_on_distinct_days"
+        "resolve_mixed_or_electronic_format"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -6035,8 +6040,7 @@
       "v2BlockingReasons": [
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
-        "confirm_station_level_programme_scope",
-        "repeat_continuity_on_distinct_days"
+        "confirm_station_level_programme_scope"
       ],
       "nextActions": [
         "resolve_remaining_station_and_technical_gates"
@@ -6136,7 +6140,8 @@
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
         "resolve_mixed_or_electronic_format",
-        "repeat_continuity_on_distinct_days"
+        "obtain_current_continuity_evidence",
+        "resolve_recent_negative_technical_observation"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -6176,7 +6181,7 @@
       "stationEditorialHint": false,
       "broadcasterStreamLink": false,
       "programmeScopeHint": false,
-      "continuityHint": true,
+      "continuityHint": false,
       "logoDecodedHint": false,
       "verifiedArtistCount": 0,
       "approved": false,
@@ -6211,8 +6216,7 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format",
-        "repeat_continuity_on_distinct_days"
+        "resolve_mixed_or_electronic_format"
       ],
       "nextActions": [
         "collect_more_programme_observations"
@@ -6451,8 +6455,7 @@
         "obtain_station_bound_editorial_evidence",
         "bind_broadcaster_to_stream",
         "confirm_station_level_programme_scope",
-        "resolve_mixed_or_electronic_format",
-        "repeat_continuity_on_distinct_days"
+        "resolve_mixed_or_electronic_format"
       ],
       "nextActions": [
         "collect_more_programme_observations"

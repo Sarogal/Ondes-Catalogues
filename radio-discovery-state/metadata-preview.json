@@ -5,7 +5,7 @@
   "approvedCount": 0,
   "attemptedCount": 6,
   "stationsWithArtistHints": 110,
-  "distinctArtistHints": 158,
+  "distinctArtistHints": 163,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -1427,7 +1427,7 @@
     {
       "stationuuid": "795e1e3f-8b5a-414a-bb28-a53164c27c71",
       "streamSha256": "792b0e94ee0667d2833b2f0125a87b57b31f43013715b16ecddd5663f1ea4dd0",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1437,6 +1437,11 @@
           "date": "2026-11-26",
           "artistHint": "Nochnoj Prospekt",
           "titleSha256": "b29e1084fd33710fcb024766850bcb88a43a4fd10c4b6457ef1269ea3a4f9b3d"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Pere Ubu",
+          "titleSha256": "813fd5b1b69bd96cbe8cb1742d96be91c308b5991babd4a459679f156555fa65"
         }
       ],
       "alternativeVersion": 0,
@@ -1445,7 +1450,7 @@
     {
       "stationuuid": "7a2996c6-adf0-4f1d-8eb9-225bc90e7a34",
       "streamSha256": "4905ac699fbd51f4a5e4f98447f27c3c812b7463246ad0796b9cf909621d9bd0",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1455,6 +1460,11 @@
           "date": "2026-11-26",
           "artistHint": "One and a half dog",
           "titleSha256": "6fba0ab78ef8adb61daeeccbffcdee56f1e31cacb79baf1672d67bc72782fad4"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Eciton",
+          "titleSha256": "8ec4451798f000665490728d81166496ad3128af894f601e9b4151f1d4a1f3d0"
         }
       ],
       "alternativeVersion": 0,
@@ -1463,7 +1473,7 @@
     {
       "stationuuid": "7bb4134f-99c9-4b72-ad72-5a03380d1270",
       "streamSha256": "5cf0d299349864b9cd81061b34baec0700d2857f2b35db479e72788cb7614ef8",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1473,6 +1483,11 @@
           "date": "2026-11-26",
           "artistHint": "Joy Division",
           "titleSha256": "e329ff55271cb3a2697bf1dd9b275d2f12ceb877a24c949d0fb7848681ceb5c7"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "The Wave Pictures",
+          "titleSha256": "3bc51062973c458d5a6f2d8d64a023246354ad7e064b1e4e009ec8a0699a3043"
         }
       ],
       "alternativeVersion": 0,
@@ -1481,7 +1496,7 @@
     {
       "stationuuid": "7e8fd698-c935-4b56-8808-d4aafcef38eb",
       "streamSha256": "d7348572336110b900839f8108e8e2d873b3f3a5889a5a99516439ab01237e87",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1491,6 +1506,11 @@
           "date": "2026-11-26",
           "artistHint": "Led Zeppelin",
           "titleSha256": "531101b46acc9a6ad3f009af465889a676e3d02aa6e7a31b87b062302078bfd5"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Gotthard",
+          "titleSha256": "7a54bec6149fd10d3697fb4628ebb46589e8256f44b9e4b97ffa7e6ce41901ad"
         }
       ],
       "alternativeVersion": 0,
@@ -1499,7 +1519,7 @@
     {
       "stationuuid": "80747ce9-cb13-44f5-9691-b68d03cdd05e",
       "streamSha256": "dd0810f5b1b406c43f3b3e40e75b90611b1f7355938e6e842a11d394a40fd65f",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1509,6 +1529,11 @@
           "date": "2026-11-26",
           "artistHint": "Behemoth",
           "titleSha256": "4c77e200dcf70dfc0576cfe778a4c13b9ff97b432dcbd2177681901b68f3c38d"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Vanden Plas",
+          "titleSha256": "7d3db3fa0cecbe0720184ea50b38c8a870014ea83eddc4a1e1a34ebf5a964009"
         }
       ],
       "alternativeVersion": 0,
@@ -1517,7 +1542,7 @@
     {
       "stationuuid": "84d6bcb6-493b-43f8-aea4-1289fccfecb8",
       "streamSha256": "04ddc354c50813f888b5121bc77ab677b815da0a7b22dcc2dcb23a3bea594f0a",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
