@@ -5,7 +5,7 @@
   "approvedCount": 0,
   "attemptedCount": 6,
   "stationsWithArtistHints": 109,
-  "distinctArtistHints": 163,
+  "distinctArtistHints": 168,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -1552,106 +1552,131 @@
       "alternativeAttempted": true
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "87ef9042-ae9a-4994-8900-026cb0dd6420",
+      "streamSha256": "3db12730b755989de338f8a94c14d866f2c843226981e74ccf6d9f185038cdb4",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "Dominum",
           "date": "2026-11-26",
           "titleSha256": "151680f179e1c68bc499afcf25f0bba2b541a2a00e1e8af376155305c8798556"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "George Benson",
+          "titleSha256": "b424e17f784ec1e97c58dcec136d87905631b3da82de55ea1d5deefcf533e50b"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "87ef9042-ae9a-4994-8900-026cb0dd6420",
-      "streamSha256": "3db12730b755989de338f8a94c14d866f2c843226981e74ccf6d9f185038cdb4",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "89345b47-66c4-45c2-a1d5-b411080d2327",
+      "streamSha256": "165a13a1226ccdef638523312bc3d52272885bc6b9d989ccd71e7406b5a8c28e",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "The Ataris",
           "date": "2026-11-26",
           "titleSha256": "15ddb7f6dfc4b3bc390daa398b26f3bc4cd5c12008edfe787a95af6b86211200"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Pulley",
+          "titleSha256": "5dc9cea15d86c96685a1d8011974774567afc295fc951812387e141957bcc151"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "89345b47-66c4-45c2-a1d5-b411080d2327",
-      "streamSha256": "165a13a1226ccdef638523312bc3d52272885bc6b9d989ccd71e7406b5a8c28e",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
-      "alternativeAttempted": true,
-      "alternativeVersion": 3,
-      "approved": false,
-      "observations": [],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
       "stationuuid": "8b2a827f-963b-4b07-80d6-5051e9e09411",
       "streamSha256": "8eb7a79f93e0d5eb2c95e29081f253ac6777ce7b55c302bc09e180f666733e47",
-      "verdict": "metadata_no_parseable_title"
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
+      "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
+      "observations": [],
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "8bfd74c2-c254-4e9b-ba58-94248ddd767e",
+      "streamSha256": "4137672f099a00eba863c3aa0ad092dcf8d2821a4450f54300b48ddde561b545",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "Lana Del Rey",
           "date": "2026-11-26",
           "titleSha256": "7ecff5c6f31e84b2515712e5a7d2ec67c77cf5692fd8f7fcd140caf0a49cf82f"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Spiewac kazdy moze",
+          "titleSha256": "12d7e83304341b6132e1f079ae93311729692531725849ce81d2faf4d761cc8e"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "8bfd74c2-c254-4e9b-ba58-94248ddd767e",
-      "streamSha256": "4137672f099a00eba863c3aa0ad092dcf8d2821a4450f54300b48ddde561b545",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "8c150c94-fe1d-4be8-93cf-fd585a300541",
+      "streamSha256": "6bc179b03dad50e0a25f295f449f464f1d8623ef454ec275512581955e034e70",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "The War on Drugs",
           "date": "2026-11-26",
           "titleSha256": "fef2dcad08cfacfaa259018c1cb0537981359ad0e2ee10538d508a6f7c61b2d8"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "James",
+          "titleSha256": "1c9effaa359e909b8775e10e01924e66b95a2b820c76ed521ff10c18012d4777"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "8c150c94-fe1d-4be8-93cf-fd585a300541",
-      "streamSha256": "6bc179b03dad50e0a25f295f449f464f1d8623ef454ec275512581955e034e70",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "8d86b9d5-0afc-4063-8b90-e0351d5aa464",
+      "streamSha256": "45d52a5c4bd204a362f3b46b5e335d87f4c9120fc7bfdfbc08a17fb169d7d0f3",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "Kayo Dot",
           "date": "2026-11-26",
           "titleSha256": "7be3d89d48934b10ccf32287f82882de53042b78bead065eda700b3b0a0865d9"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Thor",
+          "titleSha256": "789d1a94072fccb98fb28aad876f99112b068d16fd60a19c2c49a09ab32238ad"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "8d86b9d5-0afc-4063-8b90-e0351d5aa464",
-      "streamSha256": "45d52a5c4bd204a362f3b46b5e335d87f4c9120fc7bfdfbc08a17fb169d7d0f3",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "alternativeAttempted": false,

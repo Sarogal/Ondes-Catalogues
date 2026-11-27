@@ -9,8 +9,8 @@
   "checkedCount": 20,
   "everObservedStreamCount": 359,
   "sampleCounts": {
-    "audio_hint": 15,
-    "inconclusive": 5
+    "audio_hint": 18,
+    "inconclusive": 2
   },
   "hlsAttemptedCount": 0,
   "hlsDeferredCount": 0,
@@ -4213,6 +4213,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -4224,6 +4229,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -4239,6 +4249,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -4250,6 +4265,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "inconclusive",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "inconclusive",
           "route": "direct"
         }
@@ -4283,6 +4303,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -4294,6 +4319,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -4309,6 +4339,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -4320,6 +4355,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -4335,6 +4375,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -4346,6 +4391,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -4361,6 +4411,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -4372,6 +4427,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -4387,6 +4447,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -4398,6 +4463,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -4413,6 +4483,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -4424,6 +4499,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -4439,6 +4519,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -4450,6 +4535,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -4465,6 +4555,11 @@
           "date": "2026-11-26",
           "outcome": "inconclusive",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "inconclusive",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -4476,6 +4571,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }

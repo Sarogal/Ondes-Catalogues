@@ -5,7 +5,7 @@
   "approvedCount": 0,
   "publicationAllowed": false,
   "eligibleStationCount": 81,
-  "dueStationCount": 37,
+  "dueStationCount": 33,
   "attemptedCount": 4,
   "serviceFailureCount": 0,
   "stationsWithFreshHints": 2,
@@ -626,15 +626,15 @@
       "hintsFresh": true
     },
     {
-      "approved": false,
       "goStationId": "go-station-000186",
+      "lastAttemptDate": "2026-11-27",
+      "searchStatus": "no_candidate_observed",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
-      "hintsFresh": true,
-      "hintsObservedDate": "2026-11-26",
-      "lastAttemptDate": "2026-11-26",
-      "maintenanceEligible": true,
+      "approved": false,
       "publicationAllowed": false,
-      "searchStatus": "no_candidate_observed"
+      "maintenanceEligible": true,
+      "hintsFresh": true
     },
     {
       "approved": false,
@@ -659,15 +659,15 @@
       "searchStatus": "no_candidate_observed"
     },
     {
-      "approved": false,
       "goStationId": "go-station-000190",
+      "lastAttemptDate": "2026-11-27",
+      "searchStatus": "no_candidate_observed",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
-      "hintsFresh": true,
-      "hintsObservedDate": "2026-11-26",
-      "lastAttemptDate": "2026-11-26",
-      "maintenanceEligible": true,
+      "approved": false,
       "publicationAllowed": false,
-      "searchStatus": "no_candidate_observed"
+      "maintenanceEligible": true,
+      "hintsFresh": true
     },
     {
       "goStationId": "go-station-000198",
@@ -681,26 +681,26 @@
       "hintsFresh": true
     },
     {
-      "approved": false,
       "goStationId": "go-station-000199",
+      "lastAttemptDate": "2026-11-27",
+      "searchStatus": "no_candidate_observed",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
-      "hintsFresh": true,
-      "hintsObservedDate": "2026-11-26",
-      "lastAttemptDate": "2026-11-26",
-      "maintenanceEligible": true,
+      "approved": false,
       "publicationAllowed": false,
-      "searchStatus": "no_candidate_observed"
+      "maintenanceEligible": true,
+      "hintsFresh": true
     },
     {
-      "approved": false,
       "goStationId": "go-station-000202",
+      "lastAttemptDate": "2026-11-27",
+      "searchStatus": "no_candidate_observed",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
-      "hintsFresh": true,
-      "hintsObservedDate": "2026-11-26",
-      "lastAttemptDate": "2026-11-26",
-      "maintenanceEligible": true,
+      "approved": false,
       "publicationAllowed": false,
-      "searchStatus": "no_candidate_observed"
+      "maintenanceEligible": true,
+      "hintsFresh": true
     },
     {
       "approved": false,

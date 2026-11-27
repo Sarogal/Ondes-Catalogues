@@ -12223,7 +12223,7 @@
       "lastSourceObservation": {
         "date": "2026-11-27",
         "countryCode": "US",
-        "reportedTags": "chrdn,christian,christian hard rock,christianhardrock.net,hard rock",
+        "reportedTags": "christian,hard rock,christian hard rock,christianhardrock.net,chrdn",
         "reportedHomepageHost": "www.christianhardrock.net",
         "streamSha256": "3fb5100820dbce72c63887681d35b8d9e63ac9a346d7a990d49cf7c6d3d3cb63",
         "reportedFaviconSha256": "3f6ec40f87537d833c4680db925b3f755dab4dac535016cd1a4dbc1ac07090e1",
@@ -12286,11 +12286,12 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "3fb5100820dbce72c63887681d35b8d9e63ac9a346d7a990d49cf7c6d3d3cb63",
-        "observedDate": "2026-11-26",
+        "observedDate": "2026-11-27",
         "verdict": "continuous_icy_frame_indication",
         "positiveObservationDates": [
           "2026-11-25",
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "windowCount": 3,
         "sampleBytes": 12288,
@@ -12365,15 +12366,16 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "62854e8c3394f3d5e47d72673765b2c2b78ea7052acc30f133292aef5c56714d",
-        "observedDate": "2026-11-26",
+        "observedDate": "2026-11-27",
         "verdict": "continuous_icy_frame_indication",
         "positiveObservationDates": [
           "2026-11-25",
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "windowCount": 3,
         "sampleBytes": 12288,
-        "elapsedMs": 4134,
+        "elapsedMs": 4199,
         "coherentWindowCount": 3,
         "distinctWindowCount": 3,
         "frameCodec": "aac_adts",
@@ -12618,15 +12620,16 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "c73342d4af203f124e3209b0b1f19dc58d3aa6441959a24a97a50a97b0db7857",
-        "observedDate": "2026-11-26",
+        "observedDate": "2026-11-27",
         "verdict": "continuous_icy_frame_indication",
         "positiveObservationDates": [
           "2026-11-25",
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "windowCount": 3,
         "sampleBytes": 12288,
-        "elapsedMs": 4010,
+        "elapsedMs": 4011,
         "coherentWindowCount": 3,
         "distinctWindowCount": 3,
         "frameCodec": "mpeg_layer3",
@@ -12718,14 +12721,15 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "4566531dbd4311deaf0cac5b8c4b1848f5232820ffe9ead59ca6a58b9208aff2",
-        "observedDate": "2026-11-26",
+        "observedDate": "2026-11-27",
         "verdict": "continuous_icy_frame_indication",
         "positiveObservationDates": [
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "windowCount": 3,
         "sampleBytes": 12288,
-        "elapsedMs": 4002,
+        "elapsedMs": 4003,
         "coherentWindowCount": 3,
         "distinctWindowCount": 3,
         "frameCodec": "aac_adts",
@@ -13066,14 +13070,15 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "3aa0ad7bdd1da97b23357424f97f458c1ec7df16543dc61b9825a4124e84d481",
-        "observedDate": "2026-11-26",
+        "observedDate": "2026-11-27",
         "verdict": "continuous_icy_frame_indication",
         "positiveObservationDates": [
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "windowCount": 3,
         "sampleBytes": 12288,
-        "elapsedMs": 4195,
+        "elapsedMs": 4163,
         "coherentWindowCount": 3,
         "distinctWindowCount": 3,
         "frameCodec": "mpeg_layer3",
@@ -13292,15 +13297,16 @@
       "hlsEvidence": null,
       "continuityEvidence": {
         "streamSha256": "1defbb4eae2761c2f2a362187998d4d326a8480245dc7ba13cd89a4e985ea588",
-        "observedDate": "2026-11-26",
+        "observedDate": "2026-11-27",
         "verdict": "continuous_icy_frame_indication",
         "positiveObservationDates": [
           "2026-11-25",
-          "2026-11-26"
+          "2026-11-26",
+          "2026-11-27"
         ],
         "windowCount": 3,
         "sampleBytes": 12288,
-        "elapsedMs": 4000,
+        "elapsedMs": 4001,
         "coherentWindowCount": 3,
         "distinctWindowCount": 3,
         "frameCodec": "aac_adts",

@@ -3,11 +3,11 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 163,
-  "dueNameCount": 11,
-  "attemptedCount": 1,
-  "serviceFailure": "service_or_response_held",
-  "retryAfterKey": "lower class brats",
+  "observedNameCount": 168,
+  "dueNameCount": 16,
+  "attemptedCount": 6,
+  "serviceFailure": null,
+  "retryAfterKey": null,
   "entries": {
     "2000 fm": {
       "artistName": "2000 FM",
@@ -794,6 +794,15 @@
       "sourceUrl": "https://www.wikidata.org/wiki/Q2613632",
       "status": "name_hypothesis"
     },
+    "luma sol": {
+      "status": "not_found",
+      "artistName": "Luma Sol",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "maluma": {
       "artistName": "Maluma",
       "checkedAt": "2026-11-26",
@@ -802,6 +811,15 @@
       "researchVersion": 2,
       "source": "wikidata",
       "status": "ambiguous_or_incomplete"
+    },
+    "marble carrion (новосибирск)": {
+      "status": "not_found",
+      "artistName": "Marble Carrion (Новосибирск)",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
     },
     "marc freak": {
       "artistName": "Marc Freak",
@@ -874,6 +892,15 @@
       "researchVersion": 2,
       "source": "wikidata",
       "status": "ambiguous_or_incomplete"
+    },
+    "motley crue": {
+      "status": "not_found",
+      "artistName": "Motley Crue",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
     },
     "naked eyes": {
       "artistName": "Naked Eyes",
@@ -1013,6 +1040,15 @@
       "source": "wikidata",
       "status": "not_found"
     },
+    "pulley": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Pulley",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "pulso roto": {
       "artistName": "PULSO ROTO",
       "checkedAt": "2026-11-26",
@@ -1083,6 +1119,15 @@
       "source": "wikidata",
       "status": "ambiguous_or_incomplete"
     },
+    "red hot chili peppers": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Red Hot Chili Peppers",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "rock antenne": {
       "artistName": "ROCK ANTENNE",
       "checkedAt": "2026-11-26",
@@ -1100,6 +1145,15 @@
       "researchVersion": 2,
       "source": "wikidata",
       "status": "ambiguous_or_incomplete"
+    },
+    "sellout": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Sellout",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
     },
     "shadow la sombra": {
       "artistName": "Shadow La Sombra",

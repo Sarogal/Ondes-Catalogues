@@ -3,11 +3,11 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 163,
-  "dueNameCount": 48,
-  "attemptedCount": 2,
+  "observedNameCount": 168,
+  "dueNameCount": 52,
+  "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "sellout",
+  "retryAfterKey": "skinflick",
   "entries": {
     "2000 fm": {
       "artistName": "2000 FM",
