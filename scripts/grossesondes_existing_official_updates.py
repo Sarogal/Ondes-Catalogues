@@ -930,7 +930,7 @@ def daily_programme_artists(doc, html, row, today):
         visible, _ = festival_visible_content(html)
         visible = fold(visible)
         years = set(re.findall(r"\bprogramm(?:e|ation)\s+(20[2-4]\d)\b", visible))
-        if years != {str(start.year)} or SENSITIVE.search(visible):
+        if (years and years != {str(start.year)}) or SENSITIVE.search(visible):
             return []
         blocks = doc.relevant()
         day_pattern = re.compile(
@@ -938,6 +938,7 @@ def daily_programme_artists(doc, html, row, today):
             r"(\d{1,2})(?:er)?\s+(" + "|".join(OFFICIAL_MONTHS) +
             r")(?:\s+(20[2-4]\d))?")
         days, names, active = [], [], False
+        opening_year_proof = False
         for block in blocks:
             normalized = fold(block["text"])
             if block["tag"] in ("h1", "h2", "h3"):
@@ -954,6 +955,13 @@ def daily_programme_artists(doc, html, row, today):
                 active = False
             if not active or block["tag"] != "p" or normalized not in visible:
                 continue
+            # A dated opening announcement on the first day is equally
+            # explicit year proof when the programme title is navigation.
+            if days == [start]:
+                from grossesondes_official_html_edition import explicit_ranges
+                opening_year_proof |= any(
+                    begin == finish == start for _, _, begin, finish
+                    in explicit_ranges(normalized, start.year))
             # Only the explicit concert portion of a mixed daily paragraph.
             billing = re.search(
                 r"(?:^|\s)concerts?\s*:\s*([^|]{2,1200})\s*\|\s*"
@@ -970,7 +978,8 @@ def daily_programme_artists(doc, html, row, today):
                 continue
             names.extend(valid)
         expected = [start + timedelta(days=i) for i in range((end-start).days + 1)]
-        if days != expected or len(names) > 80:
+        if (days != expected or len(names) > 80
+                or not (years == {str(start.year)} or opening_year_proof)):
             return []
         return list({key(n): n for n in names}.values())
     except (KeyError, ValueError, TypeError, UnicodeError):
