@@ -1,0 +1,30 @@
+name: P'tites Ondes — découverte nationale de lieux culturels
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_cultural_directory_discovery.py'
+      - 'tests/test_ptitesondes_cultural_directory_discovery.py'
+      - '.github/workflows/ptitesondes-cultural-directory-discovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline pagination, filtering and privacy
+        env:
+          PYTHONPATH: scripts
+        run: python -m unittest discover -s tests -p 'test_ptitesondes_cultural_directory_discovery.py' -v
+      - name: Verify live national pagination (aggregate only)
+        run: python scripts/ptitesondes_cultural_directory_discovery.py
