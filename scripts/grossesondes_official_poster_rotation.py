@@ -229,7 +229,7 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
                                 linked_surfaces.append((link, content))
                         except OfficialHTTPStatusError as exc:
                             # No fallback requests after an explicit 429.
-                            if getattr(exc, "status", None) == 429 or getattr(exc, "code", None) == 429:
+                            if exc.status_code == 429:
                                 limited = True
                                 break
                         except (OSError, ValueError, TypeError, UnicodeError, KeyError):
