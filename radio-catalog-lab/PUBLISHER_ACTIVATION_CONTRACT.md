@@ -41,6 +41,29 @@ until separately authorized. A protected environment requiring approval is
 appropriate for activation; decide the unattended policy only after the
 reviewed security gates and test publication have been accepted.
 
+## Dormant role configuration
+
+The role adapter `tools/radio_daily_publisher_job_config.py` accepts only
+explicit role-specific mappings. It rejects cross-role secrets, unexpected
+repository ID, ref, reviewed commit, event, and environment. Its initial
+execution contract permits only reviewed manual laboratory dispatches; it
+does not enable that dispatch or create environments.
+
+| Role | Proposed protected environment | Explicit credential inputs |
+| --- | --- | --- |
+| Collector | none | none |
+| Signer | radio-lab-signing | RADIO_LAB_ENCRYPTED_KEY, RADIO_LAB_PASSPHRASE |
+| Publisher | radio-lab-transport | RADIO_LAB_WRITE_TOKEN |
+| Readback | radio-lab-readback | RADIO_LAB_READ_TOKEN |
+
+The public pin is independent, nonsecret configuration. Signing rejects the
+TEST key. Transport requires explicit authorization and the fixed laboratory
+ref. Readback receives no writer credential. In-process callbacks for
+pre/post-transfer verification are not proof of job isolation; the eventual
+trusted orchestration must independently enforce runner, environment, token
+scope and checkout restrictions. Do not expose real secrets to PR workflows.
+No protected environments, tokens or remote branches are created by this code.
+
 ## Remaining proof
 
 Local push tests do not establish GitHub permissions, branch protection,
