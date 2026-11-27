@@ -342,6 +342,46 @@ class IndependentUnknownVenuePublisherTests(unittest.TestCase):
                 self.assertEqual(report["stateCounts"],
                                  {"held_source_or_site_unverified": 1}, report)
 
+    def test_openagenda_pages_do_not_consume_own_website_review_budget(self):
+        from automation.concerts import openagenda_new_site_proposals as oa_producer
+        registry = lead()
+        template = registry["items"]["synthetic"]
+        # Four canonical OpenAgenda events would otherwise occupy the full
+        # four-candidate budget ahead of the independent venue's own page.
+        for i in range(4):
+            entry = copy.deepcopy(template)
+            url = "https://openagenda.com/unknown-agenda/events/concert-" + str(i)
+            entry["candidate"].update(
+                candidateId="oa:synthetic-" + str(i),
+                source="agenda_officiel_openagenda",
+                sourcePage=url, sourceUrl=url, eventDetailUrl=url,
+                openAgendaUid=123456, openAgendaEventUid=100000 + i,
+                date="2026-11-22")
+            registry["items"]["oa-" + str(i)] = entry
+        base = test_catalogue()
+        self.assertEqual(len(oa_producer.eligible(registry, base, TODAY)), 4)
+        self.assertEqual([row[1] for row in producer.eligible(registry, base, TODAY)],
+                         [URL])
+        fetch, seen = fetch_for()
+        result, report = producer.build(registry, base, before(), TODAY,
+                                        limit=4, fetch=fetch)
+        self.assertEqual(report["examined"], 1)
+        self.assertEqual(len(result["approvals"]), 1, report)
+        self.assertEqual(len(result["venueApprovals"]), 1)
+        self.assertFalse(any(urlsplit(url).hostname == "openagenda.com"
+                             for url in seen))
+
+    def test_new_site_routing_uses_exact_url_not_claimed_source_label(self):
+        registry = lead()
+        entry = registry["items"]["synthetic"]
+        # A label is not authority and must not exclude a new official site.
+        entry["candidate"]["source"] = "agenda_officiel_openagenda"
+        self.assertEqual(len(producer.eligible(registry, test_catalogue(), TODAY)), 1)
+        url = "https://openagenda.com/unknown-agenda/events/example"
+        entry["candidate"].update(source="unknown",
+                                  sourcePage=url, sourceUrl=url, eventDetailUrl=url)
+        self.assertEqual(producer.eligible(registry, test_catalogue(), TODAY), [])
+
     def test_already_known_sites_and_unstable_source_are_quarantined(self):
         no_stability, _ = producer.build(
             lead(observations=1), test_catalogue(), before(),
