@@ -16,7 +16,8 @@ from radio_daily_github_transfer_contract import DESTINATION
 from radio_daily_github_json_reader import GitHubJSONReader
 from radio_daily_github_readback import GitHubReadback
 from radio_daily_git_lab_reader import verify_snapshot_entries
-from radio_daily_publication_simulator import inventory
+from radio_daily_publication_simulator import inventory, check_logo
+from radio_daily_logo_plan import EXTENSIONS
 from radio_daily_deployment_verify import verify_public_snapshot, mirror_url, ROOT, POINTER_URL
 from radio_daily_public_https_reader import PublicHTTPSReader
 from radio_daily_state_snapshot import bounded, transition
@@ -66,6 +67,18 @@ def main():
         lambda path,length:selected["body"],day=day,anchor=anchor)
     if migration["selectedSequence"]!=seq+1 or migration["selectedSha256"]!=receipt["sha256"] or head()!=commit:
         raise ValueError("independent successor state mismatch")
+    # Seed missing new immutable objects in the same verified state artifact.
+    cache=a.next_state/"artwork-cache"/"sha256"
+    for logo,_ in inventory(strict_json(selected["body"])):
+        name=logo["sha256"]+"."+EXTENSIONS[logo["mime_type"]]
+        previous=a.state/"artwork-cache"/"sha256"/name
+        if previous.is_file() and not previous.is_symlink():
+            check_logo(logo,previous.read_bytes())
+            continue
+        data=files["objects/sha256/"+name]
+        check_logo(logo,data)
+        cache.mkdir(parents=True,exist_ok=True)
+        (cache/name).write_bytes(data)
     # Do not call it a recorded deployment until the later deployment job.
     accepted.update(simulated=False,remoteReadbackVerified=True,
         distribution="github-raw",legacyOriginalUrlsVerified=False,parent=receipt["parent"])
