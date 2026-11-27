@@ -11,9 +11,10 @@ from radio_daily_github_readback import GitHubReadback
 from radio_daily_public_https_reader import PublicHTTPSReader, deployment_status, API
 from radio_daily_deployment_verify import verify_public_snapshot, ROOT, POINTER_URL
 from radio_daily_publication_simulator import inventory
+from radio_daily_release_context import prepare
 
 
-def verify_remote(*, reader, deployment_id, environment, expected_commit,
+def _verify_remote_snapshot(*, reader, deployment_id, environment, expected_commit,
                   bootstrap_sha, expected_sha, expected_sequence, public_key, key_id):
     if not isinstance(reader, GitHubReadback):
         raise ValueError("independent GitHub reader required")
@@ -43,5 +44,41 @@ def verify_remote(*, reader, deployment_id, environment, expected_commit,
         expected_ref=REF.removeprefix("refs/heads/"), environment=environment)
     accepted = verify_public_snapshot(selected, head, fetch=PublicHTTPSReader(resources),
         expected_commit=expected_commit, public_key=public_key, key_id=key_id)
-    return dict(accepted, simulated=False, deploymentId=status["deploymentId"],
-                remoteReadbackVerified=True, publicationAllowed=False)
+    return selected, dict(accepted, simulated=False, deploymentId=status["deploymentId"],
+                          remoteReadbackVerified=True, publicationAllowed=False)
+
+
+def verify_remote(*, reader, deployment_id, environment, expected_commit,
+                  bootstrap_sha, expected_sha, expected_sequence, public_key, key_id):
+    _, accepted = _verify_remote_snapshot(reader=reader, deployment_id=deployment_id,
+        environment=environment, expected_commit=expected_commit,
+        bootstrap_sha=bootstrap_sha, expected_sha=expected_sha,
+        expected_sequence=expected_sequence, public_key=public_key, key_id=key_id)
+    return accepted
+
+
+def prepare_remote(*, reader, deployment_id, environment, expected_commit,
+                   bootstrap_sha, expected_sha, expected_sequence, public_key, key_id,
+                   day, state):
+    """Prepare migrated evidence only after exact remote and public acceptance.
+
+    No state is written here. The caller must atomically persist the returned
+    context and reports against the retained predecessor before advancing.
+    Reuses the independently verified bytes, never a second unpinned download.
+    """
+    selected, accepted = _verify_remote_snapshot(reader=reader, deployment_id=deployment_id,
+        environment=environment, expected_commit=expected_commit,
+        bootstrap_sha=bootstrap_sha, expected_sha=expected_sha,
+        expected_sequence=expected_sequence, public_key=public_key, key_id=key_id)
+    raw, report, migrated, context = prepare(selected["pointer"],
+        lambda path, length: selected["body"], day=day, state=state,
+        prior_pointer=selected["anchor_pointer"], prior_body=selected["anchor_body"],
+        expected_sha=expected_sha, expected_sequence=expected_sequence,
+        public_key=public_key, key_id=key_id)
+    if (context["selectedSha256"] != accepted["selectedSha256"]
+            or context["selectedSequence"] != accepted["selectedSequence"]
+            or reader.read_head(DESTINATION, REF) != expected_commit):
+        raise ValueError("remote acceptance anchor changed during migration")
+    return raw, report, migrated, dict(context, gitCommit=expected_commit,
+        deploymentId=accepted["deploymentId"], remoteReadbackVerified=True,
+        deploymentVerified=True, simulated=False)
