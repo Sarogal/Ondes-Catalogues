@@ -308,6 +308,44 @@ class UnlistedExistingVenueTests(unittest.TestCase):
             dynamic.validate(signed, venues, artists, TODAY,
                 fetch=fake_fetch({"primary": body(), "osm": osm(website="https://autre.fr")}))
 
+    def test_address_replay_diagnostics_are_fixed_and_do_not_change_refusal(self):
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        node = next(dynamic.discover.read_ld(page(EVENT)))
+        node["location"].pop("address")
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+        exact = " ".join(venue[k] for k in ("address", "postalCode", "city"))
+
+        def body(n, address, title=None):
+            return ("<main><h1>" + (title or n["name"]) + "</h1>"
+                    "<p>5 mars 2027</p><script type='application/ld+json'>"
+                    + json.dumps(n) + "</script><p>" + venue["name"]
+                    + "<br/>" + address + "</p></main>")
+
+        self.assertTrue(dynamic.validate(signed, venues, artists, TODAY,
+            fetch=fake_fetch({"primary": body(node, exact)})))
+        wrong = copy.deepcopy(node)
+        wrong["location"]["postalCode"] = "75001"
+        cases = (
+            (body(node, "12 rue Autre 31520 " + venue["city"]),
+             "visible_address_conflict"),
+            (body(node, "Adresse non renseignée"),
+             "visible_named_address_not_found"),
+            (body(node, exact, "Autre concert"), "visible_heading_mismatch"),
+            (body(wrong, exact), "structured_address_conflict"),
+        )
+        for html, code in cases:
+            with self.subTest(code=code), self.assertRaises(dynamic.AddressReplayHeld) as caught:
+                dynamic.validate(signed, venues, artists, TODAY,
+                                 fetch=fake_fetch({"primary": html}))
+            self.assertEqual(str(caught.exception),
+                "Unlisted official source: no unique exact first-party MusicEvent: venue_address_missing")
+            self.assertEqual(caught.exception.address_replay_diagnostics, (code,))
+
     def test_missing_address_replay_accepts_explicit_internal_room_at_exact_parent_address(self):
         signed = signed_approval()
         proof = signed["officialEvidence"][0]
