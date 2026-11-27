@@ -1,6 +1,6 @@
 import unittest
 from urllib.parse import parse_qs, urlsplit
-from ptitesondes_cultural_directory_discovery import scan, PAGE_SIZE
+from ptitesondes_cultural_directory_discovery import scan, PAGE_SIZE, format_counts
 
 def fixture(i):
     return {"commune": "Les Bois", "nom_du_lieu": f"Ludothèque {i}",
@@ -26,6 +26,33 @@ class CulturalDiscoveryTests(unittest.TestCase):
     def test_incomplete_response_cannot_advance_cursor(self):
         with self.assertRaises(ValueError):
             scan(fetch=lambda _: {"meta": {"total": 100}, "data": [fixture(1)]})
+
+    def test_cursor_recovers_only_if_directory_shrank(self):
+        calls = []
+        def get(url):
+            n = int(parse_qs(urlsplit(url).query)["page"][0])
+            calls.append(n)
+            return {"meta": {"total": 1}, "data": [fixture(1)] if n == 1 else []}
+        result = scan(17, fetch=get)
+        self.assertEqual(calls, [17, 1])
+        self.assertEqual(result["next_page"], 1)
+        self.assertEqual(len(result["records"]), 1)
+
+    def test_in_range_bad_page_is_not_skipped(self):
+        def get(url):
+            n = int(parse_qs(urlsplit(url).query)["page"][0])
+            return {"meta": {"total": 100},
+                    "data": [fixture(i) for i in range(20)] if n == 1 else []}
+        with self.assertRaises(ValueError):
+            scan(3, fetch=get)
+
+    def test_format_diagnostics_only_emit_shapes(self):
+        counts = format_counts([{"site_internet_et_autres_liens": '["https://secret.example"]',
+                                 "accessible_au_public": "oui", "code_commune": "01234"},
+                                {"accessible_au_public": True, "code_commune": None}])
+        self.assertEqual(counts["site_internet_et_autres_liens"], {"json_list_text": 1, "missing": 1})
+        self.assertEqual(counts["accessible_au_public"], {"boolean_text": 1, "boolean": 1})
+        self.assertNotIn("secret", str(counts))
 
     def test_generic_culture_not_assumed_family_relevant(self):
         row = dict(fixture(1), nom_du_lieu="Musée municipal")

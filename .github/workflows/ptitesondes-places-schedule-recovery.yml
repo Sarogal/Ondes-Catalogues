@@ -10,6 +10,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/ptitesondes_open_world_permanent_place_*.py'
+      - 'scripts/ptitesondes_cultural_directory_discovery.py'
       - 'monitoring/ptitesondes_places_schedule_recovery.py'
       - '.github/workflows/ptitesondes-places-schedule-recovery.yml'
   workflow_run:
