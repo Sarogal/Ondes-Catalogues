@@ -68,6 +68,23 @@ class IGNPOIProbeTests(unittest.TestCase):
         self.assertEqual(d["poi_official_alias_conflict"], 1)
         self.assertIsNone(exact_poi_point(row, doc("Ludothèque B", 2)))
 
+    def test_contextual_query_never_weakens_exact_result_identity(self):
+        from collections import Counter
+        row = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois",
+               "code_commune": "01234", "code_postal": "01230"}
+        calls = []
+        def query(name, code):
+            calls.append((name, code))
+            return {"type": "FeatureCollection", "features": [{
+                "type": "Feature", "properties": {"name": "Ludothèque B",
+                 "city": "Les Bois", "citycode": code, "postcode": "01230",
+                 "category": ["culture"], "score": 0.99},
+                "geometry": {"type": "Point", "coordinates": [2, 48]}}]}
+        d = Counter()
+        self.assertIsNone(query_official_names(row, query, d, contextual=True)[0])
+        self.assertEqual(calls, [("Ludothèque A Les Bois", "01234")])
+        self.assertEqual(d["poi_exact_name_missing"], 1)
+
     def test_probe_selects_discovered_identity(self):
         row = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois", "code_commune": "01234"}
         seen = []
