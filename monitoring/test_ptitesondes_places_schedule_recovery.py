@@ -60,6 +60,11 @@ class PlaceScheduleRecoveryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             contains_revisions(c, [a], lambda *_: {"status": "unknown"})
 
+    def test_cultural_qualification_dependencies_are_tracked(self):
+        for path in ["scripts/ptitesondes_cultural_directory_identity.py","scripts/ptitesondes_national_cultural_directory_probe.py","scripts/ptitesondes_dila_municipal_domains.py","scripts/ptitesondes_unlisted_source_safe_recheck.py","scripts/ptitesondes_generic_venue_ign_corroboration.py"]:
+            self.assertIn(path, RESEARCH_PATHS)
+        self.assertNotIn("scripts/ptitesondes_ign_poi_probe.py", RESEARCH_PATHS)
+
     def test_revision_floor_only_reads_research_paths(self):
         read = []
         def commits(path):
