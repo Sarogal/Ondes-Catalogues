@@ -257,6 +257,7 @@ def build(registry, catalogue, before, today, *, slot=0,
     signed_sites = {x.get("venue", {}).get("id")
                     for x in output["venueApprovals"] if isinstance(x, dict)}
     states, reasons, checks = Counter(), Counter(), []
+    geo_diagnostics = Counter()
     for day, url, candidate in chosen:
         name = str(candidate.get("candidateId", ""))[:120]
         row = {"candidateId": name, "date": day}
@@ -285,6 +286,20 @@ def build(registry, catalogue, before, today, *, slot=0,
             reason = re.sub(r"https?://\S+", "[url]", " ".join(reason.split()))[:180]
             row["reason"] = reason
             reasons[reason] += 1
+            # Diagnostics only; never modify the approval decision. Follow
+            # the bounded explicit cause chain through producer wrappers.
+            cause = ex
+            for _ in range(4):
+                code = getattr(cause, "code", None)
+                if isinstance(code, str) and code in (
+                        set(geo_producer.named_geo.GovernmentAddressHeld.CODES)
+                        | geo_producer.named_geo.NamedFeatureHeld.CODES):
+                    row["geoDiagnostic"] = code
+                    geo_diagnostics[code] += 1
+                    break
+                cause = getattr(cause, "__cause__", None)
+                if cause is None:
+                    break
             states[row["state"]] += 1
         checks.append(row)
     return output, {
@@ -292,6 +307,7 @@ def build(registry, catalogue, before, today, *, slot=0,
         "eligibleUnknownSites": len(available), "examined": len(chosen),
         "stateCounts": dict(sorted(states.items())),
         "candidateChecks": checks,
+        "geoDiagnostics": dict(sorted(geo_diagnostics.items())),
         "rejectionReasons": dict(sorted(reasons.items())),
         "privateApprovalApplied": False,
         "publicationAllowed": False,
