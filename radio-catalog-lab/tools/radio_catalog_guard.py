@@ -47,8 +47,25 @@ def safe_url(value, https_only=False):
         return False
 
 
-def validate_catalog(document, *, mode="staging", previous=None):
+def validate_catalog(document, *, mode="staging", previous=None, authenticated_legacy=False, legacy_reference=None):
+    """The default publish policy remains strict.
+
+    authenticated_legacy is reserved for the laboratory verifier after
+    cryptographic authentication of the complete predecessor. It waives
+    only approval and review timestamp for an exactly unchanged legacy row.
+    The CLI never enables it.
+    """
     issues = []
+    if authenticated_legacy is not False and authenticated_legacy is not True:
+        return ["invalid authenticated legacy option"]
+    if authenticated_legacy and (mode != "publish" or not isinstance(previous, dict)):
+        return ["authenticated legacy requires a verified predecessor"]
+    if legacy_reference is not None and not authenticated_legacy:
+        return ["legacy evidence requires authenticated predecessor"]
+    source = previous if legacy_reference is None else legacy_reference
+    legacy = {row["go_station_id"]: row for row in source["stations"]
+              if row.get("editorial", {}).get("admission_state") == "legacy_preserved"
+              } if authenticated_legacy else {}
     if mode not in ("staging", "publish"):
         return ["mode must be staging or publish"]
     if not isinstance(document, dict):
@@ -165,19 +182,20 @@ def validate_catalog(document, *, mode="staging", previous=None):
         decision = editorial_fields.get("admission_state")
         if decision not in ("approved", "legacy_preserved"):
             issues.append(prefix + " invalid editorial approval state")
+        preserved = decision == "legacy_preserved" and legacy.get(goid) == station
         if mode == "publish" and state in ("quarantined", "retired"):
-            if decision != "approved":
+            if decision != "approved" and not preserved:
                 issues.append(prefix + " unavailable station not editorially approved")
-            if not isinstance(editorial_fields.get("reviewed_at"), str) or not editorial_fields["reviewed_at"].strip():
+            if not preserved and (not isinstance(editorial_fields.get("reviewed_at"), str) or not editorial_fields["reviewed_at"].strip()):
                 issues.append(prefix + " unavailable station missing editorial review timestamp")
             if not isinstance(status.get("reason_code"), str) or not status["reason_code"].strip():
                 issues.append(prefix + " unavailable station missing status reason")
             if not isinstance(status.get("changed_at"), str) or not status["changed_at"].strip():
                 issues.append(prefix + " unavailable station missing change timestamp")
         if mode == "publish" and state == "active":
-            if decision != "approved":
+            if decision != "approved" and not preserved:
                 issues.append(prefix + " active station not approved for publication")
-            if not isinstance(editorial_fields.get("reviewed_at"), str) or not editorial_fields["reviewed_at"].strip():
+            if not preserved and (not isinstance(editorial_fields.get("reviewed_at"), str) or not editorial_fields["reviewed_at"].strip()):
                 issues.append(prefix + " missing editorial review timestamp")
             if verified < 1:
                 issues.append(prefix + " active station has no verified stream")

@@ -1,0 +1,108 @@
+import unittest
+from radio_daily_programme_preview import build
+from radio_daily_artist_research import build as music
+from radio_daily_wikidata_preview import build as wiki
+from radio_daily_qualification_dossiers import safe_digest
+from test_radio_daily_artist_research import report,service,MBID,UID,DAY
+from test_radio_daily_wikidata_preview import request
+from test_radio_daily_programme_preview import decisions
+from test_radio_daily_recording_preview import fixture,request as recording_request
+from radio_daily_recording_preview import build as recording
+
+class CrossSourceTests(unittest.TestCase):
+    def test_wikidata_fallback(self):
+        m=report()
+        r=music(m)
+        w=wiki(m,limit=1,request=request)
+        row=build(m,r,decisions(m),wikidata=w)["records"][0]
+        self.assertEqual(row["artistHintCounts"]["target_hint"],1)
+        self.assertEqual(row["sourceHintCounts"],{"wikidata_only":1})
+        self.assertFalse(row["approved"])
+    def test_linked_identity(self):
+        m=report()
+        w=wiki(m,limit=1,request=request)
+        row=build(m,music(m,limit=1,request=service),decisions(m),wikidata=w)["records"][0]
+        self.assertEqual(row["sourceHintCounts"],{"linked_sources":1})
+        self.assertEqual(row["artistHintCounts"]["mixed_hint"],1)
+    def test_conflict_and_unlinked(self):
+        m=report()
+        r=music(m,limit=1,request=service)
+        w=wiki(m,limit=1,request=request)
+        for links,reason in (([UID],"identity_conflict"),([],"cross_source_identity_unlinked")):
+            w["entries"]["iron band"]["musicbrainzIds"]=links
+            row=build(m,r,decisions(m),wikidata=w)["records"][0]
+            self.assertEqual(row["sourceHintCounts"],{reason:1})
+            self.assertEqual(row["artistHintCounts"]["unclassified_hint"],1)
+    def test_genre_conflict(self):
+        m=report()
+        r=music(m,limit=1,request=service)
+        r["entries"]["iron band"]["genres"]=["pop"]
+        w=wiki(m,limit=1,request=request)
+        row=build(m,r,decisions(m),wikidata=w)["records"][0]
+        self.assertEqual(row["sourceHintCounts"],{"genre_conflict":1})
+    def test_recording_link_and_conflict(self):
+        m,r,t=fixture()
+        cr=recording(m,r,t,limit=1,request=recording_request)
+        w=wiki(m,limit=1,request=request)
+        row=build(m,music(m),decisions(m),wikidata=w,recordings=cr)["records"][0]
+        self.assertEqual(row["sourceHintCounts"],{"recording_wikidata":1})
+        next(iter(cr["entries"].values()))["artistMbids"]=[UID]
+        row=build(m,music(m),decisions(m),wikidata=w,recordings=cr)["records"][0]
+        self.assertEqual(row["sourceHintCounts"],{"identity_conflict":1})
+    def test_credit_genres_without_name_lookup_and_conflicts(self):
+        m,r,t=fixture()
+        def artist(mid, params):
+            return {"id":mid,"name":"Iron Band","genres":[{"name":"heavy metal","count":1}]}
+        cr=recording(m,r,t,limit=1,request=recording_request,artist_request=artist)
+        row=build(m,music(m),decisions(m),recordings=cr)["records"][0]
+        self.assertEqual(row["sourceHintCounts"],{"recording_genre_hint":1})
+        self.assertEqual(row["artistHintCounts"]["target_hint"],1)
+        self.assertEqual(row["verifiedArtistCount"],0)
+        w=wiki(m,limit=1,request=request)
+        row=build(m,music(m),decisions(m),wikidata=w,recordings=cr)["records"][0]
+        self.assertEqual(row["sourceHintCounts"],{"recording_wikidata":1})
+        w["entries"]["iron band"]["genresById"]={"Q1":"pop"}
+        row=build(m,music(m),decisions(m),wikidata=w,recordings=cr)["records"][0]
+        self.assertEqual(row["sourceHintCounts"],{"genre_conflict":1})
+        next(iter(cr["entries"].values()))["creditGenreEvidence"]["mbid"]=UID
+        with self.assertRaises(ValueError):
+            build(m,music(m),decisions(m),recordings=cr)
+
+    def test_collaboration_individual_and_pair_buckets(self):
+        from test_radio_daily_recording_preview import recording as recording_row
+        m,r,t=fixture()
+        name="Iron Band, Other Band"
+        m["records"][0]["observations"][0]["artistHint"]=t[0]["artistHint"]=name
+        row=recording_row()
+        row["artist-credit"][0]["joinphrase"]=", "
+        row["artist-credit"].append({"name":"Other Band","artist":{"id":UID}})
+        def search(params):
+            return {"count":1,"recordings":[row]}
+        def artist(mid,params):
+            return {"id":mid,"name":"Canonical Artist","genres":[{"name":"heavy metal" if mid==MBID else "pop","count":1}]}
+        cr=recording(m,r,t,limit=1,request=search,artist_request=artist)
+        partial=build(m,music(m),decisions(m),recordings=cr)["records"][0]
+        self.assertEqual(partial["sourceHintCounts"],{"collaboration_partial":1})
+        self.assertEqual(partial["collaborationMemberHintCounts"]["target_hint"],1)
+        self.assertEqual(partial["collaborationMemberHintCounts"]["unclassified_hint"],1)
+        self.assertEqual(partial["artistTitleHintCounts"]["unclassified_hint"],1)
+        cr=recording(m,r,[],prior=cr,limit=1,artist_request=artist)
+        full=build(m,music(m),decisions(m),recordings=cr)["records"][0]
+        self.assertEqual(full["sourceHintCounts"],{"collaboration_credit_genres":1})
+        self.assertEqual(full["artistTitleHintCounts"]["mixed_hint"],1)
+        self.assertEqual(full["artistHintCounts"]["unclassified_hint"],1)
+        self.assertEqual(full["collaborationMemberHintCounts"]["target_hint"],1)
+        self.assertEqual(full["collaborationMemberHintCounts"]["other_hint"],1)
+        self.assertEqual(full["verifiedArtistCount"],0)
+
+    def test_stale_wikidata_and_bad_provenance(self):
+        m=report()
+        w=wiki(m,limit=1,request=request)
+        w["entries"]["iron band"]["checkedAt"]="2026-10-20"
+        row=build(m,music(m),decisions(m),wikidata=w)["records"][0]
+        self.assertEqual(row["artistHintCounts"]["unclassified_hint"],1)
+        w["entries"]["iron band"]["sourceUrl"]="https://example.org"
+        with self.assertRaises(ValueError):
+            build(m,music(m),decisions(m),wikidata=w)
+if __name__=="__main__":
+    unittest.main()

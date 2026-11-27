@@ -1,0 +1,56 @@
+name: Grosses Ondes — real successor history preflight
+on:
+  push:
+    branches: [feature/radio-daily-discovery-lab-20261120]
+    paths:
+      - .github/workflows/radio-lab-successor-preflight.yml
+permissions:
+  contents: read
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
+      - uses: actions/checkout@v4
+        with:
+          ref: state/go-radio-autonomous
+          path: go-autonomous-state
+          persist-credentials: false
+      - name: Restore actual signed history and compare every immutable object
+        env:
+          RADIO_LAB_PUBLIC_KEY: ${{ vars.RADIO_LAB_PUBLIC_KEY }}
+          RADIO_LAB_KEY_ID: ${{ vars.RADIO_LAB_KEY_ID }}
+          RADIO_LAB_JOB_TOKEN: ${{ github.token }}
+        run: |
+          PYTHONPATH=radio-catalog-lab/tools python - <<'PY'
+          import os,tempfile
+          from pathlib import Path
+          from radio_lab_successor_sign import accepted_state,restore_history
+          from radio_daily_git_lab_reader import verify_snapshot_entries
+          from radio_daily_git_lab_transport import REF,snapshot
+          from radio_daily_github_transfer_contract import DESTINATION
+          from radio_daily_github_json_reader import GitHubJSONReader
+          from radio_daily_github_readback import GitHubReadback
+          from radio_daily_v9_generator import BASELINE
+          pointer,body,context,anchor=accepted_state(Path("go-autonomous-state/radio-discovery-state"))
+          reader=GitHubReadback(GitHubJSONReader(token=os.environ.pop("RADIO_LAB_JOB_TOKEN"),max_seconds=600))
+          def head(): return reader.read_head(DESTINATION,REF)
+          commit=context["gitCommit"]
+          files=reader.read_tree(DESTINATION,commit)
+          selected=verify_snapshot_entries({p:len(b) for p,b in files.items()},files.__getitem__,head,
+              expected_commit=commit,bootstrap_sha=BASELINE,**anchor)
+          seq=anchor["expected_sequence"]
+          assert selected["sequence"]==seq and selected["pointer"]==pointer and selected["body"]==body
+          with tempfile.TemporaryDirectory() as temp:
+              store=restore_history(files,Path(temp)/"history.sqlite",seq)
+              assert snapshot(store,seq)==files
+          assert head()==commit
+          print("RADIO_REAL_HISTORY_RESTORED",seq,len(files),commit)
+          PY

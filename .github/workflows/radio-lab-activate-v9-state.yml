@@ -1,0 +1,79 @@
+name: Grosses Ondes — activate verified V9 state
+
+on:
+  push:
+    branches: [feature/radio-daily-discovery-lab-20261120]
+    paths:
+      - .github/workflows/radio-lab-activate-v9-state.yml
+      - radio-catalog-lab/tools/radio_lab_activate_v9_state.py
+
+permissions:
+  contents: read
+concurrency:
+  group: radio-lab-v9-state-activation
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
+      - uses: actions/checkout@v4
+        with:
+          ref: state/go-radio-autonomous
+          path: go-autonomous-state
+      - name: Independently authenticate actual deployed V9 and migrate evidence
+        shell: bash
+        env:
+          RADIO_LAB_PUBLIC_KEY: ${{ vars.RADIO_LAB_PUBLIC_KEY }}
+          RADIO_LAB_KEY_ID: ${{ vars.RADIO_LAB_KEY_ID }}
+          RADIO_LAB_JOB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          state=go-autonomous-state/radio-discovery-state
+          # A successful migration is never repeated against the V8 bootstrap.
+          if python - "$state/release-anchor.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          p=json.loads(Path(sys.argv[1]).read_bytes())
+          sys.exit(0 if p.get("release_sequence")==8 else 1)
+          PY
+          then
+            base=https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/feature/go-radio-test-v2-isolated-20261123/grossesondes/radio-test-v2
+            curl --fail --silent --show-error --max-time 45 --max-filesize 16384 "$base/current.json" -o "$RUNNER_TEMP/test-pointer.json"
+            curl --fail --silent --show-error --max-time 45 --max-filesize 2000000 "$base/releases/f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40.json" -o "$RUNNER_TEMP/test-body.json"
+            cp -a "$state" "$RUNNER_TEMP/prior-state"
+            python radio-catalog-lab/tools/radio_lab_activate_v9_state.py \
+              --previous "$RUNNER_TEMP/prior-state" --output "$RUNNER_TEMP/next-state" \
+              --test-body "$RUNNER_TEMP/test-body.json" --test-pointer "$RUNNER_TEMP/test-pointer.json"
+          else
+            echo "V8 bootstrap no longer current: no mutation"
+          fi
+      - name: Commit exact migrated snapshot to isolated autonomous state
+        shell: bash
+        run: |
+          set -euo pipefail
+          next="$RUNNER_TEMP/next-state"
+          if [[ ! -d "$next" ]]; then exit 0; fi
+          cd go-autonomous-state
+          state=radio-discovery-state
+          test "$(git branch --show-current)" = state/go-radio-autonomous
+          # Never retain stale baseline-bound decisions. Keep the existing
+          # validated artwork cache and unbound discovery retry queue.
+          find "$state" -maxdepth 1 -type f -name '*.json' ! -name discovery-retry.json -delete
+          cp "$next"/*.json "$state/"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "$state"
+          git commit -m "state(radio-autonomous): adopt verified real V9"
+          git push origin HEAD:refs/heads/state/go-radio-autonomous

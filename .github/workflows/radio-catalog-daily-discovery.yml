@@ -1,0 +1,1270 @@
+name: Grosses Ondes — Radio Browser daily discovery preview
+
+on:
+  push:
+    branches:
+      - feature/radio-daily-discovery-lab-20261120
+    paths:
+      - "radio-catalog-lab/tools/radio_daily_discovery.py"
+      - "radio-catalog-lab/tools/radio_daily_discovery_retry.py"
+      - "radio-catalog-lab/tools/test_radio_daily_discovery_retry.py"
+      - "radio-catalog-lab/tools/test_radio_daily_discovery.py"
+      - "radio-catalog-lab/tools/radio_daily_candidate_ledger.py"
+      - "radio-catalog-lab/tools/test_radio_daily_candidate_ledger.py"
+      - "radio-catalog-lab/tools/radio_catalog_daily_candidate_reconcile.py"
+      - "radio-catalog-lab/tools/test_radio_catalog_daily_candidate_reconcile.py"
+      - "radio-catalog-lab/tools/radio_stream_technical_probe.py"
+      - "radio-catalog-lab/tools/test_radio_stream_technical_probe.py"
+      - "radio-catalog-lab/tools/radio_stream_playlist_preview.py"
+      - "radio-catalog-lab/tools/test_radio_stream_playlist_preview.py"
+      - "radio-catalog-lab/tools/test_radio_stream_socket_integration.py"
+      - "radio-catalog-lab/tools/radio_stream_recheck_ledger.py"
+      - "radio-catalog-lab/tools/test_radio_stream_recheck_ledger.py"
+      - "radio-catalog-lab/tools/radio_daily_logo_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_logo_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_qualification_dossiers.py"
+      - "radio-catalog-lab/tools/test_radio_daily_qualification_dossiers.py"
+      - "radio-catalog-lab/tools/radio_daily_editorial_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_editorial_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_continuity_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_continuity_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_hls_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_hls_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_decision_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_decision_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_qualification_v3_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_qualification_v3_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_maintenance_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_maintenance_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_repair_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_repair_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_repair_confirmation.py"
+      - "radio-catalog-lab/tools/test_radio_daily_repair_confirmation.py"
+      - "radio-catalog-lab/tools/radio_daily_repair_release_validation.py"
+      - "radio-catalog-lab/tools/test_radio_daily_repair_release_validation.py"
+      - "radio-catalog-lab/tools/radio_daily_repair_plan.py"
+      - "radio-catalog-lab/tools/test_radio_daily_repair_plan.py"
+      - "radio-catalog-lab/tools/radio_daily_status_release_validation.py"
+      - "radio-catalog-lab/tools/test_radio_daily_status_release_validation.py"
+      - "radio-catalog-lab/tools/radio_daily_status_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_status_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_logo_maintenance.py"
+      - "radio-catalog-lab/tools/test_radio_daily_logo_maintenance.py"
+      - "radio-catalog-lab/tools/radio_daily_missing_logo.py"
+      - "radio-catalog-lab/tools/test_radio_daily_missing_logo.py"
+      - "radio-catalog-lab/tools/radio_daily_logo_plan.py"
+      - "radio-catalog-lab/tools/test_radio_daily_logo_plan.py"
+      - "radio-catalog-lab/tools/radio_daily_merge_release_validation.py"
+      - "radio-catalog-lab/tools/test_radio_daily_merge_release_validation.py"
+      - "radio-catalog-lab/tools/radio_daily_merge_plan.py"
+      - "radio-catalog-lab/tools/test_radio_daily_merge_plan.py"
+      - "radio-catalog-lab/tools/radio_daily_repair_material.py"
+      - "radio-catalog-lab/tools/test_radio_daily_repair_material.py"
+      - "radio-catalog-lab/tools/radio_daily_logo_material.py"
+      - "radio-catalog-lab/tools/test_radio_daily_logo_material.py"
+      - "radio-catalog-lab/tools/radio_daily_state_migration.py"
+      - "radio-catalog-lab/tools/test_radio_daily_state_migration.py"
+      - "radio-catalog-lab/tools/radio_daily_unified_generator.py"
+      - "radio-catalog-lab/tools/test_radio_daily_unified_generator.py"
+      - "radio-catalog-lab/tools/radio_daily_live_evidence.py"
+      - "radio-catalog-lab/tools/radio_daily_proposal_subset.py"
+      - "radio-catalog-lab/tools/test_radio_daily_proposal_subset.py"
+      - "radio-catalog-lab/tools/test_radio_daily_live_evidence.py"
+      - "radio-catalog-lab/tools/radio_daily_live_release_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_live_combined_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_live_state_migration.py"
+      - "radio-catalog-lab/tools/radio_daily_lab_cycle.py"
+      - "radio-catalog-lab/tools/test_radio_daily_lab_multiversion.py"
+      - "radio-catalog-lab/tools/radio_daily_live_inherited_artwork.py"
+      - "radio-catalog-lab/tools/radio_daily_inherited_artwork_cache.py"
+      - "radio-catalog-lab/tools/test_radio_daily_inherited_artwork_cache.py"
+      - "radio-catalog-lab/tools/test_radio_daily_live_inherited_artwork.py"
+      - "radio-catalog-lab/tools/test_radio_daily_live_combined_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_live_logo_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_live_maintenance_release_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_live_maintenance_release_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_live_logo_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_admission_release_validation.py"
+      - "radio-catalog-lab/tools/test_radio_daily_admission_release_validation.py"
+      - "radio-catalog-lab/tools/radio_daily_v9_generator.py"
+      - "radio-catalog-lab/tools/test_radio_daily_v9_generator.py"
+      - "radio-catalog-lab/tools/test_radio_daily_baseline_cli.py"
+      - "radio-catalog-lab/tools/radio_daily_release_context.py"
+      - "radio-catalog-lab/tools/test_radio_daily_release_context.py"
+      - "radio-catalog-lab/tools/radio_daily_state_snapshot.py"
+      - "radio-catalog-lab/tools/test_radio_daily_state_snapshot.py"
+      - "radio-catalog-lab/tools/radio_daily_logo_release_validation.py"
+      - "radio-catalog-lab/tools/test_radio_daily_logo_release_validation.py"
+      - "radio-catalog-lab/tools/radio_daily_combined_release_validation.py"
+      - "radio-catalog-lab/tools/test_radio_daily_combined_release_validation.py"
+      - "radio-catalog-lab/tools/radio_daily_lab_signing.py"
+      - "radio-catalog-lab/tools/test_radio_daily_lab_signing.py"
+      - "radio-catalog-lab/tools/test_radio_daily_legacy_preservation.py"
+      - "radio-catalog-lab/tools/radio_daily_publication_simulator.py"
+      - "radio-catalog-lab/tools/test_radio_daily_publication_simulator.py"
+      - "radio-catalog-lab/tools/radio_daily_durable_lab_store.py"
+      - "radio-catalog-lab/tools/test_radio_daily_durable_lab_store.py"
+      - "radio-catalog-lab/tools/radio_daily_durable_lab_signer.py"
+      - "radio-catalog-lab/tools/test_radio_daily_durable_lab_signer.py"
+      - "radio-catalog-lab/tools/radio_daily_logo_recovery_plan.py"
+      - "radio-catalog-lab/tools/test_radio_daily_logo_recovery_plan.py"
+      - "radio-catalog-lab/tools/radio_daily_logo_recovery_publish.py"
+      - "radio-catalog-lab/tools/test_radio_daily_logo_recovery_publish.py"
+      - "radio-catalog-lab/tools/radio_daily_git_lab_transport.py"
+      - "radio-catalog-lab/tools/test_radio_daily_git_lab_transport.py"
+      - "radio-catalog-lab/tools/radio_daily_git_lab_reader.py"
+      - "radio-catalog-lab/tools/test_radio_daily_git_lab_reader.py"
+      - "radio-catalog-lab/tools/radio_daily_git_lab_transfer.py"
+      - "radio-catalog-lab/tools/test_radio_daily_git_lab_transfer.py"
+      - "radio-catalog-lab/tools/radio_daily_deployment_verify.py"
+      - "radio-catalog-lab/tools/test_radio_daily_deployment_verify.py"
+      - "radio-catalog-lab/tools/test_radio_daily_durable_chain.py"
+      - "radio-catalog-lab/tools/test_radio_daily_durable_operations.py"
+      - "radio-catalog-lab/tools/radio_daily_live_durable_replay.py"
+      - "radio-catalog-lab/tools/radio_daily_public_https_reader.py"
+      - "radio-catalog-lab/tools/test_radio_daily_public_https_reader.py"
+      - "radio-catalog-lab/tools/radio_daily_publisher_job_config.py"
+      - "radio-catalog-lab/tools/test_radio_daily_publisher_job_config.py"
+      - "radio-catalog-lab/tools/radio_lab_successor_sign.py"
+      - "radio-catalog-lab/tools/radio_lab_successor_transport.py"
+      - "radio-catalog-lab/tools/radio_lab_successor_readback.py"
+      - "radio-catalog-lab/tools/radio_lab_first_release.py"
+      - "radio-catalog-lab/tools/radio_lab_provision.py"
+      - ".github/workflows/radio-lab-first-release.yml"
+      - "radio-catalog-lab/tools/radio_daily_remote_acceptance.py"
+      - "radio-catalog-lab/tools/test_radio_daily_remote_acceptance.py"
+      - "radio-catalog-lab/tools/radio_daily_github_executor.py"
+      - "radio-catalog-lab/tools/test_radio_daily_github_executor.py"
+      - "radio-catalog-lab/tools/radio_daily_github_transfer_contract.py"
+      - "radio-catalog-lab/tools/test_radio_daily_github_transfer_contract.py"
+      - "radio-catalog-lab/tools/radio_daily_github_readback.py"
+      - "radio-catalog-lab/tools/test_radio_daily_github_readback.py"
+      - "radio-catalog-lab/tools/radio_daily_github_json_reader.py"
+      - "radio-catalog-lab/tools/test_radio_daily_github_json_reader.py"
+      - "radio-catalog-lab/tools/radio_daily_protected_signer.py"
+      - "radio-catalog-lab/tools/test_radio_daily_protected_signer.py"
+      - "radio-catalog-lab/tools/radio_daily_restore_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_restore_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_baseline_selection.py"
+      - "radio-catalog-lab/tools/test_radio_daily_baseline_selection.py"
+      - "radio-catalog-lab/tools/radio_daily_baseline_verify.py"
+      - "radio-catalog-lab/tools/test_radio_daily_baseline_verify.py"
+      - "radio-catalog-lab/tools/radio_daily_alternative_metadata.py"
+      - "radio-catalog-lab/tools/test_radio_daily_alternative_metadata.py"
+      - "radio-catalog-lab/tools/radio_daily_metadata_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_metadata_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_artist_research.py"
+      - "radio-catalog-lab/tools/test_radio_daily_artist_research.py"
+      - "radio-catalog-lab/tools/radio_daily_programme_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_programme_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_recording_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_recording_preview.py"
+      - "radio-catalog-lab/tools/radio_daily_wikidata_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_wikidata_preview.py"
+      - "radio-catalog-lab/tools/test_radio_daily_cross_source_preview.py"
+      - "radio-catalog-lab/schemas/radio_catalog_v1.schema.json"
+      - ".github/workflows/radio-catalog-daily-discovery.yml"
+  workflow_dispatch:
+    inputs:
+      run_stream_probes:
+        description: "Enable up to 20 safe audio sample probes (preview only)"
+        required: false
+        type: boolean
+        default: true
+  # Only GitHub's default branch executes scheduled workflows. This schedule
+  # is dormant on this isolated review branch until explicitly approved.
+  schedule:
+    - cron: "17 4 * * *"
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: go-radio-daily-discovery-preview-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  discovery-tests:
+    name: Contract tests (offline, no catalogue writes)
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install public verification dependencies
+        run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
+      - name: Validate candidate engine without network
+        run: |
+          python -m py_compile radio-catalog-lab/tools/radio_lab_first_release.py radio-catalog-lab/tools/radio_lab_provision.py
+          python radio-catalog-lab/tools/radio_lab_first_release.py --help
+          for mode in sign transport readback; do python "radio-catalog-lab/tools/radio_lab_successor_${mode}.py" --help; done
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_daily*.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_catalog_daily_candidate_reconcile.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_technical_probe.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_playlist_preview.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_socket_integration.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_recheck_ledger.py" -v
+
+  discovery-preview:
+    name: Limited global radio scan — candidates only
+    needs: discovery-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    outputs:
+      report-name: ${{ steps.report-identity.outputs.name }}
+      candidate: ${{ steps.release-gate.outputs.candidate }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install public verification dependencies
+        run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
+      - name: Read durable discovery state
+        uses: actions/checkout@v4
+        with:
+          ref: state/go-radio-autonomous
+          path: go-radio-state-checkout
+          persist-credentials: false
+          sparse-checkout: |
+            radio-discovery-state
+      - name: Restore durable evidence or bootstrap once from validated collection
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          previous="$RUNNER_TEMP/go-radio-previous"
+          mkdir -p "$previous"
+          state=go-radio-state-checkout/radio-discovery-state
+          if [[ -f "$state/ledger.json" ]]; then
+            cp "$state/ledger.json" "$previous/ledger.json"
+            cp "$state/genre-hints.json" "$previous/candidates.json"
+            if [[ -f "$state/metadata-preview.json" ]]; then
+              cp "$state/metadata-preview.json" "$previous/metadata-preview.json"
+            fi
+            if [[ -f "$state/artist-research-preview.json" ]]; then
+              cp "$state/artist-research-preview.json" "$previous/artist-research-preview.json"
+            fi
+            if [[ -f "$state/missing-logo-preview.json" ]]; then
+              cp "$state/missing-logo-preview.json" "$previous/missing-logo-preview.json"
+            fi
+            if [[ -f "$state/logo-maintenance-preview.json" ]]; then
+              cp "$state/logo-maintenance-preview.json" "$previous/logo-maintenance-preview.json"
+            fi
+            if [[ -f "$state/status-transition-preview.json" ]]; then
+              cp "$state/status-transition-preview.json" "$previous/status-transition-preview.json"
+            fi
+            if [[ -f "$state/repair-confirmation-preview.json" ]]; then
+              cp "$state/repair-confirmation-preview.json" "$previous/repair-confirmation-preview.json"
+            fi
+            if [[ -f "$state/repair-preview.json" ]]; then
+              cp "$state/repair-preview.json" "$previous/repair-preview.json"
+            fi
+            if [[ -f "$state/maintenance-preview.json" ]]; then
+              cp "$state/maintenance-preview.json" "$previous/maintenance-preview.json"
+            fi
+            if [[ -f "$state/recording-preview.json" ]]; then
+              cp "$state/recording-preview.json" "$previous/recording-preview.json"
+            fi
+            if [[ -f "$state/wikidata-preview.json" ]]; then
+              cp "$state/wikidata-preview.json" "$previous/wikidata-preview.json"
+            fi
+            if [[ -f "$state/logo-preview.json" ]]; then
+              cp "$state/logo-preview.json" "$previous/logo-preview.json"
+            fi
+            if [[ -f "$state/hls-preview.json" ]]; then
+              cp "$state/hls-preview.json" "$previous/hls-preview.json"
+            fi
+            if [[ -f "$state/continuity-preview.json" ]]; then
+              cp "$state/continuity-preview.json" "$previous/continuity-preview.json"
+            fi
+            if [[ -f "$state/editorial-preview.json" ]]; then
+              cp "$state/editorial-preview.json" "$previous/editorial-preview.json"
+            fi
+            if [[ -f "$state/qualification-dossiers.json" ]]; then
+              cp "$state/qualification-dossiers.json" "$previous/qualification-dossiers.json"
+            fi
+            if [[ -f "$state/stream-evidence.json" ]]; then
+              cp "$state/stream-evidence.json" "$previous/stream-evidence.json"
+            fi
+          else
+            echo "Autonomous state missing; refusing V8 fallback" >&2
+            exit 1
+          fi
+      - name: Scan Radio Browser without UUID allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/go-radio-discovery"
+          git -C go-radio-state-checkout rev-parse HEAD > "$RUNNER_TEMP/go-radio-discovery/state-parent.txt"
+          retry="$RUNNER_TEMP/go-radio-discovery/discovery-retry.json"
+          prior_retry=go-radio-state-checkout/radio-discovery-state/discovery-retry.json
+          # On branch pushes, only a tiny real-network sample is used.
+          # Scheduled/manual runs explore many music tags and rotated pages.
+          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            python radio-catalog-lab/tools/radio_daily_discovery.py \
+              --tags "metal,punk,hard rock,black metal,thrash metal,trash metal,pagan metal,nu metal" \
+              --names "metal,punk,hard rock,nu metal" \
+              --page-size 50 --max-pages 1 --crawl-delay 0.3 \
+              --prior-decisions go-radio-state-checkout/radio-discovery-state/decision-preview.json \
+              --retry-state "$prior_retry" --retry-output "$retry" \
+              --output "$RUNNER_TEMP/go-radio-discovery/candidates.json"
+          else
+            # Previous review-only tags are allowed to extend the taxonomy,
+            # but never authorize a radio, stream, logo or station deletion.
+            prior=()
+            if [[ -f "$RUNNER_TEMP/go-radio-previous/candidates.json" ]]; then
+              prior=(--previous-report "$RUNNER_TEMP/go-radio-previous/candidates.json")
+            fi
+            python radio-catalog-lab/tools/radio_daily_discovery.py \
+              --page-size 100 --max-pages 3 --crawl-delay 0.3 \
+              "${prior[@]}" \
+              --prior-decisions go-radio-state-checkout/radio-discovery-state/decision-preview.json \
+              --retry-state "$prior_retry" --retry-output "$retry" \
+              --output "$RUNNER_TEMP/go-radio-discovery/candidates.json"
+          fi
+      - name: Authenticate current real catalogue and reconcile candidates
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RADIO_LAB_PUBLIC_KEY: ${{ vars.RADIO_LAB_PUBLIC_KEY }}
+          RADIO_LAB_KEY_ID: ${{ vars.RADIO_LAB_KEY_ID }}
+        run: |
+          set -euo pipefail
+          PYTHONPATH=radio-catalog-lab/tools python - <<'PY'
+          import os, json, subprocess, datetime
+          from pathlib import Path
+          from radio_daily_baseline_verify import cli_anchor, verify_baseline, strict_json
+          from radio_daily_release_context import prepare, STATE_FILES
+          from radio_daily_v9_generator import encode
+          state=Path("go-radio-state-checkout/radio-discovery-state")
+          tmp=Path(os.environ["RUNNER_TEMP"])
+          root=tmp/"go-radio-discovery"
+          pointer=(state/"release-anchor.json").read_bytes()
+          body=(state/"release-baseline.json").read_bytes()
+          old=strict_json((state/"release-context.json").read_bytes())
+          p=strict_json(pointer)
+          seq=p["release_sequence"]
+          sha=p["content_sha256"]
+          assert seq>=9 and old["selectedSequence"]==seq and old["selectedSha256"]==sha
+          assert old["remoteReadbackVerified"] is True and old["deploymentVerified"] is True and old["simulated"] is False
+          anchor=cli_anchor(sha,seq)
+          verify_baseline(pointer,body,**anchor)
+          # Never scan from a stale accepted state after an interrupted publication.
+          head=json.loads(subprocess.check_output(["gh","api","repos/Sarogal/Ondes-Catalogues/git/ref/heads/radio-lab-publisher-rehearsal"]))["object"]["sha"]
+          assert head==old["gitCommit"], "remote release differs from accepted state"
+          day=datetime.datetime.now(datetime.timezone.utc).date().isoformat()
+          evidence={key:strict_json((state/name).read_bytes()) for key,name in STATE_FILES.items()}
+          raw,selected,migrated,context=prepare(pointer,lambda path,length:body,
+              day=day,state=evidence,prior_pointer=pointer,prior_body=body,**anchor)
+          assert not migrated and selected["advanced"] is False
+          context.update({k:old[k] for k in ("gitCommit","deploymentId","remoteReadbackVerified","deploymentVerified","simulated","mirroredLegacyArtwork")})
+          (tmp/"go-radio-selected-pointer.json").write_bytes(pointer)
+          (tmp/"go-radio-selected-baseline.json").write_bytes(raw)
+          (root/"release-anchor.json").write_bytes(pointer)
+          (root/"baseline-selection.json").write_bytes(encode(selected))
+          (root/"release-context.json").write_bytes(encode(context))
+          with open(os.environ["GITHUB_ENV"],"a") as env:
+              for k,v in {"BASELINE_SHA256":sha,"BASELINE_SEQUENCE":seq,
+                          "RADIO_LAB_PUBLIC_KEY":anchor["public_key"],"RADIO_LAB_KEY_ID":anchor["key_id"]}.items():
+                  print(f"{k}={v}",file=env)
+          print("REAL_RADIO_BASELINE",seq,sha,head)
+          PY
+          python radio-catalog-lab/tools/radio_catalog_daily_candidate_reconcile.py \
+            --catalog "$RUNNER_TEMP/go-radio-selected-baseline.json" \
+            --discovery "$RUNNER_TEMP/go-radio-discovery/candidates.json" \
+            --output "$RUNNER_TEMP/go-radio-discovery/reconciliation-v8.json"
+      - name: Retain cross-day candidates without approving any stream
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/ledger.json" ]]; then
+            python radio-catalog-lab/tools/radio_daily_candidate_ledger.py \
+              --scan "$RUNNER_TEMP/go-radio-discovery/candidates.json" \
+              --output "$RUNNER_TEMP/go-radio-discovery/ledger.json" \
+              --previous "$RUNNER_TEMP/go-radio-previous/ledger.json"
+          else
+            python radio-catalog-lab/tools/radio_daily_candidate_ledger.py \
+              --scan "$RUNNER_TEMP/go-radio-discovery/candidates.json" \
+              --output "$RUNNER_TEMP/go-radio-discovery/ledger.json"
+          fi
+      - name: Bounded audio byte sampling of new candidates
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "go-radio-discovery"
+          discovery = json.loads((root / "candidates.json").read_text())
+          reconciliation = json.loads((root / "reconciliation-v8.json").read_text())
+          assert discovery["publicationAllowed"] is False
+          assert reconciliation["automaticAdmissionAllowed"] is False
+          candidates = {r["stationuuid"] for r in reconciliation["candidates"]
+                        if r["classification"] == "unmapped_candidate"}
+          discovery["candidates"] = [r for r in discovery["candidates"]
+                                     if r["stationuuid"] in candidates
+                                     and r.get("editorialSignal") != "electronic_context_review"]
+          (root / "probe-candidates.json").write_text(json.dumps(discovery))
+          PY
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/stream-evidence.json" ]]; then
+            previous=(--previous-evidence "$RUNNER_TEMP/go-radio-previous/stream-evidence.json")
+          fi
+          python radio-catalog-lab/tools/radio_stream_technical_probe.py \
+            --discovery "$RUNNER_TEMP/go-radio-discovery/probe-candidates.json" \
+            --output "$RUNNER_TEMP/go-radio-discovery/technical-probes.json" \
+            --limit 20 --workers 4 --allow-network "${previous[@]}"
+      - name: Track technical samples over separate days (never approve streams)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/stream-evidence.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/stream-evidence.json")
+          fi
+          python radio-catalog-lab/tools/radio_stream_recheck_ledger.py \
+            --probe "$RUNNER_TEMP/go-radio-discovery/technical-probes.json" \
+            --output "$RUNNER_TEMP/go-radio-discovery/stream-evidence.json" \
+            "${previous[@]}"
+      - name: Preview candidate logo sources (no approval)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/logo-preview.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/logo-preview.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_logo_preview.py \
+            --discovery "$root/candidates.json" \
+            --reconciliation "$root/reconciliation-v8.json" \
+            --stream "$root/stream-evidence.json" \
+            --output "$root/logo-preview.json" --limit 8 --allow-network "${previous[@]}"
+      - name: Collect independent homepage format indications (no approval)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/editorial-preview.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/editorial-preview.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_editorial_preview.py \
+            --discovery "$root/candidates.json" --reconciliation "$root/reconciliation-v8.json" \
+            --output "$root/editorial-preview.json" --limit 8 --allow-network "${previous[@]}"
+      - name: Observe spaced audio windows on one connection
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/continuity-preview.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/continuity-preview.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_continuity_preview.py \
+            --discovery "$root/candidates.json" --reconciliation "$root/reconciliation-v8.json" \
+            --audio "$root/stream-evidence.json" --editorial "$root/editorial-preview.json" \
+            --output "$root/continuity-preview.json" --limit 6 --allow-network "${previous[@]}"
+      - name: Inspect bounded HLS manifest progression
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/hls-preview.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/hls-preview.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_hls_preview.py \
+            --discovery "$root/candidates.json" --reconciliation "$root/reconciliation-v8.json" \
+            --audio "$root/stream-evidence.json" --output "$root/hls-preview.json" \
+            --limit 4 --allow-network "${previous[@]}"
+      - name: Join qualification evidence by UUID (no admission)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/qualification-dossiers.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/qualification-dossiers.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_qualification_dossiers.py \
+            --discovery "$root/candidates.json" --reconciliation "$root/reconciliation-v8.json" \
+            --ledger "$root/ledger.json" --stream "$root/stream-evidence.json" \
+            --logo "$root/logo-preview.json" --editorial "$root/editorial-preview.json" --continuity "$root/continuity-preview.json" --hls "$root/hls-preview.json" --output "$root/qualification-dossiers.json" \
+            --baseline-sha256 "$BASELINE_SHA256" "${previous[@]}"
+      - name: Evaluate decision policy (staging review only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          python radio-catalog-lab/tools/radio_daily_decision_preview.py \
+            --discovery "$root/candidates.json" --dossiers "$root/qualification-dossiers.json" \
+            --baseline-sha256 "$BASELINE_SHA256" --output "$root/decision-preview.json"
+      - name: Observe bounded ICY, HLS ID3 and alternative artist hints (no editorial approval)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/metadata-preview.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/metadata-preview.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_metadata_preview.py \
+            --discovery "$root/candidates.json" --reconciliation "$root/reconciliation-v8.json" \
+            --continuity "$root/continuity-preview.json" --decisions "$root/decision-preview.json" --hls "$root/hls-preview.json" \
+            --output "$root/metadata-preview.json" --transient-titles "$RUNNER_TEMP/go-radio-transient-titles.json" --limit 6 --allow-network "${previous[@]}"
+      - name: Research observed artist names in MusicBrainz (hypotheses only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/artist-research-preview.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/artist-research-preview.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_artist_research.py \
+            --metadata "$root/metadata-preview.json" --output "$root/artist-research-preview.json" \
+            --limit 8 --allow-network "${previous[@]}"
+      - name: Corroborate artist and title via recording credits (hypotheses only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          titles="$RUNNER_TEMP/go-radio-transient-titles.json"
+          trap 'rm -f "$titles"' EXIT
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/recording-preview.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/recording-preview.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_recording_preview.py \
+            --metadata "$root/metadata-preview.json" --research "$root/artist-research-preview.json" \
+            --titles "$titles" --output "$root/recording-preview.json" --limit 4 --allow-network "${previous[@]}"
+      - name: Research independent Wikidata artist and genre hints
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/wikidata-preview.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/wikidata-preview.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_wikidata_preview.py \
+            --metadata "$root/metadata-preview.json" --output "$root/wikidata-preview.json" \
+            --limit 6 --allow-network "${previous[@]}"
+      - name: Summarize cumulative programme hints without admission
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          python radio-catalog-lab/tools/radio_daily_programme_preview.py \
+            --metadata "$root/metadata-preview.json" --research "$root/artist-research-preview.json" \
+            --decisions "$root/decision-preview.json" --wikidata "$root/wikidata-preview.json" \
+            --recordings "$root/recording-preview.json" --output "$root/programme-preview.json"
+      - name: Compare shadow V3 qualification with unchanged V2 decisions
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          python radio-catalog-lab/tools/radio_daily_qualification_v3_preview.py \
+            --decisions "$root/decision-preview.json" --programme "$root/programme-preview.json" \
+            --baseline-sha256 "$BASELINE_SHA256" \
+            --output "$root/qualification-v3-preview.json"
+      - name: Sample current signed catalogue streams for maintenance review
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/maintenance-preview.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/maintenance-preview.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_maintenance_preview.py \
+            --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" --baseline-sha256 "$BASELINE_SHA256" \
+            --output "$root/maintenance-preview.json" --limit 20 --workers 4 --allow-network "${previous[@]}"
+      - name: Search replacement stream identities (review only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/repair-preview.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/repair-preview.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_repair_preview.py \
+            --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" --baseline-sha256 "$BASELINE_SHA256" \
+            --maintenance "$root/maintenance-preview.json" --discovery "$root/candidates.json" \
+            --output "$root/repair-preview.json" --limit 4 --allow-network "${previous[@]}"
+      - name: Confirm replacement hints against broadcaster (review only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/repair-confirmation-preview.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/repair-confirmation-preview.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_repair_confirmation.py \
+            --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" --baseline-sha256 "$BASELINE_SHA256" --repair "$root/repair-preview.json" \
+            --output "$root/repair-confirmation-preview.json" --limit 4 --allow-network "${previous[@]}"
+      - name: Generate digest-only maintenance repair plan (never a catalogue)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          python radio-catalog-lab/tools/radio_daily_repair_plan.py \
+            --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" --baseline-sha256 "$BASELINE_SHA256" --maintenance "$root/maintenance-preview.json" \
+            --repair "$root/repair-preview.json" --confirmation "$root/repair-confirmation-preview.json" \
+            --output "$root/repair-plan-preview.json"
+      - name: Review quarantine and restoration transitions (no writes)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/status-transition-preview.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/status-transition-preview.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_status_preview.py \
+            --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" --baseline-sha256 "$BASELINE_SHA256" --maintenance "$root/maintenance-preview.json" \
+            --repair-plan "$root/repair-plan-preview.json" --output "$root/status-transition-preview.json" \
+            --limit 4 --allow-network "${previous[@]}"
+      - name: Audit existing signed logo sources (no artwork writes)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/logo-maintenance-preview.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/logo-maintenance-preview.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_logo_maintenance.py \
+            --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" --baseline-sha256 "$BASELINE_SHA256" --output "$root/logo-maintenance-preview.json" \
+            --limit 8 --allow-network "${previous[@]}"
+      - name: Search station-bound missing artwork (review only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/missing-logo-preview.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/missing-logo-preview.json")
+          fi
+          python radio-catalog-lab/tools/radio_daily_missing_logo.py \
+            --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" --baseline-sha256 "$BASELINE_SHA256" --output "$root/missing-logo-preview.json" \
+            --limit 8 --allow-network "${previous[@]}"
+      - name: Generate single unsigned catalogue candidate (artifact only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          python radio-catalog-lab/tools/radio_daily_unified_generator.py \
+            --pointer "$RUNNER_TEMP/go-radio-selected-pointer.json" --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" --baseline-sha256 "$BASELINE_SHA256" --baseline-sequence "$BASELINE_SEQUENCE" \
+            --discovery "$root/candidates.json" --dossiers "$root/qualification-dossiers.json" \
+            --decisions "$root/decision-preview.json" --maintenance "$root/maintenance-preview.json" \
+            --repair "$root/repair-preview.json" --confirmation "$root/repair-confirmation-preview.json" \
+            --repair-report "$root/repair-plan-preview.json" --status-report "$root/status-transition-preview.json" \
+            --logo-maintenance "$root/logo-maintenance-preview.json" --missing-logo "$root/missing-logo-preview.json" \
+            --allow-repair-material-network --allow-logo-material-network --output-dir "$root/v9-preview"
+      - name: Read existing TEST v8 artwork objects (read-only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        uses: actions/checkout@v4
+        with:
+          ref: feature/go-radio-test-v2-isolated-20261123
+          path: go-artwork-v8
+          persist-credentials: false
+          sparse-checkout: |
+            grossesondes/radio-test-v2/artwork/sha256
+      - name: Read existing v6 staging artwork objects (read-only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        uses: actions/checkout@v4
+        with:
+          ref: feature/go-radio-v6-dedupe-logo-audit-20261123
+          path: go-artwork-v6
+          persist-credentials: false
+          sparse-checkout: |
+            grossesondes/radio-test-v2/artwork/staging-unpublished
+      - name: Read existing v7 staging artwork objects (read-only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        uses: actions/checkout@v4
+        with:
+          ref: feature/go-radio-v7-13-dedupe-20261123
+          path: go-artwork-v7
+          persist-credentials: false
+          sparse-checkout: |
+            grossesondes/radio-test-v2/artwork/staging-lautfm-v7
+            grossesondes/radio-test-v2/artwork/staging-exclusive-v7
+      - name: Stage bounded verified inherited artwork cache (no catalogue writes)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/go-radio-discovery"
+          python radio-catalog-lab/tools/radio_daily_inherited_artwork_cache.py \
+            --pointer "$RUNNER_TEMP/go-radio-selected-pointer.json" \
+            --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" \
+            --baseline-sha256 "$BASELINE_SHA256" --baseline-sequence "$BASELINE_SEQUENCE" \
+            --day "$(date -u +%F)" \
+            --previous go-radio-state-checkout/radio-discovery-state/artwork-cache/sha256 \
+            --local-source go-artwork-v8/grossesondes/radio-test-v2/artwork/sha256 \
+            --local-source go-artwork-v6/grossesondes/radio-test-v2/artwork/staging-unpublished \
+            --local-source go-artwork-v7/grossesondes/radio-test-v2/artwork/staging-lautfm-v7 \
+            --local-source go-artwork-v7/grossesondes/radio-test-v2/artwork/staging-exclusive-v7 \
+            --output "$root/inherited-artwork-cache" --report "$root/inherited-artwork-cache.json"
+          cp "$RUNNER_TEMP/go-radio-selected-baseline.json" "$root/inherited-artwork-baseline.json"
+      - name: Recompute strict release previews with live evidence (artifact only)
+        if: github.event_name != 'workflow_dispatch' || inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_daily_live_release_preview.py \
+            --pointer "$RUNNER_TEMP/go-radio-selected-pointer.json" \
+            --baseline "$RUNNER_TEMP/go-radio-selected-baseline.json" \
+            --baseline-sha256 "$BASELINE_SHA256" --baseline-sequence "$BASELINE_SEQUENCE" \
+            --root "$RUNNER_TEMP/go-radio-discovery" \
+            --cache-dir go-radio-state-checkout/radio-discovery-state/artwork-cache/sha256 \
+            --cache-dir "$RUNNER_TEMP/go-radio-discovery/inherited-artwork-cache"
+      - name: Read-only GitHub laboratory ref smoke
+        if: github.ref == 'refs/heads/feature/radio-daily-discovery-lab-20261120'
+        env:
+          RADIO_GITHUB_READ_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          PYTHONPATH=radio-catalog-lab/tools python - <<'PY'
+          from radio_daily_github_json_reader import GitHubJSONReader
+          from radio_daily_github_readback import GitHubReadback
+          from radio_daily_github_transfer_contract import DESTINATION
+          from radio_daily_git_lab_transport import REF, ZERO
+          import os
+          reader = None
+          try:
+              reader = GitHubJSONReader(token=os.environ.get("RADIO_GITHUB_READ_TOKEN") or None, max_calls=2, max_seconds=30)
+              head = GitHubReadback(reader).read_head(DESTINATION, REF)
+          except (ValueError, OSError):
+              print("GITHUB_LAB_READBACK_SMOKE held", reader.diagnostic if reader is not None else "credential_configuration", "; no write attempted")
+          else:
+              print("GITHUB_LAB_READBACK_SMOKE verified", "absent" if head == ZERO else "present")
+          PY
+      - name: Prepare safe durable genre hints
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "go-radio-discovery"
+          report = json.loads((root / "candidates.json").read_text())
+          hints = report.get("suggestedGenreTags", [])
+          assert isinstance(hints, list) and len(hints) <= 200
+          assert all(isinstance(x, str) and len(x) <= 240 for x in hints)
+          (root / "genre-hints.json").write_text(json.dumps({
+              "schemaVersion": 1, "publicationAllowed": False,
+              "suggestedGenreTags": hints,
+          }, ensure_ascii=False, indent=2) + "\n")
+          PY
+      - name: Determine whether a protected signing job is needed
+        id: release-gate
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os,json
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"go-radio-discovery/strict-live-release-preview.json"
+          candidate=False
+          if p.is_file():
+              report=json.loads(p.read_bytes())
+              candidate=bool(report["combined"]["candidateSha256"])
+          with open(os.environ["GITHUB_OUTPUT"],"a") as out:
+              print("candidate="+str(candidate).lower(),file=out)
+          PY
+      - name: Identify this collection attempt
+        id: report-identity
+        shell: bash
+        run: echo "name=go-radio-discovery-${GITHUB_RUN_ID}-attempt-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+      - name: Upload review-only candidate report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.report-identity.outputs.name }}
+          path: ${{ runner.temp }}/go-radio-discovery/
+          if-no-files-found: error
+          retention-days: 14
+
+  persist-preview-state:
+    name: Persist non-publishing evidence in isolated Git branch
+    needs: discovery-preview
+    if: github.ref == 'refs/heads/feature/radio-daily-discovery-lab-20261120'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      state-commit: ${{ steps.state-revision.outputs.sha }}
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: state/go-radio-autonomous
+      - name: Require exact collection artifact identity
+        shell: bash
+        env:
+          REPORT_NAME: ${{ needs.discovery-preview.outputs.report-name }}
+        run: |
+          set -euo pipefail
+          [[ "$REPORT_NAME" =~ ^go-radio-discovery-${GITHUB_RUN_ID}-attempt-[1-9][0-9]*$ ]]
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.discovery-preview.outputs.report-name }}
+          path: ${{ runner.temp }}/go-radio-state-input
+      - name: Validate and persist only evidence files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          import re, subprocess
+          src = Path(os.environ["RUNNER_TEMP"]) / "go-radio-state-input"
+          # Compare-and-swap: never replace observations collected from a different
+          # state checkout. A later concurrent push is also rejected by git push.
+          parent = (src / "state-parent.txt").read_text().strip()
+          if not re.fullmatch("[0-9a-f]{40}", parent) or parent != subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip():
+              raise ValueError("durable state changed since discovery; rerun required")
+          anchor = src / "release-anchor.json"
+          if not 0 < anchor.stat().st_size <= 16384:
+              raise ValueError("invalid release anchor size")
+          pointer = json.loads(anchor.read_bytes())
+          context = json.loads((src / "release-context.json").read_bytes())
+          if (context.get("signatureVerified") is not True or context.get("publicationAllowed") is not False
+                  or context.get("advanced") is not False or pointer.get("release_sequence",0) < 9
+                  or context.get("remoteReadbackVerified") is not True or context.get("deploymentVerified") is not True
+                  or context.get("simulated") is not False
+                  or anchor.read_bytes() != Path("radio-discovery-state/release-anchor.json").read_bytes()
+                  or pointer.get("release_sequence") != context.get("selectedSequence")
+                  or pointer.get("content_sha256") != context.get("selectedSha256")):
+              raise ValueError("release anchor does not match verified context")
+          dst = Path("radio-discovery-state")
+          dst.mkdir(exist_ok=True)
+          for name in ("ledger.json", "genre-hints.json", "stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json", "decision-preview.json", "metadata-preview.json", "artist-research-preview.json", "programme-preview.json", "recording-preview.json", "wikidata-preview.json", "qualification-v3-preview.json", "maintenance-preview.json", "repair-preview.json", "repair-confirmation-preview.json", "repair-plan-preview.json", "status-transition-preview.json", "logo-maintenance-preview.json", "missing-logo-preview.json"):
+              path = src / name
+              if name in ("stream-evidence.json", "logo-preview.json", "qualification-dossiers.json", "editorial-preview.json", "continuity-preview.json", "hls-preview.json", "decision-preview.json", "metadata-preview.json", "artist-research-preview.json", "programme-preview.json", "recording-preview.json", "wikidata-preview.json", "qualification-v3-preview.json", "maintenance-preview.json", "repair-preview.json", "repair-confirmation-preview.json", "repair-plan-preview.json", "status-transition-preview.json", "logo-maintenance-preview.json", "missing-logo-preview.json") and not path.exists():
+                  continue
+              assert path.stat().st_size <= 12 * 1024 * 1024
+              data = json.loads(path.read_text())
+              assert data.get("schemaVersion") == 1
+              assert data.get("publicationAllowed") is False
+              if name == "ledger.json":
+                  assert data.get("automaticallyApprovedCount") == 0
+                  assert isinstance(data.get("records"), list)
+              if name == "stream-evidence.json":
+                  assert data.get("technicallyQualifiedCount") == 0
+              if name == "logo-preview.json":
+                  assert data.get("approvedLogoCount") == 0
+                  assert all(r.get("logoApproved") is False and r.get("publicationAllowed") is False for r in data["records"])
+              if name in ("decision-preview.json", "metadata-preview.json"):
+                  assert data.get("approvedCount") == 0
+                  assert all(r.get("approved") is False and r.get("publicationAllowed") is False for r in data["records"])
+              if name == "missing-logo-preview.json":
+                  assert data.get("approvedLogoCount") == 0 and data.get("catalogChanged") is False
+                  assert all(r.get("logoApproved") is False and r.get("publicationAllowed") is False and "url" not in r for r in data["records"])
+              if name == "logo-maintenance-preview.json":
+                  assert data.get("approvedLogoCount") == 0 and data.get("catalogChanged") is False
+                  assert all(r.get("logoApproved") is False and r.get("publicationAllowed") is False for r in data["records"])
+                  assert all(r.get("publicationAllowed") is False and "url" not in r for r in data["sources"])
+              if name == "status-transition-preview.json":
+                  assert data.get("approvedCount") == 0 and data.get("candidateCatalogueWritten") is False
+                  assert all(r.get("approved") is False and r.get("publicationAllowed") is False for r in data["records"] + data["proposals"])
+                  assert all(r.get("publicationAllowed") is False and "url" not in r for r in data["streams"])
+              if name == "repair-plan-preview.json":
+                  assert data.get("approvedCount") == 0 and data.get("signed") is False and data.get("candidateCatalogueWritten") is False
+                  assert all(r.get("approved") is False and r.get("publicationAllowed") is False and "url" not in r for r in data["proposals"] + data["statusReviews"])
+              if name == "repair-confirmation-preview.json":
+                  assert data.get("approvedCount") == 0
+                  assert all(r.get("approved") is False and r.get("publicationAllowed") is False for r in data["records"])
+              if name == "repair-preview.json":
+                  assert data.get("approvedCount") == 0
+                  assert all(r.get("approved") is False and r.get("publicationAllowed") is False for r in data["records"])
+                  assert all(h.get("broadcasterVerified") is False and h.get("technicalVerified") is False and h.get("publicationAllowed") is False and "url" not in h for r in data["records"] for h in r["hints"])
+              if name == "maintenance-preview.json":
+                  assert data.get("approvedCount") == 0
+                  assert all(r.get("approved") is False and r.get("publicationAllowed") is False for r in data["records"])
+                  assert all(r.get("publicationAllowed") is False and "url" not in r for r in data["streams"])
+              if name == "qualification-v3-preview.json":
+                  assert data.get("policyVersion") == 3 and data.get("basePolicyVersion") == 2
+                  assert data.get("approvedCount") == 0 and data.get("verifiedArtistCount") == 0
+                  assert all(r.get("approved") is False and r.get("publicationAllowed") is False and r.get("verifiedArtistCount") == 0 for r in data["records"])
+              if name == "programme-preview.json":
+                  assert data.get("approvedCount") == 0 and data.get("verifiedArtistCount") == 0
+                  assert all(r.get("approved") is False and r.get("publicationAllowed") is False and r.get("verifiedArtistCount") == 0 for r in data["records"])
+              if name == "wikidata-preview.json":
+                  assert data.get("approvedCount") == 0 and isinstance(data.get("entries"), dict)
+                  assert all(r.get("identityVerified") is False and r.get("publicationAllowed") is False for r in data["entries"].values())
+              if name == "recording-preview.json":
+                  assert data.get("approvedCount") == 0 and isinstance(data.get("entries"), dict)
+                  assert all(r.get("identityVerified") is False and r.get("publicationAllowed") is False and "titleHint" not in r for r in data["entries"].values())
+              if name == "artist-research-preview.json":
+                  assert data.get("approvedCount") == 0
+                  assert isinstance(data.get("entries"), dict)
+                  assert all(r.get("identityVerified") is False and r.get("publicationAllowed") is False for r in data["entries"].values())
+              if name == "hls-preview.json":
+                  assert data.get("technicallyQualifiedCount") == 0
+                  assert all(r.get("technicalQualified") is False and r.get("publicationAllowed") is False for r in data["records"])
+              if name == "continuity-preview.json":
+                  assert data.get("technicallyQualifiedCount") == 0
+                  assert all(r.get("technicalQualified") is False and r.get("publicationAllowed") is False for r in data["records"])
+              if name == "editorial-preview.json":
+                  assert data.get("editoriallyApprovedCount") == 0
+                  assert all(r.get("editorialApproved") is False and r.get("publicationAllowed") is False for r in data["records"])
+              if name == "qualification-dossiers.json":
+                  assert data.get("approvedCount") == 0
+                  assert all(r.get("approved") is False and r.get("publicationAllowed") is False for r in data["records"])
+              (dst / name).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+          # Persist only bounded query identities and retry dates, never raw URLs.
+          retry = src / "discovery-retry.json"
+          if retry.exists():
+              import datetime as dt
+              assert retry.stat().st_size <= 512*1024
+              queue = json.loads(retry.read_bytes())
+              assert set(queue) == {"schemaVersion","publicationAllowed","scanDate","pending"}
+              assert queue["schemaVersion"] == 1 and queue["publicationAllowed"] is False
+              day = dt.date.fromisoformat(queue["scanDate"])
+              assert day.isoformat() == queue["scanDate"] and day <= dt.datetime.now(dt.timezone.utc).date()
+              assert isinstance(queue["pending"],list) and len(queue["pending"]) <= 512
+              seen = set()
+              for row in queue["pending"]:
+                  assert set(row) == {"field","term","offset","pageSize","firstFailureDate","lastAttemptDate","attemptCount","nextAttemptDate"}
+                  term,size,offset = row["term"],row["pageSize"],row["offset"]
+                  assert row["field"] in ("tag","name") and isinstance(term,str) and 1 <= len(term) <= 60
+                  assert term == term.strip() and re.fullmatch(r"[\w !&+/\-]+",term,re.UNICODE)
+                  assert type(size) is int and 1 <= size <= 250
+                  assert type(offset) is int and 0 <= offset <= 35000 and offset % size == 0
+                  key = (row["field"],term,offset,size)
+                  assert key not in seen
+                  seen.add(key)
+                  first,last,next_day = [dt.date.fromisoformat(row[k]) for k in ("firstFailureDate","lastAttemptDate","nextAttemptDate")]
+                  assert first <= last <= day and last < next_day <= last+dt.timedelta(days=7)
+                  assert type(row["attemptCount"]) is int and 1 <= row["attemptCount"] <= 20
+              (dst / "discovery-retry.json").write_text(json.dumps(queue,ensure_ascii=False,indent=2)+"\n")
+          # Only exact objects named by the authenticated current catalogue may be
+          # retained. Never copy an arbitrary artifact subtree into Git.
+          cache_report = src / "inherited-artwork-cache.json"
+          if cache_report.exists():
+              import hashlib, stat
+              baseline = (src / "inherited-artwork-baseline.json").read_bytes()
+              sha = hashlib.sha256(baseline).hexdigest()
+              assert sha == pointer["content_sha256"]
+              doc = json.loads(baseline)
+              report = json.loads(cache_report.read_bytes())
+              assert report["catalogBaselineSha256"] == sha and report["publicationAllowed"] is False
+              allowed = {}
+              ext = {"image/png":"png", "image/jpeg":"jpg", "image/webp":"webp"}
+              for station in doc["stations"]:
+                  logo = station.get("logo")
+                  if logo:
+                      allowed[logo["sha256"]+"."+ext[logo["mime_type"]]] = logo
+              incoming = src / "inherited-artwork-cache"
+              files = list(incoming.iterdir()) if incoming.is_dir() else []
+              local_count = report.get("localImportedCount",0)
+              network_count = report.get("networkRecoveredCount",report["recoveredCount"])
+              assert type(local_count) is int and 0 <= local_count <= 100
+              assert type(network_count) is int and 0 <= network_count <= 36
+              assert len(files) == report["recoveredCount"] == local_count+network_count <= 136
+              assert sum(item.stat().st_size for item in files) <= 48*1024*1024
+              cache = dst / "artwork-cache" / "sha256"
+              cache.mkdir(parents=True, exist_ok=True)
+              assert not cache.is_symlink() and not cache.parent.is_symlink()
+              for item in files:
+                  assert item.name in allowed and stat.S_ISREG(item.lstat().st_mode)
+                  logo = allowed[item.name]
+                  assert item.stat().st_size == logo["byte_size"] <= 2*1024*1024
+                  data = item.read_bytes()
+                  assert hashlib.sha256(data).hexdigest() == logo["sha256"]
+                  target = cache / item.name
+                  if target.exists() or target.is_symlink():
+                      assert stat.S_ISREG(target.lstat().st_mode) and target.read_bytes() == data
+                  else:
+                      with target.open("xb") as f:
+                          f.write(data)
+          # Persist the public signed reference with the evidence in one Git commit.
+          (dst / "release-anchor.json").write_bytes(anchor.read_bytes())
+          (dst / "release-context.json").write_bytes((src / "release-context.json").read_bytes())
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- radio-discovery-state/
+          if git diff --cached --quiet; then
+            echo "Durable evidence already up to date"
+          else
+            git commit -m "state(radio-autonomous): retain discovery evidence"
+            git push origin HEAD:refs/heads/state/go-radio-autonomous
+          fi
+
+      - name: Record exact persisted evidence revision
+        id: state-revision
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  sign-successor:
+    needs: [discovery-preview, persist-preview-state]
+    if: vars.RADIO_LAB_AUTONOMOUS_ENABLED == 'true' && vars.RADIO_LAB_AUTONOMOUS_APPROVED_SHA == github.sha && needs.discovery-preview.outputs.candidate == 'true' && github.ref == 'refs/heads/feature/radio-daily-discovery-lab-20261120'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: radio-lab-signing
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      changed: ${{ steps.sign.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.persist-preview-state.outputs.state-commit }}
+          path: go-autonomous-state
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.discovery-preview.outputs.report-name }}
+          path: ${{ runner.temp }}/reports
+      - name: Independently qualify and sign only a real successor
+        id: sign
+        env:
+          RADIO_LAB_PUBLIC_KEY: ${{ vars.RADIO_LAB_PUBLIC_KEY }}
+          RADIO_LAB_KEY_ID: ${{ vars.RADIO_LAB_KEY_ID }}
+          RADIO_LAB_ENCRYPTED_KEY: ${{ secrets.RADIO_LAB_ENCRYPTED_KEY }}
+          RADIO_LAB_PASSPHRASE: ${{ secrets.RADIO_LAB_PASSPHRASE }}
+          RADIO_LAB_JOB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_lab_successor_sign.py \
+            --state go-autonomous-state/radio-discovery-state --reports "$RUNNER_TEMP/reports" \
+            --bundle "$RUNNER_TEMP/signed-bundle" --receipt "$RUNNER_TEMP/signed-receipt.json" \
+            --next-state "$RUNNER_TEMP/preflight-state"
+          python - <<'PY'
+          import os,json
+          from pathlib import Path
+          receipt=json.loads((Path(os.environ["RUNNER_TEMP"])/"signed-receipt.json").read_bytes())
+          with open(os.environ["GITHUB_OUTPUT"],"a") as f:
+              print("changed="+str(receipt["changed"]).lower(),file=f)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.sign.outputs.changed == 'true'
+        with:
+          name: radio-successor-signed
+          path: |
+            ${{ runner.temp }}/signed-bundle/
+            ${{ runner.temp }}/signed-receipt.json
+          if-no-files-found: error
+          retention-days: 7
+
+  transport-successor:
+    needs: [sign-successor, persist-preview-state]
+    if: needs.sign-successor.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: radio-lab-transport
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.persist-preview-state.outputs.state-commit }}
+          path: go-autonomous-state
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: radio-successor-signed
+          path: ${{ runner.temp }}/signed-input
+      - name: Transfer exact signed public successor
+        env:
+          RADIO_LAB_PUBLIC_KEY: ${{ vars.RADIO_LAB_PUBLIC_KEY }}
+          RADIO_LAB_KEY_ID: ${{ vars.RADIO_LAB_KEY_ID }}
+          RADIO_LAB_JOB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_lab_successor_transport.py \
+            --state go-autonomous-state/radio-discovery-state \
+            --bundle "$RUNNER_TEMP/signed-input/signed-bundle" \
+            --signed-receipt "$RUNNER_TEMP/signed-input/signed-receipt.json" \
+            --transfer-receipt "$RUNNER_TEMP/transfer-receipt.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: radio-successor-transferred
+          path: ${{ runner.temp }}/transfer-receipt.json
+          if-no-files-found: error
+          retention-days: 7
+
+  accept-successor:
+    needs: [transport-successor, persist-preview-state]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: radio-lab-readback
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.persist-preview-state.outputs.state-commit }}
+          path: go-autonomous-state
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: radio-successor-transferred
+          path: ${{ runner.temp }}
+      - name: Independently verify public successor and migrate exact evidence
+        env:
+          RADIO_LAB_PUBLIC_KEY: ${{ vars.RADIO_LAB_PUBLIC_KEY }}
+          RADIO_LAB_KEY_ID: ${{ vars.RADIO_LAB_KEY_ID }}
+          RADIO_LAB_JOB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_lab_successor_readback.py \
+            --state go-autonomous-state/radio-discovery-state \
+            --transfer-receipt "$RUNNER_TEMP/transfer-receipt.json" \
+            --acceptance "$RUNNER_TEMP/acceptance.json" --next-state "$RUNNER_TEMP/next-state"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: radio-successor-accepted
+          path: |
+            ${{ runner.temp }}/acceptance.json
+            ${{ runner.temp }}/next-state/
+          if-no-files-found: error
+          retention-days: 7
+
+  commit-successor-state:
+    needs: [accept-successor, persist-preview-state]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: radio-lab-transport
+    permissions:
+      contents: write
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.persist-preview-state.outputs.state-commit }}
+          path: go-autonomous-state
+      - uses: actions/download-artifact@v4
+        with:
+          name: radio-successor-accepted
+          path: ${{ runner.temp }}/accepted-input
+      - name: Record exact accepted deployment and commit state with lease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_STATE: ${{ needs.persist-preview-state.outputs.state-commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd go-autonomous-state
+          test "$(git rev-parse HEAD)" = "$EXPECTED_STATE"
+          python - <<'PY'
+          import hashlib,json,os,re,shutil,subprocess
+          from pathlib import Path
+          repo="repos/Sarogal/Ondes-Catalogues/"
+          ref="radio-lab-publisher-rehearsal"
+          state=Path("radio-discovery-state")
+          source=Path(os.environ["RUNNER_TEMP"])/"accepted-input"
+          nxt=source/"next-state"
+          a=json.loads((source/"acceptance.json").read_bytes())
+          old=json.loads((state/"release-context.json").read_bytes())
+          new=json.loads((nxt/"release-context.json").read_bytes())
+          p=json.loads((nxt/"release-anchor.json").read_bytes())
+          def api(path,body=None):
+              cmd=["gh","api",repo+path]
+              if body is not None: cmd+=["--method","POST","--input","-"]
+              return json.loads(subprocess.check_output(cmd,input=None if body is None else json.dumps(body).encode()))
+          commit=a["gitCommit"]
+          assert re.fullmatch(r"[a-f0-9]{40}",commit)
+          assert a["simulated"] is False and a["remoteReadbackVerified"] is True and a["deploymentVerified"] is True
+          assert a["parent"]==old["gitCommit"] and a["selectedSequence"]==old["selectedSequence"]+1
+          assert new["previousSha256"]==old["selectedSha256"] and new["advanced"] is True
+          assert new["selectedSequence"]==a["selectedSequence"]==p["release_sequence"]
+          assert new["selectedSha256"]==a["selectedSha256"]==p["content_sha256"]
+          body=(nxt/"release-baseline.json").read_bytes()
+          assert hashlib.sha256(body).hexdigest()==a["selectedSha256"] and len(body)==p["content_length"]
+          assert api("git/ref/heads/state/go-radio-autonomous")["object"]["sha"]==os.environ["EXPECTED_STATE"], "state changed concurrently"
+          assert api("git/ref/heads/"+ref)["object"]["sha"]==commit, "remote release changed concurrently"
+          deployment=api("deployments",{"ref":ref,"environment":ref,"auto_merge":False,
+              "required_contexts":[],"production_environment":False,"transient_environment":True,
+              "description":"Verified isolated radio successor"})
+          assert deployment["sha"]==commit and deployment["ref"]==ref
+          status=api("deployments/"+str(deployment["id"])+"/statuses",{
+              "state":"success","environment":ref,
+              "environment_url":"https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/refs/heads/radio-lab-publisher-rehearsal/pointer.json",
+              "description":"Independent signed successor and public artwork verification passed"})
+          assert status["state"]=="success"
+          assert api("git/ref/heads/"+ref)["object"]["sha"]==commit
+          new.update(gitCommit=commit,deploymentId=deployment["id"],remoteReadbackVerified=True,
+              deploymentVerified=True,simulated=False,mirroredLegacyArtwork=True)
+          (nxt/"release-context.json").write_text(json.dumps(new,ensure_ascii=False,indent=2)+"\n")
+          for oldfile in state.glob("*.json"):
+              if oldfile.name!="discovery-retry.json": oldfile.unlink()
+          for item in nxt.glob("*.json"):
+              assert item.is_file() and not item.is_symlink()
+              shutil.copyfile(item,state/item.name)
+          ext={"image/png":"png","image/jpeg":"jpg","image/webp":"webp"}
+          allowed={s["logo"]["sha256"]+"."+ext[s["logo"]["mime_type"]]:s["logo"]
+                   for s in json.loads(body)["stations"] if s.get("logo")}
+          for item in (nxt/"artwork-cache"/"sha256").glob("*"):
+              assert item.is_file() and not item.is_symlink() and item.name in allowed
+              data=item.read_bytes()
+              logo=allowed[item.name]
+              assert len(data)==logo["byte_size"] and hashlib.sha256(data).hexdigest()==logo["sha256"]
+              target=state/"artwork-cache"/"sha256"/item.name
+              target.parent.mkdir(parents=True,exist_ok=True)
+              assert not target.is_symlink()
+              if target.exists(): assert target.read_bytes()==data
+              else: target.write_bytes(data)
+          print("RADIO_LAB_SUCCESSOR_STATE_READY",new["selectedSequence"],deployment["id"])
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- radio-discovery-state
+          git commit -m "state(radio-autonomous): adopt verified real successor"
+          git push origin HEAD:refs/heads/state/go-radio-autonomous
