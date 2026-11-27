@@ -912,7 +912,21 @@ def _unique_address_event(nodes, url):
     return True
 
 
-def _missing_address_from_own_visible_event(raw, event, venue, html):
+class AddressReplayHeld(ValueError):
+    """Fixed private diagnostics; the public refusal message stays identical."""
+    CODES = frozenset({"structured_place_or_canonical_missing", "catalogue_address_unusable",
+                       "visible_page_unusable", "structured_address_conflict",
+                       "structured_country_conflict", "structured_description_conflict",
+                       "visible_heading_mismatch", "visible_date_conflict",
+                       "visible_address_conflict", "visible_named_address_not_found",
+                       "ambiguous_event_nodes"})
+
+    def __init__(self, message, diagnostics):
+        super().__init__(message)
+        self.address_replay_diagnostics = tuple(sorted(set(diagnostics) & self.CODES))
+
+
+def _missing_address_from_own_visible_event(raw, event, venue, html, *, diagnostics=None):
     """Recover ONLY an absent structured address from the same exact page.
 
     This route is called after independent source attribution and the
@@ -923,37 +937,43 @@ def _missing_address_from_own_visible_event(raw, event, venue, html):
     import existing_venue_geo_evidence as geo_evidence
     from venue_address_osm_source import eligible_address
 
+    def reject(code):
+        if diagnostics is not None:
+            diagnostics.add(code)
+        return False
+
     location = raw.get("location")
     if (not isinstance(location, dict)
             or location.get("address") is not None
             or not bridge._event_types(location.get("@type")) & {"Place", "MusicVenue"}
-            or raw.get("url") != event.get("officialUrl")
-            or not eligible_address(venue)
-            or geo_evidence.eligible(venue)
-            or not isinstance(html, str) or not 0 < len(html) <= probe.MAX_BYTES):
-        return False
+            or raw.get("url") != event.get("officialUrl")):
+        return reject("structured_place_or_canonical_missing")
+    if not eligible_address(venue) or geo_evidence.eligible(venue):
+        return reject("catalogue_address_unusable")
+    if not isinstance(html, str) or not 0 < len(html) <= probe.MAX_BYTES:
+        return reject("visible_page_unusable")
     for field, expected in (("addressLocality", venue["city"]),
                             ("postalCode", venue["postalCode"]),
                             ("streetAddress", venue["address"])):
         if location.get(field) not in (None, "") and normal(location[field]) != normal(expected):
-            return False
+            return reject("structured_address_conflict")
     for field in ("country", "addressCountry"):
         country = location.get(field)
         if country not in (None, ""):
             if isinstance(country, dict):
                 country = country.get("name") or country.get("@id")
             if normal(country) not in {"fr", "france", "republique francaise"}:
-                return False
+                return reject("structured_country_conflict")
     if location.get("description") not in (None, "") and not _exact_location_description(
             dict(location, address={}), venue):
-        return False
+        return reject("structured_description_conflict")
     parsed = geo_evidence.AddressBlocks()
     parsed.feed(html)
     parsed.close()
     headings = [(i, text) for i, (tag, text) in enumerate(parsed.blocks)
                 if tag == "h1"]
     if len(headings) != 1 or normal(headings[0][1]) != normal(raw.get("name")):
-        return False
+        return reject("visible_heading_mismatch")
     # Visible event content only. The structured exact date has already
     # been checked; a conflicting explicit nearby visible date still holds.
     index = headings[0][0]
@@ -968,7 +988,7 @@ def _missing_address_from_own_visible_event(raw, event, venue, html):
              for _, text in parsed.blocks[max(0, index-6):index] + detail[:12]
              if geo_evidence._event_day(text)}
     if dates and dates != {event["date"]}:
-        return False
+        return reject("visible_date_conflict")
     lines = [(tag, line.strip()) for tag, text in detail
              for line in text.split("\u241e") if line.strip()]
     def named_parent_location(line):
@@ -1011,9 +1031,11 @@ def _missing_address_from_own_visible_event(raw, event, venue, html):
             actual = normal(candidate)
             if (postal_codes != [venue["postalCode"]]
                     or actual not in {expected, expected + " france"}):
-                return False
+                return reject("visible_address_conflict")
             observed.add((normal(venue["address"]), venue["postalCode"]))
-    return observed == {(normal(venue["address"]), venue["postalCode"])}
+    if observed != {(normal(venue["address"]), venue["postalCode"])}:
+        return reject("visible_named_address_not_found")
+    return True
 
 
 # Fixed replay stages in validation order; never retain exception text from
@@ -1160,7 +1182,8 @@ def official_place_city_suffix(raw, venue, url):
 
 def _event(raw, event, venue, artists, *, accept_generic=False,
            fetch=None, cache=None, html=None, allow_visible_address=False,
-           allow_incomplete_official_venue=False, profile_scan_day=None):
+           allow_incomplete_official_venue=False, profile_scan_day=None,
+           address_diagnostics=None):
     """Verify one complete first-party concert event; never join evidence."""
     types = bridge._event_types(raw.get("@type")) if isinstance(raw, dict) else set()
     require("MusicEvent" in types or (accept_generic and "Event" in types),
@@ -1195,9 +1218,12 @@ def _event(raw, event, venue, artists, *, accept_generic=False,
             and _official_incomplete_venue_address(raw, event, venue)):
         pass  # No venue mutation; the separate geographic preflight owns it.
     elif addr is None and allow_visible_address and accept_generic:
-        require(_missing_address_from_own_visible_event(raw, event, venue, html),
+        require(_missing_address_from_own_visible_event(
+                    raw, event, venue, html, diagnostics=address_diagnostics),
                 "physical venue address absent")
     else:
+        if addr is None and accept_generic and address_diagnostics is not None:
+            address_diagnostics.add("ambiguous_event_nodes")
         require(isinstance(addr, dict), "physical venue address absent")
         country = addr.get("addressCountry")
         if isinstance(country, dict):
@@ -1381,6 +1407,7 @@ def validate(approval, venues, artists, today, *, fetch=None):
         events = attested
     valid = []
     rejected = set()
+    address_diagnostics = set()
     if (not events or sparse_detail is not None) and (is_single_osm or is_address or is_official):
         from automation.concerts import open_world_visible_cards
         detail = sparse_detail
@@ -1404,7 +1431,8 @@ def validate(approval, venues, artists, today, *, fetch=None):
                                 fetch=fetch, cache=cache, html=html,
                                 allow_visible_address=_unique_address_event(events, event["officialUrl"]),
                                 allow_incomplete_official_venue=is_official,
-                                profile_scan_day=checked))
+                                profile_scan_day=checked,
+                                address_diagnostics=address_diagnostics))
         except (ValueError, KeyError, TypeError) as exc:
             rejected.add(_replay_reason(exc))
             continue
@@ -1413,6 +1441,10 @@ def validate(approval, venues, artists, today, *, fetch=None):
                   next((code for _, code in reversed(_REPLAY_REASONS)
                         if code in rejected),
                        "invalid_event_node" if rejected else "no_matching_visible_or_structured_event"))
+        if reason == "venue_address_missing" and address_diagnostics:
+            raise AddressReplayHeld(
+                "Unlisted official source: no unique exact first-party MusicEvent: " + reason,
+                address_diagnostics)
         require(False, "no unique exact first-party MusicEvent: " + reason)
     names, genres = valid[0]
     require(names == proof["officialArtistNames"]

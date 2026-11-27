@@ -736,6 +736,7 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
              if isinstance(row, dict) and isinstance(row.get("event"), dict)}
     counts = Counter()
     reason_counts = Counter()
+    address_replay_diagnostics = Counter()
     checks = []
     started = time.monotonic()
     examined = []
@@ -779,6 +780,20 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
             check.update(state="held_event_or_source_not_verified",
                          reason=reason)
             reason_counts[reason] += 1
+            # Only fixed codes from the exact Publisher replay; never HTML,
+            # URLs, untrusted exception attributes or new approval authority.
+            cause = exc
+            for _ in range(4):
+                if isinstance(cause, verified.AddressReplayHeld):
+                    codes = sorted(set(cause.address_replay_diagnostics) &
+                                   verified.AddressReplayHeld.CODES)
+                    if codes:
+                        check["addressReplayDiagnostics"] = codes
+                        address_replay_diagnostics.update(codes)
+                    break
+                cause = cause.__cause__
+                if cause is None:
+                    break
             if (reason in _EXTRACTION_REASONS and _valid_revision(revision)
                     and candidate.get("source") != "agenda_officiel_openagenda"):
                 retry_memory[key] = revision
@@ -828,6 +843,7 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         "eligibilityRejections": dict(sorted(eligibility_rejections.items())),
         "candidateChecks": checks,
         "rejectionReasons": dict(sorted(reason_counts.items())),
+        "addressReplayDiagnostics": dict(sorted(address_replay_diagnostics.items())),
         "privateApprovalApplied": False,
         "publicationAllowed": False,
     }
