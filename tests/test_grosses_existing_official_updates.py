@@ -1587,6 +1587,25 @@ if __name__ == "__main__":
 
 
 class DailyProgrammeTests(unittest.TestCase):
+    def test_first_day_ordinal_opening_proves_current_year(self):
+        from grossesondes_existing_official_updates import daily_programme_artists, page
+        row = festival("festival-exemple-2026", "https://festival-exemple.fr/",
+                       dates=("2026-12-01", "2026-12-03"))
+        row["name"] = "Festival Exemple 2026"
+        html = ("<html><head><title>Festival Exemple</title></head><body><main>"
+                "<h1>† mardi 1er décembre †</h1>"
+                "<p>EXPOSITIONS : Vernissage le 1er décembre 2026 18h00 | GALERIE A</p>"
+                "<h1>† mercredi 2 décembre †</h1>"
+                "<p>CONCERTS : Alpha † Beta | SALLE A</p>"
+                "<h1>† jeudi 3 décembre †</h1>"
+                "<p>CONCERTS : Third Act † Fourth Act | SALLE B</p>"
+                "</main></body></html>")
+        self.assertEqual(daily_programme_artists(page(html), html, row, "2026-11-27"),
+                         ["Alpha", "Beta", "Third Act", "Fourth Act"])
+        stale = html.replace("1er décembre 2026", "1er décembre 2025")
+        self.assertEqual(daily_programme_artists(page(stale), stale, row, "2026-11-27"), [])
+
+
     def test_complete_current_daily_programme_excludes_non_music_and_venue(self):
         from grossesondes_existing_official_updates import daily_programme_artists, page
         site = "https://festival-exemple.fr/"
