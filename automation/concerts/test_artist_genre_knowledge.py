@@ -72,6 +72,32 @@ class ArtistGenreKnowledgeTests(unittest.TestCase):
             OFFICIAL, CAT, html, OFFICIAL["url"], DAY)
         self.assertEqual(result["genres"], ["Metalcore"])
 
+    def test_explicit_solo_musician_roles_share_individual_genre_contract(self):
+        for fields in (
+                {"jobTitle": "Guitariste"},
+                {"jobTitle": "Singer-songwriter"},
+                {"jobTitle": ["Photographe", "Chanteuse"]},
+                {"hasOccupation": {"@type": "Occupation", "name": "Bassist"}},
+                {"hasOccupation": [{"@type": "Occupation", "name": "Batteuse"}]}):
+            with self.subTest(fields=fields):
+                fact = knowledge.independently_verify_artist_profile(
+                    OFFICIAL, CAT, page(kind="Person", **fields), OFFICIAL["url"], DAY)
+                self.assertEqual(fact["genres"], ["Black Metal"])
+                self.assertEqual(fact["scope"], "individual_artist_not_event")
+                self.assertFalse(fact["publicationAllowed"])
+        for fields in (
+                {"jobTitle": "Artist"}, {"jobTitle": "Music journalist"},
+                {"jobTitle": "Former guitarist"}, {"jobTitle": "DJ"},
+                {"hasOccupation": {"name": "Guitarist"}},
+                {"hasOccupation": {"@type": "Occupation", "name": "Photographer"}}):
+            with self.subTest(fields=fields), self.assertRaises(ValueError):
+                knowledge.independently_verify_artist_profile(
+                    OFFICIAL, CAT, page(kind="Person", **fields), OFFICIAL["url"], DAY)
+        with self.assertRaises(ValueError):
+            knowledge.independently_verify_artist_profile(
+                OFFICIAL, CAT, page("Other Act", kind="Person", jobTitle="Guitarist"),
+                OFFICIAL["url"], DAY)
+
     def test_first_party_only_and_no_redirect(self):
         for changes in (
             {"sourceRole": "promoter_official"},

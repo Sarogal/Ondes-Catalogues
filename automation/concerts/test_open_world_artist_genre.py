@@ -31,6 +31,29 @@ def registry(hints=None, *, source="open_world_visible_card_research"):
 
 
 class OpenWorldArtistGenreTests(unittest.TestCase):
+    def test_solo_musician_roles_do_not_authorize_unknown_origin(self):
+        for fields in (
+                {"jobTitle": ["Auteur", "Guitariste"]},
+                {"jobTitle": "Singer-songwriter"},
+                {"hasOccupation": {"@type": "Occupation", "name": "Chanteuse"}}):
+            node = {"@type": "Person", "name": NAME, "genre": "Metalcore", **fields}
+            html = '<script type="application/ld+json">' + json.dumps(node) + '</script>'
+            out = research.build(registry(), DAY, fetch=lambda *a: html)
+            self.assertEqual(out["profilesRefreshed"], 1)
+            fact = next(iter(out["facts"].values()))
+            self.assertEqual(fact["genres"], ["Metalcore"])
+            self.assertFalse(fact["officialDomainVerified"])
+            self.assertFalse(out["publicationAllowed"])
+            self.assertEqual(out["approvalsProposed"], 0)
+            for changes in ({"name": "Other Act"}, {"genre": "Hardcore Techno"},
+                            {"jobTitle": "Artist", "hasOccupation": None},
+                            {"@type": "Event"}):
+                bad = '<script type="application/ld+json">' + json.dumps(
+                    {**node, **changes}) + '</script>'
+                denied = research.build(registry(), DAY, fetch=lambda *a: bad)
+                self.assertEqual(denied["memoryFactCount"], 0, changes)
+                self.assertFalse(denied["publicationAllowed"])
+
     def test_last_artist_in_large_named_bill_has_own_profile_research(self):
         names = [f"Unknown Act {i:03d}" for i in range(65)]
         reg = registry([{"name": names[-1], "url": URL}])

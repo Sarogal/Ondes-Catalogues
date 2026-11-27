@@ -179,11 +179,7 @@ def profile_genres(html, name):
         except (TypeError, ValueError):
             continue
         for node in knowledge._nodes(parsed):
-            kinds = knowledge._node_types(node)
-            if ("MusicGroup" not in kinds
-                    and not ("Person" in kinds and
-                             words(node.get("jobTitle")) in {
-                                 "musician", "musicien", "singer", "chanteur"})):
+            if not knowledge._is_musical_profile(node):
                 continue
             if words(node.get("name")) != target:
                 structured_claim = True
