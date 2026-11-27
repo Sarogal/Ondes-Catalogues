@@ -123,6 +123,31 @@ class CulturalAcceslibreProbeTests(unittest.TestCase):
         self.assertEqual(result, {"municipal_research_unavailable": 1, "municipal_failed_homepage": 1,
                                   "municipal_read_tls": 1})
 
+    def test_municipal_listed_page_qualifies_without_homepage_and_rejects_foreign_urls(self):
+        from unittest.mock import patch
+        from ptitesondes_cultural_acceslibre_probe import inspect_municipal
+        lead = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois",
+                "code_commune": "01234", "code_postal": "01230",
+                "numero_et_libelle_voie": "Rue des Jeux", "adresse_complete": "Rue des Jeux",
+                "site_internet_et_autres_liens": "https://mairie.example/ludotheque"}
+        home = "https://mairie.example/"
+        target = home + "ludotheque"
+        body = "<main><h1>Ludothèque A</h1><address>Rue des Jeux 01230 Les Bois</address><p>Jeux pour enfants</p><p>Accès libre</p></main>"
+        calls = []
+        def read(url, *_):
+            calls.append(url)
+            if url != target:
+                raise AssertionError("unexpected URL")
+            return url, body
+        module = "ptitesondes_dila_municipal_domains."
+        with patch(module + "municipal_site_hosts", return_value={"mairie.example"}), \
+             patch(module + "approved_municipal_page_host", side_effect=lambda url, *_: url.startswith(home)):
+            result = inspect_municipal(lead, hit={"website_hint": "https://foreign.example/venue"},
+                                      directory_fetch=lambda _: {}, page_read=read)
+        self.assertEqual(calls, [target])
+        self.assertEqual(result, {"municipal_listed_page_attempted": 1,
+                                  "municipal_listed_page_content_concordant_unverified": 1})
+
     def test_municipal_code_fallback_keeps_existing_host_gate(self):
         from unittest.mock import patch
         from ptitesondes_cultural_acceslibre_probe import inspect_municipal
