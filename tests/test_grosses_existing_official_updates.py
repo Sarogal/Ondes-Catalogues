@@ -1584,3 +1584,90 @@ class MunicipalVenueCityTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FreshPosterPublisherTests(unittest.TestCase):
+    def setUp(self):
+        self.site = "https://festival-exemple.fr/"
+        self.row = festival("festival-exemple-2027", self.site,
+                            dates=("2027-08-13", "2027-08-15"))
+        self.row["name"] = "Festival Exemple 2027"
+        self.image = self.site + "exemple-2027.jpg"
+        self.home = ("<main><h1>Festival Exemple 2027</h1>"
+                     "<p>Festival Exemple du 13 au 15 août 2027</p>"
+                     '<img src="/exemple-2027.jpg"></main>')
+        self.reading = self.make_reading("Artistes : Alpha, New Artist", "Pass 3J : 75 €")
+
+    def make_reading(self, *extra):
+        words = []
+        for y, line in enumerate(("FESTIVAL EXEMPLE", "13 au 15 août 2027", *extra)):
+            x = 20
+            for token in line.split():
+                width = len(token) * 10
+                words.append({"text": token, "confidence": 98,
+                              "box": [x, y * 40, width, 25], "review_only": True})
+                x += width + 8
+        return {"status": "review_only", "review_only": True,
+                "sha256": "a" * 64, "words": words}
+
+    def run_update(self, *, html=None, rendered=None, reader=None):
+        from unittest.mock import Mock
+        reader = reader or Mock(return_value=self.reading)
+        original = doc(self.row)
+        result, report = apply_independently_verified_updates(
+            original, original, DAY, tick=0, fetch=lambda _: html if html is not None else self.home,
+            browser_fetch=(lambda _: rendered) if rendered else None,
+            browser_sites=(self.site,) if rendered else (),
+            poster_reader=reader, commune_resolver=lambda *_: None)
+        return original["festivals"][0], result["festivals"][0], report, reader
+
+    def test_fresh_current_poster_proves_additive_roster_and_announced_price(self):
+        old, new, report, reader = self.run_update()
+        reader.assert_called_once_with(self.site, self.image, cache={})
+        self.assertEqual(new["lineup"], ["Alpha", "New Artist"])
+        self.assertEqual(new["bands"], 2)
+        self.assertEqual(new["price"], "Tarifs annoncés — Pass 3 jours : 75 €")
+        self.assertNotIn("ouverte", new["price"])
+        self.assertIn(self.image, new["auditSources"])
+        self.assertTrue(_verified_official_update_delta(old, new))
+        self.assertEqual(report["fresh_poster_images_read"], 1)
+
+    def test_rendered_candidate_rechecked_and_existing_price_preserved(self):
+        self.row["price"] = "Ancien tarif"
+        old, new, report, reader = self.run_update(
+            html="<main>Loading</main>", rendered=self.home)
+        reader.assert_called_once_with(self.site, self.image, cache={})
+        self.assertEqual(new["lineup"], ["Alpha", "New Artist"])
+        self.assertEqual(new["price"], "Ancien tarif")
+        self.assertTrue(_verified_official_update_delta(old, new))
+
+    def test_wrong_edition_external_image_and_missing_digest_cannot_publish(self):
+        from unittest.mock import Mock
+        for html in (self.home.replace("13 au 15", "20 au 22"),
+                     self.home.replace("/exemple-2027.jpg", "https://external.example/exemple-2027.jpg")):
+            old, new, report, reader = self.run_update(html=html)
+            reader.assert_not_called()
+            self.assertEqual(new["lineup"], [])
+            self.assertIsNone(new["price"])
+        reading = dict(self.reading, sha256=None)
+        old, new, report, _ = self.run_update(reader=Mock(return_value=reading))
+        self.assertEqual(new["lineup"], [])
+        self.assertIsNone(new["price"])
+
+    def test_429_stops_same_host_and_never_uses_private_cache(self):
+        from unittest.mock import Mock
+        reader = Mock(return_value={"status": "rate_limited"})
+        html = self.home.replace("</main>", '<img src="/poster-2027.jpg"></main>')
+        old, new, report, _ = self.run_update(html=html, reader=reader)
+        reader.assert_called_once()
+        self.assertEqual(new["lineup"], [])
+        self.assertIsNone(new["price"])
+
+    def test_conflicting_poster_rosters_and_prices_not_promoted(self):
+        from unittest.mock import Mock
+        reader = Mock(side_effect=[self.reading, self.make_reading("Artistes : Beta", "Pass 3J : 85 €")])
+        html = self.home.replace("</main>", '<img src="/poster-2027.jpg"></main>')
+        old, new, report, _ = self.run_update(html=html, reader=reader)
+        self.assertEqual(reader.call_count, 2)
+        self.assertEqual(new["lineup"], [])
+        self.assertIsNone(new["price"])
