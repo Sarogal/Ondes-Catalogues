@@ -12,6 +12,7 @@ from collections import Counter
 from time import monotonic
 
 from ptitesondes_family_national_source_preflight import norm_text
+from ptitesondes_cultural_directory_discovery import scan as scan_directory, MAX_TOTAL
 from ptitesondes_generic_venue_osm_preflight import (
     fetch_osm_query, MAX_ELEMENTS, osm_transport_diagnostics,
     OSM_ENDPOINT_LABELS, OSM_CATEGORIES,
@@ -150,7 +151,7 @@ def _inspect(row, osm_fetch, page_read):
 def research(report, previous, today, *, limit=DEFAULT_BATCH,
              osm_fetch=fetch_named, page_read=read_unknown_https,
              time_budget=None, clock=monotonic, stop_on_outage=False,
-             ban_research=None):
+             ban_research=None, fair_mix=False):
     if (type(today) is not date or type(limit) is not int or not 1 <= limit <= MAX_BATCH
             or not isinstance(report, dict) or report.get("schema") !=
             "ptitesondes.place_review.v1" or not isinstance(report.get("records"), list)
@@ -188,6 +189,21 @@ def research(report, previous, today, *, limit=DEFAULT_BATCH,
     # Historical candidates are included even without an event UID.
     attempts = {k: v for k, v in previous["attempts"].items() if k in rows}
     selected = sorted(rows, key=lambda k: (attempts.get(k, 0), k))[:limit]
+    if fair_mix and limit > 1:
+        # Reserve capacity for retries even during an influx of new leads.
+        # Interleave fresh and retry work so a time budget cannot always
+        # consume the entire new-lead allowance before revisiting old leads.
+        fresh = [k for k in rows if k not in attempts]
+        retry = sorted(attempts, key=lambda k: (attempts[k], k))
+        if fresh and retry:
+            selected = []
+            for i in range(limit):
+                primary, secondary = (retry, fresh) if i % 2 == 0 else (fresh, retry)
+                if not (primary or secondary):
+                    break
+                selected.append((primary or secondary).pop(0))
+        elif fresh:
+            selected = fresh[:limit]
     seq = previous["sequence"]
     results = []
     started = clock() if time_budget is not None else None
@@ -298,6 +314,102 @@ def cycle(report, previous, today, **kwargs):
             "records": [saved[k] for k in sorted(saved)]}, summary
 
 
+DIRECTORY_STATE_SCHEMA = "ptitesondes.private_cultural_directory_queue.v1"
+
+
+def _directory_leads(records):
+    if not isinstance(records, list) or len(records) > MAX_RECORDS:
+        raise ValueError("invalid_directory_queue")
+    rows = {}
+    for row in records:
+        if (not isinstance(row, dict)
+                or set(row) != {"city", "venue", "status", "observed_at",
+                                "public_eligible", "gps_verified", "official_site_verified"}
+                or row["status"] != "not_inspected_yet" or row["observed_at"] is not None
+                or any(row[k] is not False for k in
+                       ("public_eligible", "gps_verified", "official_site_verified"))):
+            raise ValueError("invalid_directory_lead")
+        key = _identity(row)
+        if key in rows:
+            raise ValueError("duplicate_directory_lead")
+        rows[key] = row
+    return rows
+
+
+def directory_cycle(report, previous, today, *, directory_scan=None, **kwargs):
+    """Persist cursor, untrusted leads and research together in the private state.
+
+    A directory outage never prevents the existing research cycle. Existing
+    qualification decisions take precedence over newly discovered identities.
+    """
+    if directory_scan is None:
+        directory_scan = scan_directory
+    if (not isinstance(report, dict) or report.get("schema") != "ptitesondes.place_review.v1"
+            or not isinstance(report.get("records"), list)):
+        raise ValueError("invalid_place_research_input")
+    old = previous
+    directory = {"schema": DIRECTORY_STATE_SCHEMA, "next_page": 1, "records": []}
+    if previous is not None:
+        if not isinstance(previous, dict):
+            raise ValueError("invalid_place_research_state")
+        old = dict(previous)
+        directory = old.pop("directory", directory)
+    if (not isinstance(directory, dict)
+            or set(directory) != {"schema", "next_page", "records"}
+            or directory["schema"] != DIRECTORY_STATE_SCHEMA
+            or type(directory["next_page"]) is not int
+            or not 1 <= directory["next_page"] <= MAX_TOTAL):
+        raise ValueError("invalid_directory_state")
+    queue = _directory_leads(directory["records"])
+    known = {}
+    for row in report["records"]:
+        if not isinstance(row, dict):
+            raise ValueError("invalid_place_research_input")
+        key = _identity(row)
+        if key in known:
+            raise ValueError("duplicate_place_identity")
+        known[key] = row
+    # Published identities need no additional queue slot; all other private
+    # discovery leads survive provider outages and changing qualification files.
+    queue = {k: v for k, v in queue.items()
+             if known.get(k, {}).get("status") != "already_public"}
+    next_page = directory["next_page"]
+    scanned = added = unavailable = capacity = 0
+    try:
+        found = directory_scan(next_page)
+        if (not isinstance(found, dict)
+                or found.get("schema") != "ptitesondes.cultural_directory_private_page.v1"
+                or found.get("publication_ready") is not False
+                or type(found.get("public_writes")) is not int or found["public_writes"] != 0
+                or type(found.get("next_page")) is not int
+                or not 1 <= found["next_page"] <= MAX_TOTAL
+                or type(found.get("rows_examined")) is not int
+                or not 0 <= found["rows_examined"] <= 80):
+            raise ValueError("invalid_directory_scan")
+        incoming = _directory_leads(found.get("records"))
+        incoming = {k: v for k, v in incoming.items()
+                    if known.get(k, {}).get("status") != "already_public"}
+        proposed = queue | incoming
+        if len(set(known) | set(proposed)) > MAX_RECORDS:
+            capacity = 1  # Never advance past a page whose leads cannot be retained.
+        else:
+            scanned = found["rows_examined"]
+            added = len(set(proposed) - set(queue))
+            queue = proposed
+            next_page = found["next_page"]
+    except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
+        unavailable = 1
+    effective = dict(report, records=list(known.values()) +
+                     [row for key, row in queue.items() if key not in known])
+    state, summary = cycle(effective, old, today, fair_mix=True, **kwargs)
+    state["directory"] = {"schema": DIRECTORY_STATE_SCHEMA, "next_page": next_page,
+                          "records": list(queue.values())}
+    summary.update(directory_rows_examined=scanned, directory_leads_added=added,
+                   directory_leads_stored=len(queue), directory_next_page=next_page,
+                   directory_unavailable=unavailable, directory_capacity_reached=capacity)
+    return state, summary
+
+
 # Public logs may contain only fixed labels and integer aggregates.
 PUBLIC_STOP_REASONS = ("batch_complete", "time_budget", "provider_outage")
 PUBLIC_RESULT_CODES = (
@@ -318,6 +430,12 @@ def public_diagnostic_lines(summary):
     for label in ("ban_fallback_attempts", "ban_fallback_matches", "map_skipped_after_outage"):
         count = summary.get(label)
         if type(count) is int and 0 <= count <= MAX_BATCH:
+            lines.append(f"{label}: {count}")
+    for label in ("directory_rows_examined", "directory_leads_added",
+                  "directory_leads_stored", "directory_next_page",
+                  "directory_unavailable", "directory_capacity_reached"):
+        count = summary.get(label)
+        if type(count) is int and 0 <= count <= MAX_TOTAL:
             lines.append(f"{label}: {count}")
     for key, allowed in (
         ("counts", PUBLIC_RESULT_CODES),
@@ -360,7 +478,7 @@ def main():
                     if args.previous.exists() or args.previous.is_symlink() else None)
         stage = "research_cycle"
         from ptitesondes_open_world_permanent_place_ban import discover_ban_routes
-        state, summary = cycle(report, previous, args.date, limit=MAX_BATCH,
+        state, summary = directory_cycle(report, previous, args.date, limit=MAX_BATCH,
                                time_budget=LIVE_BUDGET_SECONDS, stop_on_outage=True,
                                ban_research=discover_ban_routes)
         stage = "persist_result"
