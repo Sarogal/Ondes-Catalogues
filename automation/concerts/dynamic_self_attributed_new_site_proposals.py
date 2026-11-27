@@ -257,11 +257,17 @@ def build(registry, catalogue, before, today, *, slot=0,
                   for x in output["approvals"] if isinstance(x, dict)}
     signed_sites = {x.get("venue", {}).get("id")
                     for x in output["venueApprovals"] if isinstance(x, dict)}
+    chosen, retried = geo_producer.prioritize_previous_pair(
+        chosen, available, prior, signed_ids, limit,
+        schema=SCHEMA, success_state="publisher_bound_event_site_pair")
     states, reasons, checks = Counter(), Counter(), []
     geo_diagnostics = Counter()
     for day, url, candidate in chosen:
         name = str(candidate.get("candidateId", ""))[:120]
-        row = {"candidateId": name, "date": day}
+        key = geo_producer.site_review_key((day, url, candidate))
+        row = {"candidateId": name, "date": day, "reviewKey": key}
+        if key in retried:
+            row["immediatePairRetry"] = True
         try:
             event, site = propose((day, url, candidate), current, today, fetch=fetch)
             eid, sid = event["event"]["id"], site["venue"]["id"]
@@ -278,6 +284,7 @@ def build(registry, catalogue, before, today, *, slot=0,
             current["artists"].extend(
                 {**a, "aliases": []} for a in event["newArtists"])
             row["state"] = "publisher_bound_event_site_pair"
+            row["proposedEventId"] = eid
             states[row["state"]] += 1
         except (ValueError, TypeError, KeyError, IndexError,
                 OSError, TimeoutError) as ex:
@@ -306,6 +313,7 @@ def build(registry, catalogue, before, today, *, slot=0,
     return output, {
         "schema": SCHEMA, "asOf": today.isoformat(), "scanSlot": slot,
         "eligibleUnknownSites": len(available), "examined": len(chosen),
+        "immediatePairRetries": len(retried),
         "stateCounts": dict(sorted(states.items())),
         "candidateChecks": checks,
         "reviewMemory": geo_producer.remember_site_reviews(memory, chosen),
