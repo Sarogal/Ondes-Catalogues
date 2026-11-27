@@ -903,6 +903,95 @@ def listed_artists(blocks):
 
 
 
+def linked_artist_grid(url, html, row, today):
+    """Extract visible, individually linked artist cards on an edition grid.
+
+    A generic same-origin programme route, visible brand/year and every
+    calendar day (including correct weekday) are required. The card's own
+    visible label must agree with its individual artist-profile URL.
+    No artist roster, venue or festival-specific collector is configured.
+    """
+    from datetime import timedelta
+    from grossesondes_official_html_edition import festival_visible_content
+    try:
+        site = row["officialSite"]
+        if (safe_public_url(url) != url or urlsplit(url).hostname != urlsplit(site).hostname
+                or not re.search(r"/(?:lineup|line-up|programmation|programme|program|artists|artistes)/?$",
+                                 urlsplit(url).path, re.I)):
+            return []
+        start, end = date.fromisoformat(row["startDate"]), date.fromisoformat(row["endDate"])
+        if start < date.fromisoformat(today) or start.year != end.year or not 0 <= (end-start).days <= 7:
+            return []
+        visible, _ = festival_visible_content(html)
+        visible = fold(visible)
+        brand = fold(re.sub(r"\b20[2-4]\d\b", "", row["name"]))
+        if (len(brand.replace(" ", "")) < 5
+                or not re.search(r"(?<![a-z0-9])" + re.escape(brand) + r"\s+" + str(start.year) + r"\b", visible)
+                or SENSITIVE.search(visible)):
+            return []
+        if not re.search(r"\b(?:line up|lineup|programmation|programme|program)\b", visible):
+            return []
+        weekdays = dict(WEEKDAY_2027_LABELS, monday=0, tuesday=1,
+                        wednesday=2, thursday=3, friday=4, saturday=5, sunday=6)
+        day_pattern = re.compile(r"\b(" + "|".join(weekdays) +
+                                 r")\s+(\d{1,2})(?:er)?\s+(" + MONTH_NAMES + r")\b")
+        days = set()
+        for match in day_pattern.finditer(visible):
+            day = date(start.year, OFFICIAL_MONTHS[match[3]], int(match[2]))
+            if day.weekday() != weekdays[match[1]] or not start <= day <= end:
+                return []
+            days.add(day)
+        if days != {start + timedelta(days=i) for i in range((end-start).days+1)}:
+            return []
+        class Cards(VisibleText):
+            def __init__(self):
+                super().__init__()
+                self.anchor = None
+                self.cards = []
+            def handle_starttag(self, tag, attrs):
+                if tag in ("nav", "footer", "aside", "header"):
+                    attrs = list(attrs) + [("hidden", None)]
+                super().handle_starttag(tag, attrs)
+                if tag == "a" and not self.hidden():
+                    self.anchor = [dict(attrs).get("href"), []]
+            def handle_data(self, data):
+                super().handle_data(data)
+                if self.anchor is not None and not self.hidden():
+                    self.anchor[1].append(data)
+            def handle_endtag(self, tag):
+                if tag == "a" and self.anchor is not None:
+                    self.cards.append(self.anchor)
+                    self.anchor = None
+                super().handle_endtag(tag)
+        parser = Cards()
+        parser.feed(html)
+        parser.close()
+        found = {}
+        for href, parts in parser.cards:
+            if not isinstance(href, str) or len(href) > 500 or any(c in href for c in ("%", "#", "?", "\\")):
+                continue
+            address = urljoin(url, href)
+            path = urlsplit(address)
+            if (path.hostname != urlsplit(site).hostname or safe_public_url(address) != address
+                    or ".." in path.path.split("/")):
+                continue
+            match = re.search(r"/(?:artist|artists|artiste|artistes|band|bands|groupe|groupes)/([a-zA-Z0-9-]+)/?$", path.path)
+            if not match:
+                continue
+            label = " ".join(" ".join(parts).split())
+            name = good_artist(label)
+            if (not name or key(name) != key(match[1])
+                    or key(name) in ("veryspecialguest", "specialguest", "tba", "tobeannounced", "aconfirmer", "invite") 
+                    or not re.search(r"(?<![a-z0-9])" + re.escape(fold(label)) + r"(?![a-z0-9])", visible)):
+                continue
+            found.setdefault(key(name), name)
+            if len(found) > 600:
+                return []
+        return list(found.values()) if len(found) >= 2 else []
+    except (ValueError, TypeError, KeyError, UnicodeError):
+        return []
+
+
 def daily_programme_artists(doc, html, row, today):
     """A complete printed day-by-day programme with explicit concert billing.
 
@@ -1945,6 +2034,10 @@ def apply_independently_verified_updates(
                 daily_names = daily_programme_artists(page(html), html, old, today)
                 if daily_names:
                     claims.extend(daily_names)
+                    sources.append(url)
+                grid_names = linked_artist_grid(url, html, old, today)
+                if grid_names:
+                    claims.extend(grid_names)
                     sources.append(url)
             # Separate complete, explicitly labelled price tiers from the
             # legacy one-price-per-duration parser. Do not reconcile conflicting

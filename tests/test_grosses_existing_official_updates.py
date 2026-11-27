@@ -1586,6 +1586,51 @@ if __name__ == "__main__":
     unittest.main()
 
 
+class LinkedArtistGridTests(unittest.TestCase):
+    def test_current_edition_artist_grid_without_fixed_roster_limit(self):
+        from grossesondes_existing_official_updates import linked_artist_grid
+        site = "https://festival-exemple.fr/"
+        row = festival("festival-exemple-2027", site, dates=("2027-06-17", "2027-06-20"))
+        row["name"] = "Festival Exemple"
+        row.pop("lineup")
+        row["bands"] = None
+        url = site + "en/lineup"
+        names = ["Artist %d" % i for i in range(1, 101)]
+        cards = "".join('<a href="/en/artist/artist-%d">Artist %d</a>' % (i, i)
+                        for i in range(1, 101))
+        html = ('<main><h1>Festival Exemple 2027</h1><h2>Line-Up</h2>'
+                '<div>Thursday 17 June Friday 18 June Saturday 19 June Sunday 20 June</div>'
+                + cards +
+                '<a href="/en/artist/very-special-guest">VERY SPECIAL GUEST</a>'
+                '<a href="/en/artist/not-the-name">Misleading</a>'
+                '<a href="https://other.fr/artist/fake">Fake</a>'
+                '<aside><a href="/en/artist/partner">Partner</a></aside>'
+                '<a hidden href="/en/artist/hidden">Hidden</a>'
+                '<a href="/en/artist/artist-1">Artist 1</a></main>')
+        self.assertEqual(linked_artist_grid(url, html, row, DAY), names)
+        root = ('<main><h1>Festival Exemple 2027</h1><p>17 au 20 juin 2027</p>'
+                '<a href="/en/lineup">Line up</a></main>')
+        original = doc(row)
+        updated, report = apply_independently_verified_updates(
+            original, original, DAY, tick=0, fetch={site: root, url: html}.__getitem__,
+            commune_resolver=lambda *_: None)
+        new = updated["festivals"][0]
+        self.assertEqual(new["lineup"], names)
+        self.assertEqual(new["bands"], 100)
+        self.assertTrue(_verified_official_update_delta(row, new))
+        for altered in (
+            html.replace("Festival Exemple 2027", "Festival Exemple 2026"),
+            html.replace("Sunday 20 June", "Sunday 27 June"),
+            html.replace("Thursday 17 June", "Friday 17 June"),
+            html.replace("Friday 18 June", ""),
+            html.replace("Festival Exemple 2027", "Autre Festival 2027"),
+            html.replace("<h2>Line-Up</h2>", "<h2>Line-Up annulé</h2>"),
+        ):
+            self.assertEqual(linked_artist_grid(url, altered, row, DAY), [])
+        self.assertEqual(linked_artist_grid("https://other.fr/en/lineup", html, row, DAY), [])
+        self.assertEqual(linked_artist_grid(site + "en/archives", html, row, DAY), [])
+
+
 class DailyProgrammeTests(unittest.TestCase):
     def test_first_day_ordinal_opening_proves_current_year(self):
         from grossesondes_existing_official_updates import daily_programme_artists, page
