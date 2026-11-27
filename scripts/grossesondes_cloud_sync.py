@@ -400,6 +400,11 @@ def _verified_official_update_delta(old, new):
             return False
     old_names, new_names = old.get("lineup"), new.get("lineup")
     if "lineup" in changed:
+        if old_names is None and old.get("bands") is None:
+            # A legacy signed edition may not yet have a roster at all.
+            # Independent current-edition proof can initialize it, never
+            # infer names from the absence of a count.
+            old_names = []
         if not isinstance(old_names, list) or not isinstance(new_names, list):
             return False
         # A Publisher-verified current-edition roster may collapse the same
@@ -413,9 +418,10 @@ def _verified_official_update_delta(old, new):
             new_names[:len(cleaned)] == cleaned and
             len(new_names) >= len(cleaned))
         if (not (additive or cleaned_plus_additive)
-                or type(old.get("bands")) is not int
-                or old["bands"] != len(old_names)
-                or new.get("bands") != len(new_names)):
+                or (old.get("bands") is not None and
+                    (type(old.get("bands")) is not int or old["bands"] != len(old_names)))
+                or type(new.get("bands")) is not int
+                or new["bands"] != len(new_names)):
             return False
     elif "bands" in changed:
         return False
