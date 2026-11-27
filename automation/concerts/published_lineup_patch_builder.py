@@ -161,6 +161,7 @@ def build_promotional(catalogue, approved, today, *, fetch=probe.safe_fetch, lim
             "invalid signed approval ledger or review budget")
     events = {e["id"]: e for e in catalogue["events"]}
     known = {a["id"]: a for a in catalogue["artists"]}
+    venues = {v["id"]: v for v in catalogue["venues"]}
     corrected = {r["eventId"] for r in approved.get("lineupCorrections", [])}
     seen, cache, proposals, held = set(), {}, [], []
     for original in approved["approvals"]:
@@ -173,6 +174,8 @@ def build_promotional(catalogue, approved, today, *, fetch=probe.safe_fetch, lim
                 or current.get("artistIds") != event.get("artistIds")
                 or current.get("title") != event.get("title")
                 or not any(oa.promotional_artist_candidate(known.get(aid, {}).get("name"))
+                           or oa.city_artist_candidate(known.get(aid, {}).get("name"),
+                               venues.get(current.get("venueId"), {}).get("city"))
                            or identity.possible(known.get(aid, {}).get("name"))
                            for aid in current.get("artistIds", []))):
             continue
