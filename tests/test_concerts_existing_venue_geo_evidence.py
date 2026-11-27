@@ -446,3 +446,34 @@ class LinkedPracticalAddressTests(unittest.TestCase):
                           return_value="https://unknown-room.fr/"), self.assertRaises(ValueError):
             evidence.verify(event, VENUE, fetch=lambda url, cache: (
                 page if url == URL else self.fail("contradiction must not trigger fallback")))
+
+class StandaloneVenueSourceTests(unittest.TestCase):
+    def test_exact_named_footer_and_independent_geo_without_event(self):
+        source = "https://unknown-room.fr/"
+        html = "<footer><address>New Room: 19 rue des Jardins, 68000 Colmar</address></footer>"
+        with patch.object(evidence, "registered_venue_source", return_value=source), \
+             patch.object(evidence.geo, "verify", return_value=(OSM, 48.08, 7.36, "named-site-point")):
+            proof = evidence.verify_venue_source(source, VENUE, fetch=lambda *a: html)
+            self.assertIsNone(proof["eventId"])
+            self.assertEqual(proof["venuePatch"]["address"], "19 rue des Jardins")
+            self.assertFalse(proof["publicationAllowed"])
+            for bad in (html.replace("New Room", "Other Room"),
+                        html.replace("Colmar", "Paris"),
+                        html + html.replace("19 rue", "21 rue")):
+                with self.assertRaises(ValueError):
+                    evidence.verify_venue_source(source, VENUE, fetch=lambda *a: bad)
+        with patch.object(evidence, "registered_venue_source", return_value=None):
+            with self.assertRaises(ValueError):
+                evidence.verify_venue_source(source, VENUE, fetch=lambda *a: self.fail("unbound source"))
+
+    def test_scan_rotates_orphan_venue_without_event(self):
+        source = "https://unknown-room.fr/"
+        with patch.object(evidence, "registered_venue_source", return_value=source):
+            report = evidence.scan({"venues": [VENUE], "events": []},
+                                   dt.date(2026, 11, 25),
+                                   verify_standalone=lambda url, venue, **kw: {
+                                       "venueId": venue["id"], "officialUrl": url})
+        self.assertEqual(report["venuesWithFutureOfficialEvents"], 0)
+        self.assertEqual(report["standaloneSourcesExamined"], 1)
+        self.assertEqual(report["eventPagesExamined"], 0)
+        self.assertEqual(report["proposals"][0]["venueId"], VENUE["id"])
