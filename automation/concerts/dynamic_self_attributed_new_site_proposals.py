@@ -30,6 +30,7 @@ from automation.concerts import event_site_pair_recheck as pairs
 from automation.concerts import official_rss_jsonld_bridge as bridge
 from automation.concerts import openagenda_official_concert as oa
 from automation.concerts import source_admission_intake as intake
+from automation.concerts import source_cross_domain_corroboration as cross
 from automation.concerts import source_evidence_probe as probe
 from automation.concerts import venue_address_osm_source as address_osm
 from scripts import concert_dynamic_new_site_source as live
@@ -74,7 +75,7 @@ def eligible(registry, catalogue, today):
             and isinstance(today, dt.date)
             and not isinstance(today, dt.datetime),
             "invalid private candidate registry or public catalogue")
-    known = {(_norm(v.get("name")), _norm(v.get("city")))
+    known = {(cross.clean_venue(v.get("name")), _norm(v.get("city")))
              for v in catalogue["venues"] if isinstance(v, dict)}
     published = {(e.get("officialUrl"), e.get("date"))
                  for e in catalogue["events"] if isinstance(e, dict)}
@@ -98,7 +99,7 @@ def eligible(registry, catalogue, today):
                 or not isinstance(c.get("leadArtist"), str)
                 or not c["leadArtist"].strip()
                 or not isinstance(c.get("date"), str)
-                or (_norm(c["venue"]), _norm(c["city"])) in known):
+                or (cross.clean_venue(c["venue"]), _norm(c["city"])) in known):
             continue
         try:
             date = dt.date.fromisoformat(c["date"])
@@ -153,7 +154,7 @@ def propose(row, catalogue, today, *, fetch=probe.safe_fetch):
             and live.domain(homepage) == live.domain(url),
             "OSM named venue does not independently own event domain")
     require(not any(
-        _norm(v.get("name")) == _norm(site["name"])
+        cross.clean_venue(v.get("name")) == cross.clean_venue(site["name"])
         and _norm(v.get("city")) == _norm(site["city"])
         for v in catalogue["venues"] if isinstance(v, dict)),
         "site already published; use the known-site path")

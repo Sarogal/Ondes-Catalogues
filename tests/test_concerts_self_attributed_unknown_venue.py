@@ -408,6 +408,26 @@ class IndependentUnknownVenuePublisherTests(unittest.TestCase):
                     lead(observations=1), base, pending, TODAY, fetch=denied_fetch)
                 self.assertEqual(denied, pending, diagnostic)
 
+    def test_known_venue_article_variant_is_not_new_site_in_either_lane(self):
+        from automation.concerts import openagenda_new_site_proposals as oa_producer
+        base = test_catalogue()
+        base["venues"].append({"id": "article-variant", "name": "La Place Libre",
+                               "city": "Tours"})
+        registry = lead()
+        self.assertEqual(producer.eligible(registry, base, TODAY), [])
+        entry = registry["items"]["synthetic"]
+        url = "https://openagenda.com/unknown-agenda/events/example"
+        entry["candidate"].update(
+            source="agenda_officiel_openagenda", sourcePage=url,
+            sourceUrl=url, eventDetailUrl=url,
+            openAgendaUid=123456, openAgendaEventUid=654321)
+        self.assertEqual(oa_producer.eligible(registry, base, TODAY), [])
+        entry["candidate"]["city"] = "Lyon"
+        self.assertEqual(len(oa_producer.eligible(registry, base, TODAY)), 1)
+        registry = lead()
+        registry["items"]["synthetic"]["candidate"]["venue"] = "Place Libre Club"
+        self.assertEqual(len(producer.eligible(registry, base, TODAY)), 1)
+
     def test_already_known_sites_and_unstable_source_are_quarantined(self):
         for invalid in (0, -1, True, None, "1"):
             with self.subTest(observations=invalid):
