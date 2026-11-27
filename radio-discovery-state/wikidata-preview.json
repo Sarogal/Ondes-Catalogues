@@ -3,11 +3,11 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 140,
-  "dueNameCount": 4,
-  "attemptedCount": 4,
-  "serviceFailure": null,
-  "retryAfterKey": null,
+  "observedNameCount": 143,
+  "dueNameCount": 3,
+  "attemptedCount": 1,
+  "serviceFailure": "service_or_response_held",
+  "retryAfterKey": "kindness",
   "entries": {
     "2000 fm": {
       "status": "identity_held",

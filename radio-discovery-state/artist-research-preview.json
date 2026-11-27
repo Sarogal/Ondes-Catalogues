@@ -3,11 +3,11 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 140,
+  "observedNameCount": 143,
   "dueNameCount": 36,
-  "attemptedCount": 4,
+  "attemptedCount": 1,
   "serviceFailure": "http_503",
-  "retryAfterKey": "heaven shall burn",
+  "retryAfterKey": "her echo",
   "entries": {
     "2000 fm": {
       "status": "not_found",

@@ -5,7 +5,7 @@
   "approvedCount": 0,
   "attemptedCount": 6,
   "stationsWithArtistHints": 110,
-  "distinctArtistHints": 140,
+  "distinctArtistHints": 143,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -502,7 +502,7 @@
     {
       "stationuuid": "25d7b677-a866-4b32-aabc-20fa43e2d479",
       "streamSha256": "f1a6452e4311332b6aa5694cedc2cc2a850e2de4bd46704d1306a2c1a0375ed5",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -560,7 +560,7 @@
     {
       "stationuuid": "2f76081c-dbf0-4b40-bb30-63987abe744e",
       "streamSha256": "1fd1278b4e3b5b760b2afa150d0059c6f3256a2d8f707505f0be8fc0767e0f2c",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -575,13 +575,20 @@
           "date": "2026-11-26",
           "artistHint": "Nine Inch Nails",
           "titleSha256": "f4df7cd390ce3cf82fe9f634e72652568e721ab2c885dc8da8fbf342a7c4a432"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Kindness",
+          "titleSha256": "16db3002c880692f39894be61eb4c3ee0c93bf5894eb27fa591bddb6f482efed"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "32955656-5a38-40c0-ab1f-e059496bfda6",
       "streamSha256": "ed2a3274edc9092547074120bac8f194320d86bfaa21989d4dd89c5cde525d1c",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -591,13 +598,20 @@
           "date": "2026-11-26",
           "artistHint": "Krasnaja Plesen'",
           "titleSha256": "6a8c539e454f50d67f5decc8903051003a44a5da71a199ac08ddb23308ba6238"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Tarakany!",
+          "titleSha256": "d466aca67fb26c59d37bb9a29537c2591a35ccb48188a671f475d3366209ec7d"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "32bac5f0-58bc-445a-8e54-8ce9ba7f48df",
       "streamSha256": "f23a8e1f4bb89319570b09de588c24405c3ac0b594b2c2e001d9aab7bc8ff706",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -607,6 +621,11 @@
           "date": "2026-11-26",
           "artistHint": "Athena",
           "titleSha256": "2603b122d65e53dd3209293c9f818f2fe253a3f48878199efc4d9d8158ca3640"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Talco",
+          "titleSha256": "aa345789647723f2ed08c743690b0cb41fa1a32179a22ba4e6c87291b5b88bad"
         }
       ],
       "alternativeVersion": 0,
@@ -615,7 +634,7 @@
     {
       "stationuuid": "341376c9-ce9e-4377-aaf8-a791d42cf567",
       "streamSha256": "feff2157c56ec604328d7e33735cc579cd23580fe2a498a415a9e852e9df886c",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -625,6 +644,11 @@
           "date": "2026-11-26",
           "artistHint": "Vinnie Moore",
           "titleSha256": "4ea332dfab0358056de56506b0529fdc3cce66e51557d925b684c40c408af943"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Led Zeppelin",
+          "titleSha256": "60baf8dfb73d6e6e5094a98b236f383368ed1807f0e2befe5ea7b2405af53a8c"
         }
       ],
       "alternativeVersion": 0,
@@ -633,7 +657,7 @@
     {
       "stationuuid": "3446b04f-839f-4367-b119-b85842787b97",
       "streamSha256": "cf9456eb48746077c2743b972d475238f611c9da63a84c430c49892e8ed9f3d8",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
