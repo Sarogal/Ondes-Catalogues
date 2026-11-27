@@ -17,11 +17,21 @@ from ptitesondes_cultural_directory_geo_probe import classify, point, distance
 from ptitesondes_family_national_source_preflight import norm_text
 
 
-def candidates(fetch=_fetch):
+MAX_PROBE_PAGES = 24
+
+
+def candidates(fetch=_fetch, *, pages=MAX_PROBE_PAGES):
+    """Bounded broader sample, with no selection by venue or municipality."""
+    if type(pages) is not int or not 1 <= pages <= MAX_PROBE_PAGES:
+        raise ValueError("invalid_probe_budget")
     found = {}
-    for page in range(1, 13):
+    total = None
+    for page in range(1, pages + 1):
         doc = fetch(URL.split("?")[0] + "?" + urlencode({"page": page, "page_size": PAGE_SIZE}))
-        parse_page(doc, page)
+        _, current_total = parse_page(doc, page)
+        if total is not None and total != current_total:
+            raise ValueError("directory_changed_during_scan")
+        total = current_total
         for row in doc["data"]:
             key = identity(row)
             if key and is_family_lead(row) and classify(row) == "distinct_directory_point_unverified":
@@ -30,6 +40,8 @@ def candidates(fetch=_fetch):
                     found[normalized] = None
                 else:
                     found[normalized] = row
+        if page >= max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE):
+            break
     return [row for row in found.values() if row is not None]
 
 

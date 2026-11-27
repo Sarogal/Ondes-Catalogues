@@ -33,6 +33,33 @@ class CulturalAcceslibreProbeTests(unittest.TestCase):
                 self.assertEqual(counts, {"identity_" + detail: 1})
                 self.assertNotIn("Ludothèque", str(counts))
 
+    def test_broader_sample_is_bounded_and_stops_at_directory_end(self):
+        from urllib.parse import parse_qs, urlsplit
+        from ptitesondes_cultural_acceslibre_probe import candidates, MAX_PROBE_PAGES
+        from ptitesondes_cultural_directory_discovery import PAGE_SIZE
+        calls = []
+        def fetch(url):
+            page = int(parse_qs(urlsplit(url).query)["page"][0])
+            calls.append(page)
+            return {"meta": {"total": PAGE_SIZE + 1},
+                    "data": [{} for _ in range(PAGE_SIZE if page == 1 else 1)]}
+        self.assertEqual(candidates(fetch), [])
+        self.assertEqual(calls, [1, 2])
+        for invalid in (0, MAX_PROBE_PAGES + 1, True):
+            with self.assertRaises(ValueError):
+                candidates(fetch, pages=invalid)
+        self.assertEqual(calls, [1, 2])
+
+    def test_broader_sample_rejects_directory_drift(self):
+        from ptitesondes_cultural_acceslibre_probe import candidates
+        from ptitesondes_cultural_directory_discovery import PAGE_SIZE
+        responses = iter([
+            {"meta": {"total": PAGE_SIZE * 3}, "data": [{} for _ in range(PAGE_SIZE)]},
+            {"meta": {"total": PAGE_SIZE * 4}, "data": [{} for _ in range(PAGE_SIZE)]},
+        ])
+        with self.assertRaisesRegex(ValueError, "directory_changed_during_scan"):
+            candidates(lambda _: next(responses), pages=2)
+
     def test_exact_identity_and_concordance_are_only_hints(self):
         lead = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois",
                 "code_commune": "01234", "code_postal": "01230",
