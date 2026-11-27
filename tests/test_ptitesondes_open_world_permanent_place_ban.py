@@ -323,6 +323,25 @@ class OfficialPlaceBANTests(unittest.TestCase):
                    return_value=("https://other.example/", HTML)):
             self.assertIsNone(discover_independent_cultural_ban(lead, **kwargs))
 
+    def test_cultural_identity_failure_stages_are_distinct(self):
+        from ptitesondes_open_world_permanent_place_ban import discover_independent_cultural_ban, ban_diagnostics
+        lead = {"city": CITY, "venue": VENUE}
+        record = {"commune": CITY, "nom_du_lieu": VENUE, "code_commune": "12345",
+                  "code_postal": "12345", "numero_et_libelle_voie": "12 Rue des Jeux",
+                  "adresse_complete": f"12 Rue des Jeux, 12345 {CITY}"}
+        for data, reason in (
+            (None, "record_missing"),
+            (dict(record, numero_et_libelle_voie="Rue des Jeux"), "numbered_street_missing"),
+            (dict(record, adresse_complete=f"14 Rue des Jeux, 12345 {CITY}"), "complete_address_mismatch"),
+            (record, "url_missing"),
+        ):
+            before = ban_diagnostics()
+            self.assertIsNone(discover_independent_cultural_ban(lead, cultural_lookup=lambda *_: data,
+                         page_read=lambda _: self.fail("must not read")))
+            after = ban_diagnostics()
+            key = "culture_independent_" + reason
+            self.assertEqual(after[key] - before.get(key, 0), 1)
+
     def test_multiple_cultural_links_require_exact_consistent_proof(self):
         from ptitesondes_open_world_permanent_place_ban import discover_independent_cultural_ban
         a, b = "https://a.example/lieu", "https://b.example/lieu"
