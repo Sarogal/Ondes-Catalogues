@@ -1176,3 +1176,95 @@ jobs:
             ${{ runner.temp }}/next-state/
           if-no-files-found: error
           retention-days: 7
+
+  commit-successor-state:
+    needs: [accept-successor, persist-preview-state]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: radio-lab-transport
+    permissions:
+      contents: write
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.persist-preview-state.outputs.state-commit }}
+          path: go-autonomous-state
+      - uses: actions/download-artifact@v4
+        with:
+          name: radio-successor-accepted
+          path: ${{ runner.temp }}/accepted-input
+      - name: Record exact accepted deployment and commit state with lease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_STATE: ${{ needs.persist-preview-state.outputs.state-commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd go-autonomous-state
+          test "$(git rev-parse HEAD)" = "$EXPECTED_STATE"
+          python - <<'PY'
+          import hashlib,json,os,re,shutil,subprocess
+          from pathlib import Path
+          repo="repos/Sarogal/Ondes-Catalogues/"
+          ref="radio-lab-publisher-rehearsal"
+          state=Path("radio-discovery-state")
+          source=Path(os.environ["RUNNER_TEMP"])/"accepted-input"
+          nxt=source/"next-state"
+          a=json.loads((source/"acceptance.json").read_bytes())
+          old=json.loads((state/"release-context.json").read_bytes())
+          new=json.loads((nxt/"release-context.json").read_bytes())
+          p=json.loads((nxt/"release-anchor.json").read_bytes())
+          def api(path,body=None):
+              cmd=["gh","api",repo+path]
+              if body is not None: cmd+=["--method","POST","--input","-"]
+              return json.loads(subprocess.check_output(cmd,input=None if body is None else json.dumps(body).encode()))
+          commit=a["gitCommit"]
+          assert re.fullmatch(r"[a-f0-9]{40}",commit)
+          assert a["simulated"] is False and a["remoteReadbackVerified"] is True and a["deploymentVerified"] is True
+          assert a["parent"]==old["gitCommit"] and a["selectedSequence"]==old["selectedSequence"]+1
+          assert new["previousSha256"]==old["selectedSha256"] and new["advanced"] is True
+          assert new["selectedSequence"]==a["selectedSequence"]==p["release_sequence"]
+          assert new["selectedSha256"]==a["selectedSha256"]==p["content_sha256"]
+          body=(nxt/"release-baseline.json").read_bytes()
+          assert hashlib.sha256(body).hexdigest()==a["selectedSha256"] and len(body)==p["content_length"]
+          assert api("git/ref/heads/state/go-radio-autonomous")["object"]["sha"]==os.environ["EXPECTED_STATE"], "state changed concurrently"
+          assert api("git/ref/heads/"+ref)["object"]["sha"]==commit, "remote release changed concurrently"
+          deployment=api("deployments",{"ref":ref,"environment":ref,"auto_merge":False,
+              "required_contexts":[],"production_environment":False,"transient_environment":True,
+              "description":"Verified isolated radio successor"})
+          assert deployment["sha"]==commit and deployment["ref"]==ref
+          status=api("deployments/"+str(deployment["id"])+"/statuses",{
+              "state":"success","environment":ref,
+              "environment_url":"https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/refs/heads/radio-lab-publisher-rehearsal/pointer.json",
+              "description":"Independent signed successor and public artwork verification passed"})
+          assert status["state"]=="success"
+          assert api("git/ref/heads/"+ref)["object"]["sha"]==commit
+          new.update(gitCommit=commit,deploymentId=deployment["id"],remoteReadbackVerified=True,
+              deploymentVerified=True,simulated=False,mirroredLegacyArtwork=True)
+          (nxt/"release-context.json").write_text(json.dumps(new,ensure_ascii=False,indent=2)+"\n")
+          for oldfile in state.glob("*.json"):
+              if oldfile.name!="discovery-retry.json": oldfile.unlink()
+          for item in nxt.glob("*.json"):
+              assert item.is_file() and not item.is_symlink()
+              shutil.copyfile(item,state/item.name)
+          ext={"image/png":"png","image/jpeg":"jpg","image/webp":"webp"}
+          allowed={s["logo"]["sha256"]+"."+ext[s["logo"]["mime_type"]]:s["logo"]
+                   for s in json.loads(body)["stations"] if s.get("logo")}
+          for item in (nxt/"artwork-cache"/"sha256").glob("*"):
+              assert item.is_file() and not item.is_symlink() and item.name in allowed
+              data=item.read_bytes()
+              logo=allowed[item.name]
+              assert len(data)==logo["byte_size"] and hashlib.sha256(data).hexdigest()==logo["sha256"]
+              target=state/"artwork-cache"/"sha256"/item.name
+              target.parent.mkdir(parents=True,exist_ok=True)
+              assert not target.is_symlink()
+              if target.exists(): assert target.read_bytes()==data
+              else: target.write_bytes(data)
+          print("RADIO_LAB_SUCCESSOR_STATE_READY",new["selectedSequence"],deployment["id"])
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- radio-discovery-state
+          git commit -m "state(radio-autonomous): adopt verified real successor"
+          git push origin HEAD:refs/heads/state/go-radio-autonomous
