@@ -574,3 +574,29 @@ class StandaloneVenueSourceTests(unittest.TestCase):
                 with self.subTest(bad=bad), self.assertRaises(ValueError):
                     evidence.verify_venue_source(source, VENUE,
                         fetch=lambda url, cache: link if url == source else bad)
+
+    def test_named_arrival_section_with_label_and_administrative_complement(self):
+        source = "https://unknown-room.fr/"
+        link = '<nav><a href="/infos/">Infos pratiques</a></nav>'
+        page = ("<head><title>Infos pratiques : accès – New Room</title></head>"
+                "<h1>Infos pratiques</h1><h2>Venir à New Room</h2>"
+                "<p><strong>ADRESSE</strong><br/>19 rue des Jardins, 68000 Colmar, Métropole de Exemple</p>"
+                "<p>TRAM<br/>Arrêt central</p><h2>Restaurant</h2>"
+                "<p>21 rue des Jardins, 68000 Colmar</p>")
+        with patch.object(evidence, "registered_venue_source", return_value=source), \
+             patch.object(evidence.geo, "verify", return_value=(OSM, 48.08, 7.36, "named-site-point")) as geo:
+            proof = evidence.verify_venue_source(source, VENUE,
+                fetch=lambda url, cache: link if url == source else page)
+            self.assertEqual(proof["venuePatch"]["address"], "19 rue des Jardins")
+            self.assertEqual(proof["venuePatch"]["postalCode"], "68000")
+            self.assertEqual(geo.call_args.args[0]["city"], "Colmar")
+            for bad in (
+                    page.replace("Venir à New Room", "Venir à Other Room"),
+                    page.replace("68000 Colmar, Métropole", "68000 Paris, Métropole"),
+                    page.replace("Métropole de Exemple", "Paris"),
+                    page.replace("Métropole de Exemple", "75018 Paris"),
+                    page.replace("Métropole de Exemple", "Métropole de Exemple, Belgique"),
+                    page.replace("ADRESSE", "BILLETTERIE")):
+                with self.subTest(bad=bad), self.assertRaises(ValueError):
+                    evidence.verify_venue_source(source, VENUE,
+                        fetch=lambda url, cache: link if url == source else bad)
