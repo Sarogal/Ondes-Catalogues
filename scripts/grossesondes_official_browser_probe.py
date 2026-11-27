@@ -90,6 +90,16 @@ def compare_proof(parent, year, today, raw, rendered):
     }
 
 
+class BrowserEvidenceError(ValueError):
+    """Fixed diagnostic categories; never include remote response data."""
+    REASONS = frozenset(("unsafe_origin", "navigation_failed", "unsafe_destination",
+                         "invalid_bounded_dom", "http_429", "http_rejected"))
+
+    def __init__(self, reason):
+        self.reason = reason if reason in self.REASONS else "navigation_failed"
+        super().__init__(self.reason)
+
+
 def rendered_html(official_site):
     """Browser is isolated: no secrets, off-origin requests or storage."""
     from playwright.sync_api import sync_playwright
@@ -97,7 +107,7 @@ def rendered_html(official_site):
     # Browser DNS must resolve to the exact globally validated IP. Same-host
     # request filtering alone would allow DNS rebinding to private addresses.
     if safe_public_url(official_site) is None:
-        raise ValueError("Unsafe browser HTTPS origin")
+        raise BrowserEvidenceError("unsafe_origin")
     host = urlsplit(official_site).hostname
     addresses = resolve_global_ips(host)
     pinned = next((ip for ip in addresses if ":" not in ip), addresses[0])
@@ -115,14 +125,16 @@ def rendered_html(official_site):
                 else route.abort()))
             page = context.new_page()
             response = page.goto(official_site, wait_until="domcontentloaded", timeout=20000)
-            if response is None or response.status != 200:
-                raise ValueError("Browser navigation not successful")
+            if response is None:
+                raise BrowserEvidenceError("navigation_failed")
+            if response.status != 200:
+                raise BrowserEvidenceError("http_429" if response.status == 429 else "http_rejected")
             page.wait_for_timeout(1600)
             if not request_allowed(page.url, official_site):
-                raise ValueError("Unsafe destination")
+                raise BrowserEvidenceError("unsafe_destination")
             result = page.content()
-            if not 0 < len(result) <= 1_400_000:
-                raise ValueError("Invalid rendered page")
+            if not 0 < len(result.encode("utf-8")) <= 1_400_000:
+                raise BrowserEvidenceError("invalid_bounded_dom")
             return result
         finally:
             browser.close()
