@@ -25,18 +25,10 @@ def read_snapshot(transport, *, expected_commit, bootstrap_sha, expected_sha,
     """Verify all activated history and select at most one new sequence."""
     if not isinstance(transport, LocalGitLabTransport):
         raise ValueError("local Git laboratory transport required")
-    raw_key = base64.b64decode(public_key, validate=True)
-    if (len(raw_key) != 32 or public_key == PUBLIC_KEY
-            or key_id != "radio-lab-" + digest(raw_key)[:24]):
-        raise ValueError("independent laboratory key required")
-    if (not isinstance(expected_commit, str) or not OID.fullmatch(expected_commit)
-            or expected_commit == ZERO or transport.head() != expected_commit):
+    if not isinstance(expected_commit, str) or not OID.fullmatch(expected_commit) or expected_commit == ZERO:
         raise ValueError("Git head anchor mismatch")
-    if (not isinstance(bootstrap_sha, str) or not SHA.fullmatch(bootstrap_sha)
-            or not isinstance(expected_sha, str) or not SHA.fullmatch(expected_sha)
-            or type(expected_sequence) is not int or expected_sequence < 8):
-        raise ValueError("independent catalogue anchor required")
     entries = {}
+    oids = {}
     for row in transport._git("ls-tree", "-r", "-l", "-z", expected_commit).split(b"\0"):
         if not row:
             continue
@@ -49,17 +41,54 @@ def read_snapshot(transport, *, expected_commit, bootstrap_sha, expected_sha,
         if (mode != "100644" or kind != "blob" or not OID.fullmatch(oid)
                 or not 0 < int(size) <= limit or path in entries):
             raise ValueError("unexpected or oversized Git snapshot entry")
-        entries[path] = (oid, int(size))
+        entries[path] = int(size)
+        oids[path] = oid
+    return verify_snapshot_entries(entries, lambda path: transport._git("cat-file", "blob", oids[path]),
+        transport.head, expected_commit=expected_commit, bootstrap_sha=bootstrap_sha,
+        expected_sha=expected_sha, expected_sequence=expected_sequence,
+        public_key=public_key, key_id=key_id)
+
+
+def verify_snapshot_entries(entries, fetch_entry, head, *, expected_commit,
+                            bootstrap_sha, expected_sha, expected_sequence,
+                            public_key, key_id):
+    """Shared strict history gate for independently verified regular Git blobs."""
+    raw_key = base64.b64decode(public_key, validate=True)
+    if (len(raw_key) != 32 or public_key == PUBLIC_KEY
+            or key_id != "radio-lab-" + digest(raw_key)[:24]):
+        raise ValueError("independent laboratory key required")
+    if (not isinstance(expected_commit, str) or not OID.fullmatch(expected_commit)
+            or expected_commit == ZERO or head() != expected_commit):
+        raise ValueError("Git head anchor mismatch")
+    if (not isinstance(bootstrap_sha, str) or not SHA.fullmatch(bootstrap_sha)
+            or not isinstance(expected_sha, str) or not SHA.fullmatch(expected_sha)
+            or type(expected_sequence) is not int or expected_sequence < 8):
+        raise ValueError("independent catalogue anchor required")
+    if (not isinstance(entries, dict) or not entries or len(entries) > 12000
+            or not callable(fetch_entry) or not callable(head)):
+        raise ValueError("invalid Git snapshot inventory")
+    total = 0
+    for path, size in entries.items():
+        if not isinstance(path, str):
+            raise ValueError("invalid Git snapshot path")
+        limit = (16384 if path == "pointer.json" or HISTORY.fullmatch(path)
+                 else 10485760 if RELEASE.fullmatch(path)
+                 else 2097152 if ARTWORK.fullmatch(path) else 0)
+        if type(size) is not int or not 0 < size <= limit:
+            raise ValueError("unexpected or oversized Git snapshot entry")
+        total += size
+    if total > 128 * 1024 * 1024:
+        raise ValueError("Git snapshot size budget")
     needed = set()
     cache = {}
     def read(path, length=None):
         if path not in entries:
             raise ValueError("missing Git snapshot entry: " + path)
-        oid, size = entries[path]
+        size = entries[path]
         if length is not None and size != length:
             raise ValueError("Git snapshot length mismatch")
         if path not in cache:
-            data = transport._git("cat-file", "blob", oid)
+            data = fetch_entry(path)
             if len(data) != size:
                 raise ValueError("Git snapshot readback length mismatch")
             cache[path] = data
@@ -109,7 +138,7 @@ def read_snapshot(transport, *, expected_commit, bootstrap_sha, expected_sha,
         raise ValueError("visible pointer differs from activated history")
     if set(entries) != needed:
         raise ValueError("unreferenced Git snapshot entry")
-    if transport.head() != expected_commit:
+    if head() != expected_commit:
         raise ValueError("Git head changed during verification")
     return dict(pointer=pointer, body=previous_body, anchor_pointer=anchor_pointer,
                 anchor_body=anchor_body, commit=expected_commit,

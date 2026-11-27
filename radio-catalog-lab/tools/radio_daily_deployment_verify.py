@@ -38,6 +38,12 @@ def verify_deployment(transport, *, deployment_commit, deployment_status,
     selected = read_snapshot(transport, expected_commit=expected_commit,
         bootstrap_sha=bootstrap_sha, expected_sha=expected_sha,
         expected_sequence=expected_sequence, public_key=public_key, key_id=key_id)
+    return verify_public_snapshot(selected, transport.head, fetch=fetch,
+        expected_commit=expected_commit, public_key=public_key, key_id=key_id)
+
+
+def verify_public_snapshot(selected, head, *, fetch, expected_commit, public_key, key_id):
+    """Verify visible bytes only after a caller has independently verified Git history."""
     calls = 0
 
     def read(url, limit, mime):
@@ -74,7 +80,7 @@ def verify_deployment(transport, *, deployment_commit, deployment_status,
         check_logo(logo, checked[url])
     if read(POINTER_URL, 16384, "application/json") != pointer:
         raise ValueError("public pointer changed during verification")
-    if transport.head() != expected_commit:
+    if head() != expected_commit:
         raise ValueError("Git head changed during deployment verification")
     return dict(schemaVersion=1, publicationAllowed=False, deploymentVerified=True,
                 gitCommit=expected_commit, selectedSequence=selected["sequence"],
