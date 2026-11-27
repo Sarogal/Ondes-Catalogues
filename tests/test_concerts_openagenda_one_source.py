@@ -52,6 +52,25 @@ class OfficialOpenAgendaEventTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     oa.verified_bill(html(**changed), URL, DATE, VENUE)
 
+    def test_unnamed_guest_with_exact_location_suffix_is_not_an_artist(self):
+        venue = dict(VENUE, name="La Example Room", city="Example City")
+        for suffix in ("guest - Example Room, Example City",
+                       "GUESTS – La Example Room, Example City"):
+            self.assertEqual(oa._bill({"@type": "MusicEvent",
+                                      "name": "Headliner + " + suffix},
+                                     venue=venue), ["Headliner"])
+        for suffix in ("Guest House - Example Room, Example City",
+                       "guest - Other Room, Example City",
+                       "guest - Example Room, Other City",
+                       "guests : Other Band"):
+            self.assertFalse(oa.unnamed_venue_suffix(suffix, venue))
+        self.assertEqual(oa._bill({"@type": "MusicEvent",
+                                  "name": "Headliner + guests : Other Band"},
+                                 venue=venue), ["Headliner", "Other Band"])
+        with self.assertRaises(ValueError):
+            oa._bill({"@type": "MusicEvent",
+                      "name": "guest - Example Room, Example City"}, venue=venue)
+
     def test_multiple_official_event_cards_remain_ambiguous(self):
         page = html()
         duplicate = html(title="Other Gig")
