@@ -18,6 +18,16 @@ from ptitesondes_family_national_source_preflight import norm_text
 
 
 MAX_PROBE_PAGES = 24
+CULTURE_DATA_ERRORS = frozenset(("noncanonical_tabular_response", "oversized_tabular_response",
+                                "invalid_directory_page", "incomplete_directory_page",
+                                "directory_changed_during_scan"))
+
+
+class CulturePageError(ValueError):
+    def __init__(self, page, reason):
+        self.page = page
+        self.reason = reason if reason in CULTURE_DATA_ERRORS else "invalid_data"
+        super().__init__(self.reason)
 
 
 def candidates(fetch=_fetch, *, pages=MAX_PROBE_PAGES):
@@ -27,10 +37,16 @@ def candidates(fetch=_fetch, *, pages=MAX_PROBE_PAGES):
     found = {}
     total = None
     for page in range(1, pages + 1):
-        doc = fetch(URL.split("?")[0] + "?" + urlencode({"page": page, "page_size": PAGE_SIZE}))
-        _, current_total = parse_page(doc, page)
+        try:
+            doc = fetch(URL.split("?")[0] + "?" + urlencode({"page": page, "page_size": PAGE_SIZE}))
+            _, current_total = parse_page(doc, page)
+        except ValueError as exc:
+            reason = "invalid_data"
+            if type(exc) is ValueError and len(exc.args) == 1 and isinstance(exc.args[0], str) and exc.args[0] in CULTURE_DATA_ERRORS:
+                reason = exc.args[0]
+            raise CulturePageError(page, reason) from None
         if total is not None and total != current_total:
-            raise ValueError("directory_changed_during_scan")
+            raise CulturePageError(page, "directory_changed_during_scan")
         total = current_total
         for row in doc["data"]:
             key = identity(row)
@@ -334,7 +350,10 @@ def run_stage(stage, action, *, retry=False, reset=None, sleep=None):
         try:
             return action()
         except (OSError, ValueError, TypeError, KeyError, UnicodeError, OverflowError, csv.Error) as exc:
-            if isinstance(exc, HTTPError):
+            if isinstance(exc, CulturePageError):
+                transient = exc.reason in ("directory_changed_during_scan", "incomplete_directory_page")
+                reason = f"page_{exc.page}_{exc.reason}"
+            elif isinstance(exc, HTTPError):
                 transient = exc.code in (408, 429, 500, 502, 503, 504)
                 reason = "http_" + str(exc.code) if 100 <= exc.code <= 599 else "http_error"
             elif isinstance(exc, (TimeoutError, URLError, ConnectionError)):

@@ -118,6 +118,30 @@ class CulturalAcceslibreProbeTests(unittest.TestCase):
             run_stage("acceslibre_download", unavailable, retry=True, sleep=delays.append)
         self.assertEqual(delays, [3, 3])
 
+    def test_culture_page_failure_is_sanitized_and_drift_restarts_from_first_page(self):
+        from urllib.parse import parse_qs, urlsplit
+        from ptitesondes_cultural_acceslibre_probe import candidates, run_stage, ProbeFailure
+        from ptitesondes_cultural_directory_discovery import PAGE_SIZE
+        calls, delays = [], []
+        def fetch(url):
+            page = int(parse_qs(urlsplit(url).query)["page"][0])
+            calls.append(page)
+            total = PAGE_SIZE * (3 if len(calls) == 2 else 2)
+            return {"meta": {"total": total}, "data": [{} for _ in range(PAGE_SIZE)]}
+        self.assertEqual(run_stage("culture_directory", lambda: candidates(fetch, pages=2),
+                                   retry=True, sleep=delays.append), [])
+        self.assertEqual(calls, [1, 2, 1, 2])
+        self.assertEqual(delays, [3])
+        def invalid(url):
+            raise ValueError("secret response")
+        with self.assertRaisesRegex(ProbeFailure, "^culture_directory:page_1_invalid_data$"):
+            run_stage("culture_directory", lambda: candidates(invalid), retry=True, sleep=delays.append)
+        def oversized(url):
+            raise ValueError("oversized_tabular_response")
+        with self.assertRaisesRegex(ProbeFailure, "^culture_directory:page_1_oversized_tabular_response$"):
+            run_stage("culture_directory", lambda: candidates(oversized), retry=True, sleep=delays.append)
+        self.assertEqual(delays, [3])
+
     def test_broader_sample_is_bounded_and_stops_at_directory_end(self):
         from urllib.parse import parse_qs, urlsplit
         from ptitesondes_cultural_acceslibre_probe import candidates, MAX_PROBE_PAGES
