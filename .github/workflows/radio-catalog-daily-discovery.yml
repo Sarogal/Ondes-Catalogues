@@ -125,6 +125,9 @@ on:
       - "radio-catalog-lab/tools/test_radio_daily_public_https_reader.py"
       - "radio-catalog-lab/tools/radio_daily_publisher_job_config.py"
       - "radio-catalog-lab/tools/test_radio_daily_publisher_job_config.py"
+      - "radio-catalog-lab/tools/radio_lab_first_release.py"
+      - "radio-catalog-lab/tools/radio_lab_provision.py"
+      - ".github/workflows/radio-lab-first-release.yml"
       - "radio-catalog-lab/tools/radio_daily_remote_acceptance.py"
       - "radio-catalog-lab/tools/test_radio_daily_remote_acceptance.py"
       - "radio-catalog-lab/tools/radio_daily_github_executor.py"
@@ -192,6 +195,8 @@ jobs:
         run: python -m pip install --disable-pip-version-check "cryptography==45.0.7" "jsonschema==4.23.0" "Pillow==11.3.0"
       - name: Validate candidate engine without network
         run: |
+          python -m py_compile radio-catalog-lab/tools/radio_lab_first_release.py radio-catalog-lab/tools/radio_lab_provision.py
+          python radio-catalog-lab/tools/radio_lab_first_release.py --help
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_daily*.py" -v
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_catalog_daily_candidate_reconcile.py" -v
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_technical_probe.py" -v
