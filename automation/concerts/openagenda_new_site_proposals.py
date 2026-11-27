@@ -307,6 +307,7 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
     signed_sites = {a.get("venue", {}).get("id") for a in before["venueApprovals"]
                     if isinstance(a, dict)}
     states, reasons, checks = Counter(), Counter(), []
+    geo_diagnostics = Counter()
     for row in chosen:
         check = {"candidateId": str(row[2].get("candidateId", ""))[:120],
                  "date": row[0]}
@@ -331,6 +332,20 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
             check["reason"] = re.sub(
                 r"https?://\S+", "[url]", " ".join(message.split()))[:180]
             reasons[check["reason"]] += 1
+            # Diagnostics only; never modify the approval decision. Follow
+            # the bounded explicit cause chain through producer wrappers.
+            cause = exc
+            for _ in range(4):
+                code = getattr(cause, "code", None)
+                if isinstance(code, str) and code in (
+                        set(geography.named_geo.GovernmentAddressHeld.CODES)
+                        | geography.named_geo.NamedFeatureHeld.CODES):
+                    check["geoDiagnostic"] = code
+                    geo_diagnostics[code] += 1
+                    break
+                cause = getattr(cause, "__cause__", None)
+                if cause is None:
+                    break
         states[check["state"]] += 1
         checks.append(check)
     return output, {
@@ -338,6 +353,7 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         "eligibleUnknownSites": len(selected), "examined": len(chosen),
         "stateCounts": dict(states), "rejectionReasons": dict(reasons),
         "candidateChecks": checks,
+        "geoDiagnostics": dict(sorted(geo_diagnostics.items())),
         "privateApprovalApplied": False, "publicationAllowed": False,
     }
 
