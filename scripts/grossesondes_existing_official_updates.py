@@ -34,7 +34,7 @@ from grossesondes_archived_html_intake import (
     official_date, official_structured_date, matching_official_jsonld_present,
 )
 from grossesondes_official_html_edition import (
-    VisibleText, VisibleParagraphs, MONTHS as OFFICIAL_MONTHS, CANCEL as OFFICIAL_CANCELLATION,
+    VisibleText, VisibleParagraphs, VOID, MONTHS as OFFICIAL_MONTHS, CANCEL as OFFICIAL_CANCELLATION,
     explicit_ranges as current_visible_ranges,
     fold as official_date_fold,
 )
@@ -608,19 +608,23 @@ class Page(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.blocks, self.links, self.open, self.anchors = [], [], [], []
-        self.hidden_tag = None
+        self.hidden_tags = []
         self.main = self.article = 0
         self.strong = None
 
     def handle_starttag(self, tag, attrs):
-        if self.hidden_tag is not None:
-            return
-        if (tag in ("script", "style", "noscript", "svg", "template") or
-                any(k in ("hidden", "aria-hidden") and (v is None or v == "true")
+        # Void elements never have a closing tag. A hidden decorative image
+        # must not hide the rest of the page. Track nested hidden subtrees
+        # so that closing a same-named child does not expose hidden content.
+        if self.hidden_tags or (
+                tag in ("script", "style", "noscript", "svg", "template") or
+                any(k == "hidden" or (k == "aria-hidden" and v == "true")
                     for k, v in attrs) or
-                any(k == "style" and re.search(r"display\s*:\s*none", v or "", re.I)
+                any(k == "style" and re.search(
+                    r"(?:display\s*:\s*none|visibility\s*:\s*hidden)", v or "", re.I)
                     for k, v in attrs)):
-            self.hidden_tag = tag
+            if tag not in VOID:
+                self.hidden_tags.append(tag)
             return
         # Visible edition logos often provide the accessible H1 title as
         # an image alt rather than a text node (e.g. the Motocultor 2027
@@ -646,7 +650,7 @@ class Page(HTMLParser):
             self.anchors.append([dict(attrs).get("href"), []])
 
     def handle_data(self, value):
-        if self.hidden_tag is not None:
+        if self.hidden_tags:
             return
         for b in self.open:
             b["buf"].append(value)
@@ -656,9 +660,11 @@ class Page(HTMLParser):
             self.strong.append(value)
 
     def handle_endtag(self, tag):
-        if self.hidden_tag is not None:
-            if tag == self.hidden_tag:
-                self.hidden_tag = None
+        if self.hidden_tags:
+            for i in range(len(self.hidden_tags) - 1, -1, -1):
+                if self.hidden_tags[i] == tag:
+                    del self.hidden_tags[i:]
+                    break
             return
         if tag == "strong" and self.strong is not None:
             if self.open and self.open[-1]["tag"] == "li":
@@ -798,10 +804,11 @@ def linked_pages(site, parsed):
         if not ROLE.search(label):
             continue
         rank = (-1 if re.search(r"annulation|annule|report|reporte|cancelled|postponed", label)
-                else 0 if re.search(r"nouveaux? noms|groupes? annonces?|annonce|affiche", label)
-                else 1 if re.search(r"programme|programmation|lineup|groupes", label)
-                else 2 if re.search(r"billetterie|pass|tarif", label)
-                else 3)
+                else 0 if re.search(r"/(?:lineup|line-up|programmation|programme|program|artists|artistes)/?$", bits.path, re.I)
+                else 1 if re.search(r"nouveaux? noms|groupes? annonces?|annonce|affiche", label)
+                else 2 if re.search(r"programme|programmation|line up|lineup|groupes", label)
+                else 3 if re.search(r"billetterie|pass|tarif", label)
+                else 4)
         ranked[url] = min(rank, ranked.get(url, rank))
     return sorted(ranked, key=lambda u: (ranked[u], u))[:MAX_LINKS]
 
@@ -1939,13 +1946,16 @@ def apply_independently_verified_updates(
         ]
         if current_home.blocks:
             pages.append((site, current_home))
-        for link in linked_pages(site, root):
+        selected_links = linked_pages(site, root)
+        linked_fetch_errors = []
+        for link in selected_links:
             try:
                 try:
                     linked_html = fetch(link)
                 except (OSError, TimeoutError, ValueError, UnicodeError) as exc:
                     if isinstance(exc, OfficialHTTPStatusError) and exc.status_code == 429:
                         poster_rate_limited_hosts.add(site)
+                        linked_fetch_errors.append({"url": link, "error": "HTTP_429"})
                         break
                     if browser_fetch is None:
                         raise
@@ -1956,7 +1966,8 @@ def apply_independently_verified_updates(
                 pages.append((link, linked_doc))
                 html_pages.append((link, linked_html))
                 report["rechecked_pages"] += 1
-            except (OSError, TimeoutError, ValueError, UnicodeError, TypeError):
+            except (OSError, TimeoutError, ValueError, UnicodeError, TypeError) as exc:
+                linked_fetch_errors.append({"url": link, "error": type(exc).__name__})
                 continue
         for old in rows:
             slug = old["slug"]
@@ -2563,6 +2574,8 @@ def apply_independently_verified_updates(
                 report["official_edition_diagnostics"].append({
                     "slug": slug, "official_site": site,
                     "homepage_matches_signed_edition": root_ok,
+                    "linked_pages_selected": selected_links,
+                    "linked_fetch_errors": linked_fetch_errors,
                     "linked_pages_fetched": len(html_pages) - 1,
                     "official_poster_candidates_review_only": (
                         current_official_poster_candidates(root_html, site, old)
