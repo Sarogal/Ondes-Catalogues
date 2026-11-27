@@ -247,9 +247,22 @@ jobs:
           name: grossesondes-browser-evidence
           path: /tmp/grossesondes_browser/
 
+      - name: Installer le lecteur OCR local facultatif sans jeton privé
+        id: poster_ocr
+        shell: bash
+        run: |
+          if timeout 90s sudo apt-get install -y tesseract-ocr tesseract-ocr-fra tesseract-ocr-eng >/dev/null 2>&1 && python -m pip install --disable-pip-version-check Pillow==11.3.0 >/dev/null 2>&1; then
+            echo "enabled=enabled" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::OCR indisponible ; Publisher HTML maintenu"
+            echo "enabled=disabled" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Préparer le candidat ou la modification contrôlée
         id: sync
         env:
+          GROSSES_ONDES_FRESH_POSTER_OCR: ${{ steps.poster_ocr.outputs.enabled }}
+          OMP_THREAD_LIMIT: '2'
           GROSSES_ONDES_INTAKE_READ_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
           GROSSES_ONDES_CLOUD_SYNC: ${{ vars.GROSSES_ONDES_CLOUD_SYNC }}
           GROSSES_ONDES_RETRY_ONCE: ${{ inputs.retry_once || false }}
