@@ -23,6 +23,13 @@ from proof_text import Visible, date_forms
 from ptitesondes_dynamic_municipal_source_links import _safe_url, SCHEMA as LINK_SCHEMA
 
 SCHEMA = "ptitesondes.unlisted_https_source_recheck_private.v1"
+from collections import Counter
+
+_READ_FAILURES = Counter()
+
+def read_failure_counts():
+    return dict(_READ_FAILURES)
+
 MAX_BYTES = 350_000
 MAX_DNS_ADDRESSES = 16
 TIMEOUT_SECONDS = 10
@@ -81,10 +88,12 @@ def _read_pinned_once(url, *, resolver=socket.getaddrinfo,
                       connection_factory=_PinnedHTTPS, municipal_redirect=False):
     """One bounded pinned HTTPS request. Never follow a redirect here."""
     if not _safe_url(url):
+        _READ_FAILURES["unsafe_url"] += 1
         raise ValueError("invalid_unlisted_source_url")
     parsed = urlsplit(url)
     ips = _dns_public_ips(parsed.hostname, resolver)
     if not ips:
+        _READ_FAILURES["dns_unavailable_or_unsafe"] += 1
         raise ValueError("unknown_source_unsafe_dns")
     path = parsed.path or "/"
     if parsed.query:
@@ -103,26 +112,38 @@ def _read_pinned_once(url, *, resolver=socket.getaddrinfo,
         if municipal_redirect and response.status in (301, 302, 303, 307, 308):
             location = response.getheader("Location")
             if not isinstance(location, str) or not location or len(location) > 600:
+                _READ_FAILURES["invalid_redirect"] += 1
                 raise ValueError("invalid_municipal_redirect")
             return None, location
         if response.status != 200:
+            _READ_FAILURES["http_status"] += 1
             raise ValueError("unknown_source_not_200")
         content_type = (response.getheader("Content-Type") or "").split(
             ";", 1)[0].strip().lower()
         if content_type not in ("text/html", "application/xhtml+xml"):
+            _READ_FAILURES["mime"] += 1
             raise ValueError("unknown_source_invalid_content_type")
         encoding = (response.getheader("Content-Encoding") or "").lower()
         if encoding not in ("", "identity"):
+            _READ_FAILURES["encoding"] += 1
             raise ValueError("unknown_source_compressed_content_rejected")
         size = response.getheader("Content-Length")
         if size is not None and (not size.isdigit() or int(size) > MAX_BYTES):
+            _READ_FAILURES["size"] += 1
             raise ValueError("unknown_source_oversized")
         raw = response.read(MAX_BYTES + 1)
         if not raw or len(raw) > MAX_BYTES:
+            _READ_FAILURES["size"] += 1
             raise ValueError("unknown_source_oversized_or_empty")
         return raw.decode("utf-8-sig"), None
     except (OSError, ValueError, TypeError, UnicodeError, ssl.SSLError,
-            http.client.HTTPException):
+            http.client.HTTPException) as exc:
+        if isinstance(exc, ssl.SSLError):
+            _READ_FAILURES["tls"] += 1
+        elif isinstance(exc, UnicodeError):
+            _READ_FAILURES["decode"] += 1
+        elif isinstance(exc, (OSError, http.client.HTTPException)):
+            _READ_FAILURES["transport"] += 1
         # No URLs, headers, exception strings or private candidate data
         # in public logs. Callers only expose stable status codes.
         raise ValueError("unknown_source_fetch_or_validation_failed") from None
@@ -153,6 +174,7 @@ def read_cultural_https(url, *, resolver=socket.getaddrinfo,
     for _ in range(3):
         if (not host or not _safe_url(url) or _host(url) != host or url in seen
                 or urlsplit(url).query or urlsplit(url).fragment):
+            _READ_FAILURES["redirect_scope"] += 1
             raise ValueError("cultural_redirect_outside_authority_or_loop")
         seen.add(url)
         html, location = _read_pinned_once(
@@ -161,8 +183,10 @@ def read_cultural_https(url, *, resolver=socket.getaddrinfo,
         if location is None:
             return url, html
         if not _safe_url(location, base=url):
+            _READ_FAILURES["redirect_scope"] += 1
             raise ValueError("cultural_redirect_unsafe_location")
         url = urljoin(url, location)
+    _READ_FAILURES["redirect_budget"] += 1
     raise ValueError("cultural_redirect_budget_exceeded")
 
 

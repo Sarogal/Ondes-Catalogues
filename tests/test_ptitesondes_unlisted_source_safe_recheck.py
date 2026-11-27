@@ -172,6 +172,19 @@ class UnlistedSafeSourceTests(unittest.TestCase):
                                     connection_factory=factory)
             self.assertEqual(len(calls), 1)
 
+    def test_read_diagnostics_are_fixed_and_redacted(self):
+        from ptitesondes_unlisted_source_safe_recheck import read_failure_counts
+        before = read_failure_counts()
+        for response in (FakeResponse(status=404), FakeResponse(mime="application/json"),
+                         FakeResponse(encoding="gzip")):
+            with self.assertRaises(ValueError):
+                read_unknown_https(URL, resolver=dns("8.8.8.8"),
+                                   connection_factory=lambda *_: FakeConnection(response))
+        after = read_failure_counts()
+        for key in ("http_status", "mime", "encoding"):
+            self.assertEqual(after[key]-before.get(key, 0), 1)
+        self.assertNotIn(URL, str(after))
+
     def test_invalid_untrusted_urls_never_even_resolve_dns(self):
         resolver = Mock(side_effect=AssertionError("never resolve"))
         invalids = [
