@@ -6,10 +6,11 @@ ticketAvailability update.
 """
 from datetime import date
 import json
+import re
 from urllib.parse import urlsplit
 
 from official_ticket_links import provider_for_host
-from structured_evidence import StructuredData, event_date, event_objects, root_name
+from structured_evidence import StructuredData, event_date, event_objects, root_name, normalize
 from ticket_status_watch import categories, schema_term, SENSITIVE
 
 
@@ -133,6 +134,80 @@ def provider_snapshot(html, edition):
         return empty
     signatures = {json.dumps(row, sort_keys=True, ensure_ascii=False) for row in matched}
     return matched[0] if len(signatures) == 1 else {"result": "CONFLICT", "categories_review_only": []}
+
+
+
+def provider_edition_location(html, edition):
+    """Review-only exact event location, never the organizer's postal address.
+
+    Called only by the existing bounded vendor rotation. This result is a
+    research clue; the Publisher must separately reprove link provenance.
+    """
+    if (not isinstance(html, str) or not 0 < len(html.encode("utf-8")) <= 650_000
+            or not isinstance(edition, dict)):
+        return None
+    start = event_date(edition.get("startDate"))
+    end = event_date(edition.get("endDate"))
+    name = root_name(edition.get("name", ""))
+    if not start or not end or start > end or not 5 <= len(name) <= 120:
+        return None
+    def term(value):
+        return str(value).rsplit("/", 1)[-1].casefold()
+    def label(value):
+        if (not isinstance(value, str) or not 2 <= len(value.strip()) <= 120
+                or not re.fullmatch(r"[\wÀ-ÿ .’'\-]+", value, re.UNICODE)
+                or not any(c.isalpha() for c in value)):
+            return None
+        return " ".join(value.split())
+    try:
+        parser = StructuredData()
+        parser.feed(html)
+        parser.close()
+        found, count = [], 0
+        for document in parser.documents[:25]:
+            for event in event_objects(document):
+                count += 1
+                if count > 100:
+                    return None
+                title = event.get("name")
+                if not isinstance(title, str) or root_name(title) != name:
+                    continue
+                if (event_date(event.get("startDate")) != start
+                        or (event_date(event.get("endDate")) or
+                            event_date(event.get("startDate"))) != end):
+                    continue
+                years = set(re.findall(r"\b20[2-4]\d\b", title))
+                if years - {str(start.year)} or schema_term(event.get("eventStatus"), SENSITIVE):
+                    return None
+                place = event.get("location")
+                if not isinstance(place, dict) or term(place.get("@type")) != "place":
+                    return None
+                address = place.get("address")
+                if not isinstance(address, dict) or term(address.get("@type")) != "postaladdress":
+                    return None
+                country = address.get("addressCountry")
+                if isinstance(country, dict):
+                    country = country.get("name")
+                if not isinstance(country, str) or normalize(country) not in ("fr", "france"):
+                    return None
+                city = label(address.get("addressLocality"))
+                venue = label(place.get("name"))
+                postcode = address.get("postalCode")
+                if (not city or not venue or not isinstance(postcode, str)
+                        or not re.fullmatch(r"\d{5}", postcode)):
+                    return None
+                if edition.get("city") and normalize(edition["city"]) != normalize(city):
+                    return None
+                found.append({"city": city, "venue": venue, "postalCode": postcode})
+        if not found:
+            return None
+        signatures = {(normalize(x["city"]), normalize(x["venue"]), x["postalCode"])
+                      for x in found}
+        if len(signatures) != 1:
+            return None
+        return found[0]
+    except (ValueError, TypeError, UnicodeError, RecursionError):
+        return None
 
 
 def provider_conflict_reason(snapshot, official_observation=None):
