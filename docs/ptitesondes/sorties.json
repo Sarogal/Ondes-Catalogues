@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-26T22:26:14+01:00",
+  "updated_at": "2026-11-27T16:11:21+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -22023,6 +22023,28 @@
       "geo_precision": "venue",
       "lat": 45.765273,
       "lng": 4.879855
+    },
+    {
+      "id": "openagenda-44709663-2026-12-03",
+      "title": "Le Garçon Chasseur",
+      "category": "spectacle-jeunesse",
+      "category_label": "Spectacle jeune public",
+      "date_start": "2026-12-03",
+      "date_end": "2026-12-03",
+      "time": "14:00 ; 19:00",
+      "city": "Tulle",
+      "department": "Corrèze",
+      "region": "Nouvelle-Aquitaine",
+      "venue": "Scène Nationale l'Empreinte Brive Tulle",
+      "source_url": "https://openagenda.com/accueil-agenda-spectacle-vivant-drac-na/events/44709663_le-garcon-chasseur-131655",
+      "source_label": "Accueil agenda spectacle vivant - DRAC : Nouvelle-Aquitaine — Licence Ouverte 2.0 — données mises à jour le 15/10/2026",
+      "verified_at": "2026-11-27",
+      "geo_verified_at": "2026-11-27",
+      "geo_precision": "venue",
+      "lat": 45.266771,
+      "lng": 1.77104,
+      "age_min": 8,
+      "age_label": "Dès 8 ans"
     }
   ]
 }
