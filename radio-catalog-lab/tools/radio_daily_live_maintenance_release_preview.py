@@ -7,7 +7,7 @@ from radio_daily_baseline_verify import verify_baseline
 from radio_daily_v9_generator import digest
 from radio_daily_maintenance_preview import catalogue_rows
 from radio_daily_repair_plan import plan as repair_plan
-from radio_daily_status_preview import build as status_build, MAX_PROPOSALS
+from radio_daily_status_preview import build as status_build, MAX_PROPOSALS, recovery_proof
 from radio_daily_merge_plan import plan as merge_plan, MAX_MERGES
 from radio_daily_status_release_validation import expected_status_release, validate_status_release
 from radio_daily_merge_release_validation import expected_merge_release, validate_merge_release
@@ -75,6 +75,7 @@ def preview_status(pointer, raw, *, anchor, day, maintenance, repair, confirmati
     if checked != status:
         raise ValueError("status evidence mismatch")
     _, streams = catalogue_rows(raw, sha)
+    rows = {r['go_station_id']:r for r in verify_baseline(pointer, raw, **anchor)['stations']}
     records = {r["goStationId"]: r for r in checked["records"]}
     live = LiveEvidence()
     def fresh_check(proposal):
@@ -90,16 +91,12 @@ def preview_status(pointer, raw, *, anchor, day, maintenance, repair, confirmati
                 if fingerprint != p["streamSha256"] or not live.unavailable(url):
                     raise EvidenceDeferred("unavailability not reconfirmed")
         else:
-            for p in proof:
-                url, fingerprint = streams[(sid, p["streamId"])]
-                if fingerprint != p["streamSha256"]:
-                    raise ValueError("recovery fingerprint mismatch")
-                try:
-                    if positive(live, url, fingerprint):
-                        return
-                except EvidenceDeferred:
-                    continue
-            raise EvidenceDeferred("recovery not reconfirmed")
+            p = recovery_proof(rows[sid], records[sid])
+            url, fingerprint = streams[(sid, p["streamId"])]
+            if fingerprint != p["streamSha256"]:
+                raise ValueError("recovery fingerprint mismatch")
+            if not positive(live, url, fingerprint):
+                raise EvidenceDeferred("selected recovery stream not reconfirmed")
     return select_live(pointer, raw, anchor=anchor, day=day,
         proposals=checked["proposals"], key="goStationId", maximum=MAX_PROPOSALS,
         expected=expected_status_release, validate=validate_status_release,
