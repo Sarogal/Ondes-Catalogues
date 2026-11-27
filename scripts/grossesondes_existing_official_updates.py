@@ -15,7 +15,7 @@ import re
 import unicodedata
 from urllib.parse import urljoin, urlsplit
 
-from dns_pinned_https import fetch_public_html, safe_public_url
+from dns_pinned_https import fetch_public_html, safe_public_url, OfficialHTTPStatusError
 from source_qualification import classify
 from future_city_preflight import (
     exact_edition_city, _normal as normal_city, _EditionTitle,
@@ -1596,7 +1596,8 @@ def multivenue_department_from_access(html, row, city, fetch, *, diagnostic=None
         return None
 
 
-def independently_read_posters(site, row, html, rendered, reader, budget, *, linked_html=()):
+def independently_read_posters(site, row, html, rendered, reader, budget, *, linked_html=(),
+                               rate_limited_hosts=None):
     """Fresh bounded image reads from a current first-party page, not private OCR.
 
     Raw and rendered HTML may both contribute discovery but neither an image
@@ -1606,6 +1607,8 @@ def independently_read_posters(site, row, html, rendered, reader, budget, *, lin
     """
     from grossesondes_official_html_edition import visible_official_edition
     from grossesondes_official_poster_ocr import structured_poster_candidates
+    if rate_limited_hosts is not None and site in rate_limited_hosts:
+        return [], None, []
     try:
         start, end = date.fromisoformat(row["startDate"]), date.fromisoformat(row["endDate"])
         raw_text = VisibleText()
@@ -1640,9 +1643,19 @@ def independently_read_posters(site, row, html, rendered, reader, budget, *, lin
             break
         budget[0] -= 1
         # Never consult an intake cache or accept a private proposal.
-        reading = reader(site, url, cache={})
+        try:
+            reading = reader(site, url, cache={})
+        except OfficialHTTPStatusError as exc:
+            reading = {"status": "rate_limited" if exc.status_code == 429 else "http_rejected"}
+        except (OSError, ValueError, TypeError, UnicodeError):
+            return [], None, []
+        if not isinstance(reading, dict):
+            return [], None, []
         if reading.get("status") == "rate_limited":
-            break
+            if rate_limited_hosts is not None:
+                rate_limited_hosts.add(site)
+            # Never publish earlier OCR fields from an interrupted check.
+            return [], None, []
         if (not isinstance(reading.get("sha256"), str)
                 or not re.fullmatch(r"[0-9a-f]{64}", reading["sha256"])):
             continue
@@ -1686,6 +1699,7 @@ def apply_independently_verified_updates(
               "private_proposal_is_authority": False}
     report["browser_roots_checked"] = 0
     poster_budget = [MAX_PUBLISHER_POSTERS]
+    poster_rate_limited_hosts = set()
     for site, rows in signed_rotation(
             published, today, limit, tick, browser_sites=browser_sites):
         if site in browser_sites:
@@ -1706,6 +1720,8 @@ def apply_independently_verified_updates(
             # inside the privileged Publisher itself. The HTML remains
             # untrusted and must still pass every edition/field validator.
             try:
+                if isinstance(exc, OfficialHTTPStatusError) and exc.status_code == 429:
+                    raise ValueError("Official origin rate limited")
                 if browser_fetch is None:
                     raise ValueError("No isolated browser proof")
                 root_html = browser_fetch(site)
@@ -1748,7 +1764,10 @@ def apply_independently_verified_updates(
             try:
                 try:
                     linked_html = fetch(link)
-                except (OSError, TimeoutError, ValueError, UnicodeError):
+                except (OSError, TimeoutError, ValueError, UnicodeError) as exc:
+                    if isinstance(exc, OfficialHTTPStatusError) and exc.status_code == 429:
+                        poster_rate_limited_hosts.add(site)
+                        break
                     if browser_fetch is None:
                         raise
                     # Only same-origin links proven by the parsed home DOM;
@@ -1894,7 +1913,7 @@ def apply_independently_verified_updates(
                         pass
                 poster_names, poster_price, poster_sources = independently_read_posters(
                     site, old, root_html, rendered, poster_reader, poster_budget,
-                    linked_html=html_pages[1:])
+                    linked_html=html_pages[1:], rate_limited_hosts=poster_rate_limited_hosts)
                 # Existing verified HTML roster takes precedence; never merge
                 # conflicting snapshots or displace its explicit billing.
                 if poster_names and not claims:

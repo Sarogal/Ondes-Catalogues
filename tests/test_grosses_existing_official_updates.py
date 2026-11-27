@@ -1700,6 +1700,39 @@ class FreshPosterPublisherTests(unittest.TestCase):
                 linked_html=[(url, html)]), ([], None, []))
             reader.assert_not_called()
 
+    def test_429_after_valid_poster_discards_partial_proof(self):
+        from unittest.mock import Mock
+        from grossesondes_existing_official_updates import independently_read_posters
+        from dns_pinned_https import OfficialHTTPStatusError
+        html = self.home.replace("</main>", '<img src="/poster-2027.jpg"></main>')
+        for limited in ({"status": "rate_limited"}, OfficialHTTPStatusError(429)):
+            reader = Mock(side_effect=[self.reading, limited])
+            blocked = set()
+            self.assertEqual(independently_read_posters(
+                self.site, self.row, html, None, reader, [2],
+                rate_limited_hosts=blocked), ([], None, []))
+            self.assertEqual(blocked, {self.site})
+            reader.reset_mock()
+            self.assertEqual(independently_read_posters(
+                self.site, self.row, self.home, None, reader, [2],
+                rate_limited_hosts=blocked), ([], None, []))
+            reader.assert_not_called()
+
+    def test_rate_limited_root_not_recovered_through_browser(self):
+        from unittest.mock import Mock
+        from dns_pinned_https import OfficialHTTPStatusError
+        original = doc(self.row)
+        fetch = Mock(side_effect=OfficialHTTPStatusError(429))
+        browser = Mock(return_value=self.home)
+        reader = Mock(return_value=self.reading)
+        result, report = apply_independently_verified_updates(
+            original, original, DAY, tick=0, fetch=fetch, browser_fetch=browser,
+            poster_reader=reader, commune_resolver=lambda *_: None)
+        fetch.assert_called_once()
+        browser.assert_not_called()
+        reader.assert_not_called()
+        self.assertEqual(result, original)
+
     def test_conflicting_poster_rosters_and_prices_not_promoted(self):
         from unittest.mock import Mock
         reader = Mock(side_effect=[self.reading, self.make_reading("Artistes : Beta", "Pass 3J : 85 €")])
