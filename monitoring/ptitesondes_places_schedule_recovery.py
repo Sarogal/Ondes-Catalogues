@@ -31,6 +31,11 @@ RESEARCH_PATHS = (
     "scripts/ptitesondes_open_world_permanent_place_evidence.py",
     "scripts/ptitesondes_open_world_permanent_place_draft.py",
     "scripts/ptitesondes_cultural_directory_discovery.py",
+    "scripts/ptitesondes_cultural_directory_identity.py",
+    "scripts/ptitesondes_national_cultural_directory_probe.py",
+    "scripts/ptitesondes_dila_municipal_domains.py",
+    "scripts/ptitesondes_unlisted_source_safe_recheck.py",
+    "scripts/ptitesondes_generic_venue_ign_corroboration.py",
 )
 
 
