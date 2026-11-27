@@ -128,6 +128,39 @@ class OpenAgendaNewNamedSitePublisherTests(unittest.TestCase):
         self.assertEqual(published["events"][-1]["venueId"],
                          published["venues"][-1]["id"])
 
+    def test_generic_metal_headline_uses_corroborated_named_bill(self):
+        base = geo_fixture.test_catalogue()
+        previous = geo_fixture.before()
+        title = "SOIRÉE MÉTAL"
+        registry = observation(name=title, leadArtist=title)
+        names = ["Harsh", "Witchorious", "Wake The Dead"]
+        desc = " - ".join(names)
+        long = "\n\n".join("### " + n + "\n\nPrésentation du groupe." for n in names)
+        changes = {"title": {"fr": title}, "description": {"fr": desc},
+                   "longDescription": {"fr": long}, "keywords": {"fr": ["metal"]}}
+        fetch, _ = official_get(changes=changes)
+        proposed, report = producer.build(registry, base, previous, TODAY, fetch=fetch)
+        self.assertEqual(len(proposed["approvals"]), 1, report)
+        event = proposed["approvals"][0]
+        self.assertEqual(event["officialEvidence"][1]["officialArtistNames"], names)
+        self.assertEqual(event["event"]["title"], " + ".join(names))
+        with mock.patch.object(signer.probe, "safe_fetch", side_effect=fetch):
+            self.assertEqual(len(approval_preflight.check_append_only(
+                previous, proposed, TODAY)), 1)
+            published, stats = publisher.merge(base, base, proposed, TODAY)
+        self.assertEqual(stats["newEvents"], 1, stats)
+        self.assertEqual(stats["newVenues"], 1, stats)
+        self.assertEqual(published["events"][-1]["title"], " + ".join(names))
+        for invalid in ("", "### Harsh", "### Harsh\n### Other\n### Wake The Dead",
+                        "```\n" + long + "\n```", "<div hidden>" + long + "</div>"):
+            with self.subTest(invalid=invalid):
+                bad, _ = official_get(changes={**changes, "longDescription": {"fr": invalid}})
+                held, report = producer.build(registry, base, previous, TODAY, fetch=bad)
+                self.assertEqual(held, previous, report)
+        wrong = observation(name="Concert punk", leadArtist="Concert punk")
+        held, report = producer.build(wrong, base, previous, TODAY, fetch=fetch)
+        self.assertEqual(held, previous, report)
+
     def test_city_suffix_is_not_a_new_artist_at_new_venue(self):
         reference = geo_fixture.test_catalogue()
         base = copy.deepcopy(reference)

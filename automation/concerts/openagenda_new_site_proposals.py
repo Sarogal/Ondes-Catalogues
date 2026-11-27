@@ -168,7 +168,7 @@ def propose(row, catalogue, today, *, fetch=probe.safe_fetch):
         raw, url, agenda_uid=agenda_uid, event_uid=event_uid)
     names, genres = oa.verified_export(
         raw, url, date, place, agenda_uid=agenda_uid, event_uid=event_uid)
-    require(oa.observed_bill_matches(candidate["leadArtist"], names, city=place["city"]),
+    require(oa.observed_export_bill_matches(candidate["leadArtist"], names, raw, city=place["city"]),
             "observed headliner no longer on original bill")
     require(not any(_site_key(v.get("name"), v.get("city")) ==
                     _site_key(place["name"], place["city"])

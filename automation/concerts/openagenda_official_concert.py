@@ -39,7 +39,9 @@ AGENDA_PATH = re.compile(
     r"[a-z0-9][a-z0-9_-]{2,180}/?\Z", re.I)
 CANCELLED = ("cancel", "postpon", "resched", "report", "annul")
 PLACEHOLDERS = frozenset(("concert", "soiree", "festival", "concert punk",
-                          "concert metal", "live", "show", "spectacle"))
+                          "concert metal", "live", "show", "spectacle",
+                          "soiree metal", "soiree punk", "soiree rock",
+                          "soiree hardcore", "concert rock", "concert hardcore"))
 
 
 class _VisibleOfficialGenreText(HTMLParser):
@@ -369,6 +371,63 @@ def observed_bill_matches(observed, names, *, city=None):
     return len(parts) > 1 and [normalized(p) for p in parts] == known
 
 
+def observed_export_bill_matches(observed, names, raw_json, *, city=None):
+    """Correlate only AFTER verified_export authenticated the original UID."""
+    if observed_bill_matches(observed, names, city=city):
+        return True
+    if normalized(observed) not in PLACEHOLDERS:
+        return False
+    try:
+        record = json.loads(raw_json)["events"][0]
+        value = record["title"]
+        original = value.get("fr") or value.get("en")
+        return (normalized(original) == normalized(observed)
+                and normalized(original) in PLACEHOLDERS
+                and bool(names)
+                and _generic_export_bill(record) == names)
+    except (ValueError, TypeError, KeyError, IndexError, AttributeError):
+        return False
+
+
+def _generic_export_bill(record):
+    """A generic headline is not an act. Recover only an explicit complete bill.
+
+    The short description must be an exact delimiter-separated named bill (or
+    a single name), and the original long description must independently
+    introduce every act as a matching ordered Markdown heading. Do not
+    infer names from narrative text, incidental mentions or hidden HTML.
+    """
+    short = record.get("description")
+    long = record.get("longDescription")
+    short = (short.get("fr") or short.get("en")) if isinstance(short, dict) else None
+    long = (long.get("fr") or long.get("en")) if isinstance(long, dict) else None
+    if (not isinstance(short, str) or not 2 <= len(short) <= 900
+            or not isinstance(long, str) or not 2 <= len(long) <= 20000
+            or re.search(r"[<>\r\n]", short)
+            or re.search(r"<[^>]*>", long)):
+        raise ValueError("OpenAgenda: generic title without explicit named bill")
+    names = [n.strip() for n in re.split(r"\s+(?:[+|–—-])\s+", short)]
+    if (not names or any(not 2 <= len(n) <= 120 or not normalized(n)
+                         or normalized(n) in PLACEHOLDERS
+                         or bridge.is_unnamed_performer(n) for n in names)
+            or len({normalized(n) for n in names}) != len(names)):
+        raise ValueError("OpenAgenda: generic title without explicit named bill")
+    headings = []
+    fenced = False
+    for line in long.splitlines():
+        if re.match(r"^\s*(?:`{3,}|~{3,})", line):
+            fenced = not fenced
+            continue
+        if fenced:
+            continue
+        match = re.fullmatch(r" {0,3}#{1,6}\s+(.+?)\s*#*\s*", line)
+        if match:
+            headings.append(normalized(match.group(1)))
+    if headings != [normalized(name) for name in names]:
+        raise ValueError("OpenAgenda: generic title without matching performer headings")
+    return names
+
+
 def _export_bill(title, record):
     """Disambiguate a spaced pipe only from independent visible bill text.
 
@@ -376,6 +435,8 @@ def _export_bill(title, record):
     candidate to have a separate occurrence after masking the whole title.
     Without corroboration, preserve the original single-act interpretation.
     """
+    if normalized(title) in PLACEHOLDERS:
+        return _generic_export_bill(record)
     parts = re.split(r"\s+\|\s+", title)
     if len(parts) > 1 and all(2 <= len(p.strip()) <= 120 for p in parts):
         full = normalized(title)
