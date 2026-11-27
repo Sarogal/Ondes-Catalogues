@@ -3,9 +3,9 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 132,
-  "dueNameCount": 4,
-  "attemptedCount": 4,
+  "observedNameCount": 133,
+  "dueNameCount": 1,
+  "attemptedCount": 1,
   "serviceFailure": null,
   "retryAfterKey": null,
   "entries": {
@@ -246,6 +246,15 @@
       "artistName": "Dead End Tragedy",
       "checkedAt": "2026-11-25",
       "source": "wikidata",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "dispraised": {
+      "status": "not_found",
+      "artistName": "Dispraised",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },

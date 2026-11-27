@@ -9,9 +9,8 @@
   "checkedCount": 20,
   "everObservedStreamCount": 358,
   "sampleCounts": {
-    "audio_hint": 11,
-    "inconclusive": 5,
-    "unavailable_hint": 4
+    "audio_hint": 13,
+    "inconclusive": 7
   },
   "hlsAttemptedCount": 0,
   "hlsDeferredCount": 0,
@@ -466,6 +465,11 @@
           "date": "2026-11-26",
           "outcome": "inconclusive",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "inconclusive",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -497,6 +501,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -508,6 +517,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "inconclusive",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "inconclusive",
           "route": "direct"
         }
@@ -523,6 +537,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -534,6 +553,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -549,6 +573,11 @@
           "date": "2026-11-26",
           "outcome": "inconclusive",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "inconclusive",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -560,6 +589,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "inconclusive",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "inconclusive",
           "route": "direct"
         }
@@ -575,6 +609,11 @@
           "date": "2026-11-26",
           "outcome": "inconclusive",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "inconclusive",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -588,6 +627,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -599,6 +643,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -632,6 +681,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -643,6 +697,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "inconclusive",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "inconclusive",
           "route": "direct"
         }
@@ -658,6 +717,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -669,6 +733,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "inconclusive",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "inconclusive",
           "route": "direct"
         }
@@ -684,6 +753,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -695,6 +769,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -710,6 +789,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -721,6 +805,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }
@@ -736,6 +825,11 @@
           "date": "2026-11-26",
           "outcome": "audio_hint",
           "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
+          "outcome": "audio_hint",
+          "route": "direct"
         }
       ],
       "publicationAllowed": false
@@ -747,6 +841,11 @@
       "observations": [
         {
           "date": "2026-11-26",
+          "outcome": "audio_hint",
+          "route": "direct"
+        },
+        {
+          "date": "2026-11-27",
           "outcome": "audio_hint",
           "route": "direct"
         }

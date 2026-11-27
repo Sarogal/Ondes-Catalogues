@@ -5,7 +5,7 @@
   "approvedCount": 0,
   "publicationAllowed": false,
   "eligibleStationCount": 74,
-  "dueStationCount": 70,
+  "dueStationCount": 66,
   "attemptedCount": 4,
   "serviceFailureCount": 0,
   "stationsWithFreshHints": 2,
@@ -136,9 +136,9 @@
     },
     {
       "goStationId": "go-station-000031",
-      "lastAttemptDate": "2026-11-26",
+      "lastAttemptDate": "2026-11-27",
       "searchStatus": "no_candidate_observed",
-      "hintsObservedDate": "2026-11-26",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
       "approved": false,
       "publicationAllowed": false,
@@ -147,9 +147,9 @@
     },
     {
       "goStationId": "go-station-000034",
-      "lastAttemptDate": "2026-11-26",
+      "lastAttemptDate": "2026-11-27",
       "searchStatus": "candidates_observed",
-      "hintsObservedDate": "2026-11-26",
+      "hintsObservedDate": "2026-11-27",
       "hints": [
         {
           "stationuuid": "558c4adf-b1ab-4c2e-99ab-ae2755f2a538",
@@ -168,9 +168,9 @@
     },
     {
       "goStationId": "go-station-000036",
-      "lastAttemptDate": "2026-11-26",
+      "lastAttemptDate": "2026-11-27",
       "searchStatus": "no_candidate_observed",
-      "hintsObservedDate": "2026-11-26",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
       "approved": false,
       "publicationAllowed": false,
@@ -179,9 +179,9 @@
     },
     {
       "goStationId": "go-station-000038",
-      "lastAttemptDate": "2026-11-26",
+      "lastAttemptDate": "2026-11-27",
       "searchStatus": "no_candidate_observed",
-      "hintsObservedDate": "2026-11-26",
+      "hintsObservedDate": "2026-11-27",
       "hints": [],
       "approved": false,
       "publicationAllowed": false,

@@ -3,11 +3,11 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 132,
-  "dueNameCount": 31,
-  "attemptedCount": 3,
+  "observedNameCount": 133,
+  "dueNameCount": 30,
+  "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "cats in space",
+  "retryAfterKey": "epica",
   "entries": {
     "2000 fm": {
       "status": "not_found",
@@ -248,6 +248,15 @@
       "artistName": "Dead End Tragedy",
       "source": "musicbrainz",
       "checkedAt": "2026-11-26",
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
+    "dispraised": {
+      "status": "not_found",
+      "artistName": "Dispraised",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
+      "researchVersion": 2,
       "identityVerified": false,
       "publicationAllowed": false
     },

@@ -5,7 +5,7 @@
   "approvedCount": 0,
   "attemptedCount": 6,
   "stationsWithArtistHints": 110,
-  "distinctArtistHints": 132,
+  "distinctArtistHints": 133,
   "attemptedHlsCount": 1,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -142,11 +142,11 @@
     {
       "stationuuid": "10d01aca-f5de-4591-b4e0-441ce8e1ddfe",
       "streamSha256": "557aaa2ff12b76757fa71e73ac8c531052135e5f5927e64558aa2af1165fd00f",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
-      "verdict": "icy_artist_title_hint",
+      "verdict": "metadata_no_parseable_title",
       "observations": [
         {
           "date": "2026-11-26",
@@ -154,13 +154,13 @@
           "titleSha256": "06176c0fdfe39580ce9ad54378b9db77a4cf7f8dc6829e5621eab340182be9c2"
         }
       ],
-      "alternativeVersion": 0,
-      "alternativeAttempted": false
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
       "stationuuid": "11d1fe19-b237-4bfc-95fb-fd9757f40916",
       "streamSha256": "ff612bdb6c540027b35e41a6056fbfe68b817dfecbe8b98382c14b3b3e551599",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -170,13 +170,20 @@
           "date": "2026-11-26",
           "artistHint": "Bates FM",
           "titleSha256": "e8dddbb7f115cd2de287c59bf62c05b482c3a56e56107925547e868fe578a2e6"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Bates FM",
+          "titleSha256": "e8dddbb7f115cd2de287c59bf62c05b482c3a56e56107925547e868fe578a2e6"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "11ebd6e7-4b9f-4c93-afcd-bca082bb82a6",
       "streamSha256": "58404456505af5db040c9dcc7ca0479017e676a947be85af7989133918c29164",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -186,6 +193,11 @@
           "date": "2026-11-26",
           "artistHint": "The Blamed",
           "titleSha256": "f1f4fada145ee4fe80dbe94051c5c92c91cbbcf3c76f36ef7b9aafa5b7b80f1c"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Dispraised",
+          "titleSha256": "29f678dcc21333d7f4260f0999be1810e216081d18fb82ea2b9bccea70c68d17"
         }
       ],
       "alternativeVersion": 0,
@@ -194,7 +206,7 @@
     {
       "stationuuid": "125f0f3a-4833-4e2d-856a-106fba6cd6cd",
       "streamSha256": "fcd9ff98cc5aa45e64cef6e0b6b825cfabbf71d20128fdc21f7df8284d0b4e20",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -204,13 +216,20 @@
           "date": "2026-11-26",
           "artistHint": "MLKUZ",
           "titleSha256": "55d88bf51765d0854be30863775e508745c47a3710c3957176addd529f8760b7"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "MLKUZ",
+          "titleSha256": "79ce111f68822e24d4196c9b23aae85e2e504772dc5fe98c211ff2f37d151157"
         }
-      ]
+      ],
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "stationuuid": "143ff518-5d57-4bf0-9859-e82af365a771",
       "streamSha256": "d5665c05a035495396973e43df736a2c25978c53fa5a682408a2655f9d4f4520",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
@@ -1845,7 +1864,7 @@
     {
       "stationuuid": "c123bef5-256a-427f-a942-570ae9836f68",
       "streamSha256": "ac5e132f18b64939b98ba589e2879817d636b09970400aa35b0dd01538f04016",
-      "observedDate": "2026-11-26",
+      "observedDate": "2026-11-27",
       "observedInScan": true,
       "approved": false,
       "publicationAllowed": false,
