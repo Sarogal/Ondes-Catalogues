@@ -34,9 +34,10 @@ def fetch_poi(name, code, opener=None):
         raise ValueError("oversized_poi_response")
     return json.loads(raw)
 
-def summarize(doc):
-    if (not isinstance(doc, dict) or doc.get("type") != "FeatureCollection"
-            or not isinstance(doc.get("features"), list) or len(doc["features"]) > LIMIT):
+def summarize(doc, *, limit=LIMIT):
+    if (type(limit) is not int or not 1 <= limit <= 20
+            or not isinstance(doc, dict) or doc.get("type") != "FeatureCollection"
+            or not isinstance(doc.get("features"), list) or len(doc["features"]) > limit):
         raise ValueError("invalid_poi_collection")
     fields = Counter()
     types = Counter()
@@ -74,7 +75,7 @@ def official_names(record):
     return list(names.values())
 
 
-def exact_poi_point(record, doc, diagnostics=None):
+def exact_poi_point(record, doc, diagnostics=None, *, limit=LIMIT):
     """A unique exact named point, not a street or commune centroid.
 
     This is a private location hypothesis only. The independent official
@@ -93,10 +94,10 @@ def exact_poi_point(record, doc, diagnostics=None):
         code, postcode = record["code_commune"], record.get("code_postal")
         if not isinstance(postcode, str) or not re.fullmatch(r"[0-9]{5}", postcode):
             return reject("directory_postcode_format")
-        summarize(doc)
+        summarize(doc, limit=limit)
         features = doc["features"]
         # A full truncated result set cannot establish uniqueness.
-        if len(features) >= LIMIT:
+        if len(features) >= limit:
             return reject('truncated_results')
         matches = []
         for feature in features:
