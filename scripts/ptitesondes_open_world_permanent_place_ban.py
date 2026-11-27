@@ -198,6 +198,29 @@ def corroborate_official_ban(city, venue, url, html, directory, ban_fetch, admin
         return _note("admin_unavailable")
 
 
+def _section_pages(home, html, city, directory):
+    """Bounded second hop through generic municipal culture/library menus."""
+    from urllib.parse import urljoin
+    from ptitesondes_municipal_venue_link_discovery import VisibleLinks, MAX_ANCHORS
+    if not isinstance(html, str) or not 30 <= len(html) <= MAX_HTML:
+        return []
+    parser = VisibleLinks()
+    parser.feed(html)
+    parser.close()
+    if len(parser.links) >= MAX_ANCHORS:
+        return []
+    sections = set()
+    for href, label in parser.links:
+        if not re.fullmatch(r"(?:culture(?: et (?:loisirs|patrimoine))?|bibliotheques?|mediatheques?|ludotheques?|equipements culturels|jeunesse|enfance(?: jeunesse)?|lecture publique)", norm_text(label)):
+            continue
+        url = urljoin(home, href)
+        p = urlsplit(url)
+        if (p.path.strip("/") and not p.query and not p.fragment
+                and approved_municipal_page_host(url, city, directory)):
+            sections.add(url)
+    return sorted(sections)[:3]
+
+
 def discover_official_ban(row, *, directory_fetch=None, page_read=None,
                           ban_fetch=None, admin_fetch=None):
     """Use an untrusted venue URL or exact municipal homepage link as a hint.
@@ -253,6 +276,23 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
         except (OSError, ValueError, TypeError, UnicodeError):
             return _note("homepage_unavailable")
         url = exact_named_venue_page(venue, home, homepage, city, directory)
+        if not url:
+            # A facility is rarely linked from the home page. Follow at most
+            # three generic same-authority sections, then require an exact
+            # visible venue link. Multiple destinations remain ambiguous.
+            matches = set()
+            for section in _section_pages(home, homepage, city, directory):
+                _note("section_discovery_attempted")
+                try:
+                    hit = exact_named_venue_page(venue, section, page_read(section),
+                                                 city, directory)
+                except (OSError, ValueError, TypeError, UnicodeError):
+                    _note("section_page_unavailable")
+                    continue
+                if hit:
+                    matches.add(hit)
+            if len(matches) == 1:
+                url = next(iter(matches))
         if not url or url in pages:
             return _note("exact_link_missing")
         try:
