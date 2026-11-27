@@ -38,6 +38,8 @@ BAN_DIAGNOSTIC_CODES = (
     "culture_independent_multi_url_attempted", "culture_independent_multi_url_conflict",
     "culture_independent_multi_url_resolved",
     "culture_independent_named_page_found", "culture_independent_named_page_unavailable",
+    "culture_independent_alias_heading", "culture_independent_main_missing",
+    "culture_independent_heading_missing", "culture_independent_heading_different",
     "culture_independent_record_missing", "culture_independent_name_or_commune_mismatch",
     "culture_independent_administrative_code_format", "culture_independent_address_field_missing_or_invalid",
     "culture_independent_numbered_street_missing", "culture_independent_complete_address_mismatch",
@@ -104,7 +106,7 @@ def official_facts(city, venue, url, html, directory):
         return None
 
 
-def visible_place_facts(city, venue, url, html, insee):
+def visible_place_facts(city, venue, url, html, insee, *, verified_aliases=()):
     """Content only: callers MUST separately authenticate the exact URL."""
     try:
         town, name = norm_text(city), norm_text(venue)
@@ -117,7 +119,8 @@ def visible_place_facts(city, venue, url, html, insee):
         parser.feed(html)
         parser.close()
         blocks = parser.blocks
-        if parser.headings != [name] or not parser.seen_main:
+        names = {name} | {norm_text(alias) for alias in verified_aliases}
+        if len(parser.headings) != 1 or parser.headings[0] not in names or not parser.seen_main:
             return _note("official_identity_unmatched")
         if any(RESTRICTED.search(b) or CLOSED.search(b) for b in blocks):
             return _note("official_access_restricted")
@@ -371,7 +374,7 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
         return _note("official_facts_invalid")
 
 
-def _cultural_named_page(venue, current_url, html):
+def _cultural_named_page(venue, current_url, html, *, verified_aliases=()):
     """One exact visible venue link on the already authenticated host."""
     from ptitesondes_municipal_venue_link_discovery import VisibleLinks, MAX_ANCHORS
     from ptitesondes_dynamic_municipal_source_links import _safe_url
@@ -388,7 +391,7 @@ def _cultural_named_page(venue, current_url, html):
         return None
     matches = set()
     for href, label in parser.links:
-        if norm_text(label) != norm_text(venue):
+        if norm_text(label) not in ({norm_text(venue)} | {norm_text(a) for a in verified_aliases}):
             continue
         candidate = _safe_url(href, base=current_url)
         if not candidate or candidate == current_url or _host(candidate) != host:
@@ -433,6 +436,12 @@ def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=No
                 code = "culture_independent_" + ("record_missing" if reason == "directory_record_missing" else reason)
                 _note(code)
             return _note("culture_independent_identity_unmatched")
+        aliases = tuple(value.strip() for key in ("nom_du_lieu", "nom_usuel_du_lieu")
+                        if isinstance(value := record.get(key), str)
+                        and 2 <= len(value.strip()) <= 180 and norm_text(value)
+                        and norm_text(value) != norm_text(city)
+                        and not any(ord(c) < 32 or ord(c) == 127 for c in value))
+        names = {norm_text(venue)} | {norm_text(a) for a in aliases}
         listed = directory_website_hints(record, try_https_upgrade=True)
         urls = [url for url in listed if _host(url)]
         if not 1 <= len(urls) <= 4:
@@ -459,11 +468,14 @@ def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=No
             parser = PlaceMain()
             parser.feed(html)
             parser.close()
-            if not parser.seen_main or norm_text(venue) not in parser.headings:
+            if not parser.seen_main or not names.intersection(parser.headings):
+                _note("culture_independent_main_missing" if not parser.seen_main else
+                      "culture_independent_heading_missing" if not parser.headings else
+                      "culture_independent_heading_different")
                 # A directory often lists an institution's homepage rather
                 # than its dedicated venue page. Follow only one exact
                 # visible link on that same authenticated host.
-                target = _cultural_named_page(venue, final_url, html)
+                target = _cultural_named_page(venue, final_url, html, verified_aliases=aliases)
                 if not target:
                     _note("official_identity_unmatched")
                     continue
@@ -477,7 +489,10 @@ def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=No
                 except (OSError, ValueError, TypeError, UnicodeError):
                     _note("culture_independent_named_page_unavailable")
                     continue
-            facts = visible_place_facts(city, venue, final_url, html, identity["insee"])
+            facts = visible_place_facts(city, venue, final_url, html, identity["insee"],
+                                        verified_aliases=aliases)
+            if facts is not None and parser.headings and parser.headings[0] != norm_text(venue) and parser.headings[0] in names:
+                _note("culture_independent_alias_heading")
             if facts is None:
                 return _note("culture_independent_multi_url_conflict") if len(urls) > 1 else None
             if not same_official_address(identity, facts):
