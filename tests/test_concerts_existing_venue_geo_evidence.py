@@ -551,3 +551,26 @@ class StandaloneVenueSourceTests(unittest.TestCase):
             self.assertEqual(evidence.discovered_venue_sources(denied, venues, today), {})
         registry["items"]["two"] = {**record, "candidate": {**lead, "sourceUrl": "https://other.fr/events/one"}}
         self.assertEqual(evidence.discovered_venue_sources(registry, venues, today), {})
+
+    def test_practical_arrival_heading_with_exact_document_identity(self):
+        source = "https://unknown-room.fr/"
+        link = '<nav><a href="/infos/">Infos pratiques</a></nav>'
+        page = ("<head><title>Infos pratiques - New Room</title></head>"
+                "<h1>Infos pratiques</h1><h2>Comment venir ?</h2>"
+                "<p>19 rue des Jardins, 68000 Colmar</p>"
+                "<h2>Restaurant</h2><p>21 rue des Jardins, 68000 Colmar</p>")
+        with patch.object(evidence, "registered_venue_source", return_value=source), \
+             patch.object(evidence.geo, "verify", return_value=(OSM, 48.08, 7.36, "named-site-point")):
+            proof = evidence.verify_venue_source(source, VENUE,
+                fetch=lambda url, cache: link if url == source else page)
+            self.assertEqual(proof["venuePatch"]["address"], "19 rue des Jardins")
+            for bad in (
+                    page.replace("New Room</title>", "Other Room</title>"),
+                    page.replace("19 rue des Jardins, 68000 Colmar", "19 rue des Jardins, 75018 Paris"),
+                    page.replace("Comment venir ?", "Réservations"),
+                    page.replace("<h2>Restaurant</h2>", "<h2>Accès</h2>"),
+                    page.replace("<h2>Restaurant</h2>", ""),
+                    page.replace("<h2>Comment venir ?</h2>", '<h2 hidden>Comment venir ?</h2>')):
+                with self.subTest(bad=bad), self.assertRaises(ValueError):
+                    evidence.verify_venue_source(source, VENUE,
+                        fetch=lambda url, cache: link if url == source else bad)
