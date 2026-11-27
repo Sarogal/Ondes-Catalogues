@@ -1632,6 +1632,32 @@ class FreshPosterPublisherTests(unittest.TestCase):
         self.assertTrue(_verified_official_update_delta(old, new))
         self.assertEqual(report["fresh_poster_images_read"], 1)
 
+    def test_first_verified_lineup_initializes_unknown_legacy_fields(self):
+        for legacy in (None, [], ["Existing Artist"]):
+            with self.subTest(legacy=legacy):
+                self.row["bands"] = None
+                if legacy is None:
+                    self.row.pop("lineup", None)
+                else:
+                    self.row["lineup"] = legacy
+                old, new, report, _ = self.run_update()
+                expected = (legacy or []) + ["Alpha", "New Artist"]
+                self.assertEqual(new["lineup"], expected)
+                self.assertEqual(new["bands"], len(expected))
+                self.assertTrue(_verified_official_update_delta(old, new))
+                wrong = dict(new, bands=len(expected) + 1)
+                self.assertFalse(_verified_official_update_delta(old, wrong))
+                if legacy:
+                    self.assertFalse(_verified_official_update_delta(
+                        old, dict(new, lineup=["Alpha"], bands=1)))
+        self.row["lineup"] = []
+        self.row["bands"] = 8
+        old, new, report, _ = self.run_update()
+        self.assertEqual(new["lineup"], [])
+        self.assertEqual(new["bands"], 8)
+        self.assertFalse(_verified_official_update_delta(
+            old, dict(new, lineup=["Alpha"], bands=1)))
+
     def test_rendered_candidate_rechecked_and_existing_price_preserved(self):
         self.row["price"] = "Ancien tarif"
         old, new, report, reader = self.run_update(
