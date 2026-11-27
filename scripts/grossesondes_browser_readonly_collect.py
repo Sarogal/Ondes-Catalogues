@@ -193,7 +193,7 @@ def collect(urls, renderer=rendered_html):
             seen.add(url)
             # A link is only a bounded research target discovered in CURRENT
             # same-host rendered HTML; it cannot grant publication authority.
-            links = linked_pages(url, page(html))[:MAX_LINKS_PER_SITE]
+            links = linked_pages(url, page(html), prefer_programme=True)[:MAX_LINKS_PER_SITE]
             for link in links:
                 if link in seen or safe_public_url(link) is None:
                     continue
