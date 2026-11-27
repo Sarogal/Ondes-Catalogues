@@ -17,7 +17,26 @@ def _text(value, limit):
     return value.strip()
 
 
-def directory_identity(city, venue, row, diagnostics=None):
+def address_format(value, street, postcode, city):
+    """Only exact permutations of known components; never discard extra tokens."""
+    text = _text(value, 300)
+    if text is None:
+        return None
+    n = norm_text(text)
+    street, city = norm_text(street), norm_text(city)
+    variants = {
+        f"{street} {postcode} {city}": "full",
+        f"{street} {city} {postcode}": "city_before_postcode",
+        f"{street} {postcode} {city} france": "country_suffix",
+        f"{street} {city} {postcode} france": "country_suffix",
+        street: "street_only",
+        f"{street} {postcode}": "street_postcode",
+        f"{street} {city}": "street_city",
+    }
+    return variants.get(n)
+
+
+def directory_identity(city, venue, row, diagnostics=None, *, equivalent_formats=True):
     """Exact name/alias, commune, INSEE, postcode and numbered street.
 
     Do not infer missing postal digits, municipality codes, age, or GPS.
@@ -54,14 +73,18 @@ def directory_identity(city, venue, row, diagnostics=None):
             return reject("numbered_street_missing")
         number, road = m.groups()
         expected = f"{number} {road} {postcode} {norm_text(city)}"
-        if norm_text(full_raw) != expected:
+        style = address_format(full_raw, street, postcode, city)
+        if style is None or (not equivalent_formats and style != "full"):
             return reject("complete_address_mismatch")
+        # Structured postcode and commune are mandatory above. The official
+        # site and independent BAN still have to match the complete address.
         # When an entrance address is explicitly present, a differing
         # entrance must not be silently replaced by the postal address.
         entrance = row.get("adresse_entree_public")
         if entrance not in (None, ""):
             text = _text(entrance, 300)
-            if not text or norm_text(text) != expected:
+            entrance_style = address_format(text, street, postcode, city)
+            if entrance_style is None or (not equivalent_formats and entrance_style != "full"):
                 return reject("entrance_address_mismatch")
         return {"city": city, "venue": venue, "insee": insee,
                 "postcode": postcode, "housenumber": number, "street": road,
@@ -90,6 +113,8 @@ def live_address_probe():
     from ptitesondes_cultural_directory_discovery import PAGE_SIZE, parse_page, identity, is_family_lead
     counts = Counter()
     family_counts = Counter()
+    baseline_counts = Counter()
+    baseline_family = Counter()
     examined = 0
     for page in range(1, 13):
         doc = _fetch(URL.split("?")[0] + "?" + urlencode({"page": page, "page_size": PAGE_SIZE}))
@@ -103,7 +128,14 @@ def live_address_probe():
             elif directory_identity(*pair, row, local) is not None:
                 local["address_verified"] += 1
             counts.update(local)
+            baseline = Counter()
+            if pair is None:
+                baseline["discovery_identity_missing"] += 1
+            elif directory_identity(*pair, row, baseline, equivalent_formats=False) is not None:
+                baseline["address_verified"] += 1
+            baseline_counts.update(baseline)
             if is_family_lead(row):
+                baseline_family.update(baseline)
                 family_counts.update(local)
                 family_counts["family_rows"] += 1
                 urls = directory_website_hints(row)
@@ -112,7 +144,9 @@ def live_address_probe():
         if page * PAGE_SIZE >= total:
             break
     return {"rows_examined": examined, "address_counts": dict(counts),
-            "family_counts": dict(family_counts), "publication_ready": False, "public_writes": 0}
+            "family_counts": dict(family_counts), "baseline_address_counts": dict(baseline_counts),
+            "baseline_family_counts": dict(baseline_family),
+            "publication_ready": False, "public_writes": 0}
 
 
 if __name__ == "__main__":
