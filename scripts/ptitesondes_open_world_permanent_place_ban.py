@@ -4,6 +4,7 @@ Offline evidence primitive. Inputs must be freshly fetched by the caller.
 Never grants publication permission or derives a coordinate from a street or
 commune centroid. Numberless places remain eligible for the existing route.
 """
+from collections import Counter
 import math
 import re
 from urllib.parse import urlsplit
@@ -15,6 +16,33 @@ from ptitesondes_open_world_permanent_place_draft import (
     MainBlocks, ACTIVITIES, ACCESS, RESTRICTED, DEDICATED, administrative_identity,
 )
 from ptitesondes_open_world_permanent_place_evidence import CLOSED, MAX_HTML
+
+
+# Public diagnostics contain only fixed stage names and numeric counters.
+BAN_DIAGNOSTIC_CODES = (
+    "directory_unavailable", "directory_no_authenticated_host",
+    "hint_missing", "hint_not_authenticated", "hint_not_dedicated",
+    "page_unavailable", "homepage_unavailable", "exact_link_missing",
+    "official_identity_unmatched", "official_access_restricted",
+    "official_address_missing_or_ambiguous", "official_city_conflict",
+    "official_family_activities_missing", "official_access_missing",
+    "official_category_missing_or_ambiguous", "official_facts_invalid",
+    "ban_unavailable", "ban_exact_address_unmatched", "admin_unavailable",
+    "admin_identity_unmatched", "historical_postcode_conflict", "proof_found",
+    "section_discovery_attempted", "section_page_unavailable",
+)
+_BAN_DIAGNOSTICS = Counter()
+
+
+def _note(code):
+    if code in BAN_DIAGNOSTIC_CODES:
+        _BAN_DIAGNOSTICS[code] += 1
+    return None
+
+
+def ban_diagnostics():
+    return {key: _BAN_DIAGNOSTICS[key] for key in BAN_DIAGNOSTIC_CODES
+            if _BAN_DIAGNOSTICS[key]}
 
 
 class PlaceMain(MainBlocks):
@@ -51,12 +79,12 @@ def official_facts(city, venue, url, html, directory):
                 or p.query or p.fragment
                 or not approved_municipal_page_host(url, city, directory)
                 or not isinstance(html, str) or not 50 <= len(html) <= MAX_HTML):
-            return None
+            return _note("official_facts_invalid")
         codes = {str(r.get("code_insee_commune")) for r in directory["results"]
                  if isinstance(r, dict)
                  and norm_text(r.get("nom")) == norm_text("Mairie - " + city)}
         if len(codes) != 1:
-            return None
+            return _note("official_facts_invalid")
         insee = next(iter(codes))
         if not re.fullmatch(r"(?:[0-9]{5}|2[AB][0-9]{3})", insee):
             return None
@@ -64,9 +92,10 @@ def official_facts(city, venue, url, html, directory):
         parser.feed(html)
         parser.close()
         blocks = parser.blocks
-        if (parser.headings != [name] or not parser.seen_main
-                or any(RESTRICTED.search(b) or CLOSED.search(b) for b in blocks)):
-            return None
+        if parser.headings != [name] or not parser.seen_main:
+            return _note("official_identity_unmatched")
+        if any(RESTRICTED.search(b) or CLOSED.search(b) for b in blocks):
+            return _note("official_access_restricted")
         # Exactly one explicit numbered address in the main content.
         # Other postcode-bearing addresses are not silently ignored.
         addresses = []
@@ -75,16 +104,18 @@ def official_facts(city, venue, url, html, directory):
             if m and HOUSE.fullmatch(m.group(1)):
                 addresses.append(m.groups())
         if len(set(addresses)) != 1:
-            return None
+            return _note("official_address_missing_or_ambiguous")
         number, street, postcode, address_city = addresses[0]
         if address_city != town:
-            return None
+            return _note("official_city_conflict")
         activities = [label for pattern, label in ACTIVITIES
                       if any(re.search(pattern, b) for b in blocks)]
         admission = next((label for pattern, label in ACCESS
                           if any(re.search(pattern, b) for b in blocks)), None)
-        if not activities or admission is None:
-            return None
+        if not activities:
+            return _note("official_family_activities_missing")
+        if admission is None:
+            return _note("official_access_missing")
         kinds = set()
         if re.search(r"\bludotheque\b", name):
             kinds.add(("ludotheque", "Ludothèque"))
@@ -94,7 +125,7 @@ def official_facts(city, venue, url, html, directory):
             if any(re.search(pattern, b) for b in blocks):
                 kinds.add((category, label))
         if len(kinds) != 1:
-            return None
+            return _note("official_category_missing_or_ambiguous")
         category, label = kinds.pop()
         return {"city": city, "venue": venue, "official_url": url,
                 "insee": insee, "postcode": postcode, "housenumber": number,
@@ -147,19 +178,47 @@ def corroborate_official_ban(city, venue, url, html, directory, ban_fetch, admin
     if facts is None:
         return None
     try:
-        point = exact_ban_point(facts, ban_fetch(facts))
-        if point is None:
-            return None
+        data = ban_fetch(facts)
+    except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
+        return _note("ban_unavailable")
+    point = exact_ban_point(facts, data)
+    if point is None:
+        return _note("ban_exact_address_unmatched")
+    try:
         admin = admin_fetch(*point)
         ident = administrative_identity(admin, city, facts["postcode"])
         if ident is None or admin[0].get("code") != facts["insee"]:
-            return None
+            return _note("admin_identity_unmatched")
+        _note("proof_found")
         return {**facts, "lat": point[0], "lng": point[1],
                 "department": ident[0], "region": ident[1],
                 "method": "dila_official_place_address_plus_ban",
                 "publication_ready": False, "public_writes": 0}
     except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
-        return None
+        return _note("admin_unavailable")
+
+
+def _section_pages(home, html, city, directory):
+    """Bounded second hop through generic municipal culture/library menus."""
+    from urllib.parse import urljoin
+    from ptitesondes_municipal_venue_link_discovery import VisibleLinks, MAX_ANCHORS
+    if not isinstance(html, str) or not 30 <= len(html) <= MAX_HTML:
+        return []
+    parser = VisibleLinks()
+    parser.feed(html)
+    parser.close()
+    if len(parser.links) >= MAX_ANCHORS:
+        return []
+    sections = set()
+    for href, label in parser.links:
+        if not re.fullmatch(r"(?:culture(?: et (?:loisirs|patrimoine))?|bibliotheques?|mediatheques?|ludotheques?|equipements culturels|jeunesse|enfance(?: jeunesse)?|lecture publique)", norm_text(label)):
+            continue
+        url = urljoin(home, href)
+        p = urlsplit(url)
+        if (p.path.strip("/") and not p.query and not p.fragment
+                and approved_municipal_page_host(url, city, directory)):
+            sections.add(url)
+    return sorted(sections)[:3]
 
 
 def discover_official_ban(row, *, directory_fetch=None, page_read=None,
@@ -180,16 +239,25 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
     admin_fetch = admin_fetch or fetch_admin
     try:
         city, venue = row["city"], row["venue"]
-        directory = directory_fetch(city)
+        try:
+            directory = directory_fetch(city)
+        except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
+            return _note("directory_unavailable")
         hosts = municipal_site_hosts(city, directory)
         if not hosts:
-            return None
+            return _note("directory_no_authenticated_host")
         hint = row.get("possible_website_unverified")
         pages = []
         if approved_municipal_page_host(hint, city, directory):
             p = urlsplit(hint)
             if p.path.strip("/") and not p.query and not p.fragment:
                 pages.append(hint)
+            else:
+                _note("hint_not_dedicated")
+        elif hint:
+            _note("hint_not_authenticated")
+        else:
+            _note("hint_missing")
         # At most one authenticated homepage, and one exact visible venue link.
         home = "https://" + sorted(hosts)[0] + "/"
         for url in pages:
@@ -199,21 +267,46 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
                 if proof is not None:
                     historical = row.get("historical_address_unverified")
                     if isinstance(historical, dict) and historical.get("postal_code") not in (None, proof["postcode"]):
-                        return None
+                        return _note("historical_postcode_conflict")
                     return proof
             except (OSError, ValueError, TypeError, UnicodeError):
-                pass
-        url = exact_named_venue_page(venue, home, page_read(home), city, directory)
+                _note("page_unavailable")
+        try:
+            homepage = page_read(home)
+        except (OSError, ValueError, TypeError, UnicodeError):
+            return _note("homepage_unavailable")
+        url = exact_named_venue_page(venue, home, homepage, city, directory)
+        if not url:
+            # A facility is rarely linked from the home page. Follow at most
+            # three generic same-authority sections, then require an exact
+            # visible venue link. Multiple destinations remain ambiguous.
+            matches = set()
+            for section in _section_pages(home, homepage, city, directory):
+                _note("section_discovery_attempted")
+                try:
+                    hit = exact_named_venue_page(venue, section, page_read(section),
+                                                 city, directory)
+                except (OSError, ValueError, TypeError, UnicodeError):
+                    _note("section_page_unavailable")
+                    continue
+                if hit:
+                    matches.add(hit)
+            if len(matches) == 1:
+                url = next(iter(matches))
         if not url or url in pages:
-            return None
-        proof = corroborate_official_ban(city, venue, url, page_read(url),
+            return _note("exact_link_missing")
+        try:
+            html = page_read(url)
+        except (OSError, ValueError, TypeError, UnicodeError):
+            return _note("page_unavailable")
+        proof = corroborate_official_ban(city, venue, url, html,
                                          directory, ban_fetch, admin_fetch)
         historical = row.get("historical_address_unverified")
         if proof is not None and isinstance(historical, dict) and historical.get("postal_code") not in (None, proof["postcode"]):
-            return None
+            return _note("historical_postcode_conflict")
         return proof
     except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
-        return None
+        return _note("official_facts_invalid")
 
 
 def build_ban_draft(proof, today):

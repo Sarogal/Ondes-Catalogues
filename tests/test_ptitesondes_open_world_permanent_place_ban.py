@@ -156,6 +156,39 @@ class OfficialPlaceBANTests(unittest.TestCase):
         self.assertEqual(drafts, [])
         self.assertEqual(summary["counts"]["fresh_ban_evidence_unavailable"], 1)
 
+    def test_discovery_through_culture_section_without_external_crawling(self):
+        home = "https://www.ville-les-bois.fr/"
+        section = home + "culture"
+        calls = []
+        def page(url):
+            calls.append(url)
+            return {home: '<a href="/culture">Culture</a><a href="https://untrusted.example/jeunesse">Jeunesse</a>',
+                    section: f'<a href="{PAGE}">{VENUE}</a>',
+                    PAGE: HTML}[url]
+        proof = discover_official_ban({"city": CITY, "venue": VENUE},
+            directory_fetch=lambda _: DIR, page_read=page,
+            ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN)
+        self.assertIsNotNone(proof)
+        self.assertEqual(calls, [home, section, PAGE])
+
+    def test_diagnostics_distinguish_transport_identity_and_ban_failures(self):
+        from ptitesondes_open_world_permanent_place_ban import ban_diagnostics
+        from ptitesondes_open_world_permanent_place_research import public_diagnostic_lines
+        before = ban_diagnostics()
+        def down(_):
+            raise OSError("private URL must not be logged")
+        row = {"city": CITY, "venue": VENUE, "possible_website_unverified": PAGE}
+        self.assertIsNone(discover_official_ban(row, directory_fetch=down))
+        self.assertIsNone(self.check(html=HTML.replace(VENUE, "Autre lieu")))
+        self.assertIsNone(self.check(ban={"type": "FeatureCollection", "features": []}))
+        after = ban_diagnostics()
+        for label in ("directory_unavailable", "official_identity_unmatched", "ban_exact_address_unmatched"):
+            self.assertEqual(after[label] - before.get(label, 0), 1)
+        lines = public_diagnostic_lines({"ban_diagnostics": {
+            "directory_unavailable": 2, "private URL": 3,
+            "ban_unavailable": "secret", "admin_unavailable": True}})
+        self.assertEqual(lines, ["ban_diagnostics.directory_unavailable: 2"])
+
     def test_ban_unavailable_is_not_publication_permission(self):
         def down(_):
             raise OSError("provider unavailable")
