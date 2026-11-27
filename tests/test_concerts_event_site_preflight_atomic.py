@@ -67,6 +67,39 @@ class EventSiteAtomicRealPublisherTests(unittest.TestCase):
                     gate.validate_proposal(self.before, data, self.reference,
                                            self.current, TODAY, publisher.merge)
 
+    def test_paired_site_failure_is_reported_with_exact_linked_event(self):
+        data = copy.deepcopy(self.proposed)
+        site = data["venueApprovals"][0]["venue"]
+        site["latitude"] = 47.1
+        event_id = data["approvals"][0]["event"]["id"]
+        with self.assertRaises(gate.PublisherRejections) as caught:
+            gate.validate_proposal(self.before, data, self.reference,
+                                   self.current, TODAY, publisher.merge)
+        rejection = caught.exception.rejections[0]
+        self.assertEqual(rejection["eventId"], event_id)
+        self.assertEqual(rejection["pairedVenueId"], site["id"])
+        self.assertTrue(rejection["pairedVenuePublisherReason"])
+        self.assertIn("Lieu non connu", rejection["publisherReason"])
+
+    def test_paired_site_reason_does_not_leak_urls_or_unrelated_failures(self):
+        event_id = self.proposed["approvals"][0]["event"]["id"]
+        site_id = self.location["venue"]["id"]
+        def fake_publisher(reference, current, approvals, today):
+            if not approvals["approvals"]:
+                return copy.deepcopy(current), {}
+            return copy.deepcopy(current), {"held": [
+                {"candidateId": "unrelated-site", "reason": "wrong reason"},
+                {"candidateId": site_id,
+                 "reason": "Site rejected https://example.org/private\ninvalid"},
+                {"candidateId": event_id, "reason": "unknown venue"},
+            ]}
+        with self.assertRaises(gate.PublisherRejections) as caught:
+            gate.validate_proposal(self.before, self.proposed, self.reference,
+                                   self.current, TODAY, fake_publisher)
+        reason = caught.exception.rejections[0]["pairedVenuePublisherReason"]
+        self.assertEqual(reason, "Site rejected [url] invalid")
+        self.assertNotIn("wrong reason", reason)
+
     def test_private_permanent_venue_cannot_be_smuggled_into_pair(self):
         proposal = copy.deepcopy(self.proposed)
         proposal["venueApprovals"][0]["venueKind"] = "permanent-hall"
