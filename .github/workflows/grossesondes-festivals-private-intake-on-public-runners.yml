@@ -71,6 +71,7 @@ concurrency:
 
 jobs:
   poster_dom_readonly:
+    continue-on-error: true
     if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -343,6 +344,7 @@ jobs:
         shell: bash
         env:
           OMP_THREAD_LIMIT: '2'
+          POSTER_DOM_TICK: ${{ needs.poster_dom_readonly.outputs.tick }}
         run: |
           set -euo pipefail
           # Optional enrichment: failure must not block the primary intake.
@@ -353,7 +355,7 @@ jobs:
           fi
           CACHE="intake/automation-intake/grossesondes/official-poster-ocr-cache.json"
           args=(--catalogue application/docs/grossesondes/festivals.json --limit 4 --private-cache "$CACHE")
-          tick='${{ needs.poster_dom_readonly.outputs.tick }}'
+          tick="$POSTER_DOM_TICK"
           if [[ "$tick" =~ ^[0-9]{1,10}$ && -s "$RUNNER_TEMP/poster-dom/evidence.json" ]]; then
             args+=(--tick "$tick" --rendered-evidence "$RUNNER_TEMP/poster-dom/evidence.json")
           fi
