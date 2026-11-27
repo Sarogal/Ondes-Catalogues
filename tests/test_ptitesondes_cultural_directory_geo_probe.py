@@ -46,6 +46,7 @@ class CulturalDirectoryGeoProbeTests(unittest.TestCase):
         q = parse_qs(urlsplit(reverse_poi_url(row)).query)
         self.assertEqual(q["index"], ["poi"])
         self.assertEqual(q["citycode"], ["01234"])
+        self.assertEqual(q["limit"], ["20"])
         feature = {"type": "Feature", "properties": {"name": "Ludothèque A",
                    "city": "Les Bois", "citycode": "01234", "postcode": "01230",
                    "category": ["culture"], "score": 0.99},
@@ -53,6 +54,13 @@ class CulturalDirectoryGeoProbeTests(unittest.TestCase):
         doc = {"type": "FeatureCollection", "features": [feature]}
         d = Counter()
         self.assertEqual(reverse_exact_point(row, doc, d), (48.5, 2.2))
+        import copy
+        unrelated = copy.deepcopy(feature)
+        unrelated["properties"]["name"] = "Autre"
+        self.assertEqual(reverse_exact_point(row, dict(doc, features=[feature]+[unrelated]*5), d), (48.5, 2.2))
+        self.assertIsNone(reverse_exact_point(row, dict(doc, features=[feature]+[unrelated]*19), d))
+        self.assertEqual(d["truncated_results"], 1)
+        self.assertIsNone(reverse_exact_point(row, dict(doc, features=[feature, feature]), d))
         feature["geometry"]["coordinates"] = [2.2, 48.51]
         self.assertIsNone(reverse_exact_point(row, doc, d))
         self.assertEqual(d["poi_distance"], 1)
