@@ -2,8 +2,10 @@
 
 A source URL discovered from a DILA-corroborated municipal page may be read
 via a pinned, globally routable IP with standard TLS hostname verification.
-There are NO redirects, proxies, credentials, IP literals, private networks,
-DNS re-resolution during connection, or unbounded HTML responses.
+Unknown sources never follow redirects. A separate municipal-only reader
+allows bounded redirects inside DILA-authenticated scope. No proxies,
+credentials, IP literals, private networks, DNS re-resolution during
+connection, or unbounded HTML responses.
 
 Source contents remain untrusted: even matching title/date DOES NOT prove
 ownership, organizer identity, reuse rights, location, access or publication.
@@ -14,7 +16,7 @@ import http.client
 import ipaddress
 import socket
 import ssl
-from urllib.parse import urlsplit
+from urllib.parse import urljoin, urlsplit
 
 from proof import norm
 from proof_text import Visible, date_forms
@@ -75,14 +77,9 @@ def _dns_public_ips(host, resolver=socket.getaddrinfo):
     return sorted(found) if found else None
 
 
-def read_unknown_https(url, *, resolver=socket.getaddrinfo,
-                       connection_factory=_PinnedHTTPS):
-    """Exact GET of a public-IP-pinned HTTPS endpoint; no implicit redirects.
-
-    Returns private HTML string. Not an approval or independent event proof.
-    A caller must select the URL from the independently researched municipal
-    link candidates; caller-provided HTML is never sufficient for publication.
-    """
+def _read_pinned_once(url, *, resolver=socket.getaddrinfo,
+                      connection_factory=_PinnedHTTPS, municipal_redirect=False):
+    """One bounded pinned HTTPS request. Never follow a redirect here."""
     if not _safe_url(url):
         raise ValueError("invalid_unlisted_source_url")
     parsed = urlsplit(url)
@@ -103,6 +100,11 @@ def read_unknown_https(url, *, resolver=socket.getaddrinfo,
             "User-Agent": "PtitesOndesPrivateUnlistedSource/1.0",
         })
         response = connection.getresponse()
+        if municipal_redirect and response.status in (301, 302, 303, 307, 308):
+            location = response.getheader("Location")
+            if not isinstance(location, str) or not location or len(location) > 600:
+                raise ValueError("invalid_municipal_redirect")
+            return None, location
         if response.status != 200:
             raise ValueError("unknown_source_not_200")
         content_type = (response.getheader("Content-Type") or "").split(
@@ -118,7 +120,7 @@ def read_unknown_https(url, *, resolver=socket.getaddrinfo,
         raw = response.read(MAX_BYTES + 1)
         if not raw or len(raw) > MAX_BYTES:
             raise ValueError("unknown_source_oversized_or_empty")
-        return raw.decode("utf-8-sig")
+        return raw.decode("utf-8-sig"), None
     except (OSError, ValueError, TypeError, UnicodeError, ssl.SSLError,
             http.client.HTTPException):
         # No URLs, headers, exception strings or private candidate data
@@ -127,6 +129,40 @@ def read_unknown_https(url, *, resolver=socket.getaddrinfo,
     finally:
         if connection is not None:
             connection.close()
+
+
+def read_unknown_https(url, *, resolver=socket.getaddrinfo,
+                       connection_factory=_PinnedHTTPS):
+    """Exact GET of an unknown HTTPS source; redirects are always rejected."""
+    html, _ = _read_pinned_once(url, resolver=resolver,
+                               connection_factory=connection_factory)
+    return html
+
+
+def read_municipal_https(url, city, directory, *, resolver=socket.getaddrinfo,
+                         connection_factory=_PinnedHTTPS):
+    """Only DILA-authenticated HTTPS scope, at most two explicit redirects.
+
+    Each hop independently checks URL shape, DILA authority, all DNS addresses
+    and pinned TLS. Return the actual final URL, not the initial alias.
+    """
+    from ptitesondes_dila_municipal_domains import approved_municipal_page_host
+    seen = set()
+    for _ in range(3):
+        if (not _safe_url(url) or url in seen
+                or not approved_municipal_page_host(url, city, directory)):
+            raise ValueError("municipal_redirect_outside_authority_or_loop")
+        seen.add(url)
+        html, location = _read_pinned_once(
+            url, resolver=resolver, connection_factory=connection_factory,
+            municipal_redirect=True)
+        if location is None:
+            return url, html
+        # Validate the raw location as well as the resolved target.
+        if not _safe_url(location, base=url):
+            raise ValueError("municipal_redirect_unsafe_location")
+        url = urljoin(url, location)
+    raise ValueError("municipal_redirect_budget_exceeded")
 
 
 def review_private_unlisted_event(link_report, candidate_url, event, *,
