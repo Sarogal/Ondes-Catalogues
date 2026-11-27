@@ -307,7 +307,7 @@ class OfficialPlaceBANTests(unittest.TestCase):
     def test_cultural_canonical_page_keeps_exact_authority(self):
         from ptitesondes_open_world_permanent_place_ban import discover_independent_cultural_ban
         from unittest.mock import patch
-        home = "https://culture.example/"
+        home = "https://culture.fr/"
         record = {"commune": CITY, "nom_du_lieu": VENUE, "code_commune": "12345",
                   "code_postal": "12345", "numero_et_libelle_voie": "12 Rue des Jeux",
                   "adresse_complete": f"12 Rue des Jeux, 12345 {CITY}",
@@ -319,6 +319,10 @@ class OfficialPlaceBANTests(unittest.TestCase):
                    return_value=(home+"lieu/", HTML)):
             self.assertEqual(discover_independent_cultural_ban(lead, **kwargs)["official_url"],
                              home+"lieu/")
+        with patch("ptitesondes_unlisted_source_safe_recheck.read_cultural_https",
+                   return_value=("https://www.culture.fr/lieu/", HTML)):
+            self.assertEqual(discover_independent_cultural_ban(lead, **kwargs)["official_url"],
+                             "https://www.culture.fr/lieu/")
         with patch("ptitesondes_unlisted_source_safe_recheck.read_cultural_https",
                    return_value=("https://other.example/", HTML)):
             self.assertIsNone(discover_independent_cultural_ban(lead, **kwargs))

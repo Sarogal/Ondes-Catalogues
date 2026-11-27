@@ -406,14 +406,14 @@ def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=No
     No DILA dependency. Inspect a bounded set of safe listed URLs; only exact
     dedicated identity and independent address evidence may qualify a page.
     Contradictory identified pages stay private.
-    Only same-host HTTPS canonicalization is allowed; never consume saved
+    Only bounded same-authority HTTPS canonicalization is allowed; never consume saved
     coordinates, addresses or URLs.
     """
     from ptitesondes_national_cultural_directory_probe import (
         exact_directory_record, directory_website_hints)
     from ptitesondes_cultural_directory_identity import directory_identity, same_official_address
     from ptitesondes_dila_municipal_domains import _host
-    from ptitesondes_unlisted_source_safe_recheck import read_cultural_https
+    from ptitesondes_unlisted_source_safe_recheck import read_cultural_https, same_cultural_authority
     from ptitesondes_generic_venue_ign_corroboration import fetch_ign
     from ptitesondes_open_world_permanent_place_draft import fetch_admin
     cultural_lookup = cultural_lookup or exact_directory_record
@@ -446,7 +446,7 @@ def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=No
             try:
                 result = page_read(url)
                 final_url, html = result if isinstance(result, tuple) else (url, result)
-                if (_host(final_url) != _host(url) or urlsplit(final_url).query
+                if (not same_cultural_authority(url, final_url) or urlsplit(final_url).query
                         or urlsplit(final_url).fragment):
                     raise ValueError('cultural_redirect_outside_authority')
             except (OSError, ValueError, TypeError, UnicodeError):
@@ -471,7 +471,7 @@ def discover_independent_cultural_ban(row, *, cultural_lookup=None, page_read=No
                 try:
                     result = page_read(target)
                     final_url, html = result if isinstance(result, tuple) else (target, result)
-                    if (_host(final_url) != _host(url) or urlsplit(final_url).query
+                    if (not same_cultural_authority(url, final_url) or urlsplit(final_url).query
                             or urlsplit(final_url).fragment):
                         raise ValueError("cultural_redirect_outside_authority")
                 except (OSError, ValueError, TypeError, UnicodeError):

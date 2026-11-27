@@ -160,19 +160,44 @@ def read_unknown_https(url, *, resolver=socket.getaddrinfo,
     return html
 
 
+def same_cultural_authority(initial, target):
+    """Exact host or conventional www alias of a bounded registrable domain.
+
+    Do not infer arbitrary subdomain or public-suffix equivalence. All
+    aliases must pass the ordinary URL/host restrictions before use.
+    """
+    from ptitesondes_dila_municipal_domains import _host
+    if not _safe_url(initial) or not _safe_url(target):
+        return False
+    a, b = _host(initial), _host(target)
+    if not a or not b:
+        return False
+    if a == b:
+        return True
+    short, long = sorted((a, b), key=len)
+    # Conservative single-label registry suffixes; unknown suffix layouts
+    # retain exact-host-only behavior.
+    parts = short.split(".")
+    return (len(parts) == 2 and parts[-1] in
+            {"fr", "com", "org", "net", "eu", "re", "mq", "gp", "gf", "yt",
+             "pm", "wf", "pf", "nc", "bl", "mf", "tf"}
+            and long == "www." + short)
+
+
 def read_cultural_https(url, *, resolver=socket.getaddrinfo,
                        connection_factory=_PinnedHTTPS):
     """Bounded HTTPS canonicalization within the exact directory-listed host.
 
     The caller must authenticate the initial URL from a fresh directory row.
-    A different host (including a www alias), query, or fragment is not
-    authority. DNS and pinned TLS are checked again on every hop.
+    A conventional www alias is allowed only by same_cultural_authority.
+    Other hosts, queries and fragments remain prohibited. DNS and pinned
+    TLS are checked again on every hop.
     """
     from ptitesondes_dila_municipal_domains import _host
-    host = _host(url)
+    initial = url
     seen = set()
     for _ in range(3):
-        if (not host or not _safe_url(url) or _host(url) != host or url in seen
+        if (not same_cultural_authority(initial, url) or url in seen
                 or urlsplit(url).query or urlsplit(url).fragment):
             _READ_FAILURES["redirect_scope"] += 1
             raise ValueError("cultural_redirect_outside_authority_or_loop")

@@ -172,6 +172,33 @@ class UnlistedSafeSourceTests(unittest.TestCase):
                                     connection_factory=factory)
             self.assertEqual(len(calls), 1)
 
+    def test_cultural_www_alias_requires_same_bounded_domain_and_safe_dns(self):
+        from ptitesondes_unlisted_source_safe_recheck import read_cultural_https, same_cultural_authority
+        home, target = "https://culture.fr/", "https://www.culture.fr/lieu/"
+        self.assertTrue(same_cultural_authority(home, target))
+        self.assertTrue(same_cultural_authority(target, home))
+        for bad in ("https://autre.fr/", "https://ville.culture.fr/",
+                    "https://www.culture.fr.autre.fr/", "http://www.culture.fr/",
+                    "https://user@www.culture.fr/"):
+            self.assertFalse(same_cultural_authority(home, bad))
+        self.assertFalse(same_cultural_authority("https://co.uk/", "https://www.co.uk/"))
+        class Redirect(FakeResponse):
+            def getheader(self, key):
+                return target if key == "Location" else super().getheader(key)
+        calls = []
+        def factory(host, ip):
+            calls.append(host)
+            return FakeConnection(Redirect(status=301) if len(calls) == 1 else FakeResponse())
+        self.assertEqual(read_cultural_https(home, resolver=dns("8.8.8.8"),
+                             connection_factory=factory)[0], target)
+        self.assertEqual(calls, ["culture.fr", "www.culture.fr"])
+        calls.clear()
+        def resolver(host, *args, **kwargs):
+            return dns("8.8.8.8" if host == "culture.fr" else "127.0.0.1")()
+        with self.assertRaises(ValueError):
+            read_cultural_https(home, resolver=resolver, connection_factory=factory)
+        self.assertEqual(calls, ["culture.fr"])
+
     def test_read_diagnostics_are_fixed_and_redacted(self):
         from ptitesondes_unlisted_source_safe_recheck import read_failure_counts
         before = read_failure_counts()
