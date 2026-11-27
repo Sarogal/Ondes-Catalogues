@@ -255,6 +255,45 @@ class PosterOCRTests(unittest.TestCase):
                 self.assertEqual(result["artists"], [])
                 self.assertEqual(result["passes"], {})
 
+    def test_stacked_fields_require_confident_unambiguous_adjacent_labels(self):
+        row = {"name": "Festival Exemple 2027", "startDate": "2027-08-13",
+               "endDate": "2027-08-15"}
+        def reading(segments):
+            words = []
+            for phrase, x, y, confidence in segments:
+                for token in phrase.split():
+                    width = len(token) * 10
+                    words.append({"text": token, "confidence": confidence,
+                                  "box": [x, y, width, 25], "review_only": True})
+                    x += width + 8
+            return {"status": "review_only", "review_only": True, "words": words}
+        base = [("FESTIVAL EXEMPLE", 20, 0, 98),
+                ("13 au 15 août 2027", 20, 40, 98)]
+        roster = [("Artistes :", 20, 80, 98), ("Alpha, Beta", 20, 120, 98)]
+        price = [("Pass 3J", 20, 160, 98), ("75 €", 20, 200, 98)]
+        result = structured_poster_candidates(row, reading(base + roster + price))
+        self.assertEqual(result["artists"], ["Alpha", "Beta"])
+        self.assertEqual(result["passes"], {"3": "75"})
+        self.assertFalse(result["publication_authorized"])
+        for wrong in (
+            [roster[0], ("Alpha, Beta", 400, 120, 98)],
+            [roster[0], ("Alpha, Beta", 20, 150, 98)],
+            [roster[0], ("Alpha, Beta", 20, 120, 94)],
+            [roster[0], ("Alpha, Beta", 20, 120, 98), ("Gamma", 400, 120, 98)],
+            [("Sponsors :", 20, 80, 98), roster[1]],
+            [roster[0], ("Alpha", 20, 120, 98)],
+        ):
+            self.assertEqual(structured_poster_candidates(row, reading(base + wrong))["artists"], [])
+        for wrong in (
+            [price[0], ("75 €", 400, 200, 98)],
+            [price[0], ("75 €", 20, 240, 98)],
+            [price[0], ("75 €", 20, 200, 94)],
+            [price[0], price[1], ("50 €", 400, 200, 98)],
+        ):
+            self.assertEqual(structured_poster_candidates(row, reading(base + wrong))["passes"], {})
+        conflict = base + price + [("Pass 3J : 90 €", 20, 240, 98)]
+        self.assertEqual(structured_poster_candidates(row, reading(conflict))["passes"], {})
+
     def test_failed_recognition_not_cached(self):
         cache = {}
         recognize = Mock(side_effect=FileNotFoundError())
