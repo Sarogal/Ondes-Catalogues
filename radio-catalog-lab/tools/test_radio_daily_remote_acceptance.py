@@ -1,7 +1,7 @@
 """Remote acceptance contract; network adapters replaced by exact fixtures."""
 import unittest
 from unittest.mock import Mock, patch
-from radio_daily_remote_acceptance import verify_remote
+from radio_daily_remote_acceptance import verify_remote, prepare_remote
 from radio_daily_github_readback import GitHubReadback
 from radio_daily_git_lab_transport import snapshot
 import test_radio_daily_deployment_verify as fixture
@@ -57,3 +57,36 @@ class RemoteAcceptanceTests(unittest.TestCase):
             body=self.f.store.historical(8)[0])
         with self.assertRaisesRegex(ValueError,"public pointer differs"):
             self.verify()
+
+    def prepare_remote(self, **kw):
+        args = dict(self.args, day="2026-11-23", state={})
+        args.update(kw)
+        with patch("radio_daily_remote_acceptance.PublicHTTPSReader",
+                   side_effect=[Mock(), self.f.fetch]), \
+             patch("radio_daily_remote_acceptance.deployment_status",
+                   return_value={"deploymentId":42}):
+            return prepare_remote(**args)
+
+    def test_accepted_successor_requires_complete_predecessor_evidence(self):
+        with self.assertRaisesRegex(ValueError, "complete predecessor evidence"):
+            self.prepare_remote()
+
+    def test_accepted_same_version_does_not_allocate_new_sequence(self):
+        raw, report, migrated, context = self.prepare_remote(
+            expected_sequence=9, expected_sha=self.f.f.new_sha)
+        self.assertFalse(report["advanced"])
+        self.assertEqual(migrated, {})
+        self.assertEqual(context["selectedSequence"], 9)
+        self.assertEqual(context["gitCommit"], self.f.commit)
+        self.assertTrue(context["deploymentVerified"])
+        self.assertFalse(context["simulated"])
+
+    def test_stale_deployment_never_enters_migration(self):
+        from dataclasses import replace
+        from radio_daily_deployment_verify import POINTER_URL
+        self.f.responses[POINTER_URL] = replace(self.f.responses[POINTER_URL],
+            body=self.f.store.historical(8)[0])
+        with patch("radio_daily_remote_acceptance.prepare") as migrate:
+            with self.assertRaisesRegex(ValueError, "public pointer differs"):
+                self.prepare_remote()
+            migrate.assert_not_called()
