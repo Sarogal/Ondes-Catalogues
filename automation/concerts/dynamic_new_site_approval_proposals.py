@@ -90,6 +90,50 @@ def remember_site_reviews(memory, chosen):
             list(dict.fromkeys(keys)))[-MAX_SITE_REVIEW_MEMORY:]
 
 
+def prioritize_previous_pair(chosen, eligible_rows, prior, signed_ids, limit,
+                             *, schema, success_state, preserve_genre_cohort=False):
+    """One immediate fresh replay of a previous proposed pair, not a signature.
+
+    Preserve both genre cohorts and the total network limit. An already
+    retried pair returns to normal rotation even if its new proof succeeds.
+    Legacy reports may seed a retry only on a unique candidate ID/date.
+    """
+    if (limit < 2 or not isinstance(prior, dict) or prior.get("schema") != schema
+            or prior.get("publicationAllowed") is not False
+            or prior.get("privateApprovalApplied") is not False
+            or not isinstance(prior.get("candidateChecks"), list)):
+        return chosen, set()
+    selected = list(chosen)
+    for check in prior["candidateChecks"]:
+        if (not isinstance(check, dict)
+                or check.get("state") != success_state
+                or check.get("immediatePairRetry") is True
+                or (isinstance(check.get("proposedEventId"), str)
+                    and check["proposedEventId"] in signed_ids)):
+            continue
+        key = check.get("reviewKey")
+        matches = [
+            row for row in eligible_rows
+            if row[2].get("candidateId") == check.get("candidateId")
+            and row[0] == check.get("date")
+            and (key is None or site_review_key(row) == key)
+        ]
+        if len(matches) != 1:
+            continue
+        row = matches[0]
+        if row in selected:
+            return selected, {site_review_key(row)}
+        tagged = row[2].get("reviewBucket") == "genre_tag_review"
+        # Replace one ordinary check in the SAME cohort, not its opposite.
+        same_cohort = [i for i, r in enumerate(selected)
+                       if not preserve_genre_cohort or
+                       (r[2].get("reviewBucket") == "genre_tag_review") == tagged]
+        if same_cohort:
+            selected[same_cohort[-1]] = row
+            return selected, {site_review_key(row)}
+    return selected, set()
+
+
 def read_site_review_memory(path):
     try:
         if path.stat().st_size <= 512_000:

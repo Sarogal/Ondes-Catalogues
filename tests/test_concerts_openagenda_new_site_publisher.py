@@ -444,6 +444,122 @@ class OpenAgendaNewNamedSitePublisherTests(unittest.TestCase):
                 self.assertEqual(report["examined"], 4)
                 self.assertEqual(report["firstReviewInMemory"], 0)
 
+    def test_one_previous_pair_retry_preserves_cohort_and_budget(self):
+        from automation.concerts import dynamic_new_site_approval_proposals as geo
+        leads = [
+            (DAY, "https://example.org/events/" + str(i),
+             {"candidateId": "lead-" + str(i),
+              "reviewBucket": "genre_tag_review" if i < 6 else "genre_unknown"})
+            for i in range(8)
+        ]
+        chosen = [leads[0], leads[1], leads[2], leads[6]]
+        row = leads[5]
+        check = {"candidateId": row[2]["candidateId"], "date": DAY,
+                 "state": "publisher_bound_openagenda_event_site_pair",
+                 "reviewKey": geo.site_review_key(row),
+                 "proposedEventId": "test-event"}
+        prior = {"schema": producer.SCHEMA, "publicationAllowed": False,
+                 "privateApprovalApplied": False, "candidateChecks": [check]}
+        result, retried = producer._prioritize_previous_pair(
+            chosen, leads, prior, set(), 4)
+        self.assertEqual(result, [leads[0], leads[1], row, leads[6]])
+        self.assertEqual(retried, {geo.site_review_key(row)})
+        self.assertEqual(len(result), len(chosen))
+        for invalid, signed, limit in (
+                ({**check, "immediatePairRetry": True}, set(), 4),
+                (check, {"test-event"}, 4),
+                ({**check, "reviewKey": "wrong"}, set(), 4),
+                (check, set(), 1)):
+            unchanged, retries = producer._prioritize_previous_pair(
+                chosen, leads, {**prior, "candidateChecks": [invalid]}, signed, limit)
+            self.assertEqual(unchanged, chosen)
+            self.assertEqual(retries, set())
+        legacy = {k: v for k, v in check.items()
+                  if k not in ("reviewKey", "proposedEventId")}
+        duplicate = (DAY, "https://other.example.org/event", row[2])
+        self.assertEqual(producer._prioritize_previous_pair(
+            chosen, leads + [duplicate], {**prior, "candidateChecks": [legacy]},
+            set(), 4), (chosen, set()))
+
+    def test_replayed_pair_is_freshly_verified_and_failure_stays_private(self):
+        base, previous = geo_fixture.test_catalogue(), geo_fixture.before()
+        fetch, _ = official_get()
+        proposed, first = producer.build(
+            observation(), base, previous, TODAY, fetch=fetch, limit=4)
+        self.assertEqual(len(proposed["approvals"]), 1)
+        bad, reads = official_get(changes={"status": 2})
+        result, second = producer.build(
+            observation(), base, previous, TODAY, fetch=bad, limit=4, prior=first)
+        self.assertEqual(second["immediatePairRetries"], 1)
+        self.assertIn(OFFICIAL_EXPORT, reads)
+        self.assertEqual(result, previous)
+        self.assertFalse(second["publicationAllowed"])
+        self.assertEqual(second["examined"], 1)
+        self.assertTrue(second["candidateChecks"][0]["immediatePairRetry"])
+
+    def test_pair_retry_rebuilds_changed_named_bill_without_stale_signature(self):
+        base, previous = geo_fixture.test_catalogue(), geo_fixture.before()
+        first_names = ["Example Headliner"]
+        first_fetch, _ = official_get(changes={
+            "title": {"fr": first_names[0]}, "keywords": {"fr": ["metal"]}})
+        registry = observation(name=first_names[0], leadArtist=first_names[0])
+        proposed, first = producer.build(
+            registry, base, previous, TODAY, fetch=first_fetch, limit=4)
+        self.assertEqual(len(proposed["approvals"]), 1, first)
+        self.assertEqual(proposed["approvals"][0]["officialEvidence"][1]
+                         ["officialArtistNames"], first_names)
+        names = first_names + ["Example Support A", "Example Support B"]
+        fresh_fetch, reads = official_get(changes={
+            "title": {"fr": " + ".join(names)},
+            "keywords": {"fr": ["metal", "punk"]}})
+        rebuilt, second = producer.build(
+            registry, base, previous, TODAY, fetch=fresh_fetch, limit=4, prior=first)
+        self.assertEqual(second["immediatePairRetries"], 1)
+        self.assertIn(OFFICIAL_EXPORT, reads)
+        self.assertEqual(len(rebuilt["approvals"]), 1, second)
+        self.assertEqual(rebuilt["approvals"][0]["officialEvidence"][1]
+                         ["officialArtistNames"], names)
+        self.assertEqual(len(rebuilt["approvals"][0]["event"]["artistIds"]), 3)
+        self.assertEqual(len(rebuilt["venueApprovals"]), 1)
+        self.assertEqual(proposed["approvals"][0]["officialEvidence"][1]
+                         ["officialArtistNames"], first_names)
+        self.assertEqual(previous, geo_fixture.before())
+        with mock.patch.object(signer.probe, "safe_fetch", side_effect=fresh_fetch):
+            stats = approval_preflight.validate_proposal(
+                previous, rebuilt, base, base, TODAY, publisher.merge)
+        self.assertTrue(stats["validatedByPublisher"])
+
+    def test_self_attributed_pair_retry_stays_bounded_and_rechecks_source(self):
+        from automation.concerts import dynamic_self_attributed_new_site_proposals as own
+        from automation.concerts import dynamic_new_site_approval_proposals as geo
+        leads = [(DAY, "https://example.org/events/" + str(i),
+                  {"candidateId": "lead-" + str(i), "reviewBucket": "genre_unknown"})
+                 for i in range(8)]
+        pair = leads[7]
+        prior = {"schema": own.SCHEMA, "publicationAllowed": False,
+                 "privateApprovalApplied": False,
+                 "reviewMemory": [geo.site_review_key(pair)],
+                 "candidateChecks": [{
+                     "candidateId": pair[2]["candidateId"], "date": DAY,
+                     "state": "publisher_bound_event_site_pair",
+                     "reviewKey": geo.site_review_key(pair),
+                 }]}
+        before = geo_fixture.before()
+        base = geo_fixture.test_catalogue()
+        with mock.patch.object(own, "eligible", return_value=leads), \
+             mock.patch.object(own, "propose", side_effect=ValueError("source changed")) as replay:
+            result, report = own.build(
+                observation(), base, before, TODAY, slot=1, limit=4, prior=prior)
+        self.assertEqual(result, before)
+        self.assertEqual(report["examined"], 4)
+        self.assertEqual(report["immediatePairRetries"], 1)
+        self.assertEqual(replay.call_count, 4)
+        self.assertTrue(any(call.args[0] == pair for call in replay.call_args_list))
+        check = next(x for x in report["candidateChecks"] if x.get("immediatePairRetry"))
+        self.assertEqual(check["candidateId"], pair[2]["candidateId"])
+        self.assertEqual(check["state"], "held_source_or_site_unverified")
+        self.assertFalse(report["publicationAllowed"])
+
     def test_priority_and_unknown_genres_both_rotate_without_starvation(self):
         leads = []
         for bucket in ("genre_tag_review", "genre_unknown"):

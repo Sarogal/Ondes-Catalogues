@@ -263,6 +263,13 @@ def propose(row, catalogue, today, *, fetch=probe.safe_fetch):
     return event, site_approval
 
 
+def _prioritize_previous_pair(chosen, eligible_rows, prior, signed_ids, limit):
+    return geography.prioritize_previous_pair(
+        chosen, eligible_rows, prior, signed_ids, limit,
+        schema=SCHEMA, success_state="publisher_bound_openagenda_event_site_pair",
+        preserve_genre_cohort=True)
+
+
 def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
           fetch=probe.safe_fetch, prior=None):
     require(isinstance(before, dict) and
@@ -306,11 +313,16 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
                   if isinstance(a, dict)}
     signed_sites = {a.get("venue", {}).get("id") for a in before["venueApprovals"]
                     if isinstance(a, dict)}
+    chosen, retried = _prioritize_previous_pair(
+        chosen, selected, prior, signed_ids, limit)
     states, reasons, checks = Counter(), Counter(), []
     geo_diagnostics = Counter()
     for row in chosen:
+        key = geography.site_review_key(row)
         check = {"candidateId": str(row[2].get("candidateId", ""))[:120],
-                 "date": row[0]}
+                 "date": row[0], "reviewKey": key}
+        if key in retried:
+            check["immediatePairRetry"] = True
         try:
             event, site = propose(row, current, today, fetch=fetch)
             eid, vid = event["event"]["id"], site["venue"]["id"]
@@ -325,6 +337,7 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
             current["artists"].extend({**a, "aliases": []}
                                       for a in event["newArtists"])
             check["state"] = "publisher_bound_openagenda_event_site_pair"
+            check["proposedEventId"] = eid
         except (ValueError, KeyError, IndexError, TypeError, OSError,
                 TimeoutError) as exc:
             check["state"] = "held_original_or_named_site_unverified"
@@ -351,6 +364,7 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
     return output, {
         "schema": SCHEMA, "asOf": today.isoformat(), "scanSlot": slot,
         "eligibleUnknownSites": len(selected), "examined": len(chosen),
+        "immediatePairRetries": len(retried),
         "stateCounts": dict(states), "rejectionReasons": dict(reasons),
         "candidateChecks": checks,
         "reviewMemory": geography.remember_site_reviews(memory, chosen),
