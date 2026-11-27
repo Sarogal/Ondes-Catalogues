@@ -95,6 +95,19 @@ class CulturalAcceslibreProbeTests(unittest.TestCase):
             self.assertEqual(result, {"municipal_research_unavailable": 1})
             self.assertEqual(calls, [home])
 
+    def test_municipal_code_fallback_keeps_existing_host_gate(self):
+        from unittest.mock import patch
+        from ptitesondes_cultural_acceslibre_probe import inspect_municipal
+        lead = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois",
+                "code_commune": "01234", "code_postal": "01230",
+                "numero_et_libelle_voie": "Rue des Jeux", "adresse_complete": "Rue des Jeux"}
+        with patch("ptitesondes_dila_municipal_domains.fetch_dila", side_effect=[{}, {}]) as fetch, \
+             patch("ptitesondes_dila_municipal_domains.municipal_site_hosts", return_value=frozenset()):
+            result = inspect_municipal(lead)
+        self.assertEqual(result, {"municipal_code_fallback_attempted": 1,
+                                  "municipal_authority_unavailable": 1})
+        self.assertEqual(fetch.call_args_list[1].kwargs, {"insee": "01234"})
+
     def test_stage_diagnostics_and_bounded_transient_retry(self):
         from urllib.error import HTTPError
         from ptitesondes_cultural_acceslibre_probe import run_stage, ProbeFailure

@@ -70,7 +70,7 @@ def _structured(value, max_items=50):
     return value if isinstance(value, list) and len(value) <= max_items else None
 
 
-def dila_query(city):
+def dila_query(city, *, insee=None):
     """Restrict user-derived query to a documented ODS search expression."""
     if (not isinstance(city, str) or not NAME.fullmatch(city)
             or any(c in city for c in ('"', "\\", "\n", "\r"))
@@ -79,6 +79,13 @@ def dila_query(city):
     # Exact ODSQL equality avoids matching every neighboring city with
     # a similar name (e.g. Montpellier vs Murviel-lès-Montpellier).
     condition = 'nom = "Mairie - ' + city + '"'
+    if insee is not None:
+        if not isinstance(insee, str) or not re.fullmatch(r"(?:[0-9]{5}|2[AB][0-9]{3})", insee):
+            raise ValueError("invalid_municipality_code")
+        # Search by administrative identifier, then recheck exact name and
+        # mairie pivot against the complete returned record set.
+        condition = ('code_insee_commune = "' + insee + '" AND categorie = "SL"'
+                     ' AND startswith(nom, "Mairie - ")')
     return DILA_RECORDS + "?" + urlencode({
         "where": condition, "limit": MAX_RECORDS,
         "select": ("nom,pivot,code_insee_commune,adresse,categorie,"
@@ -86,8 +93,8 @@ def dila_query(city):
     })
 
 
-def fetch_dila(city, opener=None):
-    url = dila_query(city)
+def fetch_dila(city, opener=None, *, insee=None):
+    url = dila_query(city, insee=insee)
     fetch = opener or build_opener(NoRedirect()).open
     with fetch(Request(url, headers={
         "Accept": "application/json",
@@ -101,19 +108,30 @@ def fetch_dila(city, opener=None):
     return json.loads(raw)
 
 
-def municipal_site_hosts(city, response):
+def municipal_site_hosts(city, response, *, expected_insee=None, diagnostics=None):
     """Return exactly identified mairie site domains; empty = fail closed.
 
     A self-described OpenAgenda 'official=1', claimed OA location website or
     OSM website tag can NEVER create this evidence.
     """
-    if not isinstance(city, str) or not norm(city):
+    def note(reason):
+        if diagnostics is not None:
+            diagnostics[reason] += 1
+
+    if (not isinstance(city, str) or not norm(city)
+            or (expected_insee is not None and (not isinstance(expected_insee, str)
+                or not re.fullmatch(r"(?:[0-9]{5}|2[AB][0-9]{3})", expected_insee)))):
+        note("dila_invalid_identity")
         return frozenset()
     if (not isinstance(response, dict)
             or not isinstance(response.get("results"), list)
             or type(response.get("total_count")) is not int
             or not 0 <= response["total_count"] <= MAX_RECORDS
             or len(response["results"]) != response["total_count"]):
+        note("dila_incomplete_response")
+        return frozenset()
+    if not response["results"]:
+        note("dila_empty_response")
         return frozenset()
     matching = []
     for row in response["results"]:
@@ -141,7 +159,9 @@ def municipal_site_hosts(city, response):
             continue
         code = str(row.get("code_insee_commune") or "")
         # Corsica has official 2A/2B commune codes, not five digits.
-        if not re.fullmatch(r"(?:[0-9]{5}|2[AB][0-9]{3})", code):
+        if (not re.fullmatch(r"(?:[0-9]{5}|2[AB][0-9]{3})", code)
+                or (expected_insee is not None and code != expected_insee)):
+            note("dila_code_unmatched")
             continue
         if not any(
                 isinstance(item, dict)
@@ -160,10 +180,12 @@ def municipal_site_hosts(city, response):
     # A homonymous municipality, multiple mairie records, or partial API
     # results must not cause us to silently pick an arbitrary site.
     if len(matching) != 1:
+        note("dila_mairie_unmatched" if not matching else "dila_mairie_ambiguous")
         return frozenset()
     sites = _structured(matching[0].get("site_internet"),
                         max_items=MAX_SOURCE_SITES)
     if sites is None:
+        note("dila_site_field_missing_or_invalid")
         return frozenset()
     result = set()
     for site in sites:
@@ -185,7 +207,11 @@ def municipal_site_hosts(city, response):
         if host is None:
             continue
         result.add(host)
-    return frozenset(result) if 1 <= len(result) <= MAX_SOURCE_SITES else frozenset()
+    if not 1 <= len(result) <= MAX_SOURCE_SITES:
+        note("dila_no_eligible_homepage")
+        return frozenset()
+    note("dila_homepage_found")
+    return frozenset(result)
 
 
 def approved_municipal_page_host(page_url, city, directory_response):
