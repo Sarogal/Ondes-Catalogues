@@ -18,7 +18,9 @@ class DurableDailyChainTests(unittest.TestCase):
         import tempfile
         from radio_daily_logo_release_validation import publish_logo_release
         from pathlib import Path
-        from radio_daily_state_snapshot import transition, POINTER, BODY
+        from radio_daily_state_snapshot import transition_remote, POINTER, BODY
+        from radio_daily_github_readback import GitHubReadback
+        from unittest.mock import Mock, patch
         from radio_daily_release_context import STATE_FILES, REQUALIFY
         from radio_daily_unified_generator import build
         from radio_daily_decision_preview import decide
@@ -176,10 +178,37 @@ class DurableDailyChainTests(unittest.TestCase):
                 (snapshot/REQUALIFY[0]).write_bytes(encode(dossiers))
                 before = {p.name: p.read_bytes() for p in snapshot.iterdir()}
                 target = root/("v"+str(seq+1))
-                ctx = transition(snapshot, target, visible,
-                                 lambda path, length: store.get(path), day=day,
-                                 anchor=dict(expected_sha=sha, expected_sequence=seq,
-                                             public_key=signer.public_key, key_id=signer.key_id))
+                # Exercise the remote acceptance adapter against the actual
+                # receiving Git tree, with synthetic HTTPS/deployment responses.
+                reader = GitHubReadback(lambda *args: None)
+                reader.read_head = Mock(side_effect=lambda *args: receiver.head())
+                def read_tree(destination, commit):
+                    self.assertEqual(commit, head)
+                    names = receiver._git("ls-tree", "-r", "--name-only", commit).decode().splitlines()
+                    return {name: receiver._git("show", commit+":"+name) for name in names}
+                reader.read_tree = Mock(side_effect=read_tree)
+                remote_args = dict(reader=reader, deployment_id=42+seq,
+                    environment="radio-lab-publisher-rehearsal", expected_commit=head,
+                    bootstrap_sha=bootstrap_sha, day=day,
+                    anchor=dict(expected_sha=sha, expected_sequence=seq, **key))
+                with patch("radio_daily_remote_acceptance.PublicHTTPSReader",
+                           side_effect=[Mock(), fetch]), \
+                     patch("radio_daily_remote_acceptance.deployment_status",
+                           side_effect=ValueError("deployment pending")):
+                    with self.assertRaisesRegex(ValueError, "deployment pending"):
+                        transition_remote(snapshot, target, **remote_args)
+                self.assertFalse(target.exists())
+                self.assertEqual(before, {p.name: p.read_bytes() for p in snapshot.iterdir()})
+                with patch("radio_daily_remote_acceptance.PublicHTTPSReader",
+                           side_effect=[Mock(), fetch]), \
+                     patch("radio_daily_remote_acceptance.deployment_status",
+                           return_value={"deploymentId":42+seq}):
+                    ctx = transition_remote(snapshot, target, **remote_args)
+                self.assertEqual(ctx["gitCommit"], head)
+                self.assertEqual(ctx["deploymentId"], 42+seq)
+                self.assertTrue(ctx["remoteReadbackVerified"])
+                self.assertTrue(ctx["deploymentVerified"])
+                self.assertEqual(json.loads((target/"release-context.json").read_bytes()), ctx)
                 self.assertEqual(ctx["selectedSequence"], seq+1)
                 self.assertEqual((target/BODY).read_bytes(), candidate)
                 self.assertFalse((target/REQUALIFY[0]).exists())
