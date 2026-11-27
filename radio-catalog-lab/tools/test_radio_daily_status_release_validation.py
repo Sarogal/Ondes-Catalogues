@@ -9,7 +9,7 @@ from radio_daily_decision_preview import decide
 from radio_daily_repair_preview import build as repair
 from radio_daily_repair_confirmation import build as confirm
 from radio_daily_repair_plan import plan
-from radio_daily_status_preview import build as status_build
+from radio_daily_status_preview import build as status_build, recovery_proof, promote_recovery_stream
 from radio_daily_v9_generator import digest, encode
 from test_radio_daily_baseline_selection import signed
 from test_radio_daily_status_preview import setup, run
@@ -96,6 +96,21 @@ class IndependentStatusGateTests(unittest.TestCase):
         doc["stations"][0]["streams"]=json.loads(self.raw)["stations"][0]["streams"]
         with self.assertRaises(ValueError):
             self.verify(encode(doc))
+
+    def test_only_one_proven_variant_promoted_and_other_variants_unchanged(self):
+        row={"streams":[
+            {"stream_id":"a","url":"https://radio.example.org/a","state":"candidate","priority":0},
+            {"stream_id":"b","url":"https://radio.example.org/b","state":"candidate","priority":1},
+            {"stream_id":"c","url":"https://radio.example.org/c","state":"disabled","priority":2},
+        ]}
+        old=copy.deepcopy(row)
+        proof={"proof":[{"streamId":v["stream_id"],"streamSha256":digest(v["url"].encode()),
+                         "positiveDates":["2026-11-25",DAY]} for v in row["streams"]]}
+        self.assertEqual(recovery_proof(row,proof)["streamId"],"a")
+        self.assertEqual(promote_recovery_stream(row,proof,DAY),"a")
+        self.assertEqual(row["streams"][0],dict(old["streams"][0],
+            state="verified",last_checked_at=DAY+"T00:00:00Z"))
+        self.assertEqual(row["streams"][1:],old["streams"][1:])
 
     def test_forged_proposal_refused(self):
         self.fixture()
