@@ -92,6 +92,43 @@ def exact_directory_record(city, venue, *, fetch=_fetch):
     return next(iter(records.values())) if len(records) == 1 else None
 
 
+def directory_website_hints(row):
+    """Extract only bounded HTTPS URLs from the Ministry's link field.
+
+    Handles a plain link, delimited text, or nested JSON link records.
+    These remain clues, not authority: the current municipal domain check
+    and exact official page evidence still apply independently.
+    """
+    from ptitesondes_dynamic_municipal_source_links import _safe_url
+    if not isinstance(row, dict):
+        return []
+    value = row.get("site_internet_et_autres_liens")
+    if isinstance(value, str) and len(value) <= 16000:
+        try:
+            value = json.loads(value)
+        except ValueError:
+            pass
+    queue = [value]
+    hints = set()
+    visited = 0
+    while queue and visited < 100:
+        item = queue.pop(0)
+        visited += 1
+        if isinstance(item, dict) and len(item) <= 30:
+            queue.extend(item.values())
+        elif isinstance(item, list) and len(item) <= 30:
+            queue.extend(item)
+        elif isinstance(item, str) and len(item) <= 16000:
+            for raw in re.findall(r"https://[^\s<>\"';|,]+", item):
+                url = _safe_url(raw.rstrip(")."))
+                if not url:
+                    continue
+                p = urlsplit(url)
+                if not p.query and not p.fragment and len(url) <= 600:
+                    hints.add(url)
+    return sorted(hints) if not queue and len(hints) <= 12 else []
+
+
 def live_filtered_probe():
     """Test the actual API's documented filters using its own first public row.
 
