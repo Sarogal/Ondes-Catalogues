@@ -527,6 +527,9 @@ jobs:
               --catalogue-file public/docs/ptitesondes/sorties.json \
               --output-dir "$WORK" \
               > "$LOG/verification-sorties-slot$REVIEW_SLOT.log" 2>&1; then
+              # Only fixed, whole-line diagnostic codes; never cat private logs.
+              grep -Ex 'PREFLIGHT_FAILURE (arguments|backlog|reference|catalogue|evaluate|output) (network|invalid_data|io|unexpected)' \
+                "$LOG/verification-sorties-slot$REVIEW_SLOT.log" | tail -n 1 || true
               echo "::error::Prévalidation indépendante échouée ; aucune approbation appliquée."
               exit 1
             fi

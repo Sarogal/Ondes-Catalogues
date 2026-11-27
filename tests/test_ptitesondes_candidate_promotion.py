@@ -13,7 +13,7 @@ from ptitesondes_candidate_promotion import (
     api_record, category_for, confirmed_session, evaluate, main, make_event,
     permitted, reconciled_openagenda_url, registry_location, scheduled,
     covered_by_published_range, public_run_summary,
-    admission_failure_group, private_admission_diagnostics,
+    admission_failure_group, private_admission_diagnostics, safe_preflight_failure,
 )
 from merge_policy import ORIGIN, merge
 from venue_registry import VENUES, verified_location
@@ -768,3 +768,15 @@ class CandidatePromotionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PublicFailureDiagnosticsTests(unittest.TestCase):
+    def test_failure_codes_are_fixed_and_redacted(self):
+        from urllib.error import URLError
+        for phase, error, expected in (
+            ("reference", URLError("https://private.example/token"), "reference network"),
+            ("evaluate", ValueError("secret candidate"), "evaluate invalid_data"),
+            ("output", OSError("private path"), "output io"),
+            ("unknown-secret", RuntimeError("secret"), "arguments unexpected"),
+        ):
+            self.assertEqual(safe_preflight_failure(phase, error), "PREFLIGHT_FAILURE " + expected)
