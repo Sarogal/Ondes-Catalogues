@@ -264,7 +264,7 @@ def propose(row, catalogue, today, *, fetch=probe.safe_fetch):
 
 
 def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
-          fetch=probe.safe_fetch):
+          fetch=probe.safe_fetch, prior=None):
     require(isinstance(before, dict) and
             before.get("schema") == "grossesondes.concert.approvals.v1"
             and isinstance(before.get("approvals"), list)
@@ -273,6 +273,7 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
             and type(limit) is int and 1 <= limit <= 6,
             "private approval ledger or bounded scan invalid")
     selected = eligible(registry, catalogue, today)
+    memory = geography.site_review_memory(prior, SCHEMA, selected)
     # Prefer leads already carrying an event-scoped metal/punk hint: the
     # broad OpenAgenda index also contains many nonmusic "metal" matches.
     # At the normal four-check budget use 3 priority + 1 unknown. The
@@ -291,18 +292,14 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
                           max(1, limit - max(1, limit // 4)))
     priority_count = min(len(priority), priority_quota)
     unknown_count = min(len(unknown), limit - priority_count)
-    chosen = (
-        [priority[(tick * max(1, priority_count) + i) % len(priority)]
-         for i in range(priority_count)] if priority else []
-    )
-    if unknown:
-        chosen.extend(unknown[(tick * max(1, unknown_count) + i) %
-                              len(unknown)] for i in range(unknown_count))
+    chosen = geography.rank_site_reviews(
+        priority, tick * max(1, priority_count), memory)[:priority_count]
+    chosen.extend(geography.rank_site_reviews(
+        unknown, tick * max(1, unknown_count), memory)[:unknown_count])
     if len(chosen) < min(limit, len(selected)):
         remaining = [row for row in selected if row not in chosen]
-        start = (tick * limit) % len(remaining) if remaining else 0
-        chosen.extend(remaining[(start + i) % len(remaining)]
-                      for i in range(min(limit - len(chosen), len(remaining))))
+        chosen.extend(geography.rank_site_reviews(
+            remaining, tick * limit, memory)[:limit - len(chosen)])
     output = copy.deepcopy(before)
     current = copy.deepcopy(catalogue)
     signed_ids = {a.get("event", {}).get("id") for a in before["approvals"]
@@ -356,6 +353,8 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         "eligibleUnknownSites": len(selected), "examined": len(chosen),
         "stateCounts": dict(states), "rejectionReasons": dict(reasons),
         "candidateChecks": checks,
+        "reviewMemory": geography.remember_site_reviews(memory, chosen),
+        "firstReviewInMemory": sum(geography.site_review_key(row) not in memory for row in chosen),
         "geoDiagnostics": dict(sorted(geo_diagnostics.items())),
         "privateApprovalApplied": False, "publicationAllowed": False,
     }
@@ -373,7 +372,8 @@ def main():
         json.loads(args.registry.read_text(encoding="utf-8")),
         json.loads(args.catalogue.read_text(encoding="utf-8")),
         json.loads(args.candidate.read_text(encoding="utf-8")),
-        today, slot=args.scan_slot, limit=args.limit)
+        today, slot=args.scan_slot, limit=args.limit,
+        prior=geography.read_site_review_memory(args.report))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n",

@@ -21,6 +21,7 @@ import argparse
 import copy
 import datetime as dt
 import json
+import hashlib
 import sys
 from collections import Counter
 from pathlib import Path
@@ -50,6 +51,52 @@ from scripts import concert_event_site_contract as contract
 SCHEMA = "grossesondes.concert.dynamic-new-site-paired-proposals.v1"
 MAX_CHECKS = 4  # network work per run; never an artist/venue/domain total
 CHECKED_PROOF = ["artists", "date", "venue", "genre"]
+
+
+# Bounded scheduling memory; never used for identity, eligibility or trust.
+MAX_SITE_REVIEW_MEMORY = 4096
+
+
+def site_review_key(row):
+    day, url, candidate = row
+    return hashlib.sha256(json.dumps(
+        [day, url, candidate.get("candidateId")],
+        ensure_ascii=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+def site_review_memory(prior, schema, rows):
+    if not isinstance(prior, dict) or prior.get("schema") != schema:
+        return []
+    active = {site_review_key(row) for row in rows}
+    stored = prior.get("reviewMemory", [])
+    if not isinstance(stored, list):
+        return []
+    return list(dict.fromkeys(key for key in stored[-MAX_SITE_REVIEW_MEMORY:]
+                              if isinstance(key, str) and key in active))
+
+
+def rank_site_reviews(rows, start, memory):
+    if not rows:
+        return []
+    start %= len(rows)
+    recency = {key: i for i, key in enumerate(memory)}
+    return sorted(rows[start:] + rows[:start],
+                  key=lambda row: recency.get(site_review_key(row), -1))
+
+
+def remember_site_reviews(memory, chosen):
+    keys = [site_review_key(row) for row in chosen]
+    return ([key for key in memory if key not in keys] +
+            list(dict.fromkeys(keys)))[-MAX_SITE_REVIEW_MEMORY:]
+
+
+def read_site_review_memory(path):
+    try:
+        if path.stat().st_size <= 512_000:
+            return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, UnicodeError):
+        pass
+    return None
 
 
 def require(condition, why):
