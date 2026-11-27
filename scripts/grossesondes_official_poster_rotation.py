@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from datetime import date, datetime, timezone
 import json
+from hashlib import sha256
 import re
 from urllib.parse import urlsplit
 from pathlib import Path
@@ -25,6 +26,73 @@ MAX_HOSTS = 8
 MAX_IMAGES = 2
 MAX_BROWSER_HOSTS = 2
 MAX_RUN_SECONDS = 180
+MAX_DOM_BYTES = 1_400_000
+DOM_SCHEMA = 'grossesondes.poster-rendered-review.v1'
+
+
+def capture_rendered_evidence(catalogue, today, tick, limit, *, fetch=fetch_public_html, renderer):
+    """Only signed rotation roots, public DOM only; never read private state."""
+    if type(limit) is not int or not 1 <= limit <= MAX_HOSTS:
+        raise ValueError('Invalid poster host budget')
+    entries = []
+    attempted = 0
+    deadline = monotonic() + MAX_RUN_SECONDS
+    for site, rows in signed_rotation(catalogue, today, limit, tick):
+        if attempted >= MAX_BROWSER_HOSTS or monotonic() >= deadline:
+            break
+        active = [r for r in rows if not r.get('cancelled')
+                  and r.get('status') not in ('Annulé', 'Reporté')]
+        if not active:
+            continue
+        try:
+            raw = fetch(site)
+            page(raw)
+            if any(current_official_poster_candidates(raw, site, r) for r in active):
+                continue
+        except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+            # Including HTTP 429: do not retry through Chromium.
+            continue
+        attempted += 1
+        try:
+            html = renderer(site)
+            if not isinstance(html, str):
+                continue
+            body = html.encode('utf-8')
+            if not 0 < len(body) <= MAX_DOM_BYTES:
+                continue
+            entries.append({'site': site, 'html': html, 'sha256': sha256(body).hexdigest()})
+        except Exception:
+            continue
+    return {'schema': DOM_SCHEMA, 'date': today, 'tick': tick, 'entries': entries}
+
+
+def validated_rendered_evidence(path, catalogue, today, tick, limit):
+    """Treat transported DOM as untrusted review input, never as approval."""
+    try:
+        if path.stat().st_size > MAX_DOM_BYTES * MAX_BROWSER_HOSTS * 6 + 4096:
+            return {}
+        data = json.loads(path.read_text(encoding='utf-8'))
+        if (not isinstance(data, dict) or data.get('schema') != DOM_SCHEMA
+                or data.get('date') != today or type(data.get('tick')) is not int
+                or data['tick'] != tick or not isinstance(data.get('entries'), list)
+                or len(data['entries']) > MAX_BROWSER_HOSTS):
+            return {}
+        sites = {site for site, _ in signed_rotation(catalogue, today, limit, tick)}
+        result = {}
+        for entry in data['entries']:
+            if not isinstance(entry, dict) or not isinstance(entry.get('site'), str):
+                return {}
+            site, html = entry['site'], entry.get('html')
+            if site not in sites or site in result or not isinstance(html, str):
+                return {}
+            body = html.encode('utf-8')
+            if (not 0 < len(body) <= MAX_DOM_BYTES
+                    or sha256(body).hexdigest() != entry.get('sha256')):
+                return {}
+            result[site] = html
+        return result
+    except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+        return {}
 
 
 def contextual_poster_match(site, url, row, page_date_match, reading, result):
@@ -190,6 +258,8 @@ def main():
     parser.add_argument("--limit", type=int, default=MAX_HOSTS)
     parser.add_argument("--private-cache", type=Path)
     parser.add_argument("--browser", action="store_true")
+    parser.add_argument("--capture-rendered-evidence", type=Path)
+    parser.add_argument("--rendered-evidence", type=Path)
     args = parser.parse_args()
     if args.catalogue.stat().st_size > 10_000_000:
         raise ValueError("Catalogue exceeds budget")
@@ -197,10 +267,27 @@ def main():
     today = date.today().isoformat()
     tick = args.tick if args.tick is not None else int(datetime.now(timezone.utc).timestamp() // 14400)
     cache = load_ocr_cache(args.private_cache) if args.private_cache else {}
+    if args.capture_rendered_evidence and (not args.browser or args.private_cache
+            or args.rendered_evidence or args.slug):
+        parser.error("DOM capture is public-only, without private cache or slug")
+    if args.rendered_evidence and (args.browser or args.slug):
+        parser.error("Transported DOM is separate from browser execution")
     browser_fetch = None
     if args.browser:
         from grossesondes_official_browser_probe import rendered_html
         browser_fetch = rendered_html
+    if args.capture_rendered_evidence:
+        evidence = capture_rendered_evidence(catalogue, today, tick, args.limit,
+                                             renderer=browser_fetch)
+        args.capture_rendered_evidence.parent.mkdir(parents=True, exist_ok=True)
+        args.capture_rendered_evidence.write_text(json.dumps(evidence, ensure_ascii=False), encoding="utf-8")
+        print("Public rendered roots:", len(evidence["entries"]))
+        return
+    if args.rendered_evidence:
+        evidence = validated_rendered_evidence(args.rendered_evidence, catalogue,
+                                              today, tick, args.limit)
+        if evidence:
+            browser_fetch = lambda site: evidence[site]
     report = scan(catalogue, today, tick=tick, limit=args.limit, slug=args.slug,
                   cache=cache, browser_fetch=browser_fetch)
     if args.private_cache:
