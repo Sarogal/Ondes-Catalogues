@@ -47,6 +47,32 @@ class GenericVenueGeoContractTests(unittest.TestCase):
             self.assertEqual(contract.apply(replay, p), 0)
             self.assertEqual(replay, normalized)
 
+    def test_standalone_correction_does_not_require_a_published_event(self):
+        original, proof, _ = fixture()
+        original["events"] = []
+        source = proof["officialVenueSourceUrl"]
+        proof.update(eventId=None, eventDate=None, officialUrl=source)
+        row = contract.signed_proposal(proof, TODAY)
+        self.assertEqual(row["proofType"], contract.STANDALONE_PROOF)
+        ledger = {contract.KEY: [row]}
+        with mock.patch.object(evidence, "verify_venue_source", return_value=proof) as verify:
+            normalized, plans = contract.prepare(original, ledger, TODAY)
+            verify.assert_called_once_with(source, original["venues"][0])
+        self.assertEqual(contract.apply(normalized, plans), 1)
+        self.assertEqual(normalized["events"], [])
+        self.assertEqual(normalized["artists"], [])
+        with mock.patch.object(evidence, "verify_venue_source", side_effect=AssertionError("network")):
+            repeated, plans = contract.prepare(normalized, ledger, TODAY + dt.timedelta(days=30))
+            self.assertEqual(contract.apply(repeated, plans), 0)
+        self.assertEqual(repeated, normalized)
+        for bad in (dict(row, eventId="invented"), dict(row, eventDate="2027-01-01"),
+                    dict(row, proofType=contract.PROOF),
+                    dict(row, officialUrl=source + "other")):
+            with self.assertRaises(ValueError):
+                contract.prepare(original, {contract.KEY: [bad]}, TODAY)
+        with self.assertRaisesRegex(ValueError, "fresh"):
+            contract.prepare(original, ledger, TODAY + dt.timedelta(days=8))
+
     def test_rejects_protected_fields_and_wrong_original(self):
         for field, value in (("city", "Paris"), ("name", "Another Room"),
                              ("id", "other"), ("latitude", True)):
