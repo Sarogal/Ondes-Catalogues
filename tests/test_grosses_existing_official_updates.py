@@ -1125,6 +1125,50 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
                 ["Foo", "Foo Fighters"], ["Foo Fighters"]),
             ["Foo", "Foo Fighters"])
 
+    def test_linkless_raw_root_recovers_only_signed_rendered_programme(self):
+        site = "https://festival-exemple.fr/"
+        url = site + "en/lineup"
+        row = festival("festival-exemple-2027", site, dates=("2027-06-17", "2027-06-20"))
+        row["name"] = "Festival Exemple"
+        row.pop("lineup")
+        row["bands"] = None
+        shell = "<main>Loading</main>"
+        rendered = ('<main><a href="/en/lineup">Line up</a>'
+                    '<a href="https://external.example/lineup">Fake</a></main>')
+        grid = ('<main><h1>Festival Exemple 2027</h1><h2>Line-Up</h2>'
+                '<p>Thursday 17 June Friday 18 June Saturday 19 June Sunday 20 June</p>'
+                '<a href="/en/artist/alpha-band">Alpha Band</a>'
+                '<a href="/en/artist/beta-band">Beta Band</a></main>')
+        original = doc(row)
+        calls = []
+        def fetch(address):
+            calls.append(address)
+            return {site: shell, url: grid}[address]
+        updated, report = apply_independently_verified_updates(
+            original, original, DAY, tick=0, fetch=fetch,
+            browser_fetch={site: rendered}.__getitem__, browser_sites=(site,),
+            commune_resolver=lambda *_: None)
+        self.assertEqual(calls, [site, url])
+        self.assertEqual(updated["festivals"][0]["lineup"], ["Alpha Band", "Beta Band"])
+        self.assertEqual(report["browser_recoveries"], 1)
+        self.assertEqual(report["official_edition_diagnostics"][0]["linked_pages_fetched"], 1)
+        unchanged, _ = apply_independently_verified_updates(
+            original, original, DAY, tick=0, fetch=fetch,
+            browser_fetch={site: rendered}.__getitem__, browser_sites=(),
+            commune_resolver=lambda *_: None)
+        self.assertEqual(unchanged["festivals"][0], row)
+
+    def test_official_access_links_are_publisher_research_not_ocr_targets(self):
+        site = "https://festival-exemple.fr/"
+        html = ('<main><a href="/festival-plan-du-site/">Plan du site</a>'
+                '<a href="/programmation/">Programme</a>'
+                '<a href="https://external.example/acces">Accès</a>'
+                '<a href="/2026/acces">Ancienne édition</a>'
+                '<a hidden href="/fake/acces">Accès masqué</a></main>')
+        self.assertEqual(linked_pages(site, page(html)), [site + "programmation/"])
+        self.assertEqual(linked_pages(site, page(html), prefer_programme=True),
+                         [site + "programmation/", site + "festival-plan-du-site/"])
+
     def test_visible_programme_links_survive_hidden_void_and_nested_markup(self):
         site = "https://festival-exemple.fr/"
         url = site + "en/lineup"

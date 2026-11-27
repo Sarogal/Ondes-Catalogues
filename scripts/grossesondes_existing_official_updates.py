@@ -804,12 +804,16 @@ def linked_pages(site, parsed, *, prefer_programme=False):
         programme_route = bool(re.search(
             r"/(?:lineup|line-up|programmation|programme|program|artists|artistes)/?$",
             bits.path, re.I))
-        if not ROLE.search(label) and not programme_route:
+        access_route = prefer_programme and bool(re.search(
+            r"\b(?:acces|venir au festival|plan du site|infos pratiques|informations pratiques|getting here|how to get there|access|directions)\b",
+            label))
+        if not ROLE.search(label) and not programme_route and not access_route:
             continue
         # Preserve the legacy poster/announcement priority for OCR scans.
         # Only the Publisher and its isolated browser prefer programme routes.
         rank = (-2 if re.search(r"annulation|annule|report|reporte|cancelled|postponed", label)
                 else -1 if prefer_programme and programme_route
+                else -0.5 if access_route
                 else 0 if re.search(r"nouveaux? noms|groupes? annonces?|annonce|affiche", label)
                 else 1 if re.search(r"programme|programmation|line up|lineup|groupes", label)
                 else 2 if re.search(r"billetterie|pass|tarif", label)
@@ -1952,6 +1956,24 @@ def apply_independently_verified_updates(
         if current_home.blocks:
             pages.append((site, current_home))
         selected_links = linked_pages(site, root, prefer_programme=True)
+        # An HTTP 200 can be only the JavaScript shell. Reuse the current
+        # secretless browser evidence for a signed origin when the raw root
+        # exposes no relevant links. Keep raw evidence for contradiction
+        # checks and never manufacture a programme URL.
+        if (raw_root_available and not selected_links and browser_fetch is not None
+                and site in browser_sites):
+            try:
+                rendered_root = browser_fetch(site)
+                rendered_doc = page(rendered_root)
+                rendered_links = linked_pages(site, rendered_doc, prefer_programme=True)
+                if rendered_links:
+                    selected_links = rendered_links
+                    pages.append((site, rendered_doc))
+                    html_pages.append((site, rendered_root))
+                    report["browser_recoveries"] += 1
+                    report["rechecked_pages"] += 1
+            except (OSError, TimeoutError, ValueError, UnicodeError, TypeError, KeyError):
+                pass
         linked_fetch_errors = []
         for link in selected_links:
             try:
@@ -2581,7 +2603,7 @@ def apply_independently_verified_updates(
                     "homepage_matches_signed_edition": root_ok,
                     "linked_pages_selected": selected_links,
                     "linked_fetch_errors": linked_fetch_errors,
-                    "linked_pages_fetched": len(html_pages) - 1,
+                    "linked_pages_fetched": len({url for url, _ in html_pages} - {site}),
                     "official_poster_candidates_review_only": (
                         current_official_poster_candidates(root_html, site, old)
                         if root_ok else []),

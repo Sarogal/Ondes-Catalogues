@@ -137,15 +137,24 @@ def prioritize_unavailable(published, history, today, slot, *,
             published, today.isoformat(), limit=budget, tick=slot)
         if _eligible_url({"officialSite": url}) == url
     ]
-    def unavailable(url):
+    # A successful HTTP response without navigable links can be a dynamic
+    # shell. Prioritize these only for explicitly incomplete signed lineups.
+    # Ordinary HTTP failures retain precedence and the same slot budget.
+    incomplete = {row.get("officialSite") for row in published["festivals"]
+                  if isinstance(row, dict) and "bands" in row
+                  and row.get("bands") is None and not row.get("lineup")}
+    def probe(url):
         try:
-            page(fetch(url))
-            return False
+            parsed = page(fetch(url))
+            if url in incomplete and not linked_pages(url, parsed, prefer_programme=True):
+                return "linkless"
+            return "ok"
         except (OSError, TimeoutError, ValueError, UnicodeError, TypeError):
-            return True
+            return "unavailable"
     with ThreadPoolExecutor(max_workers=6) as pool:
-        failures = [url for url, failed in
-                    zip(candidates, pool.map(unavailable, candidates)) if failed]
+        outcomes = list(zip(candidates, pool.map(probe, candidates)))
+    failures = [url for url, state in outcomes if state == "unavailable"]
+    linkless = [url for url, state in outcomes if state == "linkless"]
     # Stable daily rotation through unavailable sites; do not repeatedly
     # select the first five when more than five require browser recovery.
     # Prioritize genuinely unlocated future editions among actual failures,
@@ -160,6 +169,8 @@ def prioritize_unavailable(published, history, today, slot, *,
     selected = [url for _, url in _rotate(missing_geo, slot, geo_quota)]
     selected += [url for _, url in _rotate(
         other, slot, MAX_FAILURE_SLOTS - len(selected))]
+    selected += [url for _, url in _rotate(
+        [(url, url) for url in linkless], slot, MAX_FAILURE_SLOTS - len(selected))]
     if not selected:
         return baseline, len(candidates), len(failures)
     # Reserve one rotating root from each cohort before filling spare
