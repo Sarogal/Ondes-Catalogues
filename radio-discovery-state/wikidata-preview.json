@@ -3,8 +3,8 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 168,
-  "dueNameCount": 16,
+  "observedNameCount": 172,
+  "dueNameCount": 14,
   "attemptedCount": 6,
   "serviceFailure": null,
   "retryAfterKey": null,
@@ -310,6 +310,15 @@
       "source": "wikidata",
       "status": "not_found"
     },
+    "discover.com": {
+      "status": "not_found",
+      "artistName": "discover.com",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "dispraised": {
       "artistName": "Dispraised",
       "checkedAt": "2026-11-27",
@@ -372,6 +381,24 @@
       "researchVersion": 2,
       "source": "wikidata",
       "status": "ambiguous_or_incomplete"
+    },
+    "embodyment": {
+      "status": "name_hypothesis",
+      "qid": "Q3724078",
+      "genresById": {
+        "Q20378": "alternative metal"
+      },
+      "musicbrainzIds": [
+        "0617f8e8-8e74-4fb4-9b46-8542cc94caca"
+      ],
+      "sourceUrl": "https://www.wikidata.org/wiki/Q3724078",
+      "genreSource": "wikidata-P136",
+      "artistName": "Embodyment",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
     },
     "emmure": {
       "artistName": "Emmure",
@@ -455,6 +482,15 @@
       "source": "wikidata",
       "status": "ambiguous_or_incomplete"
     },
+    "george benson": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "George Benson",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "gojira": {
       "artistName": "Gojira",
       "checkedAt": "2026-11-26",
@@ -528,6 +564,15 @@
       "source": "wikidata",
       "status": "ambiguous_or_incomplete"
     },
+    "humidifier": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Humidifier",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
+    },
     "iced earth": {
       "artistName": "ICED EARTH",
       "checkedAt": "2026-11-26",
@@ -554,6 +599,15 @@
       "researchVersion": 2,
       "source": "wikidata",
       "status": "not_found"
+    },
+    "james": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "James",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
     },
     "jason derulo; nicki minaj; ty dolla $ign": {
       "artistName": "Jason Derulo; Nicki Minaj; Ty Dolla $ign",
@@ -793,6 +847,15 @@
       "source": "wikidata",
       "sourceUrl": "https://www.wikidata.org/wiki/Q2613632",
       "status": "name_hypothesis"
+    },
+    "lower class brats": {
+      "status": "identity_held",
+      "artistName": "Lower Class Brats",
+      "checkedAt": "2026-11-27",
+      "source": "wikidata",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
     },
     "luma sol": {
       "status": "not_found",

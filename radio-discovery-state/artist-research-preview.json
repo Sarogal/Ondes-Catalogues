@@ -3,11 +3,11 @@
   "scanDate": "2026-11-27",
   "publicationAllowed": false,
   "approvedCount": 0,
-  "observedNameCount": 168,
-  "dueNameCount": 52,
-  "attemptedCount": 1,
+  "observedNameCount": 172,
+  "dueNameCount": 56,
+  "attemptedCount": 2,
   "serviceFailure": "http_503",
-  "retryAfterKey": "skinflick",
+  "retryAfterKey": "spiewac kazdy moze",
   "entries": {
     "2000 fm": {
       "artistName": "2000 FM",
@@ -1196,6 +1196,15 @@
       "source": "musicbrainz",
       "sourceUrl": "https://musicbrainz.org/artist/1c346a43-0fba-4702-bc1b-c198f07e3da4",
       "status": "name_hypothesis"
+    },
+    "sodom": {
+      "status": "ambiguous_or_incomplete",
+      "artistName": "Sodom",
+      "source": "musicbrainz",
+      "checkedAt": "2026-11-27",
+      "researchVersion": 2,
+      "identityVerified": false,
+      "publicationAllowed": false
     },
     "soul asylum": {
       "artistName": "SOUL ASYLUM",

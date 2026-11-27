@@ -5,7 +5,7 @@
   "approvedCount": 0,
   "attemptedCount": 6,
   "stationsWithArtistHints": 109,
-  "distinctArtistHints": 168,
+  "distinctArtistHints": 172,
   "attemptedHlsCount": 0,
   "stationsWithHlsId3Hints": 0,
   "stationsWithHistoryHints": 0,
@@ -1679,9 +1679,13 @@
       "alternativeAttempted": false
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "8decb3ad-234d-4535-b66e-c40f0cc2179b",
+      "streamSha256": "f4f1a56e9b309dbba9ca8daabe7f6892f1a524193733940ed9c3dbce3af19e1a",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "metadata_no_parseable_title",
       "observations": [
         {
           "artistHint": "3 Doors Down",
@@ -1689,102 +1693,123 @@
           "titleSha256": "1ec3bc003d2fe87f4d11851af2ce336f6a819c40581d37dc38d3cb2b331afe1c"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "8decb3ad-234d-4535-b66e-c40f0cc2179b",
-      "streamSha256": "f4f1a56e9b309dbba9ca8daabe7f6892f1a524193733940ed9c3dbce3af19e1a",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 3,
+      "alternativeAttempted": true
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "913fc253-fd99-4f0e-a215-f7751bbed27a",
+      "streamSha256": "ffd43159ad703308a2fa2c3bf95f8a0eb0cc20cfeb3abec28010e6fdb90744b3",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "Aerosmith",
           "date": "2026-11-26",
           "titleSha256": "2af63942c600036baaeeb6c5c67cd49fe75991648bd82d5c13f05d6903ff88b9"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "discover.com",
+          "titleSha256": "2d36510b4d1effc8f6e0550ca7aafb89d8cbf8186a79b4f68e7f2e753e669315"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "913fc253-fd99-4f0e-a215-f7751bbed27a",
-      "streamSha256": "ffd43159ad703308a2fa2c3bf95f8a0eb0cc20cfeb3abec28010e6fdb90744b3",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "955166e9-1bd6-4cd2-841f-fb7eeb09e1dc",
+      "streamSha256": "77c568b0dc217ce0d3a91aa837a1e0bd62a237a2df76771f6e5f48220022bc73",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "Blightbeast",
           "date": "2026-11-26",
           "titleSha256": "ef3b444826dbb2e89695d9791edf1158e87bbe524e3c80e93c70bc45f7c32911"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Humidifier",
+          "titleSha256": "e8171e90b58289e2eeed5cc8b141486a70b87635b854d00b709f8bff903b0f2d"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "955166e9-1bd6-4cd2-841f-fb7eeb09e1dc",
-      "streamSha256": "77c568b0dc217ce0d3a91aa837a1e0bd62a237a2df76771f6e5f48220022bc73",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "9628a108-0601-11e8-ae97-52543be04c81",
+      "streamSha256": "728d8a9c5da25b798772fe7765b2b6b6b3b8944dd557e34f3115eeb469ba2607",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "2000 FM",
           "date": "2026-11-26",
           "titleSha256": "e8dddbb7f115cd2de287c59bf62c05b482c3a56e56107925547e868fe578a2e6"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "2000 FM",
+          "titleSha256": "e8dddbb7f115cd2de287c59bf62c05b482c3a56e56107925547e868fe578a2e6"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "9628a108-0601-11e8-ae97-52543be04c81",
-      "streamSha256": "728d8a9c5da25b798772fe7765b2b6b6b3b8944dd557e34f3115eeb469ba2607",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "962caa2a-0601-11e8-ae97-52543be04c81",
+      "streamSha256": "3fb5100820dbce72c63887681d35b8d9e63ac9a346d7a990d49cf7c6d3d3cb63",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "Latter Day Exploits",
           "date": "2026-11-26",
           "titleSha256": "0b8ac33442bdbed0ed836b8c53d5b0b75c72f958f387a9aca878c339aa29f0ac"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Embodyment",
+          "titleSha256": "0ea95b826d8d13a5521d55f45b278561ca78d59a882b25a7da74a741b3b30ba8"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "962caa2a-0601-11e8-ae97-52543be04c81",
-      "streamSha256": "3fb5100820dbce72c63887681d35b8d9e63ac9a346d7a990d49cf7c6d3d3cb63",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
-      "alternativeAttempted": false,
-      "alternativeVersion": 0,
+      "stationuuid": "962e7288-0601-11e8-ae97-52543be04c81",
+      "streamSha256": "62854e8c3394f3d5e47d72673765b2c2b78ea7052acc30f133292aef5c56714d",
+      "observedDate": "2026-11-27",
+      "observedInScan": true,
       "approved": false,
+      "publicationAllowed": false,
+      "verdict": "icy_artist_title_hint",
       "observations": [
         {
           "artistHint": "ssshhhiiittt!",
           "date": "2026-11-26",
           "titleSha256": "cef599f6940f412aa7b3bcef4330926d886c45940fe2c46efe3e279b2bcb5494"
+        },
+        {
+          "date": "2026-11-27",
+          "artistHint": "Nechernozem'e",
+          "titleSha256": "acda87227a58ed9134a1dd97ecd834bf1a852d08aef555818159010dcd65e082"
         }
       ],
-      "observedDate": "2026-11-26",
-      "observedInScan": true,
-      "publicationAllowed": false,
-      "stationuuid": "962e7288-0601-11e8-ae97-52543be04c81",
-      "streamSha256": "62854e8c3394f3d5e47d72673765b2c2b78ea7052acc30f133292aef5c56714d",
-      "verdict": "icy_artist_title_hint"
+      "alternativeVersion": 0,
+      "alternativeAttempted": false
     },
     {
       "alternativeAttempted": false,
