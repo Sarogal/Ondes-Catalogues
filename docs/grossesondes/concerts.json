@@ -16345,10 +16345,10 @@
     },
     {
       "id": "go-c-20270219-roubaix-ultra-vomit-roubaix",
-      "title": "ULTRA VOMIT - ROUBAIX",
+      "title": "ULTRA VOMIT",
       "date": "2027-02-19",
       "artistIds": [
-        "ultra-vomit-roubaix"
+        "ultra-vomit"
       ],
       "venueId": "go-site-3cd862e28529bcb1d84d",
       "genres": [
@@ -16369,6 +16369,10 @@
         {
           "date": "2026-11-27",
           "change": "Ajout après revue des preuves officielles"
+        },
+        {
+          "date": "2026-11-27",
+          "change": "Identité artistique rectifiée après nouvelle vérification de la fiche officielle"
         }
       ]
     }
