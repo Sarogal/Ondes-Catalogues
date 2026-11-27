@@ -961,7 +961,7 @@ def daily_programme_artists(doc, html, row, today):
                 from grossesondes_official_html_edition import explicit_ranges
                 opening_year_proof |= any(
                     begin == finish == start for _, _, begin, finish
-                    in explicit_ranges(normalized, start.year))
+                    in explicit_ranges(re.sub(r"\b1er\b", "1", normalized), start.year))
             # Only the explicit concert portion of a mixed daily paragraph.
             billing = re.search(
                 r"(?:^|\s)concerts?\s*:\s*([^|]{2,1200})\s*\|\s*"
