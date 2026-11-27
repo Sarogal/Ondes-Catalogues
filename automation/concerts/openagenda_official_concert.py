@@ -403,10 +403,10 @@ def _generic_export_bill(record):
     long = (long.get("fr") or long.get("en")) if isinstance(long, dict) else None
     if (not isinstance(short, str) or not 2 <= len(short) <= 900
             or not isinstance(long, str) or not 2 <= len(long) <= 20000
-            or re.search(r"[<>\\r\\n]", short)
+            or re.search(r"[<>\r\n]", short)
             or re.search(r"<[^>]*>", long)):
         raise ValueError("OpenAgenda: generic title without explicit named bill")
-    names = [n.strip() for n in re.split(r"\\s+(?:[+|–—-])\\s+", short)]
+    names = [n.strip() for n in re.split(r"\s+(?:[+|–—-])\s+", short)]
     if (not names or any(not 2 <= len(n) <= 120 or not normalized(n)
                          or normalized(n) in PLACEHOLDERS
                          or bridge.is_unnamed_performer(n) for n in names)
@@ -415,12 +415,12 @@ def _generic_export_bill(record):
     headings = []
     fenced = False
     for line in long.splitlines():
-        if re.match(r"^\\s*(?:`{3,}|~{3,})", line):
+        if re.match(r"^\s*(?:`{3,}|~{3,})", line):
             fenced = not fenced
             continue
         if fenced:
             continue
-        match = re.fullmatch(r" {0,3}#{1,6}\\s+(.+?)\\s*#*\\s*", line)
+        match = re.fullmatch(r" {0,3}#{1,6}\s+(.+?)\s*#*\s*", line)
         if match:
             headings.append(normalized(match.group(1)))
     if headings != [normalized(name) for name in names]:
