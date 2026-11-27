@@ -231,7 +231,7 @@ def inspect_municipal(lead, *, directory_fetch=None, page_read=None):
         fetch_dila, municipal_site_hosts, approved_municipal_page_host)
     from ptitesondes_municipal_venue_link_discovery import exact_named_venue_page
     from ptitesondes_open_world_permanent_place_ban import _section_pages
-    from ptitesondes_unlisted_source_safe_recheck import read_municipal_https
+    from ptitesondes_unlisted_source_safe_recheck import read_municipal_https, read_failure_counts
     from urllib.parse import urlsplit
     use_code_fallback = directory_fetch is None
     directory_fetch = directory_fetch or fetch_dila
@@ -261,11 +261,27 @@ def inspect_municipal(lead, *, directory_fetch=None, page_read=None):
         def read(url):
             if not approved_municipal_page_host(url, city, directory):
                 raise ValueError("municipal_scope")
-            final, html = page_read(url, city, directory)
-            if (not approved_municipal_page_host(final, city, directory)
-                    or urlsplit(final).query or urlsplit(final).fragment):
-                raise ValueError("municipal_scope")
-            return final, html
+            before = read_failure_counts()
+            try:
+                final, html = page_read(url, city, directory)
+                if (not approved_municipal_page_host(final, city, directory)
+                        or urlsplit(final).query or urlsplit(final).fragment):
+                    raise ValueError("municipal_scope")
+                return final, html
+            except (OSError, ValueError, TypeError, KeyError, UnicodeError) as exc:
+                after = read_failure_counts()
+                for reason in ("unsafe_url", "dns_unavailable_or_unsafe", "http_status",
+                               "mime", "encoding", "size", "tls", "decode", "transport",
+                               "invalid_redirect"):
+                    delta = after.get(reason, 0) - before.get(reason, 0)
+                    if delta > 0:
+                        counts["municipal_read_" + reason] += delta
+                if type(exc) is ValueError and len(exc.args) == 1 and exc.args[0] in (
+                        "municipal_redirect_outside_authority_or_loop",
+                        "municipal_redirect_unsafe_location", "municipal_redirect_budget_exceeded",
+                        "municipal_scope"):
+                    counts["municipal_read_redirect_rejected"] += 1
+                raise
 
         stage = "homepage"
         home, html = read("https://" + sorted(hosts)[0] + "/")

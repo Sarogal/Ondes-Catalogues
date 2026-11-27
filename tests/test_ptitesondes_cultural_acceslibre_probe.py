@@ -108,6 +108,21 @@ class CulturalAcceslibreProbeTests(unittest.TestCase):
             result = inspect_municipal(lead, directory_fetch=lambda _: {}, page_read=read)
         self.assertEqual(result, {"municipal_research_unavailable": 1, "municipal_failed_homepage": 1})
 
+    def test_municipal_reader_reports_transport_deltas_not_global_totals(self):
+        from unittest.mock import patch
+        from ptitesondes_cultural_acceslibre_probe import inspect_municipal
+        lead = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois", "code_commune": "01234"}
+        module = "ptitesondes_dila_municipal_domains."
+        with patch(module + "municipal_site_hosts", return_value={"mairie.example"}), \
+             patch(module + "approved_municipal_page_host", return_value=True), \
+             patch("ptitesondes_unlisted_source_safe_recheck.read_failure_counts",
+                   side_effect=[{"tls": 4, "transport": 2}, {"tls": 5, "transport": 2}]):
+            def read(*args):
+                raise ValueError("private URL")
+            result = inspect_municipal(lead, directory_fetch=lambda _: {}, page_read=read)
+        self.assertEqual(result, {"municipal_research_unavailable": 1, "municipal_failed_homepage": 1,
+                                  "municipal_read_tls": 1})
+
     def test_municipal_code_fallback_keeps_existing_host_gate(self):
         from unittest.mock import patch
         from ptitesondes_cultural_acceslibre_probe import inspect_municipal
