@@ -402,6 +402,8 @@ def _named_footer_address(html, venue):
         address = _postal_line(rest, venue["city"])
         require(address is not None, "named footer postal address unconfirmed")
         addresses.add(address)
+    if not addresses:
+        raise MissingVenueAddress("no named visible footer address")
     require(len(addresses) == 1, "one named visible footer address required")
     street, postcode = next(iter(addresses))
     site = dict(venue, address=street, postalCode=postcode)
@@ -607,6 +609,63 @@ def registered_venue_source(venue):
     return next(iter(matches)) if len(matches) == 1 else None
 
 
+def _standalone_practical_address(html, source, venue, fetch, cache):
+    """Follow one actual visible same-origin practical link, never guess URLs."""
+    links = PracticalLinks()
+    links.feed(html)
+    links.close()
+    origin = urlsplit(source)
+    candidates = set()
+    for link in links.links:
+        resolved = urljoin(source, link)
+        target = urlsplit(resolved)
+        if (target.scheme == "https" and target.netloc.casefold() == origin.netloc.casefold()
+                and not target.username and not target.password
+                and not target.query and not target.fragment
+                and target.path.rstrip("/") != origin.path.rstrip("/")
+                and intake.valid_https(resolved)):
+            candidates.add(resolved)
+    require(len(candidates) == 1, "one visible official practical link required")
+    page = fetch(next(iter(candidates)), cache)
+    require(isinstance(page, str) and 0 < len(page) <= probe.MAX_BYTES,
+            "invalid practical page")
+    addresses = set()
+    try:
+        footer = _named_footer_address(page, venue)
+        addresses.add((footer["address"], footer["postalCode"]))
+    except MissingVenueAddress:
+        pass
+    parser = AddressBlocks()
+    parser.feed(page)
+    parser.close()
+    for i, (tag, text) in enumerate(parser.blocks):
+        if tag not in {"h1", "h2", "h3", "h4"} or not _named_location(text, venue):
+            continue
+        nearby = []
+        for kind, value in parser.blocks[i+1:i+6]:
+            if kind.startswith("h") or NONVENUE.search(triage.words(value)):
+                break
+            nearby.append(value)
+        for j, value in enumerate(nearby):
+            # A split street/postcode may occupy two adjacent visible blocks.
+            variants = [value]
+            if j+1 < len(nearby):
+                variants.append(value + " " + nearby[j+1])
+            matches = {_postal_line(v, venue["city"]) for v in variants}
+            matches.discard(None)
+            if re.search(r"\\b\\d{5}\\b", value) and not matches:
+                # A preceding street line may be part of the exact address.
+                prior = _postal_line(nearby[j-1] + " " + value, venue["city"]) if j else None
+                require(prior is not None, "conflicting named practical postal address")
+                matches.add(prior)
+            addresses.update(matches)
+    require(len(addresses) == 1, "one exact named practical address required")
+    street, postcode = next(iter(addresses))
+    site = dict(venue, address=street, postalCode=postcode)
+    require(address_source.eligible_address(site), "non-geocodable practical address")
+    return site
+
+
 def verify_venue_source(source, venue, *, fetch=probe.safe_fetch, cache=None):
     """Correct an existing coarse pin without needing a published concert.
 
@@ -623,7 +682,10 @@ def verify_venue_source(source, venue, *, fetch=probe.safe_fetch, cache=None):
         html = fetch(source, cache)
         require(isinstance(html, str) and 0 < len(html) <= probe.MAX_BYTES,
                 "invalid venue page")
-        site = _named_footer_address(html, venue)
+        try:
+            site = _named_footer_address(html, venue)
+        except MissingVenueAddress:
+            site = _standalone_practical_address(html, source, venue, fetch, cache)
     except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
         raise EvidenceHeld("standalone_named_address_unconfirmed") from exc
     def bounded(endpoint, limit):
