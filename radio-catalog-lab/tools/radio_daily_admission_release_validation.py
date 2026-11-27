@@ -6,14 +6,14 @@ the staging generator or trust its report. No external key or default network.
 """
 import copy
 import re
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urljoin
 from radio_daily_baseline_verify import verify_baseline
 from radio_daily_lab_signing import validate_candidate
 from radio_daily_decision_preview import decide
 from radio_catalog_daily_candidate_reconcile import review_candidates, checked_uuid
 from radio_daily_discovery import candidate as directory_candidate, normalize
 from radio_daily_editorial_preview import (homepage_url, related_host, inspect_site,
-    followup_links, MAX_BYTES)
+    followup_links, MAX_BYTES, Page, station_nodes, matches_identity)
 from radio_daily_repair_confirmation import confirm_page
 from radio_stream_technical_probe import validate_endpoint
 from radio_daily_v9_generator import GENRES, digest, encode
@@ -22,6 +22,34 @@ from radio_daily_proposal_subset import select_proposals, AdmissionGateHeld
 
 MAX_ADMISSIONS = 4
 DIRECTORY_LIMIT = 100
+
+
+def typed_station_unique_player(name, final, body, url):
+    """Bind a single explicit player to an exact, typed station on its own page.
+
+    A RadioStation entity may declare its genre but omit the stream address.
+    Never infer a binding on a multi-station page, with competing players,
+    or where the structured entity declares a different stream.
+    """
+    page = Page()
+    page.feed(body.decode("utf-8", errors="replace"))
+    identity = normalize(name)
+    if not matches_identity(identity, name):
+        return False
+    if not any(normalize(value) == identity for value in page.identity):
+        return False
+    nodes = list(station_nodes(page.structured))
+    if not nodes or any(not isinstance(node.get("name"), str)
+                        or normalize(node["name"]) != identity for node in nodes):
+        return False
+    for node in nodes:
+        for field in ("contentUrl", "streamUrl"):
+            if field in node and (not isinstance(node[field], str)
+                                  or urljoin(final, node[field]) != url):
+                return False
+    # Only the parser's explicit audio-player declarations count; arbitrary
+    # hyperlinks and executable scripts are excluded.
+    return {urljoin(final, value) for value in page.audio_urls} == {url}
 
 
 def qualify_admission(prior_pointer, prior_body, *, anchor, day, discovery, dossiers,
@@ -96,7 +124,7 @@ def qualify_admission(prior_pointer, prior_body, *, anchor, day, discovery, doss
             raise AdmissionGateHeld("station_format_binding", "fresh station format or stream binding missing")
         # A station-specific declaration is stronger than a generic audio tag.
         mode, _, _ = confirm_page({"display_name":name},page,url,fetch)
-        if not mode:
+        if not mode and not typed_station_unique_player(name, final, data, url):
             raise AdmissionGateHeld("station_stream_binding", "fresh station-specific stream declaration missing")
         genres = sorted({GENRES[t.lower()] for t in fresh["programmeScopeTerms"] if t.lower() in GENRES})
         old_genres = sorted({GENRES[t.lower()] for t in evidence["homepageEvidence"]["programmeScopeTerms"] if t.lower() in GENRES})

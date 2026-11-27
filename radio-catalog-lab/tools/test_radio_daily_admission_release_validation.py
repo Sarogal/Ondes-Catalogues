@@ -1,6 +1,6 @@
 import json
 import unittest
-from radio_daily_admission_release_validation import qualify_admission, validate_admission_release
+from radio_daily_admission_release_validation import qualify_admission, validate_admission_release, typed_station_unique_player
 from radio_daily_lab_signing import EphemeralLabSigner
 from radio_daily_publication_simulator import MemoryStore,publish,verify_visible
 from radio_daily_v9_generator import digest,encode
@@ -61,6 +61,31 @@ class StrictAdmissionTests(unittest.TestCase):
         self.assertEqual(row["streams"][0]["state"],"verified")
         self.assertIsNone(row["logo"])
         self.assertEqual(validate_admission_release(self.pointer,self.raw,body,**self.args),digest(body))
+
+    def test_typed_station_without_stream_and_unique_player(self):
+        node = {"@type":"RadioStation","name":"Iron Radio","genre":"metal"}
+        body = ('<h1>Iron Radio</h1><audio src="'+URL+'"></audio>'
+                '<script type="application/ld+json">'+json.dumps(node)+'</script>').encode()
+        self.assertTrue(typed_station_unique_player("Iron Radio",PAGE,body,URL))
+        self.assertEqual(json.loads(self.qualify(fetch=lambda u:(PAGE,body)))["stations"][-1]["display_name"],"Iron Radio")
+
+    def test_typed_station_unique_player_refuses_ambiguity(self):
+        node = {"@type":"RadioStation","name":"Iron Radio","genre":"metal"}
+        other = dict(node,name="Other Radio")
+        conflicting = dict(node,streamUrl="https://other.example.org/live")
+        for identity, nodes, players in (
+            ("Iron Radio",[node,other],[URL]),
+            ("Iron Radio",[conflicting],[URL]),
+            ("Iron Radio",[node],[URL,"https://other.example.org/live"]),
+            ("Iron Radio network",[node],[URL]),
+            ("Iron Radio",[],[URL]),
+            ("Iron Radio",[node],[]),
+        ):
+            with self.subTest(identity=identity,nodes=nodes,players=players):
+                body = ('<h1>'+identity+'</h1>'+
+                        ''.join('<audio src="'+u+'"></audio>' for u in players)+
+                        '<script type="application/ld+json">'+json.dumps(nodes)+'</script>').encode()
+                self.assertFalse(typed_station_unique_player("Iron Radio",PAGE,body,URL))
 
     def test_missing_repeated_history_refused(self):
         self.e["records"][0]["continuityEvidence"]["positiveObservationDates"]=[DAY]
