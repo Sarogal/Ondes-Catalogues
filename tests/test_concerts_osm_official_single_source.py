@@ -297,6 +297,51 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
                 self.assertEqual(published["events"][-1]["officialUrl"], URL)
             self.assertEqual(set(seen), {URL})
 
+    def test_event_place_city_suffix_requires_exact_official_source_and_address(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sources = Path(directory) / "sources.json"
+            sources.write_text(json.dumps({
+                "schema": "grossesondes.concert.sourcelist.v1",
+                "venues": [{"kind": "official_venue_agenda_candidate",
+                            "name": "Le Bikini", "city": "Ramonville-Saint-Agne",
+                            "url": "https://nouveau-domaine-independant.fr/"}]
+            }), encoding="utf-8")
+            before = {"schema": publisher.SCHEMA, "approvals": []}
+            def fetch_body(body):
+                def fetch(url, cache):
+                    self.assertEqual(url, URL)
+                    return body
+                return fetch
+            with mock.patch.object(pipeline.official_source, "SOURCES", sources), \
+                 mock.patch.object(identity.official_source, "SOURCES", sources):
+                for name in ("Le Bikini - Ramonville-Saint-Agne",
+                             "Le Bikini de Ramonville-Saint-Agne"):
+                    body = fixture.page(URL, venue_name=name)
+                    fetch = fetch_body(body)
+                    proposals, report = pipeline.build(registry(), BASE, before, TODAY, fetch=fetch)
+                    self.assertEqual(len(proposals["approvals"]), 1, report)
+                    with mock.patch.object(identity, "safe_fetch", side_effect=fetch):
+                        _, stats = publisher.merge(BASE, BASE, proposals, TODAY)
+                    self.assertEqual(stats["newEvents"], 1, stats["held"])
+                valid = fixture.page(URL, venue_name="Le Bikini - Ramonville-Saint-Agne")
+                for bad in (
+                    fixture.page(URL, venue_name="Le Bikini - Toulouse"),
+                    fixture.page(URL, venue_name="Le Bikini Club - Ramonville-Saint-Agne"),
+                    fixture.page(URL, venue_name="Le Bikini - Ramonville-Saint-Agne", postal="75001"),
+                    fixture.page(URL, venue_name="Le Bikini - Ramonville-Saint-Agne", country="BE"),
+                    fixture.page(URL, venue_name="Le Bikini - Ramonville-Saint-Agne", city="Toulouse"),
+                    valid.replace('"url": "' + URL + '"', '"url": null'),
+                    valid.replace(json.dumps(next(v for v in BASE["venues"]
+                                     if v["id"] == fixture.VENUE_ID)["address"]),
+                                  json.dumps("14 rue Autre")),
+                ):
+                    out, report = pipeline.build(registry(), BASE, before, TODAY, fetch=fetch_body(bad))
+                    self.assertEqual(out, before, report)
+                venue = next(v for v in BASE["venues"] if v["id"] == fixture.VENUE_ID)
+                node = next(identity.discover.read_ld(valid))
+                self.assertFalse(identity.official_place_city_suffix(
+                    node, venue, "https://different.example/show"))
+
     def test_city_suffix_does_not_trust_nearby_name_or_foreign_host(self):
         venue = next(v for v in BASE["venues"] if v["id"] == fixture.VENUE_ID)
         source = {
