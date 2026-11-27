@@ -93,7 +93,7 @@ FALLBACK_SUPPORT_LABELS = frozenset({
 })
 
 
-def candidate_tasks(registry, today):
+def candidate_tasks(registry, today, *, future_dates=None):
     if (not isinstance(registry, dict)
             or registry.get("schema") != "grossesondes.concert.intake.v1"
             or not isinstance(registry.get("items"), dict)):
@@ -120,12 +120,23 @@ def candidate_tasks(registry, today):
             if not named and frontier.normalized(name) in FALLBACK_SUPPORT_LABELS:
                 continue
             key = exact(name)
+            if future_dates is not None:
+                future_dates.setdefault(key, set()).add(day)
             # Prefer an actual named performer, then the nearest show;
             # keep fallback leads eligible, including new or unusual acts.
             task = (0 if named else 1, day.toordinal(), name)
             if key not in names or task < names[key]:
                 names[key] = task
     return names
+
+
+def directory_priority(row, future_dates):
+    # Preserve oldest/unvisited first, then named-performer priority.
+    # Among equally due names, a verified artist profile may help several
+    # distinct future dates. Duplicate observations of one date count once.
+    # Scheduling only: no inferred identity, genre or publication authority.
+    age, named, day, key, _ = row
+    return age, named, -len(future_dates.get(key, ())), day, key
 
 
 def candidate_names(registry, today):
@@ -208,7 +219,8 @@ def build(registry, today, *, prior=None, limit=MAX_NAMES, request=None):
             or not isinstance(prior.get("entries"), dict)):
         raise ValueError("Untrusted MusicBrainz memory")
     entries = dict(prior["entries"])
-    names = candidate_tasks(registry, today)
+    future_dates = {}
+    names = candidate_tasks(registry, today, future_dates=future_dates)
     eligible = []
     for key, (priority, date, name) in names.items():
         entry = entries.get(key, {})
@@ -221,7 +233,7 @@ def build(registry, today, *, prior=None, limit=MAX_NAMES, request=None):
     counters = Counter()
     request = request if request is not None else Client()
     checked = 0
-    ordered = sorted(eligible)
+    ordered = sorted(eligible, key=lambda row: directory_priority(row, future_dates))
     # A failed request must not pin every future cycle to the same artist.
     # Rotate the next cycle after that name without declaring it researched.
     cursor = prior.get("serviceRetryAfterKey")
