@@ -13,6 +13,7 @@ from collections import Counter
 from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from national_generic_publisher_funnel import dossier_edition_title
 
 SCHEMA = "grossesondes.national-blocker-inventory-private.v1"
 REPORTS = {
@@ -220,7 +221,7 @@ def build_inventory(reports, catalogue, today, patch=None, municipal_history=())
         if not isinstance(title, str) or not title or type(year) is not int:
             raise ValueError("Unnamed or undated national identity")
         e, f, h = editorial[ident], funnel[ident], handoff[ident]
-        published = (_name(title), year) in existing
+        published = (_name(dossier_edition_title(d)), year) in existing
         if published != (f.get("status") == "EXACT_EDITION_IN_PUBLIC_SNAPSHOT"):
             raise ValueError("Publisher funnel/public snapshot mismatch")
         sources = d.get("sources")

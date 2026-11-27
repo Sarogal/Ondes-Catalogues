@@ -84,6 +84,21 @@ class BlockerInventoryTests(TestCase):
             self.assertRegex(result, r"^[A-Z_]+$")
             self.assertNotIn("private", result.lower())
 
+    def test_openagenda_pass_alias_is_not_an_unpublished_blocker(self):
+        reports, catalogue = fixture()
+        dossier = reports["discovery"]["dossiers"][2]
+        dossier["name_hint"] = "Festival MozHell Open Air 2027 - 3J PASS (3-events)"
+        dossier["sources"] = [{"kind": "OPENAGENDA_PUBLIC_RESEARCH_ONLY",
+                               "url": "https://openagenda.com/example/events/pass"}]
+        result = build_inventory(reports, catalogue, TODAY)
+        self.assertTrue(result["dossiers"][2]["in_signed_public_catalogue"])
+        self.assertFalse(result["dossiers"][2]["generic_proposal_missing"])
+        self.assertEqual(result["dossiers_already_in_public_snapshot"], 1)
+        self.assertFalse(result["publication_authorized"])
+        dossier["sources"][0]["kind"] = "UNTRUSTED_RESEARCH"
+        with self.assertRaisesRegex(ValueError, "snapshot mismatch"):
+            build_inventory(reports, catalogue, TODAY)
+
     def test_signed_undated_year_matches_funnel_without_inventing_dates(self):
         reports, catalogue = fixture()
         # A real announced 2027 edition may have a signed year but no dates.

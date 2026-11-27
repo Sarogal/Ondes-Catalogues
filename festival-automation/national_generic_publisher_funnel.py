@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo
 
 from national_generic_primary_domain_preflight import _edition_name
 from source_qualification import normalized
+from national_openagenda_research import pass_edition_title
 
 SCRIPTS = str(Path(__file__).resolve().parents[1] / "scripts")
 if SCRIPTS not in sys.path:
@@ -101,6 +102,20 @@ def _identity(name, year):
     return normalized(name), year
 
 
+def dossier_edition_title(dossier):
+    """Diagnostic identity only: reuse the strict OpenAgenda pass parser."""
+    name, year = dossier.get("name_hint"), dossier.get("edition_year_hint")
+    sources = dossier.get("sources")
+    if isinstance(sources, list) and any(
+            isinstance(source, dict) and
+            source.get("kind") == "OPENAGENDA_PUBLIC_RESEARCH_ONLY"
+            for source in sources):
+        title = pass_edition_title(name, year)
+        if title is not None:
+            return title
+    return _edition_name(name, year)
+
+
 def build_report(discovery, patch, published, today):
     """Compare real private proposals; never trust a patch as source authority."""
     date.fromisoformat(today)
@@ -163,8 +178,7 @@ def build_report(discovery, patch, published, today):
                 or dossier.get("safe_to_publish") is not False):
             raise ValueError("Unsafe national dossier or duplicate identity")
         seen_ids.add(dossier["id"])
-        title = _edition_name(
-            dossier.get("name_hint"), dossier.get("edition_year_hint"))
+        title = dossier_edition_title(dossier)
         year = dossier.get("edition_year_hint")
         key = _identity(title, year)
         proposals = by_key.get(key, []) if key is not None else []

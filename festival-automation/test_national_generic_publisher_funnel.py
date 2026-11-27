@@ -99,6 +99,29 @@ class GenericPublisherFunnelTests(TestCase):
                 self.assertEqual(result["generic_publisher_recheck_pending_count"], 0)
                 self.assertEqual(result["still_without_generic_proposal_count"], 1)
 
+    def test_explicit_openagenda_pass_matches_canonical_direct_edition(self):
+        discovery, source, signed = fixture()
+        dossier = discovery["dossiers"][0]
+        dossier["name_hint"] = "Festival Foudre Imaginaire 2027 - 4J PASS (4-events)"
+        proposal = direct_private_proposal("Foudre Imaginaire 2027", SITE, DATES, DAY)
+        source["additions"] = [proposal]
+        result = build_report(discovery, source, signed, DAY)
+        self.assertEqual(result["generic_publisher_recheck_pending_count"], 1)
+        signed["festivals"] = [{"name": "Foudre Imaginaire 2027",
+                                "slug": "foudre-imaginaire-2027",
+                                "startDate": DATES[0], "endDate": DATES[1]}]
+        result = build_report(discovery, source, signed, DAY)
+        self.assertEqual(result["already_in_public_snapshot_count"], 1)
+        for invalid in ("Festival Foudre Imaginaire 2026 - 4J PASS (4-events)",
+                        "Concert Foudre Imaginaire 2027 - 4J PASS (4-events)"):
+            dossier["name_hint"] = invalid
+            self.assertEqual(build_report(discovery, source, signed, DAY)
+                             ["already_in_public_snapshot_count"], 0)
+        dossier["name_hint"] = "Festival Foudre Imaginaire 2027 - 4J PASS (4-events)"
+        dossier["sources"][0]["kind"] = "UNTRUSTED_RESEARCH"
+        self.assertEqual(build_report(discovery, source, signed, DAY)
+                         ["already_in_public_snapshot_count"], 0)
+
     def test_signed_undated_edition_is_already_in_public_snapshot(self):
         discovery, source, signed = fixture()
         signed["festivals"] = [{
