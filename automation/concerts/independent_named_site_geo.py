@@ -44,6 +44,20 @@ class NamedFeatureHeld(ValueError):
         super().__init__("Independent BAN/OSM site: one independent named OSM feature at exact address required")
 
 
+class GovernmentAddressHeld(ValueError):
+    """Fixed diagnostic, preserving the original strict rejection contract."""
+    CODES = ("ban_no_valid_point", "ban_postal_identity_mismatch",
+             "ban_street_name_mismatch", "ban_address_type_mismatch",
+             "ban_house_number_mismatch", "ban_score_insufficient",
+             "ban_multiple_exact_addresses")
+
+    def __init__(self, code):
+        if code not in self.CODES:
+            raise ValueError("Invalid government address diagnostic")
+        self.code = code
+        super().__init__("Independent BAN/OSM site: one exact government street address required")
+
+
 def require(ok, reason):
     if not ok:
         raise ValueError("Independent BAN/OSM site: " + reason)
@@ -104,6 +118,7 @@ def _ban_result(site, fetch, *, include_region=False, min_score=0.78):
             and len(report["features"]) <= 5,
             "ambiguous or invalid government response")
     eligible = []
+    deepest = 0
     for item in report["features"]:
         if not isinstance(item, dict):
             continue
@@ -113,23 +128,27 @@ def _ban_result(site, fetch, *, include_region=False, min_score=0.78):
         coords = geom.get("coordinates")
         if not _geo(coords) or geom.get("type") != "Point":
             continue
-        if (props.get("postcode") != postcode
-                or clean(props.get("city")) != clean(city)
-                or clean(props.get("street")) != street
-                or props.get("type") not in ("housenumber", "street")
-                or type(props.get("score")) not in (int, float)
+        deepest = max(deepest, 1)
+        if props.get("postcode") != postcode or clean(props.get("city")) != clean(city):
+            continue
+        deepest = max(deepest, 2)
+        if clean(props.get("street")) != street:
+            continue
+        deepest = max(deepest, 3)
+        if props.get("type") != ("housenumber" if house else "street"):
+            continue
+        deepest = max(deepest, 4)
+        if house and clean(props.get("housenumber")) != house:
+            continue
+        deepest = max(deepest, 5)
+        if (type(props.get("score")) not in (int, float)
                 or not math.isfinite(props["score"])
                 or props["score"] < min_score):
             continue
-        if house:
-            if props["type"] != "housenumber" or clean(
-                    props.get("housenumber")) != house:
-                continue
-        else:
-            if props["type"] != "street":
-                continue
         eligible.append(((coords[1], coords[0]), props.get("context")))
-    require(len(eligible) == 1, "one exact government street address required")
+    if len(eligible) != 1:
+        raise GovernmentAddressHeld(GovernmentAddressHeld.CODES[
+            6 if len(eligible) > 1 else deepest])
     center, context = eligible[0]
     if not include_region:
         return center
