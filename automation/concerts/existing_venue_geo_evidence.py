@@ -9,6 +9,7 @@ This never edits the catalogue or produces a signed approval.
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import json
 from collections import Counter
 from html.parser import HTMLParser
@@ -879,6 +880,36 @@ def _touch(recent, key):
     recent.append(key)
 
 
+def _address_revision():
+    return hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+
+
+def _address_retry_memory(prior, standalone, today):
+    """Only bounded scheduling data; legacy reports seed one fresh retry."""
+    if (not isinstance(prior, dict) or prior.get("schema") != SCHEMA + ".scan"
+            or prior.get("publicationAllowed") is not False
+            or prior.get("publisherAuthorityGranted") is not False):
+        return {}
+    try:
+        if dt.date.fromisoformat(prior["asOf"]) > today:
+            return {}
+    except (KeyError, TypeError, ValueError):
+        return {}
+    saved = prior.get("standaloneAddressRetryMemory")
+    if isinstance(saved, dict):
+        return {vid: revision for vid, revision in saved.items()
+                if vid in standalone and isinstance(revision, str)
+                and (revision == "legacy" or re.fullmatch(r"[0-9a-f]{64}", revision))}
+    held = prior.get("held", [])
+    if not isinstance(held, list):
+        return {}
+    return {row["venueId"]: "legacy" for row in held
+            if isinstance(row, dict) and isinstance(row.get("venueId"), str)
+            and row["venueId"] in standalone
+            and isinstance(row.get("reasonCounts"), dict)
+            and row["reasonCounts"].get("standalone_named_address_unconfirmed") == 1}
+
+
 def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify,
          prior=None, verify_standalone=verify_venue_source, registry=None):
     """Bounded private research. Rotate over all eligible venues and their events.
@@ -920,13 +951,26 @@ def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify,
     cycle = today.toordinal() * 3 + slot
     start = (cycle * limit) % len(ordered) if ordered else 0
     recent_venues, recent_events = _review_history(prior, groups, today, standalone)
-    chosen = _least_recent(ordered[start:] + ordered[:start], recent_venues)[:limit]
+    ranked = _least_recent(ordered[start:] + ordered[:start], recent_venues)
+    chosen = ranked[:limit]
+    revision = _address_revision()
+    retry_memory = _address_retry_memory(prior, standalone, today)
+    stale = {vid for vid, previous in retry_memory.items() if previous != revision}
+    prioritized = None
+    # Spend at most one existing slot, never suppress normal rotation.
+    if limit >= 2 and not stale.intersection(chosen):
+        prioritized = next((vid for vid in ranked if vid in stale and vid not in chosen), None)
+        if prioritized is not None:
+            chosen[-1] = prioritized
     report = {"schema": SCHEMA + ".scan", "asOf": today.isoformat(),
               "eligibleVenues": len(groups),
               "venuesWithFutureOfficialEvents": sum(bool(rows) for rows in groups.values()),
               "venuesWithStandaloneSource": len(standalone), "standaloneSourcesExamined": 0,
               "venuesWithDiscoveredSourceHints": len(hints),
               "examinedVenues": len(chosen), "eventPagesExamined": 0,
+              "addressExtractorRevision": revision,
+              "changedAddressRetryPendingBefore": len(stale),
+              "changedAddressPriorityChecks": int(prioritized is not None),
               "proposals": [], "held": [], "reasonCounts": {},
               "publicationAllowed": False, "publisherAuthorityGranted": False}
     cache = {}
@@ -934,6 +978,7 @@ def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify,
     for vid in chosen:
         _touch(recent_venues, vid)
         if vid in standalone:
+            retry_memory.pop(vid, None)
             report["standaloneSourcesExamined"] += 1
             try:
                 report["proposals"].append(verify_standalone(
@@ -941,6 +986,8 @@ def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify,
             except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
                 code = exc.code if isinstance(exc, EvidenceHeld) else "other_evidence_unconfirmed"
                 reasons[code] += 1
+                if code == "standalone_named_address_unconfirmed":
+                    retry_memory[vid] = revision
                 report["held"].append({"venueId": vid, "reason": "no_verified_address",
                                        "reasonCounts": {code: 1}})
             continue
@@ -968,6 +1015,9 @@ def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify,
             report["held"].append({"venueId": vid, "reason": "no_verified_address",
                                    "reasonCounts": dict(sorted(venue_reasons.items()))})
     report["reasonCounts"] = dict(sorted(reasons.items()))
+    report["standaloneAddressRetryMemory"] = dict(sorted(retry_memory.items()))
+    report["changedAddressRetryPendingAfter"] = sum(
+        previous != revision for previous in retry_memory.values())
     report["recentVenueIds"] = recent_venues
     report["recentEventIdsByVenue"] = dict(sorted(recent_events.items()))
     return report
