@@ -1592,7 +1592,7 @@ def multivenue_department_from_access(html, row, city, fetch, *, diagnostic=None
         return None
 
 
-def independently_read_posters(site, row, html, rendered, reader, budget):
+def independently_read_posters(site, row, html, rendered, reader, budget, *, linked_html=()):
     """Fresh bounded image reads from a current first-party page, not private OCR.
 
     Raw and rendered HTML may both contribute discovery but neither an image
@@ -1614,12 +1614,20 @@ def independently_read_posters(site, row, html, rendered, reader, budget):
     except (ValueError, TypeError, KeyError, UnicodeError):
         return [], None, []
     candidates = []
-    for source in (html, rendered):
+    # Only follow links independently extracted from the signed root by
+    # linked_pages, and already fetched in this same Publisher run.
+    allowed = set(linked_pages(site, page(html)))
+    if isinstance(rendered, str):
+        allowed.update(linked_pages(site, page(rendered)))
+    surfaces = [(site, html), (site, rendered)]
+    surfaces.extend((url, content) for url, content in linked_html
+                    if url in allowed)
+    for page_url, source in surfaces:
         if (not isinstance(source, str)
                 or not 0 < len(source.encode("utf-8")) <= 650_000
                 or not visible_official_edition(source, row["name"], start, end)):
             continue
-        for url in current_official_poster_candidates(source, site, row):
+        for url in current_official_poster_candidates(source, page_url, row):
             if url not in candidates:
                 candidates.append(url)
     rosters, offers, sources = [], [], []
@@ -1881,7 +1889,8 @@ def apply_independently_verified_updates(
                     except (OSError, TimeoutError, ValueError, UnicodeError, TypeError, KeyError):
                         pass
                 poster_names, poster_price, poster_sources = independently_read_posters(
-                    site, old, root_html, rendered, poster_reader, poster_budget)
+                    site, old, root_html, rendered, poster_reader, poster_budget,
+                    linked_html=html_pages[1:])
                 # Existing verified HTML roster takes precedence; never merge
                 # conflicting snapshots or displace its explicit billing.
                 if poster_names and not claims:
