@@ -203,6 +203,47 @@ class MusicBrainzResearchTests(unittest.TestCase):
         self.assertEqual(queried[2:], ['artist:"Première Partie"', 'artist:"3rd Eye"'])
         self.assertEqual(result["approvalsProposed"], 0)
 
+    def test_directory_priority_counts_distinct_future_dates_not_duplicate_rows(self):
+        from unittest import mock
+        import open_world_wikidata as wd
+        reg = registry()
+        base = reg["items"]["lead"]["candidate"]
+        reg["items"] = {}
+        def add(key, name, day, named=True):
+            candidate = {**base, "date": day, "leadArtist": name}
+            candidate.pop("officialArtistNames", None)
+            if named:
+                candidate["officialArtistNames"] = [name]
+            reg["items"][key] = {"status": "pending_review", "candidate": candidate}
+        add("a", "One Date", "2026-11-25")
+        for i in range(5):
+            add("duplicate" + str(i), "One Date", "2026-11-25")
+        add("b", "Tour Act", "2026-12-01")
+        add("c", "Tour Act", "2027-02-01")
+        add("past", "One Date", "2026-11-23")
+        add("d", "New Act", "2027-03-01")
+        add("e", "Fallback Act", "2026-11-25", named=False)
+        add("f", "Fallback Act", "2026-11-26", named=False)
+        add("g", "Fallback Act", "2026-11-27", named=False)
+        dates = {}
+        tasks = mb.candidate_tasks(reg, DAY, future_dates=dates)
+        self.assertEqual(len(tasks), 4)
+        self.assertEqual(len(dates["one date"]), 1)
+        self.assertEqual(len(dates["tour act"]), 2)
+        for directory in (mb, wd):
+            with self.subTest(directory=directory.__name__):
+                with mock.patch.object(directory, "research", return_value={"status": "not_found"}) as research:
+                    prior = None
+                    for _ in range(4):
+                        prior = directory.build(reg, DAY, prior=prior, limit=1,
+                                                request=lambda *a: self.fail("network"))
+                        self.assertEqual(prior["namesChecked"], 1)
+                        self.assertFalse(prior["publicationAllowed"])
+                        self.assertEqual(prior["approvalsProposed"], 0)
+                    self.assertEqual([c.args[0] for c in research.call_args_list],
+                                     ["Tour Act", "One Date", "New Act", "Fallback Act"])
+                    self.assertEqual(len(prior["entries"]), 4)
+
     def test_no_event_data_sent_and_query_escaped(self):
         name = 'Act "OR" \\ Other'
         def request(path, params):
