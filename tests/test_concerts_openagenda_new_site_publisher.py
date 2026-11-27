@@ -226,6 +226,29 @@ class OpenAgendaNewNamedSitePublisherTests(unittest.TestCase):
                 self.assertEqual(reason["stateCounts"], {
                     "held_original_or_named_site_unverified": 1}, reason)
 
+    def test_geo_report_distinguishes_ban_rejections_without_admission(self):
+        base = geo_fixture.test_catalogue()
+        previous = geo_fixture.before()
+        duplicate = json.loads(geo_fixture.ban())
+        duplicate["features"].append(copy.deepcopy(duplicate["features"][0]))
+        cases = (
+            ('{"features":[]}', "ban_no_valid_point"),
+            (geo_fixture.ban(city="Paris"), "ban_postal_identity_mismatch"),
+            (geo_fixture.ban(street="Place Autre"), "ban_street_name_mismatch"),
+            (geo_fixture.ban(score=0.7), "ban_score_insufficient"),
+            (json.dumps(duplicate), "ban_multiple_exact_addresses"),
+        )
+        for government, code in cases:
+            with self.subTest(code=code):
+                fetch, reads = official_get(gov=government)
+                proposed, report = producer.build(
+                    observation(), base, previous, TODAY, fetch=fetch)
+                self.assertEqual(proposed, previous, report)
+                self.assertEqual(report["geoDiagnostics"], {code: 1}, report)
+                self.assertEqual(report["candidateChecks"][0]["geoDiagnostic"], code)
+                self.assertFalse(any("openstreetmap.org" in url for url in reads))
+                self.assertFalse(report["publicationAllowed"])
+
     def test_openagenda_new_venue_fails_closed_on_false_identity_or_geography(self):
         base = geo_fixture.test_catalogue()
         reference = official()
