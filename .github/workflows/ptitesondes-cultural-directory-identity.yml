@@ -26,3 +26,6 @@ jobs:
         env:
           PYTHONPATH: scripts
         run: python -m unittest discover -s tests -p 'test_ptitesondes_cultural_directory_identity.py' -v
+
+      - name: Live national address shapes and rejection counts
+        run: python scripts/ptitesondes_cultural_directory_identity.py

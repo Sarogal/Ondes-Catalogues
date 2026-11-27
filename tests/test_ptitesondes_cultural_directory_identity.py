@@ -33,6 +33,19 @@ class CulturalIdentityTests(unittest.TestCase):
             self.assertIsNone(directory_identity("Les Bois", "Ludothèque du parc",
                                                  dict(ROW, **changes)), changes)
 
+    def test_diagnostics_distinguish_missing_number_and_conflict(self):
+        from collections import Counter
+        counts = Counter()
+        for changes in ({"numero_et_libelle_voie": "rue des Jeux"},
+                        {"adresse_complete": "14 rue des Jeux, 01230 Les Bois"},
+                        {"adresse_entree_public": "14 rue des Jeux, 01230 Les Bois"}):
+            self.assertIsNone(directory_identity("Les Bois", "Ludothèque du parc",
+                                                 dict(ROW, **changes), counts))
+        self.assertEqual(dict(counts), {"numbered_street_missing": 1,
+                                       "complete_address_mismatch": 1,
+                                       "entrance_address_mismatch": 1})
+        self.assertNotIn("Les Bois", str(counts))
+
     def test_no_guessed_address_or_partial_comparison(self):
         self.assertIsNone(directory_identity("Les Bois", "Ludothèque du parc",
                                              dict(ROW, adresse_complete=None)))
