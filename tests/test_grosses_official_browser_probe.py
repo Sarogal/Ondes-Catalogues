@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from grossesondes_official_browser_probe import (
     compare_proof, request_allowed, trusted_parent, probe_sources,
     bounded_rendered_html, BrowserEvidenceError, MAX_DOM_BYTES,
-    wait_for_linkless_dom,
+    wait_for_linkless_dom, BrowserResourceCounts,
     MAX_COMPACTION_INPUT_BYTES,
 )
 
@@ -200,6 +200,32 @@ class BrowserPreflightTests(unittest.TestCase):
         anchors.first.wait_for.side_effect = ValueError("browser error")
         with self.assertRaises(ValueError):
             wait_for_linkless_dom(page, TimeoutError)
+
+    def test_resource_counts_do_not_change_route_policy_or_record_urls(self):
+        from unittest.mock import Mock
+        counts = BrowserResourceCounts()
+        source = PARENT["officialSite"]
+        local = Mock()
+        local.request.url = source + "asset.js"
+        local.request.resource_type = "script"
+        counts.route(local, source)
+        local.continue_.assert_called_once()
+        local.abort.assert_not_called()
+        outside = Mock()
+        outside.request.url = "https://example.org/private?token=SECRET"
+        outside.request.resource_type = "script"
+        counts.route(outside, source)
+        outside.abort.assert_called_once()
+        outside.continue_.assert_not_called()
+        counts.failed(outside.request)
+        counts.bump("page_errors")
+        self.assertEqual(counts.report(), {"blocked_scripts": 1,
+            "blocked_data": 0, "failed_scripts": 1, "failed_data": 0,
+            "page_errors": 1})
+        self.assertNotIn("SECRET", json.dumps(counts.report()))
+        counts.blocked_data = 10000
+        counts.bump("blocked_data")
+        self.assertEqual(counts.report()["blocked_data"], 10000)
 
 
 if __name__ == "__main__":
