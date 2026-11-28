@@ -602,7 +602,7 @@ def build_candidate(snapshot, published, patch, official_sources, today, trusted
                     official_update_fetcher=None, official_update_tick=None,
                     official_update_limit=8, official_update_browser_fetcher=None,
                     official_update_browser_sites=(), admin_metadata_reader=None,
-                    official_update_poster_reader=None):
+                    official_update_poster_reader=None, official_update_sitemap_reader=None):
     proven,report=stage(
         snapshot["festivals.json"],snapshot["festival-history.json"],
         patch,official_sources,today,
@@ -695,7 +695,8 @@ def build_candidate(snapshot, published, patch, official_sources, today, trusted
             fetch=official_update_fetcher, limit=official_update_limit,
             tick=official_update_tick, browser_fetch=official_update_browser_fetcher,
             browser_sites=official_update_browser_sites,
-            poster_reader=official_update_poster_reader)
+            poster_reader=official_update_poster_reader,
+            sitemap_reader=official_update_sitemap_reader)
         report["accepted_updates"].extend(
             {"slug": record["slug"], "fields": record["fields"]}
             for record in first_party_report["accepted_changes"])
@@ -1502,6 +1503,7 @@ def main():
     if os.environ.get('GROSSES_ONDES_FRESH_POSTER_OCR') == 'enabled':
         from grossesondes_official_poster_ocr import read_official_poster
         poster_reader = read_official_poster
+    from official_programme_sitemap import read_sitemap
     out,report=build_candidate(
         snapshot,published,patch,sources,today.isoformat(),
         trusted_published=True, geo_review=geo_review,
@@ -1511,6 +1513,7 @@ def main():
         official_update_browser_fetcher=isolated_browser_fetch,
         official_update_browser_sites=tuple(isolated_pages),
         official_update_poster_reader=poster_reader,
+        official_update_sitemap_reader=read_sitemap,
         official_update_tick=rotation_tick,
         official_update_limit=official_update_scan_limit(event_name, retry_limit))
     report["official_update_scan_tick"] = rotation_tick
