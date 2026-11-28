@@ -113,7 +113,10 @@ def review_drafts(private, today, *, osm_fetch=fetch_named, page_read=read_unkno
         try:
             if lead.get("cultural_ban_route"):
                 fresh = discover_independent_cultural_ban(
-                    lead, cultural_lookup=cultural_lookup, page_read=page_read,
+                    lead, cultural_lookup=cultural_lookup,
+                    # Use the same bounded, same-authority HTTPS reader as
+                    # research. Preserve injected offline readers unchanged.
+                    page_read=None if page_read is read_unknown_https else page_read,
                     ban_fetch=ban_fetch, admin_fetch=admin_fetch)
                 if fresh is None:
                     counts["fresh_cultural_ban_evidence_unavailable"] += 1

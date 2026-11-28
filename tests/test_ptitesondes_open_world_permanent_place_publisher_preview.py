@@ -73,6 +73,20 @@ class OpenWorldPlacePublisherPreviewTests(unittest.TestCase):
         self.assertEqual(calls, [])
         self.assertEqual(result["counts"]["osm_directory_geo_unmatched"], 1)
 
+    def test_cultural_route_uses_same_safe_reader_as_research(self):
+        s = state()
+        s["records"][0]["evidence"]["method"] = "culture_directory_official_place_address_plus_ban"
+        module = "ptitesondes_open_world_permanent_place_publisher_preview."
+        with patch(module + "discover_independent_cultural_ban", return_value=None) as discover:
+            result = review(s, DAY)
+            self.assertIsNone(discover.call_args.kwargs["page_read"])
+            self.assertEqual(result["counts"]["fresh_cultural_ban_evidence_unavailable"], 1)
+            def offline(url):
+                return HTML
+            review(s, DAY, page_read=offline)
+            self.assertIs(discover.call_args.kwargs["page_read"], offline)
+        self.assertNotIn("possible_website_unverified", discover.call_args.args[0])
+
     def test_unknown_host_is_not_read_by_publisher(self):
         with patch("ptitesondes_open_world_permanent_place_publisher_preview.approved_municipal_page_host",
                    return_value=None):
