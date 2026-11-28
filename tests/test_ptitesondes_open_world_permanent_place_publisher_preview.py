@@ -38,6 +38,41 @@ class OpenWorldPlacePublisherPreviewTests(unittest.TestCase):
         self.assertNotIn(VENUE, str(result))
         self.assertEqual(s, state())
 
+    def test_numberless_osm_with_fresh_commune_authority(self):
+        from test_ptitesondes_dila_municipal_domains import mairie, payload
+        from ptitesondes_open_world_permanent_place_publisher_preview import review_drafts
+        from ptitesondes_place_preflight import merge_open_world_drafts
+        calls = []
+        def directory(city, code):
+            calls.append(code)
+            return payload(mairie(city=CITY, site="https://venue.example/", insee=code))
+        kwargs = dict(osm_fetch=lambda *_: OSM, directory_fetch=lambda _: payload(),
+                      code_directory_fetch=directory,
+                      commune_fetch=lambda _: [{"nom": CITY, "code": "12345"}],
+                      page_read=lambda _: HTML, admin_fetch=lambda *_: ADMIN)
+        drafts, result = review_drafts(state(), DAY, **kwargs)
+        self.assertEqual(calls, ["12345"])
+        self.assertEqual(result["counts"]["osm_directory_geo_found"], 1)
+        self.assertEqual(len(drafts), 1)
+        self.assertEqual(drafts[0]["address"], "Rue des Jeux, 12345 Ville")
+        self.assertEqual((drafts[0]["lat"], drafts[0]["lng"]), (45.1, 3.1))
+        out, counts = merge_open_world_drafts(
+            {"version": 1, "updated_at": DAY.isoformat(), "places": []}, drafts, DAY)
+        self.assertEqual(counts["open_world_added"], 1)
+        self.assertEqual(len(out["places"]), 1)
+        drafts, result = review_drafts(state(), DAY, **dict(kwargs,
+            admin_fetch=lambda *_: [dict(ADMIN[0], code="99999")]))
+        self.assertEqual(drafts, [])
+        self.assertEqual(result["counts"]["osm_directory_geo_admin_conflict"], 1)
+        calls.clear()
+        drafts, result = review_drafts(state(), DAY, **dict(kwargs,
+            commune_fetch=lambda _: [{"nom": CITY, "code": "12345"},
+                                    {"nom": CITY, "code": "99999"}],
+            osm_fetch=lambda *_: self.fail("ambiguous authority must not read OSM")))
+        self.assertEqual(drafts, [])
+        self.assertEqual(calls, [])
+        self.assertEqual(result["counts"]["osm_directory_geo_unmatched"], 1)
+
     def test_unknown_host_is_not_read_by_publisher(self):
         with patch("ptitesondes_open_world_permanent_place_publisher_preview.approved_municipal_page_host",
                    return_value=None):
