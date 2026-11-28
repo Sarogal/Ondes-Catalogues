@@ -47,6 +47,20 @@ class EvidenceHeld(ValueError):
         super().__init__(code)
 
 
+class StandaloneAddressHeld(EvidenceHeld):
+    """Coarse reason remains stable for retry; stage is bounded telemetry only."""
+    STAGES = frozenset({"source_fetch", "footer_address", "practical_link_missing",
+                        "practical_link_ambiguous", "practical_fetch",
+                        "practical_document_identity", "practical_arrival_section",
+                        "practical_address"})
+
+    def __init__(self, stage):
+        if stage not in self.STAGES:
+            raise ValueError("Invalid standalone address diagnostic")
+        super().__init__("standalone_named_address_unconfirmed")
+        self.stage = stage
+
+
 class MissingVenueAddress(ValueError):
     """Dated event recognized, but no explicit address in its own body."""
 
@@ -740,10 +754,15 @@ def _standalone_practical_address(html, source, venue, fetch, cache):
                 and target.path.rstrip("/") != origin.path.rstrip("/")
                 and intake.valid_https(resolved)):
             candidates.add(resolved)
-    require(len(candidates) == 1, "one visible official practical link required")
-    page = fetch(next(iter(candidates)), cache)
-    require(isinstance(page, str) and 0 < len(page) <= probe.MAX_BYTES,
-            "invalid practical page")
+    if len(candidates) != 1:
+        raise StandaloneAddressHeld("practical_link_missing" if not candidates
+                                    else "practical_link_ambiguous")
+    try:
+        page = fetch(next(iter(candidates)), cache)
+        require(isinstance(page, str) and 0 < len(page) <= probe.MAX_BYTES,
+                "invalid practical page")
+    except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
+        raise StandaloneAddressHeld("practical_fetch") from exc
     addresses = set()
     try:
         footer = _named_footer_address(page, venue)
@@ -774,7 +793,20 @@ def _standalone_practical_address(html, source, venue, fetch, cache):
                 require(prior is not None, "conflicting named practical postal address")
                 matches.add(prior)
             addresses.update(matches)
-    addresses.update(_access_section_address(page, parser.blocks, venue))
+    try:
+        addresses.update(_access_section_address(page, parser.blocks, venue))
+    except (ValueError, TypeError, KeyError) as exc:
+        raise StandaloneAddressHeld("practical_arrival_section") from exc
+    if not addresses:
+        title = _PracticalTitle()
+        title.feed(page)
+        title.close()
+        name = triage.words(venue.get("name"))
+        # Diagnostic only: a nonmatching title is not a new rejection condition.
+        parts = [triage.words(part) for part in re.split(
+            r"\s+[–—|\-]\s+|\s*[:|]\s*", title.titles[0])] if len(title.titles) == 1 else []
+        raise StandaloneAddressHeld("practical_document_identity"
+                                    if name not in parts else "practical_address")
     require(len(addresses) == 1, "one exact named practical address required")
     street, postcode = next(iter(addresses))
     site = dict(venue, address=street, postalCode=postcode)
@@ -846,12 +878,19 @@ def verify_venue_source(source, venue, *, fetch=probe.safe_fetch, cache=None):
         html = fetch(source, cache)
         require(isinstance(html, str) and 0 < len(html) <= probe.MAX_BYTES,
                 "invalid venue page")
-        try:
-            site = _named_footer_address(html, venue)
-        except MissingVenueAddress:
-            site = _standalone_practical_address(html, source, venue, fetch, cache)
     except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
-        raise EvidenceHeld("standalone_named_address_unconfirmed") from exc
+        raise StandaloneAddressHeld("source_fetch") from exc
+    try:
+        site = _named_footer_address(html, venue)
+    except MissingVenueAddress:
+        try:
+            site = _standalone_practical_address(html, source, venue, fetch, cache)
+        except StandaloneAddressHeld:
+            raise
+        except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
+            raise StandaloneAddressHeld("practical_address") from exc
+    except (ValueError, TypeError, KeyError, OSError, TimeoutError) as exc:
+        raise StandaloneAddressHeld("footer_address") from exc
     def bounded(endpoint, limit):
         body = fetch(endpoint, cache)
         require(isinstance(body, str) and 0 < len(body) <= min(limit, probe.MAX_BYTES),
@@ -1034,6 +1073,7 @@ def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify,
               "publicationAllowed": False, "publisherAuthorityGranted": False}
     cache = {}
     reasons = Counter()
+    standalone_stages = Counter()
     for vid in chosen:
         _touch(recent_venues, vid)
         if vid in standalone:
@@ -1047,8 +1087,12 @@ def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify,
                 reasons[code] += 1
                 if code == "standalone_named_address_unconfirmed":
                     retry_memory[vid] = revision
-                report["held"].append({"venueId": vid, "reason": "no_verified_address",
-                                       "reasonCounts": {code: 1}})
+                row = {"venueId": vid, "reason": "no_verified_address",
+                       "reasonCounts": {code: 1}}
+                if isinstance(exc, StandaloneAddressHeld) and exc.stage in StandaloneAddressHeld.STAGES:
+                    row["addressStage"] = exc.stage
+                    standalone_stages[exc.stage] += 1
+                report["held"].append(row)
             continue
         rows = sorted(groups[vid], key=lambda e: (e["date"], e["id"]))
         # Avoid retrying only the same event page for a room indefinitely.
@@ -1074,6 +1118,7 @@ def scan(catalogue, today, *, slot=0, limit=4, per_venue=2, verify_one=verify,
             report["held"].append({"venueId": vid, "reason": "no_verified_address",
                                    "reasonCounts": dict(sorted(venue_reasons.items()))})
     report["reasonCounts"] = dict(sorted(reasons.items()))
+    report["standaloneAddressStageCounts"] = dict(sorted(standalone_stages.items()))
     report["standaloneAddressRetryMemory"] = dict(sorted(retry_memory.items()))
     report["changedAddressRetryPendingAfter"] = sum(
         previous != revision for previous in retry_memory.values())
