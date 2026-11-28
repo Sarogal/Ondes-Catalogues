@@ -122,6 +122,39 @@ class OfficialPlaceBANTests(unittest.TestCase):
             self.assertIsNone(discover_official_ban(row, **dict(kwargs, cultural_lookup=lambda *_: bad)))
             self.assertFalse(any(x[0] == "page" for x in calls))
 
+    def test_publisher_reconstructs_insee_fallback_without_trusting_saved_code_or_coordinates(self):
+        from datetime import date
+        from ptitesondes_open_world_permanent_place_research import STATE_SCHEMA
+        from ptitesondes_open_world_permanent_place_publisher_preview import review_drafts
+        from ptitesondes_place_preflight import merge_open_world_drafts
+        day = date(2026, 11, 28)
+        private = {"schema": STATE_SCHEMA, "records": [{
+            "city": CITY, "venue": VENUE, "status": "independent_evidence_found",
+            "public_eligible": False, "evidence": {"public_eligible": False,
+                "method": "dila_official_place_address_plus_ban",
+                "official_url": PAGE, "lat": 0, "lng": 0, "code_commune": "99999"}}]}
+        record = {"commune": CITY, "nom_du_lieu": VENUE, "code_commune": "12345"}
+        calls = []
+        def by_code(city, code):
+            calls.append((city, code))
+            return DIR
+        kwargs = dict(directory_fetch=lambda _: payload(), cultural_lookup=lambda *_: record,
+                      code_directory_fetch=by_code, page_read=lambda _: HTML,
+                      ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN,
+                      osm_fetch=lambda *_: self.fail("must not call Overpass"))
+        drafts, summary = review_drafts(private, day, **kwargs)
+        self.assertEqual(calls, [(CITY, "12345")])
+        self.assertEqual(summary["complete_draft_records"], 1)
+        self.assertEqual((drafts[0]["lat"], drafts[0]["lng"]), (45.1, 3.1))
+        current = {"version": 1, "updated_at": day.isoformat(), "places": []}
+        out, counts = merge_open_world_drafts(current, drafts, day)
+        self.assertEqual(counts["open_world_added"], 1)
+        self.assertEqual(len(out["places"]), 1)
+        drafts, summary = review_drafts(private, day,
+            **dict(kwargs, code_directory_fetch=lambda *_: payload()))
+        self.assertEqual(drafts, [])
+        self.assertEqual(summary["counts"]["fresh_ban_evidence_unavailable"], 1)
+
     def test_outage_does_not_stop_independent_ban_rotation(self):
         from datetime import date
         from ptitesondes_open_world_permanent_place_research import cycle
