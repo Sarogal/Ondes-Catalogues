@@ -155,6 +155,32 @@ class OfficialPlaceBANTests(unittest.TestCase):
         self.assertEqual(drafts, [])
         self.assertEqual(summary["counts"]["fresh_ban_evidence_unavailable"], 1)
 
+    def test_administrative_fallback_without_cultural_record_refuses_homonyms(self):
+        row = {"city": CITY, "venue": VENUE, "possible_website_unverified": PAGE}
+        calls = []
+        def by_code(city, code):
+            calls.append(("code", code))
+            return DIR
+        def read(url):
+            calls.append(("page", url))
+            return HTML
+        kwargs = dict(directory_fetch=lambda _: payload(), cultural_lookup=lambda *_: None,
+                      code_directory_fetch=by_code, page_read=read,
+                      ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN)
+        exact = {"nom": CITY, "code": "12345"}
+        self.assertIsNotNone(discover_official_ban(row, **kwargs, commune_fetch=lambda _: [exact]))
+        self.assertEqual(calls, [("code", "12345"), ("page", PAGE)])
+        for response in ([exact, dict(exact, code="99999")], [exact]*100,
+                         [{"nom": "Autre commune", "code": "12345"}], [exact, {}]):
+            calls.clear()
+            self.assertIsNone(discover_official_ban(row, **kwargs, commune_fetch=lambda _: response))
+            self.assertEqual(calls, [])
+        calls.clear()
+        self.assertIsNone(discover_official_ban(row, **dict(kwargs,
+            cultural_lookup=lambda *_: {"commune": CITY, "nom_du_lieu": VENUE, "code_commune": "99999"}),
+            commune_fetch=lambda _: self.fail("must not override exact culture identity")))
+        self.assertEqual(calls, [("code", "99999")])
+
     def test_outage_does_not_stop_independent_ban_rotation(self):
         from datetime import date
         from ptitesondes_open_world_permanent_place_research import cycle

@@ -23,6 +23,8 @@ BAN_DIAGNOSTIC_CODES = (
     "directory_unavailable", "directory_no_authenticated_host",
     "directory_code_fallback_attempted", "directory_code_fallback_found",
     "directory_code_fallback_unavailable", "directory_code_fallback_identity_unmatched",
+    "directory_geo_commune_attempted", "directory_geo_commune_found",
+    "directory_geo_commune_unmatched", "directory_geo_commune_unavailable",
     "hint_missing", "hint_not_authenticated", "hint_not_dedicated",
     "page_unavailable", "homepage_unavailable", "exact_link_missing",
     "official_identity_unmatched", "official_access_restricted",
@@ -276,9 +278,44 @@ def _section_pages(home, html, city, directory):
     return sorted(sections)[:3]
 
 
+def fetch_communes_by_name(city):
+    """Official administrative lookup; never request or consume centre points."""
+    from urllib.parse import urlencode
+    from urllib.request import Request, build_opener
+    from ptitesondes_dila_municipal_domains import NAME, NoRedirect
+    if not isinstance(city, str) or not NAME.fullmatch(city):
+        raise ValueError("invalid_commune_name")
+    url = "https://geo.api.gouv.fr/communes?" + urlencode({
+        "nom": city, "fields": "nom,code", "format": "json", "limit": 100})
+    request = Request(url, headers={"Accept": "application/json",
+                                    "User-Agent": "PtitesOndesPlaceAdmin/1.0"})
+    with build_opener(NoRedirect()).open(request, timeout=15) as response:
+        if response.status != 200 or response.geturl() != url:
+            raise ValueError("invalid_commune_response")
+        raw = response.read(150001)
+    if not 0 < len(raw) <= 150000:
+        raise ValueError("invalid_commune_size")
+    import json
+    return json.loads(raw)
+
+
+def unique_commune_code(city, response):
+    """Refuse homonyms, partial/capped results, and malformed exact matches."""
+    if not isinstance(response, list) or not 0 < len(response) < 100:
+        return None
+    if any(not isinstance(row, dict) or not isinstance(row.get("nom"), str)
+           for row in response):
+        return None
+    exact = [row for row in response if norm_text(row["nom"]) == norm_text(city)]
+    if len(exact) != 1:
+        return None
+    code = exact[0].get("code")
+    return code if isinstance(code, str) and re.fullmatch(r"(?:[0-9]{5}|2[AB][0-9]{3})", code) else None
+
+
 def discover_official_ban(row, *, directory_fetch=None, page_read=None,
                           ban_fetch=None, admin_fetch=None, cultural_lookup=None,
-                          code_directory_fetch=None):
+                          code_directory_fetch=None, commune_fetch=None):
     """Use an untrusted venue URL or exact municipal homepage link as a hint.
 
     Every page is authenticated by a fresh DILA result before network access.
@@ -292,6 +329,7 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
     use_municipal_reader = page_read is None or page_read is read_unknown_https
     if code_directory_fetch is None and directory_fetch is None and use_municipal_reader:
         code_directory_fetch = lambda city, code: fetch_dila(city, insee=code)
+        commune_fetch = commune_fetch or fetch_communes_by_name
     directory_fetch = directory_fetch or fetch_dila
     if cultural_lookup is None and use_municipal_reader:
         from ptitesondes_national_cultural_directory_probe import exact_directory_record
@@ -307,6 +345,7 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
         hosts = municipal_site_hosts(city, directory)
         record = None
         lookup_attempted = False
+        culture_code = None
         if not hosts and code_directory_fetch is not None and cultural_lookup is not None:
             from ptitesondes_cultural_directory_discovery import identity
             _note("directory_code_fallback_attempted")
@@ -316,6 +355,7 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
                 pair = identity(record)
                 if pair is not None and tuple(map(norm_text, pair)) == (norm_text(city), norm_text(venue)):
                     code = record["code_commune"]
+                    culture_code = code
                     alternative = code_directory_fetch(city, code)
                     bound_hosts = municipal_site_hosts(city, alternative, expected_insee=code)
                     if bound_hosts and bound_hosts == municipal_site_hosts(city, alternative):
@@ -327,6 +367,22 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
                     _note("directory_code_fallback_identity_unmatched")
             except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
                 _note("directory_code_fallback_unavailable")
+        # Only when no exact cultural identity supplied a code: do not
+        # override a contradictory cultural code with a different commune.
+        if not hosts and culture_code is None and commune_fetch is not None and code_directory_fetch is not None:
+            _note("directory_geo_commune_attempted")
+            try:
+                code = unique_commune_code(city, commune_fetch(city))
+                if code:
+                    alternative = code_directory_fetch(city, code)
+                    bound_hosts = municipal_site_hosts(city, alternative, expected_insee=code)
+                    if bound_hosts and bound_hosts == municipal_site_hosts(city, alternative):
+                        directory, hosts = alternative, bound_hosts
+                        _note("directory_geo_commune_found")
+                if not hosts:
+                    _note("directory_geo_commune_unmatched")
+            except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
+                _note("directory_geo_commune_unavailable")
         if not hosts:
             return _note("directory_no_authenticated_host")
         def read_page(url):

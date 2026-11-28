@@ -26,6 +26,7 @@ from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
 from ptitesondes_open_world_permanent_place_draft import build_draft, fetch_admin
 from ptitesondes_open_world_permanent_place_ban import (
     discover_official_ban, discover_independent_cultural_ban, build_ban_draft,
+    fetch_communes_by_name,
 )
 from ptitesondes_generic_venue_ign_corroboration import fetch_ign
 
@@ -56,11 +57,12 @@ def read_private(token):
 
 def review_drafts(private, today, *, osm_fetch=fetch_named, page_read=read_unknown_https,
            directory_fetch=fetch_dila, admin_fetch=fetch_admin, ban_fetch=fetch_ign,
-           cultural_lookup=None, code_directory_fetch=None):
+           cultural_lookup=None, code_directory_fetch=None, commune_fetch=None):
     # A cached name lookup must not disable the independent INSEE fallback.
     # Offline injected readers remain network-free unless explicitly enabled.
     if code_directory_fetch is None and directory_fetch is fetch_dila and page_read is read_unknown_https:
         code_directory_fetch = lambda city, code: fetch_dila(city, insee=code)
+        commune_fetch = commune_fetch or fetch_communes_by_name
     counts = Counter()
     drafts = []
     summary = {"private_candidates": 0, "rechecked": 0,
@@ -131,7 +133,8 @@ def review_drafts(private, today, *, osm_fetch=fetch_named, page_read=read_unkno
             if lead.get("ban_route"):
                 fresh = discover_official_ban(lead, directory_fetch=lambda _: directory,
                     page_read=page_read, ban_fetch=ban_fetch, admin_fetch=admin_fetch,
-                    cultural_lookup=cultural_lookup, code_directory_fetch=code_directory_fetch)
+                    cultural_lookup=cultural_lookup, code_directory_fetch=code_directory_fetch,
+                    commune_fetch=commune_fetch)
                 if fresh is None:
                     counts["fresh_ban_evidence_unavailable"] += 1
                     continue
