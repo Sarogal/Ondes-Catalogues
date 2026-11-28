@@ -2621,11 +2621,6 @@
       "id": "downterra",
       "name": "Downterra",
       "aliases": []
-    },
-    {
-      "id": "guest-brat-cave-lille",
-      "name": "guest - Brat Cave, Lille",
-      "aliases": []
     }
   ],
   "venues": [
@@ -16446,6 +16441,7 @@
   "retiredArtistIds": [
     "deefait-release-party",
     "gagner-de-l-argent-wtazzz",
+    "guest-brat-cave-lille",
     "guests",
     "guests-nexion",
     "the-locos-ex-ska-p-en-concert",
