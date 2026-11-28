@@ -6,6 +6,7 @@ from ptitesondes_cultural_directory_discovery import scan
 from ptitesondes_unlisted_source_safe_recheck import read_failure_counts
 from ptitesondes_open_world_permanent_place_ban import (
     discover_ban_routes, ban_diagnostics, build_ban_draft,
+    fetch_communes_by_name, unique_commune_code,
 )
 
 
@@ -40,11 +41,50 @@ def probe(*, discover=scan, qualify=discover_ban_routes,
             "public_writes": 0, "publication_ready": False}
 
 
+def probe_administration(leads, *, commune_fetch=fetch_communes_by_name,
+                         directory_fetch=None):
+    """Independently exercise the Geo API -> DILA path without Culture codes.
+
+    Only names are used; never publish or consume a centre point.
+    """
+    from ptitesondes_dila_municipal_domains import fetch_dila, municipal_site_hosts
+    from ptitesondes_family_national_source_preflight import norm_text
+    if directory_fetch is None:
+        directory_fetch = lambda city, code: fetch_dila(city, insee=code)
+    counts, seen = Counter(), set()
+    for row in leads[:32]:
+        city = row.get("city")
+        if not isinstance(city, str) or not norm_text(city) or norm_text(city) in seen:
+            continue
+        seen.add(norm_text(city))
+        counts["attempted"] += 1
+        try:
+            code = unique_commune_code(city, commune_fetch(city))
+            if code is None:
+                counts["commune_not_unique"] += 1
+            else:
+                counts["unique_commune_code"] += 1
+                directory = directory_fetch(city, code)
+                hosts = municipal_site_hosts(city, directory, expected_insee=code)
+                if hosts and hosts == municipal_site_hosts(city, directory):
+                    counts["dila_authority_found"] += 1
+                else:
+                    counts["dila_authority_unmatched"] += 1
+        except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
+            counts["source_unavailable"] += 1
+        if counts["attempted"] >= 4:
+            break
+    return {"counts": dict(counts), "public_writes": 0, "publication_ready": False}
+
+
 if __name__ == "__main__":
     try:
         for page in (1, 37):
-            result = probe(discover=lambda: scan(previous_page=page))
+            found = scan(previous_page=page)
+            result = probe(discover=lambda: found)
             print(json.dumps({"sample_start_page": page, **result}, sort_keys=True))
+            result = probe_administration(found["records"])
+            print(json.dumps({"administration_sample_start_page": page, **result}, sort_keys=True))
     except (OSError, ValueError, TypeError, KeyError, UnicodeError):
         print("::error::Cultural live qualification sample unavailable")
         raise SystemExit(1) from None

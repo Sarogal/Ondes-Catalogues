@@ -10,6 +10,29 @@ class CulturalLiveQualificationTests(unittest.TestCase):
         self.assertIs(inspect.signature(probe).parameters["qualify"].default,
                       discover_ban_routes)
 
+    def test_administration_probe_bounded_and_independent(self):
+        from unittest.mock import patch
+        from ptitesondes_cultural_live_qualification import probe_administration
+        calls = []
+        leads = [{"city": f"Private city {i}", "code_commune": "99999"} for i in range(9)]
+        leads.insert(1, dict(leads[0]))
+        def communes(city):
+            calls.append(city)
+            if city.endswith("1"):
+                return [{"nom": city, "code": "12345"}, {"nom": city, "code": "54321"}]
+            return [{"nom": city, "code": "12345"}]
+        def directory(city, code):
+            self.assertEqual(code, "12345")
+            return {}
+        with patch("ptitesondes_dila_municipal_domains.municipal_site_hosts",
+                   return_value={"mairie.example"}):
+            result = probe_administration(leads, commune_fetch=communes, directory_fetch=directory)
+        self.assertEqual(len(calls), 4)
+        self.assertEqual(result["counts"], {"attempted": 4, "unique_commune_code": 3,
+                         "dila_authority_found": 3, "commune_not_unique": 1})
+        self.assertNotIn("Private", str(result))
+        self.assertEqual(result["public_writes"], 0)
+
     def test_bounded_sample_redacts_facts_and_isolates_failures(self):
         rows = [{"city": "Private city", "venue": str(i)} for i in range(12)]
         def qualify(row):
