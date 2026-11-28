@@ -445,5 +445,38 @@ class IndependentUnknownVenuePublisherTests(unittest.TestCase):
         self.assertEqual(result, before())
 
 
+
+class GenreCohortBudgetTests(unittest.TestCase):
+    def test_tagged_leads_get_priority_without_starving_unknown_or_extra_fetches(self):
+        base, ledger = test_catalogue(), before()
+        rows = [
+            (fixture.DAY, "https://example.org/event/" + str(i),
+             {"candidateId": "candidate-" + str(i), "reviewBucket": bucket})
+            for i, bucket in enumerate(["genre_tag_review"] * 8 + ["genre_unknown"] * 8)
+        ]
+        with mock.patch.object(producer, "eligible", return_value=rows), \
+             mock.patch.object(producer, "propose", side_effect=ValueError("not proved")) as prove:
+            result, report = producer.build({}, base, ledger, TODAY, limit=6)
+            self.assertEqual(result, ledger)
+            self.assertEqual(prove.call_count, 6)
+            self.assertEqual(report["genreTaggedExamined"], 5)
+            self.assertEqual(report["genreUnknownExamined"], 1)
+            self.assertFalse(report["publicationAllowed"])
+            unknown = {c["candidateId"] for c in report["candidateChecks"]
+                       if int(c["candidateId"].split("-")[-1]) >= 8}
+            for slot in (1, 2):
+                _, report = producer.build({}, base, ledger, TODAY, slot=slot,
+                                           limit=6, prior=report)
+                unknown.update(c["candidateId"] for c in report["candidateChecks"]
+                               if int(c["candidateId"].split("-")[-1]) >= 8)
+            self.assertEqual(len(unknown), 3)
+        for cohort in (rows[:8], rows[8:]):
+            with mock.patch.object(producer, "eligible", return_value=cohort), \
+                 mock.patch.object(producer, "propose", side_effect=ValueError("not proved")) as prove:
+                _, report = producer.build({}, base, ledger, TODAY, limit=6)
+                self.assertEqual(prove.call_count, 6)
+                self.assertEqual(report["examined"], 6)
+
+
 if __name__ == "__main__":
     unittest.main()
