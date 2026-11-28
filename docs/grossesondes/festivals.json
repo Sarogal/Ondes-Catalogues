@@ -6490,7 +6490,7 @@
       ]
     },
     {
-      "region": null,
+      "region": "Hauts-de-France",
       "slug": "betizfest-2027",
       "startDate": "2027-04-16",
       "name": "BetiZFest 2027",
@@ -6506,7 +6506,7 @@
       "showOnMap": true,
       "dateRangeIsContinuous": false,
       "verificationStatus": "Site et édition officielle revérifiés",
-      "department": null,
+      "department": "59",
       "lastVerified": "2026-11-28",
       "venue": null,
       "officialSite": "https://betizfest.info/",
