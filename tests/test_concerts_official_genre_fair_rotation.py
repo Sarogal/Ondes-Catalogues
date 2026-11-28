@@ -531,6 +531,32 @@ class FairGenreReviewSlots(unittest.TestCase):
                     self.assertLess(again["changedExtractorRetryPendingAfter"], 12)
                     self.assertLessEqual(again["changedExtractorPriorityChecks"], 4)
 
+    def test_retry_rotation_diversifies_large_failed_agenda(self):
+        crowded = [(r[0], r[1], "crowded-venue", r[3])
+                   for r in [row("unknown", i) for i in range(32)]]
+        others = [(r[0], r[1], f"small-venue-{i}", r[3])
+                  for i, r in enumerate([row("unknown", i) for i in range(32, 40)])]
+        ordinary = [row("unknown", i) for i in range(40, 88)]
+        stale = crowded + others
+        queue = stale + ordinary
+        memory = {pipeline._review_key(r): i for i, r in enumerate(stale)}
+        old, new = "a" * 64, "b" * 64
+        failures = {key: old for key in memory}
+        window, chosen, pending = pipeline._prioritize_extraction_retries(
+            ordinary, queue, failures, new, 48, recency=memory)
+        selected = [r for r in window if pipeline._review_key(r) in chosen]
+        self.assertEqual(len(window), 48)
+        self.assertEqual(len(chosen), 12)
+        self.assertEqual(pending, 40)
+        self.assertEqual(len({r[2] for r in selected}), 9)
+        self.assertEqual(sum(r[2] == "crowded-venue" for r in selected), 4)
+        # Every geographic retry still precedes extraction-only retries.
+        geo = {pipeline._review_key(r) for r in crowded[:6]}
+        window, chosen, _ = pipeline._prioritize_extraction_retries(
+            ordinary, queue, failures, new, 48, geo_stale=geo, recency=memory)
+        self.assertTrue(geo <= chosen)
+        self.assertEqual(len(chosen), 12)
+
     def test_geographic_and_extractor_retries_share_one_budget(self):
         queue = [row("unknown", i) for i in range(50)]
         window = queue[20:36]
