@@ -54,6 +54,24 @@ class OfficialPlaceBANTests(unittest.TestCase):
         ):
             self.assertIsNone(official_facts(CITY, VENUE, PAGE, html, DIR), html)
 
+    def test_municipal_accessible_main_landmark_keeps_all_proof_requirements(self):
+        body = HTML.replace("<main>", '<section role="main">').replace("</main>", "</section>")
+        proof = self.check(html=body)
+        self.assertIsNotNone(proof)
+        self.assertEqual((proof["lat"], proof["lng"]), (45.1, 3.1))
+        for bad in (
+            body.replace('role="main"', 'class="main"'),
+            body.replace('role="main"', 'role="main" hidden'),
+            body + '<div role="main"><p>Other</p></div>',
+            body.replace(f"<h1>{VENUE}</h1>", "") + f"<h1>{VENUE}</h1>",
+            body.replace("12 Rue", "14 Rue"),
+            body.replace("Ouverte à tous", "Pas ouverte à tous"),
+            body.replace("espace de jeux pour enfants", "informations"),
+            body.replace("<p>12", "<p hidden>12") + f"<footer><p>12 Rue des Jeux, 12345 {CITY}</p></footer>",
+        ):
+            self.assertIsNone(self.check(html=bad))
+        self.assertIsNone(self.check(html=body, url="https://foreign.example/lieu"))
+
     def test_wrong_ban_citycode_postcode_score_or_centroid(self):
         for key, value in (("citycode", "99999"), ("postcode", "99999"),
                            ("score", .80), ("type", "street"), ("housenumber", "14")):
@@ -155,6 +173,32 @@ class OfficialPlaceBANTests(unittest.TestCase):
         self.assertEqual(drafts, [])
         self.assertEqual(summary["counts"]["fresh_ban_evidence_unavailable"], 1)
 
+    def test_administrative_fallback_without_cultural_record_refuses_homonyms(self):
+        row = {"city": CITY, "venue": VENUE, "possible_website_unverified": PAGE}
+        calls = []
+        def by_code(city, code):
+            calls.append(("code", code))
+            return DIR
+        def read(url):
+            calls.append(("page", url))
+            return HTML
+        kwargs = dict(directory_fetch=lambda _: payload(), cultural_lookup=lambda *_: None,
+                      code_directory_fetch=by_code, page_read=read,
+                      ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN)
+        exact = {"nom": CITY, "code": "12345"}
+        self.assertIsNotNone(discover_official_ban(row, **kwargs, commune_fetch=lambda _: [exact]))
+        self.assertEqual(calls, [("code", "12345"), ("page", PAGE)])
+        for response in ([exact, dict(exact, code="99999")], [exact]*100,
+                         [{"nom": "Autre commune", "code": "12345"}], [exact, {}]):
+            calls.clear()
+            self.assertIsNone(discover_official_ban(row, **kwargs, commune_fetch=lambda _: response))
+            self.assertEqual(calls, [])
+        calls.clear()
+        self.assertIsNone(discover_official_ban(row, **dict(kwargs,
+            cultural_lookup=lambda *_: {"commune": CITY, "nom_du_lieu": VENUE, "code_commune": "99999"}),
+            commune_fetch=lambda _: self.fail("must not override exact culture identity")))
+        self.assertEqual(calls, [("code", "99999")])
+
     def test_outage_does_not_stop_independent_ban_rotation(self):
         from datetime import date
         from ptitesondes_open_world_permanent_place_research import cycle
@@ -234,6 +278,29 @@ class OfficialPlaceBANTests(unittest.TestCase):
             ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN)
         self.assertIsNotNone(proof)
         self.assertEqual(calls, [home, section, PAGE])
+
+    def test_nested_municipal_sections_bounded_and_exact(self):
+        home = "https://www.ville-les-bois.fr/"
+        culture, library = home + "culture", home + "bibliotheques"
+        calls = []
+        pages = {
+            home: '<a href="/culture">Culture</a>',
+            culture: '<a href="/bibliotheques">Bibliothèques</a><a href="/culture">Culture</a><a href="https://foreign.example/jeunesse">Jeunesse</a>',
+            library: f'<a href="{PAGE}">{VENUE}</a>',
+            PAGE: HTML,
+        }
+        def read(url):
+            calls.append(url)
+            return pages[url]
+        kwargs = dict(directory_fetch=lambda _: DIR, page_read=read,
+                      ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN)
+        row = {"city": CITY, "venue": VENUE}
+        self.assertIsNotNone(discover_official_ban(row, **kwargs))
+        self.assertEqual(calls, [home, culture, library, PAGE])
+        calls.clear()
+        pages[library] += f'<a href="{home}autre-lieu">{VENUE}</a>'
+        self.assertIsNone(discover_official_ban(row, **kwargs))
+        self.assertEqual(calls, [home, culture, library])
 
     def test_diagnostics_distinguish_transport_identity_and_ban_failures(self):
         from ptitesondes_open_world_permanent_place_ban import ban_diagnostics
@@ -410,7 +477,7 @@ class OfficialPlaceBANTests(unittest.TestCase):
                     body.replace(f"<h1>{VENUE}</h1>", "")+f"<h1>{VENUE}</h1>",
                     body.replace("12 Rue", "14 Rue")):
             self.assertIsNone(qualify(bad))
-        self.assertIsNone(official_facts(CITY, VENUE, PAGE, body, DIR))
+        self.assertIsNotNone(official_facts(CITY, VENUE, PAGE, body, DIR))
 
     def test_cultural_exact_official_alias_not_fuzzy_identity(self):
         from ptitesondes_open_world_permanent_place_ban import discover_independent_cultural_ban

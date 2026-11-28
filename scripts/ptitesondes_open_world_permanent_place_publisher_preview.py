@@ -17,7 +17,7 @@ from urllib.error import HTTPError
 from zoneinfo import ZoneInfo
 
 from private_intake import github, PATH, BRANCH
-from ptitesondes_dila_municipal_domains import fetch_dila, approved_municipal_page_host
+from ptitesondes_dila_municipal_domains import fetch_dila, approved_municipal_page_host, municipal_site_hosts
 from ptitesondes_open_world_permanent_place_research import (
     STATE_SCHEMA, _identity, fetch_named, _inspect,
 )
@@ -26,6 +26,7 @@ from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
 from ptitesondes_open_world_permanent_place_draft import build_draft, fetch_admin
 from ptitesondes_open_world_permanent_place_ban import (
     discover_official_ban, discover_independent_cultural_ban, build_ban_draft,
+    fetch_communes_by_name, unique_commune_code,
 )
 from ptitesondes_generic_venue_ign_corroboration import fetch_ign
 
@@ -56,11 +57,12 @@ def read_private(token):
 
 def review_drafts(private, today, *, osm_fetch=fetch_named, page_read=read_unknown_https,
            directory_fetch=fetch_dila, admin_fetch=fetch_admin, ban_fetch=fetch_ign,
-           cultural_lookup=None, code_directory_fetch=None):
+           cultural_lookup=None, code_directory_fetch=None, commune_fetch=None):
     # A cached name lookup must not disable the independent INSEE fallback.
     # Offline injected readers remain network-free unless explicitly enabled.
     if code_directory_fetch is None and directory_fetch is fetch_dila and page_read is read_unknown_https:
         code_directory_fetch = lambda city, code: fetch_dila(city, insee=code)
+        commune_fetch = commune_fetch or fetch_communes_by_name
     counts = Counter()
     drafts = []
     summary = {"private_candidates": 0, "rechecked": 0,
@@ -131,7 +133,8 @@ def review_drafts(private, today, *, osm_fetch=fetch_named, page_read=read_unkno
             if lead.get("ban_route"):
                 fresh = discover_official_ban(lead, directory_fetch=lambda _: directory,
                     page_read=page_read, ban_fetch=ban_fetch, admin_fetch=admin_fetch,
-                    cultural_lookup=cultural_lookup, code_directory_fetch=code_directory_fetch)
+                    cultural_lookup=cultural_lookup, code_directory_fetch=code_directory_fetch,
+                    commune_fetch=commune_fetch)
                 if fresh is None:
                     counts["fresh_ban_evidence_unavailable"] += 1
                     continue
@@ -144,6 +147,23 @@ def review_drafts(private, today, *, osm_fetch=fetch_named, page_read=read_unkno
                 else:
                     counts["draft_facts_not_complete"] += 1
                 continue
+            # The exact OSM-node route also supports numberless addresses.
+            # Recover municipal authority via fresh official commune identity,
+            # not saved private GPS or postal data. Never select a homonym.
+            bound_code = None
+            if (code_directory_fetch is not None and commune_fetch is not None
+                    and not municipal_site_hosts(city, directory)):
+                counts["osm_directory_geo_attempted"] += 1
+                code = unique_commune_code(city, commune_fetch(city))
+                if code is not None:
+                    alternative = code_directory_fetch(city, code)
+                    hosts = municipal_site_hosts(city, alternative, expected_insee=code)
+                    if hosts and hosts == municipal_site_hosts(city, alternative):
+                        directory, bound_code = alternative, code
+                        counts["osm_directory_geo_found"] += 1
+                if bound_code is None:
+                    counts["osm_directory_geo_unmatched"] += 1
+                    continue
             pages = {}
             maps = []
             def mapped(city, venue):
@@ -161,6 +181,11 @@ def review_drafts(private, today, *, osm_fetch=fetch_named, page_read=read_unkno
                 summary["independently_corroborated"] += 1
                 try:
                     admin = admin_fetch(proof["lat"], proof["lng"])
+                    if bound_code is not None and (
+                            not isinstance(admin, list) or len(admin) != 1
+                            or not isinstance(admin[0], dict) or admin[0].get("code") != bound_code):
+                        counts["osm_directory_geo_admin_conflict"] += 1
+                        continue
                     draft = build_draft(city, lead["venue"], proof["postal_code"],
                                         proof["official_url"], pages[proof["official_url"]],
                                         maps[0], admin, today)
