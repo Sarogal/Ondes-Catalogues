@@ -8,11 +8,13 @@ from __future__ import annotations
 import argparse
 from datetime import date
 import json
+import os
 from pathlib import Path
 import re
 import ssl
 import subprocess
 import sys
+import tempfile
 from time import monotonic
 from urllib.parse import parse_qsl, urlsplit, urlunsplit
 
@@ -27,7 +29,7 @@ from grossesondes_official_html_edition import (
 from dns_pinned_https import DNSPinnedHTTPSConnection, OfficialHTTPStatusError, safe_public_url, fetch_public_html
 from grossesondes_official_poster_ocr import (
     MAX_BYTES, MIME_FORMAT, recognize_poster, poster_review_claims, _valid_cached_words,
-    MIN_REVIEW_CONFIDENCE,
+    MIN_REVIEW_CONFIDENCE, normalized_image, parse_tsv, MAX_TSV,
 )
 
 MAX_HOSTS = 4
@@ -223,8 +225,44 @@ def unordered_identity_flags(row, words):
     }
 
 
+def alternate_layout_read(mime, body):
+    """One local page-layout pass, never combine it with the sparse pass."""
+    with tempfile.TemporaryDirectory(prefix="go-external-layout-") as directory:
+        path = Path(directory) / "raster.png"
+        normalized_image(mime, body, path)
+        completed = subprocess.run(
+            ["tesseract", str(path), "stdout", "-l", "fra+eng", "--psm", "3", "tsv"],
+            shell=False, capture_output=True, timeout=12, check=True,
+            env={k: os.environ[k] for k in
+                 ("PATH", "LANG", "LC_ALL", "OMP_THREAD_LIMIT", "TESSDATA_PREFIX")
+                 if k in os.environ})
+        if len(completed.stdout) > MAX_TSV:
+            raise ValueError("OCR output exceeds budget")
+        return parse_tsv(completed.stdout.decode("utf-8", errors="strict"))
+
+
+def alternate_layout_diagnostic(row, original, mime, body, recognize):
+    """Independent review only; never replace a rejected primary reading."""
+    flags = unordered_identity_flags(row, original)
+    if (not flags.get("strong_expected_year_token_present")
+            or flags.get("other_year_token_present")
+            or flags.get("cancellation_token_present")):
+        return {"status": "PRIMARY_IDENTITY_CONFLICT_OR_MISSING"}
+    try:
+        words = recognize(mime, body)
+        result = poster_review_claims(row, {"status": "review_only",
+                                           "review_only": True, "words": words})
+        return {"status": result["status"], "qualification": result["diagnostics"],
+                "unordered_identity": unordered_identity_flags(row, words),
+                "publication_authorized": False}
+    except (OSError, ValueError, TypeError, UnicodeError, ImportError,
+            subprocess.SubprocessError, Warning):
+        return {"status": "ALTERNATE_UNAVAILABLE"}
+
+
 def scan(catalogue, today, tick=0, slug=None, *, fetch=fetch_public_html,
-         read=read_raster, recognize=recognize_poster):
+         read=read_raster, recognize=recognize_poster,
+         alternate=alternate_layout_read):
     report = {"review_only": True, "publication_authorized": False,
               "checked_hosts": 0, "external_candidates": 0, "images_read": 0, "rows": []}
     selected = signed_rotation(catalogue, today, MAX_HOSTS, tick, alternate_order=True)
@@ -236,6 +274,7 @@ def scan(catalogue, today, tick=0, slug=None, *, fetch=fetch_public_html,
         selected = selected[:1]
     deadline = monotonic() + MAX_SECONDS
     limited_raster_hosts = set()
+    alternate_used = False
     for site, rows in selected:
         if monotonic() >= deadline:
             break
@@ -308,6 +347,11 @@ def scan(catalogue, today, tick=0, slug=None, *, fetch=fetch_public_html,
                 diagnostic.update(outcome=result["status"], qualification=result["diagnostics"],
                                   claim_types=sorted(result["claims"]),
                                   unordered_identity=unordered_identity_flags(row, words))
+                if (not alternate_used and monotonic() + 15 < deadline
+                        and result["diagnostics"].get("ambiguous_line_geometry") is True):
+                    alternate_used = True
+                    diagnostic["alternate_layout"] = alternate_layout_diagnostic(
+                        row, words, mime, body, alternate)
             except OfficialHTTPStatusError as exc:
                 diagnostic["outcome"] = "RATE_LIMITED" if exc.status_code == 429 else "HTTP_REJECTED"
                 if exc.status_code == 429:

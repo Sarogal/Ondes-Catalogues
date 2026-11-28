@@ -108,3 +108,25 @@ class ExternalRasterTests(unittest.TestCase):
         self.assertEqual(proof["claims"], {})
         self.assertEqual(unordered_identity_flags(ROW, [{"text": "invalid"}]), {})
         self.assertFalse(unordered_identity_flags(ROW, words[:1])["expected_year_token_present"])
+
+    def test_alternate_layout_is_independent_and_refuses_conflicting_years(self):
+        from grossesondes_external_poster_review import alternate_layout_diagnostic
+        def word(text, x, y):
+            return {"text": text, "box": [x, y, 24, 18],
+                    "confidence": 99, "review_only": True}
+        original = [word("2027", 0, 0)]
+        alternate = Mock(return_value=[word("Exemple", 0, 0), word("2026", 0, 30)])
+        result = alternate_layout_diagnostic(ROW, original, "image/png", b"fake", alternate)
+        alternate.assert_called_once_with("image/png", b"fake")
+        self.assertFalse(result["publication_authorized"])
+        self.assertTrue(result["unordered_identity"]["other_year_token_present"])
+        self.assertNotIn("claims", result)
+        self.assertEqual(original, [word("2027", 0, 0)])
+        alternate.reset_mock()
+        result = alternate_layout_diagnostic(ROW, original + [word("2026", 0, 50)],
+                                             "image/png", b"fake", alternate)
+        self.assertEqual(result["status"], "PRIMARY_IDENTITY_CONFLICT_OR_MISSING")
+        alternate.assert_not_called()
+        result = alternate_layout_diagnostic(ROW, original, "image/png", b"fake",
+                                             Mock(side_effect=TimeoutError()))
+        self.assertEqual(result["status"], "ALTERNATE_UNAVAILABLE")
