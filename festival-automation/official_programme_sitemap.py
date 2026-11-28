@@ -125,23 +125,49 @@ def index_children(site, data):
     return sorted(selected)
 
 
-def discover_programme_urls(site, *, fetch=read_sitemap, tick=0):
+def discover_programme_urls(site, *, fetch=read_sitemap, tick=0, diagnostic=None):
     """At most two XML reads: one fixed root, one rotating indexed child.
 
     No nested indexes, arbitrary candidate URL, cross-host redirects or
-    further request when the root/child cannot be fetched.
+    further request when the root/child cannot be fetched. Diagnostics
+    expose only fixed outcomes and bounded counts, never XML or child URLs.
     """
+    if diagnostic is None:
+        diagnostic = {}
+    diagnostic.update(outcome="INELIGIBLE", index_children=0, xml_reads=0)
     url = sitemap_url(site)
     if url is None or type(tick) is not int or tick < 0:
         return []
     try:
+        diagnostic.update(outcome="ROOT_UNAVAILABLE", xml_reads=1)
         raw = fetch(url)
-        direct = programme_urls(site, raw)
-        if direct:
+        if raw is None:
+            return []
+        root = xml_root(raw)
+        if root is None:
+            diagnostic["outcome"] = "ROOT_XML_REJECTED"
+            return []
+        if root.tag == NS + "urlset":
+            direct = programme_urls(site, raw)
+            diagnostic["outcome"] = "DIRECT_ROUTES_FOUND" if direct else "DIRECT_NO_ROUTES"
             return direct
+        if root.tag != NS + "sitemapindex":
+            diagnostic["outcome"] = "ROOT_UNSUPPORTED_TYPE"
+            return []
         children = index_children(site, raw)
+        diagnostic.update(outcome="INDEX_NO_ELIGIBLE_CHILD", index_children=len(children))
         if not children:
             return []
-        return programme_urls(site, fetch(children[tick % len(children)]))
+        diagnostic.update(outcome="CHILD_UNAVAILABLE", xml_reads=2)
+        raw_child = fetch(children[tick % len(children)])
+        if raw_child is None:
+            return []
+        child = xml_root(raw_child)
+        if child is None or child.tag != NS + "urlset":
+            diagnostic["outcome"] = "CHILD_XML_REJECTED"
+            return []
+        routes = programme_urls(site, raw_child)
+        diagnostic["outcome"] = "INDEX_ROUTES_FOUND" if routes else "INDEX_NO_ROUTES"
+        return routes
     except (OSError, TimeoutError, ValueError, TypeError, UnicodeError):
         return []

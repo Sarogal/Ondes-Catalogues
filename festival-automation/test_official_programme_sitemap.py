@@ -67,3 +67,29 @@ class ProgrammeSitemapTests(unittest.TestCase):
         pages[first] = index(second)
         self.assertEqual(discover_programme_urls(SITE, fetch=fetch, tick=0), [])
         self.assertEqual(calls, [root, first])
+
+    def test_discovery_outcomes_expose_only_counts_and_fixed_codes(self):
+        root = SITE + "sitemap.xml"
+        child = SITE + "pages.xml"
+        index = ('<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+                 '<sitemap><loc>' + child + '</loc></sitemap></sitemapindex>').encode()
+        for raw, child_raw, expected, reads, children in (
+                (None, None, "ROOT_UNAVAILABLE", 1, 0),
+                (b"<broken", None, "ROOT_XML_REJECTED", 1, 0),
+                (sitemap(SITE + "news"), None, "DIRECT_NO_ROUTES", 1, 0),
+                (sitemap(SITE + "lineup"), None, "DIRECT_ROUTES_FOUND", 1, 0),
+                (index, None, "CHILD_UNAVAILABLE", 2, 1),
+                (index, index, "CHILD_XML_REJECTED", 2, 1),
+                (index, sitemap(SITE + "news"), "INDEX_NO_ROUTES", 2, 1),
+                (index, sitemap(SITE + "lineup"), "INDEX_ROUTES_FOUND", 2, 1)):
+            with self.subTest(expected=expected):
+                diagnostic = {}
+                calls = []
+                def fetch(url):
+                    calls.append(url)
+                    return {root: raw, child: child_raw}[url]
+                discover_programme_urls(SITE, fetch=fetch, diagnostic=diagnostic)
+                self.assertEqual(diagnostic, {"outcome": expected,
+                    "index_children": children, "xml_reads": reads})
+                self.assertEqual(len(calls), reads)
+                self.assertNotIn(child, str(diagnostic))
