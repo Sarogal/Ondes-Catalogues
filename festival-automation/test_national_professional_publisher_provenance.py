@@ -52,6 +52,36 @@ class ProfessionalPublisherTests(unittest.TestCase):
                 "total_count": 2, "results": [RECORD, RECORD]}), [])
             self.assertEqual(discover.call_count, 1)
 
+    def test_venue_fallback_is_independent_of_rate_limited_ticket_host(self):
+        from national_professional_official_detail import examine_openagenda_venue
+        from national_openagenda_research import candidate
+        lead = candidate(dict(RECORD, location_website=SITE), DAY)
+        calls = []
+        with patch("national_professional_official_detail.examine") as examine:
+            def proof(research, title, year, today, fetch):
+                self.assertEqual(research["websites"][0]["website_url"], SITE)
+                self.assertEqual(research["websites"][0]["ticket_url"], TICKET)
+                fetch(SITE)
+                return {"status": "OFFICIAL_DETAIL_PROOF_REVIEW_ONLY", "proofs": [PROOF]}
+            examine.side_effect = proof
+            result = examine_openagenda_venue(lead, TITLE, 2027, DAY,
+                fetch=lambda url: calls.append(url) or "<main></main>")
+            self.assertEqual(result["proofs"], [PROOF])
+            self.assertEqual(calls, [SITE])
+            self.assertFalse(result["publication_authorized"])
+            self.assertEqual(examine_openagenda_venue(candidate(RECORD, DAY),
+                TITLE, 2027, DAY)["proofs"], [])
+        with patch("national_professional_publisher_provenance.discover") as discover, \
+                patch("national_professional_publisher_provenance.examine") as examine, \
+                patch("national_professional_publisher_provenance.examine_openagenda_venue") as venue:
+            discover.return_value = {"status": "PROFESSIONAL_RATE_LIMITED"}
+            examine.return_value = {"status": "NO_OFFICIAL_DETAIL_PROOF"}
+            venue.return_value = {"status": "OFFICIAL_DETAIL_PROOF_REVIEW_ONLY", "proofs": [PROOF]}
+            self.assertEqual(prove(EVENT, TITLE, DAY, record_fetch=lambda _: {
+                "total_count": 1, "results": [dict(RECORD, location_website=SITE)]}), [PROOF])
+            self.assertEqual(venue.call_args.args[0]["professional_source_hints_review_only"]
+                             ["links"][-1]["url"], SITE)
+
     def test_publisher_requires_exact_reconstructed_proof(self):
         proposal = private_proposal(TITLE, SITE, DATES, DAY, event_ref=EVENT,
                                     professional_ticket=TICKET)
