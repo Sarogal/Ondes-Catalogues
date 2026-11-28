@@ -261,6 +261,33 @@ class OpenWorldArtistGenreTests(unittest.TestCase):
             retained = research.build(empty, DAY, prior=out)
             self.assertEqual(retained["facts"], out["facts"])
 
+    def test_direct_individual_description_accepts_multiple_explicit_styles(self):
+        for sentence, genres in (
+            ("New Act is a black metal and death metal band from France.",
+             ["Black Metal", "Death Metal"]),
+            ("New Act est un groupe de punk rock et de post punk.",
+             ["Post Punk", "Punk Rock"]),
+            ("New Act is a hard rock and heavy metal artist.",
+             ["Hard Rock", "Heavy Metal"]),
+        ):
+            page = f"<title>New Act</title><main><p>{sentence}</p></main>"
+            result = research.build(registry(), DAY, fetch=lambda *a: page)
+            self.assertEqual(result["profilesRefreshed"], 1)
+            self.assertEqual(next(iter(result["facts"].values()))["genres"], genres)
+            self.assertEqual(result["officialDomainsAuthenticated"], 0)
+            self.assertEqual(result["approvalsProposed"], 0)
+            self.assertFalse(result["publicationAllowed"])
+        for sentence in (
+            "New Act is a metal and hardcore techno band.",
+            "New Act is a punk rock and jazz band.",
+            "New Act is not a death metal and black metal band.",
+            "New Act is a metal band influenced by punk rock.",
+            "Other Act is a black metal and death metal band.",
+        ):
+            result = research.build(registry(), DAY, fetch=lambda *a:
+                f"<title>New Act</title><p>{sentence}</p>")
+            self.assertEqual(result["memoryFactCount"], 0)
+
     def test_direct_description_rejects_event_influences_negation_other_identity(self):
         for page in (
             "<title>New Act</title><p>New Act plays with a death metal band.</p>",
