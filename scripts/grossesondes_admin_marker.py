@@ -19,6 +19,24 @@ def valid_commune_marker_identity(row):
     city, parent = row.get("city"), row.get("geoCity")
     if not isinstance(source, str) or not isinstance(city, str) or not isinstance(parent, str):
         return False
+    if proof.get("proofMode") == "current-edition-commune-linked-ticket.v1":
+        from dns_pinned_https import safe_public_url
+        from official_ticket_links import provider_for_host
+        from urllib.parse import urlsplit
+        ticket = proof.get("ticketSource")
+        postal = proof.get("ticketPostalCode")
+        if (set(proof) != PROOF_KEYS | {"ticketSource", "ticketPostalCode"}
+                or not isinstance(ticket, str) or safe_public_url(ticket) != ticket
+                or not provider_for_host(urlsplit(ticket).hostname)
+                or not isinstance(postal, str) or re.fullmatch(r"[0-9]{5}", postal) is None
+                or postal[:2] in ("00", "20", "97", "98", "99")
+                or not isinstance(row.get("geoInsee"), str)
+                or not row["geoInsee"].startswith(postal[:2])
+                or row.get("department") not in (None, "", postal[:2])):
+            return False
+        return city == parent and source.startswith((
+            "https://geo.api.gouv.fr/communes?",
+            "https://geo.api.gouv.fr/communes_associees_deleguees?"))
     if set(proof) == PROOF_KEYS:
         return city == parent and source.startswith((
             "https://geo.api.gouv.fr/communes?",

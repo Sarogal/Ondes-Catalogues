@@ -248,7 +248,8 @@ def _certified_new_commune_delta(old, new, *, allow_direct=False):
             or proof.get("proofMode") not in (
                 ("current-edition-commune-two-day.v1",) +
                 (("current-edition-commune-direct-official.v1",
-                  "signed-city-current-edition-centre.v1")
+                  "signed-city-current-edition-centre.v1",
+                  "current-edition-commune-linked-ticket.v1")
                  if allow_direct else ())
             )
             or proof.get("markerMeaning") != "centre_indicatif_de_commune"
@@ -271,6 +272,11 @@ def _certified_new_commune_delta(old, new, *, allow_direct=False):
             or not isinstance(new.get("geoInsee"), str)
             or re.fullmatch(r"[0-9AB]{5}", new["geoInsee"]) is None):
         return False
+    if proof["proofMode"] == "current-edition-commune-linked-ticket.v1":
+        if (not allow_direct or not isinstance(old.get("startDate"), str)
+                or not isinstance(old.get("endDate"), str)
+                or not isinstance(old.get("officialSite"), str)):
+            return False
     if proof["proofMode"] == "signed-city-current-edition-centre.v1":
         # This special direct route can only locate an ALREADY signed town
         # of a dated edition. It cannot invent or replace the municipality,
