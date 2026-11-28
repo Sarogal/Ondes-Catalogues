@@ -154,13 +154,16 @@ def direct_artist_description(html, name):
     labels = sorted(set(BIO_GENRES) | {"metal", "punk"},
                     key=lambda value: (-len(value), value))
     genre_pattern = "|".join(re.escape(label) for label in labels)
+    # Recognize a complete conjunction of explicit styles, not a substring
+    # of a genre or an influence list. Every item must match the vocabulary.
+    genre_list = rf"(?:{genre_pattern})(?: (?:and|et)(?: de| du| d)? (?:{genre_pattern}))*"
     suffix = r"(?: (?:from|based in|formed in|originaire de|forme en|base a|basee a) [a-z0-9 ]{1,100})?"
     patterns = (
         rf"{re.escape(target)} (?:is|are) (?:an? |the )?"
-        rf"({genre_pattern}) (?:band|group|duo|trio|artist|musician)" + suffix,
+        rf"({genre_list}) (?:band|group|duo|trio|artist|musician)" + suffix,
         rf"{re.escape(target)} (?:est|sont) (?:un |une |le |la )?"
         rf"(?:groupe|duo|trio|artiste|musicien) (?:de |du |d )?"
-        rf"({genre_pattern})" + suffix,
+        rf"({genre_list})" + suffix,
     )
     found = set()
     for paragraph in parser.paragraphs[:4]:
@@ -173,7 +176,7 @@ def direct_artist_description(html, name):
             for pattern in patterns:
                 match = re.fullmatch(pattern, normalized)
                 if match:
-                    found.add(match.group(1))
+                    found.update(re.split(r" (?:and|et)(?: de| du| d)? ", match.group(1)))
     if not found:
         raise ValueError("No explicit individual artist self-description")
     return [label.title() for label in sorted(found)]
