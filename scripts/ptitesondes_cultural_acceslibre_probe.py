@@ -72,8 +72,12 @@ def candidates(fetch=_fetch, *, pages=MAX_PROBE_PAGES, research_sample=None):
     return [row for row in found.values() if row is not None]
 
 
-def structured_place_hint(lead, html):
-    """Bounded JSON-LD discovery signal, never visible or GPS proof."""
+def structured_place_hint(lead, html, *, hit=None):
+    """Bounded JSON-LD signal; with a directory hit, compare explicit points.
+
+    Only the exact named Place with the exact address can supply a point.
+    Still research only: the caller must separately prove visible content.
+    """
     from html.parser import HTMLParser
     from ptitesondes_open_world_permanent_place_ban import MAX_HTML
     if not isinstance(html, str) or len(html) > MAX_HTML:
@@ -136,11 +140,39 @@ def structured_place_hint(lead, html):
                 continue
             fields = [addr.get("streetAddress"), addr.get("postalCode"), addr.get("addressLocality")]
             expected = [lead.get("numero_et_libelle_voie"), lead.get("code_postal"), lead.get("commune")]
-            hits.append(all(isinstance(a, str) and isinstance(b, str) and norm_text(a)
-                            and norm_text(a) == norm_text(b) for a, b in zip(fields, expected)))
+            address_matches = all(isinstance(a, str) and isinstance(b, str) and norm_text(a)
+                                  and norm_text(a) == norm_text(b) for a, b in zip(fields, expected))
+            if hit is None or not address_matches:
+                hits.append(address_matches)
+                continue
+            geo = node.get("geo")
+            if not isinstance(geo, dict) or geo.get("@type") != "GeoCoordinates":
+                hits.append("structured_geo_missing")
+                continue
+            official = point(geo.get("latitude"), geo.get("longitude"))
+            culture = point(lead.get("latitude"), lead.get("longitude"))
+            accessible = point(hit.get("lat_hint"), hit.get("lng_hint"))
+            street = " ".join(str(hit.get(k) or "") for k in ("number", "street")).strip()
+            if (hit.get("code_insee") != lead.get("code_commune")
+                    or hit.get("postcode") != lead.get("code_postal")
+                    or norm_text(hit.get("city")) != norm_text(lead.get("commune"))
+                    or norm_text(hit.get("name")) not in names
+                    or norm_text(street) != norm_text(lead.get("numero_et_libelle_voie"))):
+                hits.append("structured_geo_directory_identity_conflict")
+            elif (classify(lead) != "distinct_directory_point_unverified"
+                    or official is None or culture is None or accessible is None
+                    or (0, 0) in (official, culture, accessible)):
+                hits.append("structured_geo_invalid_point")
+            elif max(distance(official, culture), distance(official, accessible),
+                     distance(culture, accessible)) > 40:
+                hits.append("structured_geo_point_conflict")
+            else:
+                hits.append("structured_geo_three_way_concordant_hint")
     if len(hits) > 1:
         return "structured_identity_ambiguous"
     if hits:
+        if isinstance(hits[0], str):
+            return hits[0]
         return "structured_address_concordant_hint" if hits[0] else "structured_address_unconfirmed"
     return "structured_identity_unconfirmed" if parser.count else "structured_absent"
 
@@ -220,6 +252,8 @@ def inspect_official(lead, hit, page_read=None):
                         raise ValueError("unexpected_authority")
                     reason = inspect_official_content(lead, html, diagnostics=counts)
             counts[reason] += 1
+            if reason == "page_content_concordant_unverified":
+                counts[structured_place_hint(lead, html, hit=hit)] += 1
         except (OSError, ValueError, TypeError, KeyError, UnicodeError, OverflowError):
             counts["page_unavailable"] += 1
     return counts
@@ -306,6 +340,8 @@ def inspect_municipal(lead, *, hit=None, directory_fetch=None, page_read=None):
                     _, body = read(url)
                     reason = inspect_official_content(lead, body)
                     counts["municipal_listed_" + reason] += 1
+                    if reason == "page_content_concordant_unverified" and isinstance(hit, dict) and "lat_hint" in hit:
+                        counts["municipal_" + structured_place_hint(lead, body, hit=hit)] += 1
                     concordant += int(reason == "page_content_concordant_unverified")
                 except (OSError, ValueError, TypeError, KeyError, UnicodeError, OverflowError):
                     counts["municipal_listed_page_unavailable"] += 1
@@ -340,7 +376,10 @@ def inspect_municipal(lead, *, hit=None, directory_fetch=None, page_read=None):
         final, html = read(next(iter(targets)))
         counts["municipal_exact_page_found"] += 1
         stage = "content"
-        counts["municipal_" + inspect_official_content(lead, html)] += 1
+        reason = inspect_official_content(lead, html)
+        counts["municipal_" + reason] += 1
+        if reason == "page_content_concordant_unverified" and isinstance(hit, dict) and "lat_hint" in hit:
+            counts["municipal_" + structured_place_hint(lead, html, hit=hit)] += 1
     except (OSError, ValueError, TypeError, KeyError, UnicodeError, OverflowError):
         counts["municipal_research_unavailable"] += 1
         counts["municipal_failed_" + stage] += 1
