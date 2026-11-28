@@ -2083,7 +2083,8 @@ def apply_independently_verified_updates(
                         and row.get("startDate") and row.get("endDate") for row in rows)):
             from official_programme_sitemap import discover_programme_urls
             sitemap_budget -= 1
-            urls = discover_programme_urls(site, fetch=sitemap_reader)
+            urls = discover_programme_urls(site, fetch=sitemap_reader,
+                                           tick=date.fromisoformat(today).toordinal())
             diagnostic = {"official_site": site, "programme_urls": len(urls),
                           "pages_fetched": 0, "rosters_qualified": 0}
             report["sitemap_checks"].append(diagnostic)
