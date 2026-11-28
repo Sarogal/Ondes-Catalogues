@@ -10,6 +10,8 @@ import re
 from urllib.parse import urlsplit
 
 from official_ticket_links import provider_for_host
+from official_ticket_offer_links import structured_offer_links
+from dns_pinned_https import safe_public_url, fetch_public_html
 from structured_evidence import StructuredData, event_date, event_objects, root_name, normalize
 from ticket_status_watch import categories, schema_term, SENSITIVE
 
@@ -207,6 +209,43 @@ def provider_edition_location(html, edition):
             return None
         return found[0]
     except (ValueError, TypeError, UnicodeError, RecursionError):
+        return None
+
+
+def independently_linked_location(edition, today, *, fetch=fetch_public_html):
+    """Reprove a vendor location from a signed edition, without trusting leads.
+
+    Caller must supply an already published, signed edition. Only an exact
+    current Event.offers.url on its freshly fetched official page is eligible.
+    No private URL, guessed vendor path, profile search or saved HTML accepted.
+    This contract is still review-only; it grants no publication authority.
+    """
+    if not isinstance(edition, dict):
+        return None
+    site = edition.get("officialSite")
+    start, end = event_date(edition.get("startDate")), event_date(edition.get("endDate"))
+    try:
+        day = date.fromisoformat(today)
+        if (not site or safe_public_url(site) != site or provider_for_host(urlsplit(site).hostname)
+                or not start or not end or not day <= start <= end
+                or edition.get("cancelled") is True):
+            return None
+        root = fetch(site)
+        # Reject ambiguity rather than choosing one seller arbitrarily.
+        links = structured_offer_links(root, site, edition,
+                                       lambda url: safe_public_url(url) == url, limit=2)
+        if len(links) != 1:
+            return None
+        target = links[0]["ticket_url"]
+        if safe_public_url(target) != target:
+            return None
+        location = provider_edition_location(fetch(target), edition)
+        if location is None:
+            return None
+        return {"source_url": site, "ticket_url": target,
+                "edition_location_review_only": location,
+                "publication_authorized": False}
+    except (OSError, TimeoutError, ValueError, TypeError, UnicodeError, KeyError, RecursionError):
         return None
 
 
