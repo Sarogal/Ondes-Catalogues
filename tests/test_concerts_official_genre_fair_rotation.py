@@ -50,7 +50,7 @@ class FairGenreReviewSlots(unittest.TestCase):
             "artistId": "example-act", "artistName": "Example Act",
             "verifiedAt": TODAY.isoformat(), "scope": "individual_artist_not_event",
             "evidenceKind": "first-party-artist-structured-profile",
-            "sourceUrl": "https://artist.example/bio/",
+            "sourceUrl": "https://artist-fixture.example.com/bio/",
             "genres": ["Death Metal"], "publicationAllowed": False,
             "approvalsProposed": 0, "eventDateLocationAndLineupProved": False,
         }
@@ -77,6 +77,7 @@ class FairGenreReviewSlots(unittest.TestCase):
         for invalid in ({**fact, "artistId": "wrong"},
                         {**fact, "verifiedAt": "2025-01-01"},
                         {**fact, "genres": ["Hardcore Techno"]},
+                        {**fact, "sourceUrl": "https://artist.example/bio/"},
                         {**fact, "publicationAllowed": True}):
             self.assertEqual(pipeline._individual_genre_leads(
                 queue, catalogue, TODAY, {**evidence, "verifiedArtists": [invalid]}),
