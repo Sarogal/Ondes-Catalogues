@@ -108,7 +108,12 @@ class OfficialPlaceBANTests(unittest.TestCase):
                       code_directory_fetch=by_code, page_read=read,
                       ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN)
         row = {"city": CITY, "venue": VENUE}
+        from ptitesondes_open_world_permanent_place_ban import ban_diagnostics
+        before = ban_diagnostics()
         proof = discover_official_ban(row, **kwargs)
+        after = ban_diagnostics()
+        for key in ("directory_code_fallback_attempted", "directory_code_fallback_found"):
+            self.assertEqual(after.get(key, 0) - before.get(key, 0), 1)
         self.assertIsNotNone(proof)
         self.assertFalse(proof["publication_ready"])
         self.assertEqual(calls, [("culture", CITY, VENUE), ("dila", CITY, "12345"), ("page", PAGE)])

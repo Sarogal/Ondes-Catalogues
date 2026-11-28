@@ -21,6 +21,8 @@ from ptitesondes_open_world_permanent_place_evidence import CLOSED, MAX_HTML
 # Public diagnostics contain only fixed stage names and numeric counters.
 BAN_DIAGNOSTIC_CODES = (
     "directory_unavailable", "directory_no_authenticated_host",
+    "directory_code_fallback_attempted", "directory_code_fallback_found",
+    "directory_code_fallback_unavailable", "directory_code_fallback_identity_unmatched",
     "hint_missing", "hint_not_authenticated", "hint_not_dedicated",
     "page_unavailable", "homepage_unavailable", "exact_link_missing",
     "official_identity_unmatched", "official_access_restricted",
@@ -318,6 +320,10 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
                     if bound_hosts and bound_hosts == municipal_site_hosts(city, alternative):
                         directory, hosts = alternative, bound_hosts
                         _note("directory_code_fallback_found")
+                    else:
+                        _note("directory_code_fallback_identity_unmatched")
+                else:
+                    _note("directory_code_fallback_identity_unmatched")
             except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
                 _note("directory_code_fallback_unavailable")
         if not hosts:
