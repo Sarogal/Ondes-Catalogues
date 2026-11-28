@@ -175,8 +175,20 @@ def build(registry, sources, catalogue, approvals, today, *,
         return [rows[(offset + i) % len(rows)]
                 for i in range(min(budget, len(rows)))]
 
-    selected = choose(eligible, limit)
-    selected_exploratory = choose(exploratory, limit - len(selected))
+    # A candidate without a source mapping cannot be fetched by this
+    # particular reviewer. Count it, but don't spend a slot on that known
+    # outcome while another candidate can actually be independently read.
+    # Other discovery/review paths retain all unmapped sources.
+    mapped = {id(c): trusted_source(c, sources) for c in eligible + exploratory}
+    mapped_tagged = [c for c in eligible if mapped[id(c)] is not None]
+    mapped_unknown = [c for c in exploratory if mapped[id(c)] is not None]
+    selected = choose(mapped_tagged, limit)
+    selected_exploratory = choose(mapped_unknown, limit - len(selected))
+    spare = limit - len(selected) - len(selected_exploratory)
+    selected.extend(choose([c for c in eligible if mapped[id(c)] is None], spare))
+    spare = limit - len(selected) - len(selected_exploratory)
+    selected_exploratory.extend(choose(
+        [c for c in exploratory if mapped[id(c)] is None], spare))
     results, counts, diagnostics, html_counts, robot_cache = ([], Counter(), Counter(), Counter(), {})
     for diagnostic_only, candidate in (
             [(False, c) for c in selected]
@@ -186,7 +198,7 @@ def build(registry, sources, catalogue, approvals, today, *,
         diagnostic = None
         html_status = None
         html_genres = []
-        source = trusted_source(candidate, sources)
+        source = mapped[id(candidate)]
         if source is None:
             reason = "source_not_independently_mapped"
         else:
@@ -266,6 +278,10 @@ def build(registry, sources, catalogue, approvals, today, *,
         "exploratoryEligible": len(exploratory),
         "exploratoryAttempted": len(selected_exploratory),
         "totalProbed": len(selected) + len(selected_exploratory),
+        "mappedGenreReviewEligible": len(mapped_tagged),
+        "mappedExploratoryEligible": len(mapped_unknown),
+        "unmappedEligible": len(eligible) + len(exploratory) - len(mapped_tagged) - len(mapped_unknown),
+        "mappedSelected": sum(mapped[id(c)] is not None for c in selected + selected_exploratory),
         "exploratoryGenreRecovered": counts[
             "fresh_official_music_event_genre_recovered"],
         "exploratoryGenreUnknown": counts[
