@@ -661,3 +661,36 @@ class StandaloneVenueSourceTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     evidence.verify_venue_source(source, VENUE,
                         fetch=lambda url, cache: link if url == source else bad)
+
+    def test_standalone_address_stage_diagnostics_keep_stable_retry_reason(self):
+        source = "https://unknown-room.fr/"
+        cases = (
+            ("source_fetch", None, ""),
+            ("practical_link_missing", "<p>No useful link</p>", ""),
+            ("practical_link_ambiguous",
+             '<a href="/one">Infos pratiques</a><a href="/two">Infos pratiques</a>', ""),
+            ("practical_fetch", '<a href="/infos">Infos pratiques</a>', None),
+            ("practical_document_identity", '<a href="/infos">Infos pratiques</a>',
+             "<title>Other Room</title><h1>Infos pratiques</h1>"),
+            ("practical_arrival_section", '<a href="/infos">Infos pratiques</a>',
+             "<title>Infos pratiques – New Room</title><h2>Comment venir ?</h2><p>10 rue des Tests, 75018 Paris</p>"),
+        )
+        for stage, home, practical in cases:
+            def fetch(url, cache):
+                value = home if url == source else practical
+                if value is None:
+                    raise OSError("raw sensitive transport detail")
+                return value
+            with self.subTest(stage=stage), patch.object(
+                    evidence, "registered_venue_source", return_value=source):
+                with self.assertRaises(evidence.StandaloneAddressHeld) as held:
+                    evidence.verify_venue_source(source, VENUE, fetch=fetch)
+                self.assertEqual(held.exception.code, "standalone_named_address_unconfirmed")
+                self.assertEqual(held.exception.stage, stage)
+                result = evidence.scan({"venues": [VENUE], "events": []},
+                                       dt.date(2026, 11, 28),
+                                       verify_standalone=lambda *a, **kw: (_ for _ in ()).throw(held.exception))
+                self.assertEqual(result["standaloneAddressStageCounts"], {stage: 1})
+                self.assertEqual(result["held"][0]["addressStage"], stage)
+                self.assertNotIn("raw sensitive", str(result))
+                self.assertEqual(result["changedAddressRetryPendingAfter"], 0)
