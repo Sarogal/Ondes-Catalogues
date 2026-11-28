@@ -217,9 +217,12 @@ def scan(catalogue, today, *, tick=None, limit=MAX_HOSTS, cache=None,
             if not candidates and not limited and count < MAX_IMAGES:
                 if not linked_attempted:
                     linked_attempted = True
-                    links = linked_pages(site, parsed)
+                    # Access pages can carry the current edition's visual
+                    # information. Keep the same two-page budget and prefer
+                    # these explicit navigation labels, not guessed URLs.
+                    links = linked_pages(site, parsed, prefer_access=True)
                     if rendered is not None:
-                        links += linked_pages(site, page(rendered))
+                        links += linked_pages(site, page(rendered), prefer_access=True)
                     for link in list(dict.fromkeys(links))[:MAX_LINKED_POSTER_PAGES]:
                         if monotonic() >= deadline:
                             break

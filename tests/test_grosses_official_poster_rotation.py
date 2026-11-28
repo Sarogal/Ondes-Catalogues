@@ -52,6 +52,29 @@ class RotationTests(unittest.TestCase):
         recognize.assert_called_once()
         self.assertFalse(second["publication_authorized"])
 
+    def test_named_access_link_selected_within_existing_budget(self):
+        from grossesondes_existing_official_updates import linked_pages, page
+        access = SITE + "venir-au-exemple"
+        news = SITE + "news"
+        tickets = SITE + "billetterie-2027"
+        root = ('<main><a href="/news">News</a>'
+                '<a href="/billetterie-2027">Billetterie 2027</a>'
+                '<a href="/venir-au-exemple">Venir au Exemple</a>'
+                '<a href="https://external.fr/venir-au-exemple">Venir au Exemple</a>'
+                '<a href="/2026/venir-au-exemple">Venir au Exemple</a></main>')
+        self.assertEqual(linked_pages(SITE, page(root), prefer_programme=True)[0], access)
+        self.assertEqual(linked_pages(SITE, page(root), prefer_access=True)[0], access)
+        reader = Mock(return_value={"status": "review_only", "words": []})
+        fetch = Mock(side_effect={SITE: root,
+            access: '<main><img src="/exemple-2027.jpg"></main>',
+            news: '<main>News</main>', tickets: '<main>Billetterie</main>'}.__getitem__)
+        report = scan(CAT, "2026-11-26", tick=0, fetch=fetch, reader=reader)
+        self.assertEqual(fetch.call_count, 3)
+        self.assertEqual(fetch.call_args_list[1].args, (access,))
+        self.assertEqual(report["rows"][0]["linked_candidates"], 1)
+        reader.assert_called_once()
+        self.assertFalse(report["publication_authorized"])
+
     def test_linked_page_rate_limit_stops_further_host_requests(self):
         from dns_pinned_https import OfficialHTTPStatusError
         root = ('<main><a href="/affiche/">Affiche</a>'

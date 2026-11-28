@@ -833,7 +833,7 @@ def current_official_poster_candidates(html, site, row):
         return []
 
 
-def linked_pages(site, parsed, *, prefer_programme=False):
+def linked_pages(site, parsed, *, prefer_programme=False, prefer_access=False):
     if safe_public_url(site) != site:
         return []
     host = urlsplit(site).hostname
@@ -868,8 +868,8 @@ def linked_pages(site, parsed, *, prefer_programme=False):
         programme_route = bool(re.search(
             r"/(?:lineup|line-up|programmation|programme|program|artists|artistes)/?$",
             bits.path, re.I))
-        access_route = prefer_programme and bool(re.search(
-            r"\b(?:acces|venir au festival|plan du site|infos pratiques|informations pratiques|getting here|how to get there|access|directions)\b",
+        access_route = (prefer_programme or prefer_access) and bool(re.search(
+            r"\b(?:acces|venir (?:au|a la|aux) [a-z0-9]+|plan du site|infos pratiques|informations pratiques|getting here|how to get there|access|directions)\b",
             label))
         if not ROLE.search(label) and not programme_route and not access_route:
             continue
