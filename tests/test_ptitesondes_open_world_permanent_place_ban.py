@@ -199,6 +199,24 @@ class OfficialPlaceBANTests(unittest.TestCase):
             commune_fetch=lambda _: self.fail("must not override exact culture identity")))
         self.assertEqual(calls, [("code", "99999")])
 
+    def test_geo_fallback_distinguishes_commune_and_dila_rejections(self):
+        from ptitesondes_open_world_permanent_place_ban import ban_diagnostics
+        row = {"city": CITY, "venue": VENUE, "possible_website_unverified": PAGE}
+        common = dict(directory_fetch=lambda _: payload(), cultural_lookup=lambda *_: None,
+                      page_read=lambda _: self.fail("unverified domain must not be read"),
+                      code_directory_fetch=lambda *_: payload())
+        before = ban_diagnostics()
+        self.assertIsNone(discover_official_ban(row, **common, commune_fetch=lambda _: []))
+        self.assertIsNone(discover_official_ban(row, **common,
+            commune_fetch=lambda _: [{"nom": CITY, "code": "12345"}]))
+        after = ban_diagnostics()
+        for reason, expected in (("directory_geo_code_missing_or_ambiguous", 1),
+                                 ("directory_geo_code_unique", 1),
+                                 ("directory_geo_dila_empty_response", 1),
+                                 ("directory_geo_commune_unmatched", 2)):
+            self.assertEqual(after[reason] - before.get(reason, 0), expected)
+        self.assertNotIn(CITY, str(after))
+
     def test_outage_does_not_stop_independent_ban_rotation(self):
         from datetime import date
         from ptitesondes_open_world_permanent_place_research import cycle

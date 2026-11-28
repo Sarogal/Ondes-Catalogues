@@ -25,6 +25,12 @@ BAN_DIAGNOSTIC_CODES = (
     "directory_code_fallback_unavailable", "directory_code_fallback_identity_unmatched",
     "directory_geo_commune_attempted", "directory_geo_commune_found",
     "directory_geo_commune_unmatched", "directory_geo_commune_unavailable",
+    "directory_geo_code_unique", "directory_geo_code_missing_or_ambiguous",
+    "directory_geo_dila_empty_response", "directory_geo_dila_incomplete_response",
+    "directory_geo_dila_mairie_unmatched", "directory_geo_dila_mairie_ambiguous",
+    "directory_geo_dila_code_unmatched", "directory_geo_dila_site_field_missing_or_invalid",
+    "directory_geo_dila_no_eligible_homepage", "directory_geo_dila_invalid_identity",
+    "directory_geo_dila_scope_ambiguous",
     "hint_missing", "hint_not_authenticated", "hint_not_dedicated",
     "page_unavailable", "homepage_unavailable", "exact_link_missing",
     "official_identity_unmatched", "official_access_restricted",
@@ -376,11 +382,20 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
             try:
                 code = unique_commune_code(city, commune_fetch(city))
                 if code:
+                    _note("directory_geo_code_unique")
                     alternative = code_directory_fetch(city, code)
-                    bound_hosts = municipal_site_hosts(city, alternative, expected_insee=code)
+                    detail = Counter()
+                    bound_hosts = municipal_site_hosts(city, alternative, expected_insee=code,
+                                                       diagnostics=detail)
+                    for reason in detail:
+                        _note("directory_geo_" + reason)
                     if bound_hosts and bound_hosts == municipal_site_hosts(city, alternative):
                         directory, hosts = alternative, bound_hosts
                         _note("directory_geo_commune_found")
+                    elif bound_hosts:
+                        _note("directory_geo_dila_scope_ambiguous")
+                else:
+                    _note("directory_geo_code_missing_or_ambiguous")
                 if not hosts:
                     _note("directory_geo_commune_unmatched")
             except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
