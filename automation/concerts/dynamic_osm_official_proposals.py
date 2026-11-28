@@ -31,6 +31,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from automation.concerts import artist_genre_knowledge as artist_knowledge
 from automation.concerts import discover
 from automation.concerts import event_site_pair_recheck as pairs
 from automation.concerts import official_rss_jsonld_bridge as bridge
@@ -611,8 +612,56 @@ def _prioritize_extraction_retries(window, selected, failures, revision, limit,
     return window, prioritized, pending
 
 
+def _individual_genre_leads(rows, catalogue, today, report):
+    """Exact artist matches are scheduling hints, never approval evidence."""
+    if (not isinstance(report, dict)
+            or report.get("schema") != "grossesondes.concert.artist-genre-source-preflight.v1"
+            or report.get("publicationAllowed") is not False
+            or report.get("approvalsProposed") != 0
+            or not isinstance(report.get("verifiedArtists"), list)):
+        return set()
+    aliases, collisions = artist_knowledge._aliases(catalogue)
+    verified_ids = set()
+    for fact in report["verifiedArtists"]:
+        if not isinstance(fact, dict):
+            continue
+        try:
+            age = (today - dt.date.fromisoformat(fact.get("verifiedAt"))).days
+        except (TypeError, ValueError):
+            continue
+        name = artist_knowledge.words(fact.get("artistName"))
+        artist_id = fact.get("artistId")
+        if (not isinstance(artist_id, str) or not name or name in collisions
+                or aliases.get(name) != artist_id or not 0 <= age <= 60
+                or fact.get("schema") != artist_knowledge.SCHEMA
+                or fact.get("scope") != "individual_artist_not_event"
+                or fact.get("evidenceKind") not in {
+                    "first-party-artist-structured-profile",
+                    "first-party-artist-visible-linked-bio"}
+                or fact.get("publicationAllowed") is not False
+                or fact.get("approvalsProposed") != 0
+                or fact.get("eventDateLocationAndLineupProved") is not False
+                or not intake.valid_https(fact.get("sourceUrl"))
+                or not isinstance(fact.get("genres"), list)
+                or not any(artist_knowledge._relevant_genre(g) for g in fact["genres"])):
+            continue
+        verified_ids.add(artist_id)
+    matched = set()
+    for row in rows:
+        candidate = row[3]
+        if candidate.get("reviewBucket") != "genre_unknown":
+            continue
+        names = artist_knowledge._named_bill(candidate)
+        normalized = [artist_knowledge.words(n) for n in names]
+        if not any(n in collisions for n in normalized) and any(
+                aliases.get(n) in verified_ids for n in normalized):
+            matched.add(_review_key(row))
+    return matched
+
+
 def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
-          fetch=verified.safe_fetch, prior=None, max_seconds=MAX_REVIEW_SECONDS):
+          fetch=verified.safe_fetch, prior=None, max_seconds=MAX_REVIEW_SECONDS,
+          artist_evidence=None):
     require(type(max_seconds) is int and 1 <= max_seconds <= MAX_REVIEW_SECONDS,
             "invalid bounded review time")
     require(type(slot) is int and slot in (0, 1, 2)
@@ -627,6 +676,11 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
                         diagnostics=eligibility_rejections)
     memory = _review_memory(prior, selected)
     recency = {key: i for i, key in enumerate(memory)}
+    genre_leads = _individual_genre_leads(selected, catalogue, today, artist_evidence)
+    # Reserve at most four existing slots, and only for not-yet-reviewed
+    # candidates. Keep lane shares and the extraction/geography retry rules.
+    preferred = sorted(genre_leads - set(recency))
+    priority_keys = set(preferred[:min(4, limit // 4)])
 
     def ranked(pool, start):
         if not pool:
@@ -634,7 +688,9 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         rotated = pool[start:] + pool[:start]
         # Unseen first, then least recently checked. The original rotation
         # breaks ties, and remains identical when there is no memory.
-        return sorted(rotated, key=lambda row: recency.get(_review_key(row), -1))
+        return sorted(rotated, key=lambda row: (
+            recency.get(_review_key(row), -1),
+            _review_key(row) not in priority_keys))
 
     # Rotate BOTH pools without leaving unvisited holes between scan slots.
     # OpenAgenda receives a proportional share (at most half whenever there
@@ -824,6 +880,9 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         "asOf": today.isoformat(),
         "scanSlot": slot,
         "eligibleQueue": len(selected),
+        "individualGenreResearchLeadsEligible": len(genre_leads),
+        "individualGenreResearchPriorityExamined": len(priority_keys & checked_set),
+        "individualGenreResearchLeadsExamined": len(genre_leads & checked_set),
         "examined": len(examined),
         "reviewBudget": limit,
         "reviewTimeBudgetSeconds": max_seconds,
@@ -856,17 +915,25 @@ def main():
     parser.add_argument("--candidate", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--report", required=True, type=Path)
+    parser.add_argument("--artist-evidence", type=Path)
     parser.add_argument("--scan-slot", choices=(0, 1, 2), type=int, default=0)
     parser.add_argument("--limit", type=int, default=MAX_CHECKS)
     parser.add_argument("--max-seconds", type=int, default=MAX_REVIEW_SECONDS)
     opts = parser.parse_args()
     data = lambda p: json.loads(p.read_text(encoding="utf-8"))
+    artist_evidence = None
+    if opts.artist_evidence:
+        try:
+            artist_evidence = data(opts.artist_evidence)
+        except (OSError, ValueError):
+            pass  # Missing research must not interrupt normal review.
     proposal, summary = build(
         data(opts.registry), data(opts.catalogue),
         data(opts.candidate),
         dt.datetime.now(ZoneInfo("Europe/Paris")).date(),
         slot=opts.scan_slot, limit=opts.limit, max_seconds=opts.max_seconds,
-        prior=data(opts.report) if opts.report.exists() else None)
+        prior=data(opts.report) if opts.report.exists() else None,
+        artist_evidence=artist_evidence)
     opts.output.write_text(json.dumps(
         proposal, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     opts.report.write_text(json.dumps(
