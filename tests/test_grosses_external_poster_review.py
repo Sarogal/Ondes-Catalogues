@@ -48,3 +48,23 @@ class ExternalRasterTests(unittest.TestCase):
                  read=read, recognize=Mock(return_value=[]))
             read.assert_not_called()
 
+    def test_root_rejections_are_visible_without_reading_images(self):
+        from unittest.mock import patch
+        html = ('<main><h1>Festival Exemple 2027</h1><p>Festival Exemple du 13 au 15 août 2027</p>'
+                '<img src="' + URL.replace("&", "&amp;") + '"></main>')
+        read = Mock()
+        for fetch, expected in (
+            (Mock(side_effect=OSError("private diagnostic detail")), "ROOT_UNAVAILABLE"),
+            (Mock(return_value=html), "ROOT_EDITION_UNCONFIRMED"),
+            (Mock(return_value=html.replace("13 au 15 août", "14 au 16 août")), "ROOT_DATES_UNCONFIRMED"),
+        ):
+            with self.subTest(expected=expected), patch(
+                "grossesondes_external_poster_review.home_matches_edition",
+                return_value=expected != "ROOT_EDITION_UNCONFIRMED"
+            ):
+                report = scan(CAT, "2026-11-28", fetch=fetch, read=read)
+                self.assertEqual(report["rows"], [{"slug": ROW["slug"], "candidates": 0,
+                                                  "outcome": expected}])
+                self.assertFalse(report["publication_authorized"])
+                self.assertNotIn("private diagnostic detail", str(report))
+        read.assert_not_called()

@@ -181,13 +181,28 @@ def scan(catalogue, today, tick=0, slug=None, *, fetch=fetch_public_html,
         try:
             html = fetch(site)
             parsed = page(html)
-        except (OSError, ValueError, TypeError, UnicodeError):
+        except OfficialHTTPStatusError as exc:
+            outcome = "ROOT_RATE_LIMITED" if exc.status_code == 429 else "ROOT_HTTP_REJECTED"
+            report["rows"].extend({"slug": r["slug"], "candidates": 0, "outcome": outcome}
+                                  for r in rows)
             continue
-        eligible = [r for r in rows if not r.get("cancelled")
-                    and r.get("status") not in ("Annulé", "Reporté")
-                    and r.get("startDate") and r.get("endDate")
-                    and home_matches_edition(parsed, r, today)
-                    and exact_root_dates(parsed, r)]
+        except (OSError, ValueError, TypeError, UnicodeError):
+            report["rows"].extend({"slug": r["slug"], "candidates": 0,
+                                   "outcome": "ROOT_UNAVAILABLE"} for r in rows)
+            continue
+        eligible = []
+        for r in rows:
+            if (r.get("cancelled") or r.get("status") in ("Annulé", "Reporté")
+                    or not r.get("startDate") or not r.get("endDate")):
+                outcome = "ROW_NOT_ELIGIBLE"
+            elif not home_matches_edition(parsed, r, today):
+                outcome = "ROOT_EDITION_UNCONFIRMED"
+            elif not exact_root_dates(parsed, r):
+                outcome = "ROOT_DATES_UNCONFIRMED"
+            else:
+                eligible.append(r)
+                continue
+            report["rows"].append({"slug": r["slug"], "candidates": 0, "outcome": outcome})
         if not eligible:
             continue
         surfaces = [html]
@@ -204,6 +219,8 @@ def scan(catalogue, today, tick=0, slug=None, *, fetch=fetch_public_html,
             except (OSError, ValueError, TypeError, UnicodeError):
                 continue
         if limited:
+            report["rows"].extend({"slug": r["slug"], "candidates": 0,
+                                   "outcome": "LINK_RATE_LIMITED"} for r in eligible)
             continue
         for row in eligible:
             urls = sorted({u for h in surfaces for u in candidates(h, site, row)})
