@@ -140,22 +140,29 @@ def municipal_site_hosts(city, response, *, expected_insee=None, diagnostics=Non
         url = row.get("url_service_public")
         try:
             parsed = urlsplit(url)
+            canonical = (parsed.scheme == "https"
+                         and parsed.hostname == "lannuaire.service-public.gouv.fr"
+                         and not parsed.username and not parsed.password
+                         and parsed.port in (None, 443))
         except (TypeError, ValueError):
+            canonical = False
+        if not canonical:
+            note("dila_record_canonical_url_invalid")
             continue
-        if (parsed.scheme != "https"
-                or parsed.hostname != "lannuaire.service-public.gouv.fr"
-                or parsed.username or parsed.password
-                or parsed.port not in (None, 443)
-                or norm(row.get("nom")) != norm("Mairie - " + city)
-                or row.get("categorie") != "SL"
+        if norm(row.get("nom")) != norm("Mairie - " + city):
+            note("dila_record_name_mismatch")
+            continue
+        if (row.get("categorie") != "SL"
                 or str(row.get("statut_de_diffusion")).lower() != "true"
                 or row.get("version_type") != "Publiable"
                 or row.get("copyright") !=
                     "Direction de l'information légale et administrative (Premier ministre)"):
+            note("dila_record_provenance_invalid")
             continue
         pivots = _structured(row.get("pivot"))
         addresses = _structured(row.get("adresse"))
         if pivots is None or addresses is None:
+            note("dila_record_structure_invalid")
             continue
         code = str(row.get("code_insee_commune") or "")
         # Corsica has official 2A/2B commune codes, not five digits.
@@ -169,12 +176,14 @@ def municipal_site_hosts(city, response, *, expected_insee=None, diagnostics=Non
                 and isinstance(item.get("code_insee_commune"), list)
                 and code in item["code_insee_commune"]
                 for item in pivots):
+            note("dila_record_pivot_mismatch")
             continue
         if not any(
                 isinstance(item, dict)
                 and norm(item.get("nom_commune")) == norm(city)
                 and item.get("pays") == "France"
                 for item in addresses):
+            note("dila_record_address_mismatch")
             continue
         matching.append(row)
     # A homonymous municipality, multiple mairie records, or partial API
@@ -195,16 +204,22 @@ def municipal_site_hosts(city, response, *, expected_insee=None, diagnostics=Non
         # unlabelled official home page. Never grant authority to all the
         # unrelated domains referenced by those service links.
         if site.get("libelle") not in (None, ""):
+            note("dila_site_labelled")
             continue
         value = site.get("valeur")
         try:
             parsed_site = urlsplit(value)
         except (ValueError, TypeError):
+            note("dila_site_url_invalid")
             continue
         if parsed_site.path not in ("", "/") or parsed_site.query:
+            note("dila_site_not_homepage")
             continue
         host = _host(value)
         if host is None:
+            # The scheme is only diagnosed: never authorize or fetch HTTP.
+            note("dila_site_http_only" if parsed_site.scheme == "http"
+                 else "dila_site_url_invalid")
             continue
         result.add(host)
     if not 1 <= len(result) <= MAX_SOURCE_SITES:
