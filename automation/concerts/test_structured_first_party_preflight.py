@@ -168,6 +168,36 @@ class StructuredIndependentPreflightTests(unittest.TestCase):
         self.assertEqual(len(report["results"]), 8)
         self.assertEqual(report["approvalsProposed"], 0)
 
+    def test_mapped_exploratory_candidates_take_precedence_over_unmapped_noops(self):
+        original = candidate()
+        original["classification"] = []
+        original["reviewBucket"] = "genre_unknown"
+        unmapped = []
+        for i in range(20):
+            row = candidate()
+            row["candidateId"] = "unmapped-" + str(i)
+            row["sourceUrl"] = "https://unknown.example/concerts/event-" + str(i)
+            unmapped.append(row)
+        calls = []
+        def fetch(url, **kw):
+            calls.append(url)
+            return page(), url
+        report = run(reg=registry([original, *unmapped]), fetch=fetch, limit=1)
+        self.assertEqual(calls, [URL])
+        self.assertEqual(report["mappedGenreReviewEligible"], 0)
+        self.assertEqual(report["mappedExploratoryEligible"], 1)
+        self.assertEqual(report["unmappedEligible"], 20)
+        self.assertEqual(report["mappedSelected"], 1)
+        self.assertEqual(report["exploratoryGenreRecovered"], 1)
+        self.assertEqual(report["totalProbed"], 1)
+        self.assertFalse(report["publicationAllowed"])
+        self.assertEqual(report["approvalsProposed"], 0)
+        calls.clear()
+        report = run(reg=registry(unmapped), fetch=fetch, limit=1)
+        self.assertEqual(calls, [])
+        self.assertEqual(report["mappedSelected"], 0)
+        self.assertEqual(report["reasonCounts"], {"source_not_independently_mapped": 1})
+
     def test_three_daily_slots_rotate_exploratory_cohorts(self):
         unknown = []
         for i in range(20):
