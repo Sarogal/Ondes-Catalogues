@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-27",
+  "updatedAt": "2026-11-28",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -16396,11 +16396,10 @@
     },
     {
       "id": "go-c-20261212-lille-downterra",
-      "title": "Downterra + guest - Brat Cave, Lille",
+      "title": "Downterra",
       "date": "2026-12-12",
       "artistIds": [
-        "downterra",
-        "guest-brat-cave-lille"
+        "downterra"
       ],
       "venueId": "go-site-c4a2f339ee92bd635e08",
       "genres": [
@@ -16414,7 +16413,7 @@
       "timeMeaning": "non confirmé",
       "organizer": "La Brat Cave",
       "ticketUrl": null,
-      "lastVerified": "2026-11-27",
+      "lastVerified": "2026-11-28",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
       "sourceLabel": "Programmation officielle (salle / organisateur)",
       "locationPrecision": "Position connue du catalogue, précision à confirmer",
@@ -16422,6 +16421,10 @@
         {
           "date": "2026-11-27",
           "change": "Ajout après revue des preuves officielles"
+        },
+        {
+          "date": "2026-11-28",
+          "change": "Identité artistique rectifiée après nouvelle vérification de la fiche officielle"
         }
       ]
     }
