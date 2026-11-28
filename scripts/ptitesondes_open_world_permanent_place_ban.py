@@ -349,7 +349,11 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
         try:
             directory = directory_fetch(city)
         except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
-            return _note("directory_unavailable")
+            _note("directory_unavailable")
+            # A failed name query is not evidence against the municipality.
+            # Continue only through the existing independently bound code
+            # routes; no page is read until fresh DILA authority is proved.
+            directory = None
         hosts = municipal_site_hosts(city, directory)
         record = None
         lookup_attempted = False
