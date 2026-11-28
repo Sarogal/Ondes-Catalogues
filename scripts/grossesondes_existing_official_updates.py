@@ -1960,6 +1960,8 @@ def apply_independently_verified_updates(
               "private_proposal_is_authority": False}
     report["browser_roots_checked"] = 0
     poster_budget = [MAX_PUBLISHER_POSTERS]
+    ticket_location_budget = 2
+    report["ticket_location_checks"] = 0
     poster_rate_limited_hosts = set()
     for site, rows in signed_rotation(
             published, today, limit, tick, browser_sites=browser_sites,
@@ -2367,6 +2369,39 @@ def apply_independently_verified_updates(
                             and direct[1]):
                         claims_city.append({"slug": slug, "city": direct[1],
                                             "source": site})
+                # Only independently fetched raw first-party evidence can
+                # authorize an exact structured offer link. Keep browser-only
+                # markup, private leads and generic vendor anchors excluded.
+                if (not claims_city and raw_root_available and ticket_location_budget > 0
+                        and old.get("startDate") and old.get("endDate")):
+                    from ticket_provider_probe import independently_linked_location
+                    def read_ticket_location(url):
+                        nonlocal ticket_location_budget
+                        if url == site:
+                            return root_html  # fetched by this Publisher run
+                        if ticket_location_budget <= 0:
+                            raise OSError("Ticket location budget exhausted")
+                        ticket_location_budget -= 1
+                        report["ticket_location_checks"] += 1
+                        report["rechecked_pages"] += 1
+                        return fetch(url)
+                    ticket_proof = independently_linked_location(
+                        old, today, fetch=read_ticket_location)
+                    if ticket_proof:
+                        location = ticket_proof["edition_location_review_only"]
+                        postal = location["postalCode"]
+                        dept = postal[:2]
+                        # Initial route handles unambiguous mainland postal
+                        # departments only. Corsica and overseas need their
+                        # separate administrative concordance, never guessed.
+                        if (dept not in ("00", "20", "97", "98", "99")
+                                and re.fullmatch(r"[0-9]{2}", dept)
+                                and old.get("department") in (None, "", dept)):
+                            claims_city.append({
+                                "slug": slug, "city": location["city"], "source": site,
+                                "ticket_source": ticket_proof["ticket_url"],
+                                "ticket_postal": postal, "ticket_department": dept,
+                                "access_postcode": postal})
                 distinct_cities = {
                     normal_city(c["city"]) for c in claims_city}
                 commune_diagnostic = ("no_current_city_proof" if not distinct_cities
@@ -2379,12 +2414,14 @@ def apply_independently_verified_updates(
                         and (not old.get("city")
                              or normal_city(old["city"]) == normal_city(claim["city"]))):
                     try:
-                        commune = commune_resolver(claim["city"], old.get("department"))
+                        commune = commune_resolver(
+                            claim["city"], claim.get("ticket_department", old.get("department")))
                     except (OSError, TimeoutError, ValueError, UnicodeError):
                         commune = None
                     commune_diagnostic = ("admin_resolution_returned" if commune
                                           else "admin_resolution_unavailable_or_ambiguous")
-                    if not commune and old.get("department") in (None, ""):
+                    if (not commune and not claim.get("ticket_source")
+                            and old.get("department") in (None, "")):
                         # Only after the current event has proved its city:
                         # use one explicitly named venue's official postal
                         # address to disambiguate, never to choose a venue pin.
@@ -2420,6 +2457,12 @@ def apply_independently_verified_updates(
                             and not str(commune.get("codeInsee", "")).startswith(access_postcode[:2])):
                         commune = None
                         commune_diagnostic = "access_postcode_conflict"
+                    if (commune and claim.get("ticket_source")
+                            and (historical_proof(commune)
+                                 or not str(commune.get("codeInsee", "")).startswith(
+                                     claim["ticket_department"]))):
+                        commune = None
+                        commune_diagnostic = "ticket_department_or_historical_conflict"
                     if (commune and normal_city(commune.get("city")) == normal_city(claim["city"])
                             and type(commune.get("lat")) in (float, int)
                             and type(commune.get("lon")) in (float, int)
@@ -2434,11 +2477,16 @@ def apply_independently_verified_updates(
                             "geoSource": commune["geoSource"],
                             "showOnMap": True,
                             "geoVerification": {
-                                "proofMode": "current-edition-commune-direct-official.v1",
+                                "proofMode": ("current-edition-commune-linked-ticket.v1"
+                                              if claim.get("ticket_source") else
+                                              "current-edition-commune-direct-official.v1"),
                                 "firstObserved": today,
                                 "verifiedAt": today,
                                 "officialSite": site,
                                 "markerMeaning": "centre_indicatif_de_commune",
+                                **({"ticketSource": claim["ticket_source"],
+                                    "ticketPostalCode": claim["ticket_postal"]}
+                                   if claim.get("ticket_source") else {}),
                                 **historical_proof(commune),
                             },
                         })

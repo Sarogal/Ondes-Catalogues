@@ -353,6 +353,59 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertTrue(out["festivals"][0]["showOnMap"])
         self.assertIn("les-gueules-de-bois-2027", report["accepted"])
 
+    def test_linked_ticket_location_is_independently_certified_commune_only(self):
+        import json
+        from official_admin_communes import search_url
+        site = "https://festival-exemple.fr/"
+        vendor = "https://my.weezevent.com/festival-exemple"
+        row = festival("festival-exemple-2027", site)
+        row.update(name="Festival Exemple 2027", city=None, department=None, venue=None)
+        event = {"@type": "MusicEvent", "name": row["name"],
+                 "startDate": row["startDate"], "endDate": row["endDate"]}
+        def html(obj):
+            return '<main><h1>Festival Exemple</h1></main><script type="application/ld+json">' + json.dumps(obj) + '</script>'
+        root = html({**event, "offers": {"url": vendor}})
+        detail = html({**event, "location": {"@type": "Place", "name": "Salle des Arts",
+                       "address": {"@type": "PostalAddress", "addressCountry": "FR",
+                                   "addressLocality": "Douai", "postalCode": "59500"}}})
+        calls = []
+        def fetch(url):
+            calls.append(url)
+            return root if url == site else detail
+        def admin(city, department):
+            self.assertEqual((city, department), ("Douai", "59"))
+            return {"city": city, "lat": 50.37, "lon": 3.08,
+                    "codeInsee": "59178", "geoSource": search_url(city)}
+        original = doc(row)
+        out, report = apply_independently_verified_updates(original, original, DAY,
+            fetch=fetch, commune_resolver=admin, limit=1, tick=0)
+        updated = out["festivals"][0]
+        self.assertEqual(calls, [site, vendor])
+        self.assertEqual(report["ticket_location_checks"], 1)
+        self.assertTrue(updated["showOnMap"])
+        self.assertEqual(updated["geoPrecision"], "commune")
+        self.assertIsNone(updated["venue"])
+        self.assertEqual(updated["geoVerification"]["ticketSource"], vendor)
+        self.assertEqual(updated["geoVerification"]["proofMode"],
+                         "current-edition-commune-linked-ticket.v1")
+        self.assertTrue(_verified_official_update_delta(row, updated))
+        bad = deepcopy(updated)
+        bad["geoVerification"]["ticketSource"] = "https://example.org/fake"
+        self.assertFalse(_verified_official_update_delta(row, bad))
+        bad = deepcopy(updated)
+        bad["geoVerification"]["ticketPostalCode"] = "75001"
+        self.assertFalse(_verified_official_update_delta(row, bad))
+        for bad_root in ('<main><a href="' + vendor + '">Billetterie</a></main>',
+                         html({**event, "offers": {"url": vendor},
+                               "startDate": "2026-07-23"})):
+            root = bad_root
+            calls.clear()
+            out, report = apply_independently_verified_updates(original, original, DAY,
+                fetch=fetch, commune_resolver=lambda *_: self.fail("Unproved city"),
+                limit=1, tick=0)
+            self.assertFalse(out["festivals"][0]["showOnMap"])
+            self.assertEqual(calls, [site])
+
     def test_direct_edition_daily_programme_can_gain_commune_marker(self):
         from grossesondes_first_party_direct_edition import PUBLISHED_CONFIDENCE
         site = "https://nocturnesauvage.fr/"
