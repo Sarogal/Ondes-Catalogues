@@ -747,7 +747,8 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         # breaks ties, and remains identical when there is no memory.
         return sorted(rotated, key=lambda row: (
             recency.get(_review_key(row), -1),
-            _review_key(row) not in priority_keys))
+            0 if _review_key(row) in priority_keys - catalogue_priority else
+            1 if _review_key(row) in catalogue_priority else 2))
 
     # Rotate BOTH pools without leaving unvisited holes between scan slots.
     # OpenAgenda receives a proportional share (at most half whenever there
@@ -942,7 +943,10 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         "scanSlot": slot,
         "eligibleQueue": len(selected),
         "individualGenreResearchLeadsEligible": len(genre_leads),
-        "individualGenreResearchPriorityExamined": len(priority_keys & checked_set),
+        "individualGenreResearchPriorityExamined": len(priority_keys & genre_leads & checked_set),
+        "catalogueGenreResearchLeadsEligible": len(catalogue_leads),
+        "catalogueGenreResearchPriorityExamined": len(catalogue_priority & checked_set),
+        "catalogueGenreResearchLeadsExamined": len(catalogue_leads & checked_set),
         "individualGenreResearchLeadsExamined": len(genre_leads & checked_set),
         "examined": len(examined),
         "reviewBudget": limit,
