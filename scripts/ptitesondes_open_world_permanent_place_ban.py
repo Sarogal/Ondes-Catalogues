@@ -121,7 +121,9 @@ def official_facts(city, venue, url, html, directory):
         if len(codes) != 1:
             return _note("official_facts_invalid")
         insee = next(iter(codes))
-        return visible_place_facts(city, venue, url, html, insee)
+        # Same explicit accessible main landmark as the Culture route.
+        # This does not grant authority to arbitrary body text or CSS classes.
+        return visible_place_facts(city, venue, url, html, insee, allow_role_main=True)
     except (ValueError, TypeError, KeyError, AttributeError, OverflowError, UnicodeError):
         return None
 

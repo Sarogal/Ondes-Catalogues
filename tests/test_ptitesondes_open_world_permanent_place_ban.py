@@ -54,6 +54,24 @@ class OfficialPlaceBANTests(unittest.TestCase):
         ):
             self.assertIsNone(official_facts(CITY, VENUE, PAGE, html, DIR), html)
 
+    def test_municipal_accessible_main_landmark_keeps_all_proof_requirements(self):
+        body = HTML.replace("<main>", '<section role="main">').replace("</main>", "</section>")
+        proof = self.check(html=body)
+        self.assertIsNotNone(proof)
+        self.assertEqual((proof["lat"], proof["lng"]), (45.1, 3.1))
+        for bad in (
+            body.replace('role="main"', 'class="main"'),
+            body.replace('role="main"', 'role="main" hidden'),
+            body + '<div role="main"><p>Other</p></div>',
+            body.replace(f"<h1>{VENUE}</h1>", "") + f"<h1>{VENUE}</h1>",
+            body.replace("12 Rue", "14 Rue"),
+            body.replace("Ouverte à tous", "Pas ouverte à tous"),
+            body.replace("espace de jeux pour enfants", "informations"),
+            body.replace("<p>12", "<p hidden>12") + f"<footer><p>12 Rue des Jeux, 12345 {CITY}</p></footer>",
+        ):
+            self.assertIsNone(self.check(html=bad))
+        self.assertIsNone(self.check(html=body, url="https://foreign.example/lieu"))
+
     def test_wrong_ban_citycode_postcode_score_or_centroid(self):
         for key, value in (("citycode", "99999"), ("postcode", "99999"),
                            ("score", .80), ("type", "street"), ("housenumber", "14")):
@@ -459,7 +477,7 @@ class OfficialPlaceBANTests(unittest.TestCase):
                     body.replace(f"<h1>{VENUE}</h1>", "")+f"<h1>{VENUE}</h1>",
                     body.replace("12 Rue", "14 Rue")):
             self.assertIsNone(qualify(bad))
-        self.assertIsNone(official_facts(CITY, VENUE, PAGE, body, DIR))
+        self.assertIsNotNone(official_facts(CITY, VENUE, PAGE, body, DIR))
 
     def test_cultural_exact_official_alias_not_fuzzy_identity(self):
         from ptitesondes_open_world_permanent_place_ban import discover_independent_cultural_ban
