@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-27T23:45:18+01:00",
+  "updated_at": "2026-11-28T01:00:34+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -22105,6 +22105,68 @@
       "geo_precision": "venue",
       "lat": 44.842873,
       "lng": -0.574592
+    },
+    {
+      "id": "openagenda-15144308-2026-12-06",
+      "title": "Spectacle d’improvisation « Jackpot »",
+      "category": "spectacle-jeunesse",
+      "category_label": "Spectacle jeune public",
+      "date_start": "2026-12-06",
+      "date_end": "2026-12-06",
+      "time": "19:30",
+      "city": "Bordeaux",
+      "department": "Gironde",
+      "region": "Nouvelle-Aquitaine",
+      "venue": "Improvidence",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/15144308_jackpot-7629905",
+      "source_label": "Un air de Bordeaux — Licence Ouverte 2.0 — données mises à jour le 24/09/2026",
+      "verified_at": "2026-11-28",
+      "geo_verified_at": "2026-11-28",
+      "geo_precision": "venue",
+      "lat": 44.832496,
+      "lng": -0.571882
+    },
+    {
+      "id": "openagenda-15144308-2026-12-13",
+      "title": "Spectacle d’improvisation « Jackpot »",
+      "category": "spectacle-jeunesse",
+      "category_label": "Spectacle jeune public",
+      "date_start": "2026-12-13",
+      "date_end": "2026-12-13",
+      "time": "19:30",
+      "city": "Bordeaux",
+      "department": "Gironde",
+      "region": "Nouvelle-Aquitaine",
+      "venue": "Improvidence",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/15144308_jackpot-7629905",
+      "source_label": "Un air de Bordeaux — Licence Ouverte 2.0 — données mises à jour le 24/09/2026",
+      "verified_at": "2026-11-28",
+      "geo_verified_at": "2026-11-28",
+      "geo_precision": "venue",
+      "lat": 44.832496,
+      "lng": -0.571882
+    },
+    {
+      "id": "openagenda-44709663-2026-12-04",
+      "title": "Le Garçon Chasseur",
+      "category": "spectacle-jeunesse",
+      "category_label": "Spectacle jeune public",
+      "date_start": "2026-12-04",
+      "date_end": "2026-12-04",
+      "time": "14:00",
+      "city": "Tulle",
+      "department": "Corrèze",
+      "region": "Nouvelle-Aquitaine",
+      "venue": "Scène Nationale l'Empreinte Brive Tulle",
+      "source_url": "https://openagenda.com/accueil-agenda-spectacle-vivant-drac-na/events/44709663_le-garcon-chasseur-131655",
+      "source_label": "Accueil agenda spectacle vivant - DRAC : Nouvelle-Aquitaine — Licence Ouverte 2.0 — données mises à jour le 15/10/2026",
+      "verified_at": "2026-11-28",
+      "geo_verified_at": "2026-11-28",
+      "geo_precision": "venue",
+      "lat": 45.266771,
+      "lng": 1.77104,
+      "age_min": 8,
+      "age_label": "Dès 8 ans"
     }
   ]
 }

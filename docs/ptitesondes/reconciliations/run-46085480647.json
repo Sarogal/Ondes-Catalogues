@@ -1,0 +1,40 @@
+{
+  "schema": "ptitesondes.official_reconciliation.v1",
+  "checked_on": "2026-11-28",
+  "slot": 0,
+  "source_series_checked": 30,
+  "total_source_series": 169,
+  "before_count": 1073,
+  "after_count": 1076,
+  "source_summary": {
+    "official_new_session_admitted": 2,
+    "official_new_session_held": 1,
+    "official_unchanged": 28
+  },
+  "catalogue_before_sha256": "44572436d2bba2d11eaedc73127ff288bd058ae2965575b31f8a40e574c28c26",
+  "catalogue_after_sha256": "c2dd9e9ac8260f4271fe769532914fa8668d641880575dd6242a5d9f4bed5611",
+  "operations": [
+    {
+      "id": "openagenda-15144308-2026-12-06",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/15144308_jackpot-7629905",
+      "new_event_sha256": "25b4de060852214bfba57f54f2af6c151d9bc3c2a35f241e90e87e86eaa6e45a"
+    },
+    {
+      "id": "openagenda-15144308-2026-12-13",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/un-air-de-bordeaux/events/15144308_jackpot-7629905",
+      "new_event_sha256": "a4382ad5e03f9d73f089aaf69d953ac62ea6b13c35d322125528784968897c5e"
+    },
+    {
+      "id": "openagenda-44709663-2026-12-04",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/accueil-agenda-spectacle-vivant-drac-na/events/44709663_le-garcon-chasseur-131655",
+      "new_event_sha256": "689fa903a236bb981e5340de89ca3858da63fbf7045b721b55722c65920fdd84"
+    }
+  ],
+  "unrelated_public_records_preserved": true
+}
