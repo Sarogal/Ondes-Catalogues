@@ -221,6 +221,50 @@ class StructuredIndependentPreflightTests(unittest.TestCase):
             checked.update(item["candidateId"] for item in report["results"])
         self.assertEqual(len(checked), 20)
 
+    def test_exploratory_rotation_diversifies_uneven_venue_queues(self):
+        sources, rows = [], []
+        for venue_index, size in enumerate((30, 2, 3, 4)):
+            host = f"https://venue-{venue_index}.example"
+            source = {**SOURCE, "name": f"Salle {venue_index}",
+                      "url": host + "/agenda/"}
+            sources.append(source)
+            for index in range(size):
+                row = candidate()
+                row.update(venue=source["name"], sourcePage=source["url"],
+                           sourceUrl=f"{host}/concerts/show-{index:02d}/",
+                           candidateId=f"venue-{venue_index}-{index:02d}",
+                           classification=[], reviewBucket="genre_unknown")
+                rows.append(row)
+        calls = []
+        def fetch(url, **kw):
+            calls.append(url)
+            return "<html></html>", url
+        result = run(reg=registry(rows),
+                     source_list={**SOURCES, "venues": sources},
+                     fetch=fetch, limit=8)
+        self.assertEqual(result["totalProbed"], 8)
+        self.assertEqual(result["distinctMappedVenuesProbed"], 4)
+        self.assertEqual(result["mappedExploratoryVenuesEligible"], 4)
+        self.assertEqual(len(set(calls)), 8)
+        self.assertEqual(result["approvalsProposed"], 0)
+        self.assertFalse(result["publicationAllowed"])
+
+    def test_rotation_visits_every_candidate_across_slots_with_uneven_queues(self):
+        rows = [{"candidateId": f"{venue}-{index}", "venue": venue,
+                 "city": "City", "department": "30"}
+                for venue, size in (("A", 13), ("B", 1), ("C", 3))
+                for index in range(size)]
+        seen = set()
+        for day in range(13):
+            for slot in range(3):
+                batch = module._choose_by_venue(
+                    rows, 8, TODAY + dt.timedelta(days=day), slot, 8)
+                ids = {row["candidateId"] for row in batch}
+                self.assertEqual(len(ids), 8)
+                self.assertEqual(len({row["venue"] for row in batch}), 3)
+                seen.update(ids)
+        self.assertEqual(seen, {row["candidateId"] for row in rows})
+
     def test_changed_official_performer_date_or_venue_is_held(self):
         variants = [
             {"performer": [
