@@ -40,6 +40,25 @@ def catalogue(row=ROW):
 
 class FutureCityProofTests(unittest.TestCase):
 
+    def test_named_current_date_venue_hero_proves_only_city(self):
+        row = dict(ROW, name="ExempleFest 2027")
+        html = ("<main><h2>MAKE EXEMPLEFEST NOT WAR</h2>"
+                "<h3>2 &amp; 3 JUILLET 2027</h3>"
+                "<p>Palais des Grottes de Colonne - France</p>"
+                "<h2>Programmation 2026</h2><p>Ancien groupe</p></main>")
+        self.assertEqual(exact_edition_city(html, row),
+                         {"slug": ROW["slug"], "city": "Colonne", "source": SITE})
+        for bad in (html.replace("EXEMPLEFEST", "AUTRE FESTIVAL"),
+                    html.replace("JUILLET 2027", "JUILLET 2026"),
+                    html.replace("EXEMPLEFEST NOT WAR", "EXEMPLEFEST 2026"),
+                    html.replace("<p>Palais", "<p hidden>Palais"),
+                    html.replace("<p>Palais", "<p>Autre événement</p><p>Palais"),
+                    html.replace("</main>", "<h3>2 &amp; 3 JUILLET 2027</h3>"
+                                 "<p>Palais des Arts de Douai - France</p></main>"),
+                    html.replace("Programmation 2026", "Festival annulé")):
+            with self.subTest(html=bad):
+                self.assertIsNone(exact_edition_city(bad, row))
+
     def test_current_dated_multivenue_festival_city_not_single_venue(self):
         row = dict(ROW, name="Festival Exemple : Une célébration 2027")
         html = ("<main><h1>Festival Exemple : Une célébration</h1>"
