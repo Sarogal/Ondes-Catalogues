@@ -1107,6 +1107,18 @@ def _city_from_dated_named_venue_hero(html, row):
         def handle_starttag(self, tag, attrs):
             if tag in ("nav", "footer", "aside"):
                 attrs = list(attrs) + [("hidden", None)]
+            # A CMS heading can print the exact date and venue on two
+            # lines of the same h3. Preserve this explicit line boundary
+            # only within a visible heading, not arbitrary body prose.
+            if (tag == "br" and not self.hidden()
+                    and any(name in ("h1", "h2", "h3", "h4")
+                            for name, _ in self.stack)):
+                attributes = dict(attrs)
+                if ("hidden" not in attributes
+                        and attributes.get("aria-hidden") != "true"
+                        and not re.search(r"(?:display\s*:\s*none|visibility\s*:\s*hidden)",
+                                          fold(attributes.get("style") or ""))):
+                    self.parts.append(self.SEP)
             super().handle_starttag(tag, attrs)
     parser = HeroBody()
     try:
