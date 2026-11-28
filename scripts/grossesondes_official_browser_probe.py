@@ -237,6 +237,13 @@ class BrowserResourceCounts:
             "failed_data", "page_errors")}
 
 
+def resource_diagnostic(official_site, counts):
+    """Associate bounded counters with the already validated origin only."""
+    if safe_public_url(official_site) != official_site or not organizer_homepage(official_site):
+        raise BrowserEvidenceError("unsafe_origin")
+    return {"origin_host": urlsplit(official_site).hostname, **counts.report()}
+
+
 def rendered_html(official_site):
     """Browser is isolated: no secrets, off-origin requests or storage."""
     from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
@@ -274,10 +281,11 @@ def rendered_html(official_site):
             if not request_allowed(page.url, official_site):
                 raise BrowserEvidenceError("unsafe_destination")
             if page.locator("a[href]").count() == 0:
-                # The caller logs the signed root separately. No URLs,
-                # exception messages, response body or script data here.
+                # Only the already validated host, never the discovered
+                # path, query, external hosts, response or exception text.
                 print("BROWSER_LINKLESS_RESOURCE_COUNTS:",
-                      json.dumps(counts.report(), sort_keys=True))
+                      json.dumps(resource_diagnostic(official_site, counts),
+                                 sort_keys=True))
             return bounded_rendered_html(page.content())
         finally:
             browser.close()

@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from grossesondes_official_browser_probe import (
     compare_proof, request_allowed, trusted_parent, probe_sources,
     bounded_rendered_html, BrowserEvidenceError, MAX_DOM_BYTES,
-    wait_for_linkless_dom, BrowserResourceCounts,
+    wait_for_linkless_dom, BrowserResourceCounts, resource_diagnostic,
     MAX_COMPACTION_INPUT_BYTES,
 )
 
@@ -226,6 +226,16 @@ class BrowserPreflightTests(unittest.TestCase):
         counts.blocked_data = 10000
         counts.bump("blocked_data")
         self.assertEqual(counts.report()["blocked_data"], 10000)
+
+    def test_resource_diagnostic_attributes_only_the_validated_host(self):
+        counts = BrowserResourceCounts()
+        counts.bump("blocked_scripts")
+        report = resource_diagnostic(PARENT["officialSite"] + "private-path", counts)
+        self.assertEqual(report["origin_host"], "www.festival666.com")
+        self.assertEqual(report["blocked_scripts"], 1)
+        self.assertNotIn("private-path", json.dumps(report))
+        with self.assertRaises(BrowserEvidenceError):
+            resource_diagnostic("https://www.festival666.com/?token=SECRET", counts)
 
 
 if __name__ == "__main__":
