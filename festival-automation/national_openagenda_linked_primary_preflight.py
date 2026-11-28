@@ -28,6 +28,7 @@ from national_openagenda_research import (SOURCE as OPENAGENDA_DATASET,
                                           pass_edition_title)
 from national_professional_profile_discovery import discover as discover_professional_profiles
 from national_professional_official_detail import examine as examine_professional_details
+from national_professional_official_detail import examine_openagenda_venue
 from national_cultural_venue_discovery import cultural_detail
 from national_brand_domain_research import research_brand_domain, brand_private_proposal
 from national_generic_primary_domain_preflight import (
@@ -257,6 +258,12 @@ def examine(state, queue, catalogue, today, *, event_fetch=None,
                 row["professional_official_detail_review_only"] = examine_professional_details(
                     row["professional_research_review_only"], source["title"],
                     source["year"], today, fetch=read_site)
+                if (row["professional_official_detail_review_only"]["status"] ==
+                        "NO_OFFICIAL_DETAIL_PROOF"):
+                    venue = examine_openagenda_venue(current_leads.get(url), source["title"],
+                                                    source["year"], today, fetch=read_site)
+                    if venue["status"] != "NO_OFFICIAL_DETAIL_PROOF":
+                        row["professional_official_detail_review_only"] = venue
                 if (row["professional_official_detail_review_only"]["status"] ==
                         "NO_OFFICIAL_DETAIL_PROOF"):
                     fallback = cultural_detail(current_leads.get(url), source["title"],

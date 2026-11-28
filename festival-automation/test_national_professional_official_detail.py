@@ -1,7 +1,7 @@
 """Synthetic offline professional detail research, never production data."""
 import unittest
 from copy import deepcopy
-from national_professional_official_detail import examine, MAX_PAGES
+from national_professional_official_detail import examine, examine_openagenda_venue, MAX_PAGES
 
 TITLE = "Festival des Rives 2027"
 TODAY = "2026-11-26"
@@ -37,6 +37,29 @@ class OfficialDetailResearchTests(unittest.TestCase):
                          "ticket_url": TICKET, "start_date": "2027-06-04",
                          "end_date": "2027-06-05", "publication_authorized": False}])
         self.assertFalse(result["publication_authorized"])
+
+    def test_openagenda_venue_fallback_uses_real_detail_validator(self):
+        lead = {"professional_source_hints_review_only": {
+            "location_name": "Salle des Rives", "originagenda_title": None,
+            "verified": False, "links": [
+                {"field": "location_website", "url": ROOT},
+                {"field": "registration", "url": TICKET}]}}
+        for html, expected in ((HTML, True),
+                (HTML.replace(TICKET, TICKET + "-autre"), False),
+                (HTML.replace("metal et punk", "techno et house"), False),
+                (HTML.replace("4 et 5 juin 2027", "4 et 5 juin 2026"), False)):
+            with self.subTest(expected=expected, html=html):
+                pages = dict(PAGES, **{DETAIL: html})
+                calls = []
+                def read(url):
+                    calls.append(url)
+                    return pages[url]
+                result = examine_openagenda_venue(lead, TITLE, 2027, TODAY, fetch=read)
+                self.assertEqual(bool(result["proofs"]), expected)
+                self.assertEqual(calls, [ROOT, INDEX, DETAIL])
+                self.assertFalse(result["publication_authorized"])
+                if expected:
+                    self.assertEqual(result["proofs"][0]["official_detail_url"], DETAIL)
 
     def test_wrong_identity_or_ticket_or_genre_never_qualifies(self):
         for html in (HTML.replace("<h1>Festival des Rives 2027</h1>", "<h1>Autre festival</h1>"),

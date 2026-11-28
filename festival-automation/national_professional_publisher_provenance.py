@@ -13,7 +13,7 @@ from national_openagenda_research import (
     provider_title_matches,
 )
 from national_professional_profile_discovery import discover
-from national_professional_official_detail import examine
+from national_professional_official_detail import examine, examine_openagenda_venue
 from national_cultural_venue_discovery import cultural_detail
 
 
@@ -68,6 +68,8 @@ def prove(event, title, today, *, record_fetch=fetch_record, fetch=fetch_public_
         research = discover(lead["professional_source_hints_review_only"],
                             title, year, fetch=fetch)
         report = examine(research, title, year, today, fetch=fetch)
+        if report["status"] == "NO_OFFICIAL_DETAIL_PROOF":
+            report = examine_openagenda_venue(lead, title, year, today, fetch=fetch)
         if report["status"] == "NO_OFFICIAL_DETAIL_PROOF":
             report = cultural_detail(lead, title, year, today, fetch=fetch)
         return report["proofs"] if report["status"] == "OFFICIAL_DETAIL_PROOF_REVIEW_ONLY" else []

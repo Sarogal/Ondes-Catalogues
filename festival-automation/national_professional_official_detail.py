@@ -168,3 +168,61 @@ def examine(research, title, year, today, *, fetch=fetch_public_html):
     elif result["proofs"]:
         result["status"] = "OFFICIAL_DETAIL_PROOF_REVIEW_ONLY"
     return result
+
+def examine_openagenda_venue(lead, title, year, today, *, fetch=fetch_public_html):
+    """Recheck a venue site nominated by fresh public OpenData, not ticket HTML.
+
+    The venue page must still prove exact title, visible current dates, genre
+    and the exact ticket backlink. No request to a rate-limited ticket origin.
+    """
+    from national_openagenda_research import _valid_professional_hints
+    from national_professional_profile_discovery import ticket_variants
+    empty = {"status": "NO_OFFICIAL_DETAIL_PROOF", "requests": 0, "proofs": [],
+             "review_only": True, "safe_to_publish": False, "publication_authorized": False}
+    if not isinstance(lead, dict):
+        return empty
+    hints = lead.get("professional_source_hints_review_only")
+    if not _valid_professional_hints(hints):
+        return empty
+    sites, tickets = [], []
+    for link in hints["links"]:
+        url = link["url"]
+        if (link["field"] == "location_website"
+                and classify(url) in ALLOWED_WEBSITE_ROLES
+                and url not in sites):
+            sites.append(url)
+        elif link["field"] in ("registration", "links"):
+            for ticket in ticket_variants(url):
+                if ticket not in tickets:
+                    tickets.append(ticket)
+    if len(sites) != 1 or not tickets or len(tickets) > 2:
+        return empty
+    site = sites[0]
+    if any(urlsplit(site).hostname == urlsplit(ticket).hostname for ticket in tickets):
+        return empty
+    # Share a fixed network budget across both exact ticket-route variants.
+    cache = {}
+    def read(url):
+        if url not in cache:
+            if len(cache) >= MAX_PAGES_PER_SITE:
+                raise ValueError("Venue fallback budget exhausted")
+            cache[url] = None
+            cache[url] = fetch(url)
+        if cache[url] is None:
+            raise ValueError("Venue page unavailable")
+        return cache[url]
+    proofs = []
+    for ticket in tickets:
+        report = examine({"status": "PROFESSIONAL_WEBSITE_HINTS",
+            "review_only": True, "safe_to_publish": False, "publication_authorized": False,
+            "websites": [{"website_url": site, "ticket_url": ticket,
+                          "verified": False, "publication_authorized": False}]},
+            title, year, today, fetch=read)
+        if report["status"] == "CONFLICTING_OFFICIAL_DETAILS":
+            return dict(empty, status=report["status"], requests=len(cache))
+        proofs.extend(report["proofs"])
+    if len({(p["start_date"], p["end_date"]) for p in proofs}) > 1:
+        return dict(empty, status="CONFLICTING_OFFICIAL_DETAILS", requests=len(cache))
+    return dict(empty, requests=len(cache), proofs=proofs,
+                status="OFFICIAL_DETAIL_PROOF_REVIEW_ONLY" if proofs else empty["status"],
+                research_route="OPENAGENDA_LOCATION_WEBSITE")
