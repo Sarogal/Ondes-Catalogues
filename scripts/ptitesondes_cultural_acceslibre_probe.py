@@ -225,19 +225,20 @@ def inspect_official(lead, hit, page_read=None):
     return counts
 
 
-def inspect_municipal(lead, *, directory_fetch=None, page_read=None):
+def inspect_municipal(lead, *, hit=None, directory_fetch=None, page_read=None):
     """Research only: fresh DILA authority and exact named municipal page."""
     from ptitesondes_dila_municipal_domains import (
         fetch_dila, municipal_site_hosts, approved_municipal_page_host)
     from ptitesondes_municipal_venue_link_discovery import exact_named_venue_page
     from ptitesondes_open_world_permanent_place_ban import _section_pages
-    from ptitesondes_unlisted_source_safe_recheck import read_municipal_https
+    from ptitesondes_unlisted_source_safe_recheck import read_municipal_https, read_failure_counts
     from urllib.parse import urlsplit
     use_code_fallback = directory_fetch is None
     directory_fetch = directory_fetch or fetch_dila
     page_read = page_read or read_municipal_https
     counts = Counter()
     city, venue = identity(lead)
+    stage = "directory"
     try:
         directory = directory_fetch(city)
         code = lead.get("code_commune")
@@ -260,23 +261,74 @@ def inspect_municipal(lead, *, directory_fetch=None, page_read=None):
         def read(url):
             if not approved_municipal_page_host(url, city, directory):
                 raise ValueError("municipal_scope")
-            final, html = page_read(url, city, directory)
-            if (not approved_municipal_page_host(final, city, directory)
-                    or urlsplit(final).query or urlsplit(final).fragment):
-                raise ValueError("municipal_scope")
-            return final, html
+            before = read_failure_counts()
+            try:
+                final, html = page_read(url, city, directory)
+                if (not approved_municipal_page_host(final, city, directory)
+                        or urlsplit(final).query or urlsplit(final).fragment):
+                    raise ValueError("municipal_scope")
+                return final, html
+            except (OSError, ValueError, TypeError, KeyError, UnicodeError) as exc:
+                after = read_failure_counts()
+                for reason in ("unsafe_url", "dns_unavailable_or_unsafe", "http_status",
+                               "mime", "encoding", "size", "tls", "decode", "transport",
+                               "invalid_redirect"):
+                    delta = after.get(reason, 0) - before.get(reason, 0)
+                    if delta > 0:
+                        counts["municipal_read_" + reason] += delta
+                if type(exc) is ValueError and len(exc.args) == 1 and exc.args[0] in (
+                        "municipal_redirect_outside_authority_or_loop",
+                        "municipal_redirect_unsafe_location", "municipal_redirect_budget_exceeded",
+                        "municipal_scope"):
+                    counts["municipal_read_redirect_rejected"] += 1
+                raise
 
+        # Fresh directory-listed dedicated pages may be public even when
+        # the municipal homepage is unavailable. Never guess a path, change
+        # a site's access controls, or visit a URL outside DILA authority.
+        from ptitesondes_national_cultural_directory_probe import directory_website_hints
+        listed = set(directory_website_hints(lead, try_https_upgrade=True))
+        if isinstance(hit, dict) and isinstance(hit.get("website_hint"), str):
+            listed.add(hit["website_hint"])
+        direct = set()
+        for url in listed:
+            if not approved_municipal_page_host(url, city, directory):
+                continue
+            parts = urlsplit(url)
+            if parts.path.strip("/") and not parts.query and not parts.fragment:
+                direct.add(url)
+        if 1 <= len(direct) <= 4:
+            stage = "listed_page"
+            concordant = 0
+            for url in sorted(direct):
+                counts["municipal_listed_page_attempted"] += 1
+                try:
+                    _, body = read(url)
+                    reason = inspect_official_content(lead, body)
+                    counts["municipal_listed_" + reason] += 1
+                    concordant += int(reason == "page_content_concordant_unverified")
+                except (OSError, ValueError, TypeError, KeyError, UnicodeError, OverflowError):
+                    counts["municipal_listed_page_unavailable"] += 1
+            if concordant:
+                # Only a research signal, not an authority/GPS publication decision.
+                return counts
+        stage = "homepage"
         home, html = read("https://" + sorted(hosts)[0] + "/")
+        counts["municipal_homepage_read"] += 1
         names = {venue} | {lead[k] for k in ("nom_du_lieu", "nom_usuel_du_lieu")
                            if isinstance(lead.get(k), str) and 2 <= len(lead[k]) <= 180}
         def links(url, content):
             return {hit for name in names
                     if (hit := exact_named_venue_page(name, url, content, city, directory))}
+        stage = "link_discovery"
         targets = links(home, html)
         if not targets:
-            for section in _section_pages(home, html, city, directory):
+            sections = _section_pages(home, html, city, directory)
+            counts["municipal_sections_discovered"] += len(sections)
+            for section in sections:
                 try:
                     final, section_html = read(section)
+                    counts["municipal_sections_read"] += 1
                     targets.update(links(final, section_html))
                 except (OSError, ValueError, TypeError, KeyError, UnicodeError):
                     counts["municipal_section_unavailable"] += 1
@@ -284,18 +336,21 @@ def inspect_municipal(lead, *, directory_fetch=None, page_read=None):
         if len(targets) != 1:
             counts["municipal_exact_page_missing" if not targets else "municipal_exact_page_ambiguous"] += 1
             return counts
+        stage = "dedicated_page"
         final, html = read(next(iter(targets)))
         counts["municipal_exact_page_found"] += 1
+        stage = "content"
         counts["municipal_" + inspect_official_content(lead, html)] += 1
     except (OSError, ValueError, TypeError, KeyError, UnicodeError, OverflowError):
         counts["municipal_research_unavailable"] += 1
+        counts["municipal_failed_" + stage] += 1
     return counts
 
 
 def inspect_with_municipal_fallback(lead, hit):
     counts = inspect_official(lead, hit)
     if not counts.get("page_content_concordant_unverified"):
-        counts.update(inspect_municipal(lead))
+        counts.update(inspect_municipal(lead, hit=hit))
     return counts
 
 

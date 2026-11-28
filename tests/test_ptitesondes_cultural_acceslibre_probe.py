@@ -80,7 +80,7 @@ class CulturalAcceslibreProbeTests(unittest.TestCase):
              patch(module + "approved_municipal_page_host", side_effect=lambda u, *_: u.startswith(home)), \
              patch("ptitesondes_municipal_venue_link_discovery.exact_named_venue_page", return_value=target):
             result = inspect_municipal(lead, directory_fetch=lambda _: directory, page_read=read)
-            self.assertEqual(result, {"municipal_exact_page_found": 1,
+            self.assertEqual(result, {"municipal_homepage_read": 1, "municipal_exact_page_found": 1,
                                       "municipal_page_content_concordant_unverified": 1})
             self.assertEqual(calls, [home, target])
         calls.clear()
@@ -92,8 +92,61 @@ class CulturalAcceslibreProbeTests(unittest.TestCase):
              patch(module + "approved_municipal_page_host", side_effect=lambda u, *_: u.startswith(home)), \
              patch("ptitesondes_municipal_venue_link_discovery.exact_named_venue_page", return_value="https://foreign.example/venue"):
             result = inspect_municipal(lead, directory_fetch=lambda _: directory, page_read=read)
-            self.assertEqual(result, {"municipal_research_unavailable": 1})
+            self.assertEqual(result, {"municipal_homepage_read": 1, "municipal_research_unavailable": 1,
+                                      "municipal_failed_dedicated_page": 1})
             self.assertEqual(calls, [home])
+
+    def test_municipal_homepage_failure_is_reported_without_url(self):
+        from unittest.mock import patch
+        from ptitesondes_cultural_acceslibre_probe import inspect_municipal
+        lead = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois", "code_commune": "01234"}
+        module = "ptitesondes_dila_municipal_domains."
+        with patch(module + "municipal_site_hosts", return_value={"mairie.example"}), \
+             patch(module + "approved_municipal_page_host", return_value=True):
+            def read(*args):
+                raise TimeoutError("private URL")
+            result = inspect_municipal(lead, directory_fetch=lambda _: {}, page_read=read)
+        self.assertEqual(result, {"municipal_research_unavailable": 1, "municipal_failed_homepage": 1})
+
+    def test_municipal_reader_reports_transport_deltas_not_global_totals(self):
+        from unittest.mock import patch
+        from ptitesondes_cultural_acceslibre_probe import inspect_municipal
+        lead = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois", "code_commune": "01234"}
+        module = "ptitesondes_dila_municipal_domains."
+        with patch(module + "municipal_site_hosts", return_value={"mairie.example"}), \
+             patch(module + "approved_municipal_page_host", return_value=True), \
+             patch("ptitesondes_unlisted_source_safe_recheck.read_failure_counts",
+                   side_effect=[{"tls": 4, "transport": 2}, {"tls": 5, "transport": 2}]):
+            def read(*args):
+                raise ValueError("private URL")
+            result = inspect_municipal(lead, directory_fetch=lambda _: {}, page_read=read)
+        self.assertEqual(result, {"municipal_research_unavailable": 1, "municipal_failed_homepage": 1,
+                                  "municipal_read_tls": 1})
+
+    def test_municipal_listed_page_qualifies_without_homepage_and_rejects_foreign_urls(self):
+        from unittest.mock import patch
+        from ptitesondes_cultural_acceslibre_probe import inspect_municipal
+        lead = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois",
+                "code_commune": "01234", "code_postal": "01230",
+                "numero_et_libelle_voie": "Rue des Jeux", "adresse_complete": "Rue des Jeux",
+                "site_internet_et_autres_liens": "https://mairie.example/ludotheque"}
+        home = "https://mairie.example/"
+        target = home + "ludotheque"
+        body = "<main><h1>Ludothèque A</h1><address>Rue des Jeux 01230 Les Bois</address><p>Jeux pour enfants</p><p>Accès libre</p></main>"
+        calls = []
+        def read(url, *_):
+            calls.append(url)
+            if url != target:
+                raise AssertionError("unexpected URL")
+            return url, body
+        module = "ptitesondes_dila_municipal_domains."
+        with patch(module + "municipal_site_hosts", return_value={"mairie.example"}), \
+             patch(module + "approved_municipal_page_host", side_effect=lambda url, *_: url.startswith(home)):
+            result = inspect_municipal(lead, hit={"website_hint": "https://foreign.example/venue"},
+                                      directory_fetch=lambda _: {}, page_read=read)
+        self.assertEqual(calls, [target])
+        self.assertEqual(result, {"municipal_listed_page_attempted": 1,
+                                  "municipal_listed_page_content_concordant_unverified": 1})
 
     def test_municipal_code_fallback_keeps_existing_host_gate(self):
         from unittest.mock import patch
