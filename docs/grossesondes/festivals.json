@@ -6488,6 +6488,30 @@
       "auditSources": [
         "https://setmanasanta.fr/"
       ]
+    },
+    {
+      "region": null,
+      "slug": "betizfest-2027",
+      "startDate": "2027-04-16",
+      "name": "BetiZFest 2027",
+      "lat": null,
+      "lon": null,
+      "price": null,
+      "lineup": [],
+      "endDate": "2027-04-17",
+      "sourceConfidence": "Domaine du festival + annonce officielle revérifiée",
+      "city": null,
+      "source": "https://betizfest.info/",
+      "bands": 0,
+      "showOnMap": false,
+      "dateRangeIsContinuous": false,
+      "verificationStatus": "Site et édition officielle revérifiés",
+      "department": null,
+      "lastVerified": "2026-11-28",
+      "venue": null,
+      "officialSite": "https://betizfest.info/",
+      "notes": "Édition et dates revérifiées directement sur le site officiel du festival. Aucun recoupement extérieur des dates n'est requis. Adresse exacte et GPS à compléter.",
+      "status": "Annoncé"
     }
   ]
 }
