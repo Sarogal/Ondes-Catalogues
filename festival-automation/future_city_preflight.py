@@ -1088,6 +1088,84 @@ def _city_from_multivenue_edition(html, row):
     return next(iter(facts.values())) if len(facts) == 1 else None
 
 
+def _city_from_dated_named_venue_hero(html, row):
+    """Current branded date hero immediately followed by a venue and town.
+
+    A bounded visible introduction, not a footer/contact address or a
+    historical programme. Only the commune is returned, never venue GPS.
+    """
+    start, end = iso_day(row.get("startDate")), iso_day(row.get("endDate"))
+    if not start or not end or start.year != end.year:
+        return None
+    words = re.findall(r"[a-z0-9]+", re.sub(
+        r"\b20[2-4]\d\b", "", fold(row.get("name", ""))))
+    if len("".join(words)) < 8:
+        return None
+    identity = re.compile(r"(?<![a-z0-9])" + r"[\W_]+".join(map(re.escape, words))
+                          + r"(?![a-z0-9])")
+    class HeroBody(VisibleParagraphs):
+        def handle_starttag(self, tag, attrs):
+            if tag in ("nav", "footer", "aside"):
+                attrs = list(attrs) + [("hidden", None)]
+            super().handle_starttag(tag, attrs)
+    parser = HeroBody()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (ValueError, TypeError, UnicodeError):
+        return None
+    blocks = [" ".join(x.split()) for x in " ".join(parser.parts).split(parser.SEP)
+              if x.strip()]
+    visible = " ".join(fold(x) for x in blocks)
+    if CANCEL.search(visible):
+        return None
+    intervals = {(a, b) for _, _, a, b in explicit_ranges(visible, start.year)}
+    if dominant_visible_range(intervals) != (start, end):
+        return None
+    venue_pattern = re.compile(
+        r"(?i)^(?:palais|salle|halle|parc|theatre|zenith|arena|espace|stade)"
+        r"\s+[\w'’ -]{2,75}?\s+(?:de|du|a|à)\s+"
+        r"([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-]+"
+        r"(?:\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-]+){0,3})"
+        r"\s*[-–—·,]\s*france\s*$")
+    cities = {}
+    for i, block in enumerate(blocks[:-1]):
+        printed = fold(block)
+        ranges = list(explicit_ranges(printed, start.year))
+        if len(ranges) != 1 or ranges[0][2:] != (start, end):
+            continue
+        a, b, _, _ = ranges[0]
+        if (printed[:a] + printed[b:]).strip(" :;.,-"):
+            continue
+        match = venue_pattern.fullmatch(blocks[i + 1])
+        if not match:
+            continue
+        city = _name(match.group(1))
+        if not city or re.search(r"\b(?:et|ou|france|festival|confirmer)\b", fold(city)):
+            return None
+        cities[_normal(city)] = city
+    if len(cities) != 1:
+        return None
+    # The affirmative date/place pair must occur in the first visible
+    # blocks immediately after an explicit festival brand.
+    for i in range(1, min(8, len(blocks) - 1)):
+        if not identity.search(fold(blocks[i - 1])):
+            continue
+        if set(re.findall(r"\b20[2-4]\d\b", blocks[i - 1])) - {str(start.year)}:
+            continue
+        printed = fold(blocks[i])
+        ranges = list(explicit_ranges(printed, start.year))
+        if len(ranges) != 1 or ranges[0][2:] != (start, end):
+            continue
+        a, b, _, _ = ranges[0]
+        if (printed[:a] + printed[b:]).strip(" :;.,-"):
+            continue
+        match = venue_pattern.fullmatch(blocks[i + 1])
+        if match and _normal(match.group(1)) in cities:
+            return cities[_normal(match.group(1))]
+    return None
+
+
 def exact_edition_city(html, row):
     """One city of one 2027 edition, or nothing. Never infer from old years."""
     if not isinstance(html, str) or not 0 < len(html) <= 650_000:
@@ -1116,17 +1194,18 @@ def exact_edition_city(html, row):
     evergreen = _current_edition_evergreen_commune(html, row)
     countdown_place = _city_from_adjacent_countdown_hero(html, row)
     multivenue_place = _city_from_multivenue_edition(html, row)
+    named_venue_hero = _city_from_dated_named_venue_hero(html, row)
     title_place = _city_from_official_title_plus_named_current_dates(html, row)
     image_alt_place = _city_from_current_edition_image_alt(html, row)
     tourism_place = _signed_tourism_current_postal_city(html, row)
     description = current_edition_description(html, row)
     description_city = description['city'] if description else None
-    evidence = [c for c in (structured, visible, title, evergreen, countdown_place, multivenue_place, title_place,
+    evidence = [c for c in (structured, visible, title, evergreen, countdown_place, multivenue_place, named_venue_hero, title_place,
                             image_alt_place, tourism_place, description_city) if c is not None]
     if len({_normal(c) for c in evidence}) > 1:
         return None
     city = (structured or visible or title or evergreen or countdown_place or multivenue_place or title_place
-            or image_alt_place or tourism_place or description_city)
+            or named_venue_hero or image_alt_place or tourism_place or description_city)
     if not city or (row.get("city") and _normal(city) != _normal(row["city"])):
         return None
     return {"slug": row["slug"], "city": city, "source": row["officialSite"]}
