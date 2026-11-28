@@ -40,6 +40,28 @@ def catalogue(row=ROW):
 
 class FutureCityProofTests(unittest.TestCase):
 
+    def test_named_date_and_venue_in_same_heading_with_visible_line_break(self):
+        row = dict(ROW, name="ExempleFest 2027")
+        # Reproduce the observed CMS structure, not its festival identity.
+        html = ('<main><h2>MAKE <span style="color:#00acb2;">EXEMPLEFEST</span> NOT WAR</h2>'
+                '<h3>2 &amp; 3 JUILLET 2027<br/>Palais des Grottes de Colonne - france</h3>'
+                '<a href="/tickets">BILLETTERIE 2027</a>'
+                '<h2>Rendez-vous les 2 &amp; 3 juillet 2027</h2>'
+                '<h3>Ancien groupe</h3><a href="/line-up">LINE UP 2026</a></main>')
+        self.assertEqual(exact_edition_city(html, row),
+                         {"slug": ROW["slug"], "city": "Colonne", "source": SITE})
+        for bad in (html.replace("<br/>", " "),
+                    html.replace("<br/>", "<br hidden/>"),
+                    html.replace("<br/>", "<br style='display:none'/>"),
+                    html.replace("Palais des Grottes de Colonne - france",
+                                 "<span hidden>Palais des Grottes de Colonne - france</span>"),
+                    html.replace("<h3>2 &amp; 3 JUILLET", "<p>2 &amp; 3 JUILLET")
+                        .replace("france</h3>", "france</p>"),
+                    html.replace("JUILLET 2027", "JUILLET 2026"),
+                    html.replace("EXEMPLEFEST", "AUTRE FESTIVAL")):
+            with self.subTest(html=bad):
+                self.assertIsNone(exact_edition_city(bad, row))
+
     def test_named_current_date_venue_hero_proves_only_city(self):
         row = dict(ROW, name="ExempleFest 2027")
         html = ("<main><h2>MAKE EXEMPLEFEST NOT WAR</h2>"
