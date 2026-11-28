@@ -68,3 +68,22 @@ class ExternalRasterTests(unittest.TestCase):
                 self.assertFalse(report["publication_authorized"])
                 self.assertNotIn("private diagnostic detail", str(report))
         read.assert_not_called()
+
+    def test_exact_title_and_future_announcement(self):
+        from grossesondes_external_poster_review import page, titled_future_announcement
+        row = dict(ROW, name="Exemple Sonore 2027", startDate="2027-09-11",
+                   endDate="2027-09-11")
+        html = ("<html><head><title>Exemple Sonore</title></head><body><main>"
+                "<p>Merci pour cette édition 2026. Préparez-vous pour le 11 septembre 2027 !</p>"
+                "</main></body></html>")
+        self.assertTrue(titled_future_announcement(html, page(html), row))
+        for bad in (html.replace("Exemple Sonore", "Autre Sonore"),
+                    html.replace("Exemple Sonore", "Exemple Sonore 2026"),
+                    html.replace("Préparez-vous pour le", "Photos prises le"),
+                    html.replace("11 septembre", "12 septembre"),
+                    html.replace("<p>", "<p hidden>"),
+                    html.replace("</main>", "<p>Festival annulé</p></main>")):
+            self.assertFalse(titled_future_announcement(bad, page(bad), row), bad)
+        from grossesondes_external_poster_review import exact_root_dates
+        conflict = html.replace("</main>", "<p>12 septembre 2027</p></main>")
+        self.assertFalse(exact_root_dates(page(conflict), row))

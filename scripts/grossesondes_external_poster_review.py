@@ -19,10 +19,10 @@ from urllib.parse import parse_qsl, urlsplit, urlunsplit
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "festival-automation"))
 
 from grossesondes_existing_official_updates import (
-    signed_rotation, page, home_matches_edition, linked_pages, fold,
+    signed_rotation, page, home_matches_edition, linked_pages, fold, _EditionTitle,
 )
 from grossesondes_official_html_edition import (
-    VisibleText, explicit_ranges, dominant_visible_range, fold as calendar_fold,
+    VisibleText, explicit_ranges, dominant_visible_range, fold as calendar_fold, CANCEL,
 )
 from dns_pinned_https import DNSPinnedHTTPSConnection, OfficialHTTPStatusError, safe_public_url, fetch_public_html
 from grossesondes_official_poster_ocr import (
@@ -161,6 +161,43 @@ def exact_root_dates(parsed, row):
     return dominant_visible_range(ranges) == (start, end)
 
 
+def titled_future_announcement(html, parsed, row):
+    """Review-only fallback: exact signed-site title and explicit future announcement.
+
+    Never accept a brand from the navigation, a year in a filename, or dates
+    from the preceding edition. The separate exact_root_dates gate still applies.
+    """
+    try:
+        start = date.fromisoformat(row["startDate"])
+        end = date.fromisoformat(row["endDate"])
+        name = fold(row["name"])
+    except (ValueError, TypeError, KeyError):
+        return False
+    brand = re.sub(r"\s+20[2-4]\d$", "", name)
+    if len(brand.replace(" ", "")) < 8 or name != brand + " " + str(start.year):
+        return False
+    title = _EditionTitle()
+    title.feed(html)
+    title.close()
+    label = fold(" ".join(title.parts))
+    if label not in (brand, name, "accueil " + brand, "home " + brand):
+        return False
+    blocks = [b for b in parsed.blocks if b["scope"] == "main"] or parsed.relevant()
+    if any(CANCEL.search(calendar_fold(b["text"])) for b in parsed.blocks):
+        return False
+    for block in blocks:
+        if block["tag"] not in ("p", "h1", "h2", "h3"):
+            continue
+        value = calendar_fold(block["text"])
+        for offset, _, first, last in explicit_ranges(value, start.year):
+            if (first, last) == (start, end) and re.search(
+                r"\b(?:preparez[ -]vous pour le|rendez[ -]vous le|prochaine edition\s*(?:le|du)?|save the date)\s*[:!]?\s*$",
+                value[max(0, offset - 90):offset]
+            ):
+                return True
+    return False
+
+
 def scan(catalogue, today, tick=0, slug=None, *, fetch=fetch_public_html,
          read=read_raster, recognize=recognize_poster):
     report = {"review_only": True, "publication_authorized": False,
@@ -195,7 +232,8 @@ def scan(catalogue, today, tick=0, slug=None, *, fetch=fetch_public_html,
             if (r.get("cancelled") or r.get("status") in ("Annulé", "Reporté")
                     or not r.get("startDate") or not r.get("endDate")):
                 outcome = "ROW_NOT_ELIGIBLE"
-            elif not home_matches_edition(parsed, r, today):
+            elif not (home_matches_edition(parsed, r, today)
+                      or titled_future_announcement(html, parsed, r)):
                 outcome = "ROOT_EDITION_UNCONFIRMED"
             elif not exact_root_dates(parsed, r):
                 outcome = "ROOT_DATES_UNCONFIRMED"
