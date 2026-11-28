@@ -29,7 +29,7 @@ from grossesondes_official_html_edition import (
 from dns_pinned_https import DNSPinnedHTTPSConnection, OfficialHTTPStatusError, safe_public_url, fetch_public_html
 from grossesondes_official_poster_ocr import (
     MAX_BYTES, MIME_FORMAT, recognize_poster, poster_review_claims, _valid_cached_words,
-    MIN_REVIEW_CONFIDENCE, normalized_image, parse_tsv, MAX_TSV,
+    MIN_REVIEW_CONFIDENCE, normalized_image, parse_tsv, MAX_TSV, poster_word_lines,
 )
 
 MAX_HOSTS = 4
@@ -241,6 +241,44 @@ def alternate_layout_read(mime, body):
         return parse_tsv(completed.stdout.decode("utf-8", errors="strict"))
 
 
+def numeric_date_diagnostic(row, words):
+    """Recognize a full weekday-labelled numeric date on one geometric line.
+
+    Review-only: do not interpret bare numbers, GPS, prices, stacked
+    columns, dates without a year, or a mismatching calendar weekday.
+    """
+    flags = {"numeric_exact_date": False, "numeric_date_conflict": False}
+    if not _valid_cached_words(words) or not words:
+        return flags
+    lines = poster_word_lines(words)
+    if lines is None:
+        return flags
+    try:
+        start = date.fromisoformat(row["startDate"])
+        end = date.fromisoformat(row["endDate"])
+    except (ValueError, TypeError, KeyError):
+        return flags
+    weekdays = ("lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche")
+    pattern = re.compile(r"(?<!\w)(" + "|".join(weekdays) +
+                         r")\s+(\d{1,2})\s*([./-])\s*(\d{1,2})\s*\3\s*(20[2-4]\d)(?!\d)", re.I)
+    for line in lines:
+        raw = " ".join(w["text"] for w in line)
+        for m in pattern.finditer(raw):
+            try:
+                value = date(int(m[5]), int(m[4]), int(m[2]))
+            except ValueError:
+                flags["numeric_date_conflict"] = True
+                continue
+            if value.weekday() != weekdays.index(m[1].lower()) or not start <= value <= end:
+                flags["numeric_date_conflict"] = True
+            elif (start == end == value and
+                  all(w["confidence"] >= MIN_REVIEW_CONFIDENCE for w in line)):
+                flags["numeric_exact_date"] = True
+    if flags["numeric_date_conflict"]:
+        flags["numeric_exact_date"] = False
+    return flags
+
+
 def alternate_layout_diagnostic(row, original, mime, body, recognize):
     """Independent review only; never replace a rejected primary reading."""
     flags = unordered_identity_flags(row, original)
@@ -254,6 +292,7 @@ def alternate_layout_diagnostic(row, original, mime, body, recognize):
                                            "review_only": True, "words": words})
         return {"status": result["status"], "qualification": result["diagnostics"],
                 "unordered_identity": unordered_identity_flags(row, words),
+                "numeric_calendar": numeric_date_diagnostic(row, words),
                 "publication_authorized": False}
     except (OSError, ValueError, TypeError, UnicodeError, ImportError,
             subprocess.SubprocessError, Warning):

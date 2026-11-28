@@ -130,3 +130,27 @@ class ExternalRasterTests(unittest.TestCase):
         result = alternate_layout_diagnostic(ROW, original, "image/png", b"fake",
                                              Mock(side_effect=TimeoutError()))
         self.assertEqual(result["status"], "ALTERNATE_UNAVAILABLE")
+
+    def test_numeric_date_diagnostic_requires_single_confident_weekday_line(self):
+        from grossesondes_external_poster_review import numeric_date_diagnostic
+        row = dict(ROW, startDate="2027-09-11", endDate="2027-09-11")
+        def line(value, y=0, confidence=99):
+            words = []
+            x = 0
+            for token in value.split():
+                width = len(token) * 9
+                words.append({"text": token, "box": [x, y, width, 18],
+                              "confidence": confidence, "review_only": True})
+                x += width + 6
+            return words
+        good = line("SAMEDI 11 . 09 . 2027")
+        self.assertTrue(numeric_date_diagnostic(row, good)["numeric_exact_date"])
+        for bad in (line("11 . 09 . 2027"), line("SAMEDI 11 . 09 . 2027", confidence=60),
+                    line("SAMEDI 11") + line("09 . 2027", y=50),
+                    line("SAMEDI 11 . 09 / 2027")):
+            self.assertFalse(numeric_date_diagnostic(row, bad)["numeric_exact_date"])
+        for bad in (line("DIMANCHE 11 . 09 . 2027"), line("SAMEDI 31 . 02 . 2027"),
+                    good + line("DIMANCHE 12 . 09 . 2027", y=50)):
+            result = numeric_date_diagnostic(row, bad)
+            self.assertTrue(result["numeric_date_conflict"])
+            self.assertFalse(result["numeric_exact_date"])
