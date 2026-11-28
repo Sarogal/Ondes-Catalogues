@@ -67,6 +67,31 @@ class DILAMunicipalDomainsTests(unittest.TestCase):
         self.assertEqual(municipal_site_hosts(CITY, payload(mairie()), expected_insee="12345"),
                          frozenset({"www.ville-les-bois.fr"}))
 
+    def test_rejection_details_preserve_fail_closed_and_redact_values(self):
+        from collections import Counter
+        cases = (
+            ({"url_service_public": "https://lannuaire.service-public.gouv.fr:bad/mairie"}, "dila_record_canonical_url_invalid"),
+            ({"nom": "Mairie - Autre-ville"}, "dila_record_name_mismatch"),
+            ({"copyright": "Inconnu"}, "dila_record_provenance_invalid"),
+            ({"pivot": "invalid JSON"}, "dila_record_structure_invalid"),
+            ({"pivot": "[]"}, "dila_record_pivot_mismatch"),
+            ({"adresse": "[]"}, "dila_record_address_mismatch"),
+            ({"site_internet": json.dumps([{"libelle": "Service", "valeur": SITE}])}, "dila_site_labelled"),
+            ({"site_internet": json.dumps([{"valeur": "https://www.ville-les-bois.fr/path"}])}, "dila_site_not_homepage"),
+            ({"site_internet": json.dumps([{"valeur": "http://www.ville-les-bois.fr/"}])}, "dila_site_http_only"),
+            ({"site_internet": json.dumps([{"valeur": "https://127.0.0.1/"}])}, "dila_site_url_invalid"),
+        )
+        for change, reason in cases:
+            with self.subTest(reason=reason):
+                row = mairie()
+                row.update(change)
+                counts = Counter()
+                self.assertFalse(municipal_site_hosts(CITY, payload(row), diagnostics=counts))
+                self.assertEqual(counts[reason], 1)
+                self.assertNotIn(CITY, str(counts))
+                self.assertNotIn(SITE, str(counts))
+                self.assertTrue(all(type(n) is int for n in counts.values()))
+
     def test_no_query_injection_from_city(self):
         for city in ('Ville" OR true', 'Saint\\Ville', 'X\nOR true', "", " "):
             with self.subTest(city=city), self.assertRaises(ValueError):
