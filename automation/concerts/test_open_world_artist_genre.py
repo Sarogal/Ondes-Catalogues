@@ -132,6 +132,41 @@ class OpenWorldArtistGenreTests(unittest.TestCase):
         self.assertEqual(out["rememberedHeldStageCounts"], {})
         self.assertNotIn("untrusted text", json.dumps(out))
 
+    def test_changed_reader_retries_extraction_failure_once_same_day(self):
+        first = research.build(registry(), DAY,
+                               fetch=lambda *a: "<title>New Act</title>")
+        key = next(iter(first["profileAttempts"]))
+        first["profileAttempts"][key]["readerRevision"] = "0" * 64
+        second = research.build(registry(), DAY, prior=first,
+                                fetch=lambda *a: "<title>New Act</title>")
+        self.assertEqual(second["sourcesChecked"], 1)
+        self.assertEqual(second["readerRevisionRetries"], 1)
+        self.assertEqual(second["readerRevisionRetryPendingAfter"], 0)
+        self.assertEqual(second["profileAttempts"][key]["readerRevision"],
+                         research.READER_REVISION)
+        third = research.build(registry(), DAY, prior=second,
+                               fetch=lambda *a: self.fail("same revision cooldown"))
+        self.assertEqual(third["sourcesChecked"], 0)
+        self.assertFalse(third["publicationAllowed"])
+        self.assertEqual(third["approvalsProposed"], 0)
+
+    def test_legacy_extraction_failure_retries_but_network_failure_does_not(self):
+        failed = research.build(registry(), DAY,
+                                fetch=lambda *a: "<title>New Act</title>")
+        key = next(iter(failed["profileAttempts"]))
+        failed["profileAttempts"][key].pop("readerRevision")
+        second = research.build(registry(), DAY, prior=failed, fetch=lambda *a: PROFILE)
+        self.assertEqual(second["profilesRefreshed"], 1)
+        self.assertEqual(second["readerRevisionRetries"], 1)
+        def unavailable(*args):
+            raise OSError("network")
+        network = research.build(registry(), DAY, fetch=unavailable)
+        result = research.build(registry(), DAY, prior=network,
+                                fetch=lambda *a: self.fail("network cooldown"))
+        self.assertEqual(result["sourcesChecked"], 0)
+        self.assertEqual(result["readerRevisionRetries"], 0)
+        self.assertFalse(second["publicationAllowed"])
+
     def test_fresh_profile_is_reused_and_new_artist_is_not_delayed(self):
         first = research.build(registry(), DAY, fetch=lambda *a: PROFILE)
         self.assertEqual(first["profilesRefreshed"], 1)
@@ -240,6 +275,8 @@ class OpenWorldArtistGenreTests(unittest.TestCase):
         for sentence, genre in (
             ("New Act is a death metal band from France.", "Death Metal"),
             ("New Act est un groupe de punk basé à Lyon.", "Punk"),
+            ("New Act plays death metal.", "Death Metal"),
+            ("New Act joue du punk rock.", "Punk Rock"),
         ):
             html = f"<title>New Act | Official website</title><main><p>{sentence}</p></main>"
             calls = []
@@ -291,6 +328,8 @@ class OpenWorldArtistGenreTests(unittest.TestCase):
     def test_direct_description_rejects_event_influences_negation_other_identity(self):
         for page in (
             "<title>New Act</title><p>New Act plays with a death metal band.</p>",
+            "<title>New Act</title><p>New Act plays death metal covers.</p>",
+            "<title>New Act</title><p>New Act joue du punk rock et du jazz.</p>",
             "<title>New Act</title><p>New Act is not a death metal band.</p>",
             "<title>New Act</title><p>Other Act is a death metal band.</p>",
             "<title>Other Act</title><p>New Act is a death metal band.</p>",
