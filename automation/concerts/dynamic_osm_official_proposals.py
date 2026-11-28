@@ -587,9 +587,25 @@ def _prioritize_extraction_retries(window, selected, failures, revision, limit,
     # Within each priority, least recently examined wins. Successive code
     # revisions must not keep favoring the first rows of a static registry.
     recency = {} if recency is None else recency
-    for row in sorted(selected, key=lambda row: (
-            _review_key(row) not in geo_stale,
-            recency.get(_review_key(row), -1))):
+    # Group changed-code retries by venue inside each priority class.
+    # This preserves geographic precedence and least-recent ordering within
+    # a venue without allowing one large failed agenda to exhaust the quota.
+    # Exhaust every venue's first turn before giving any venue a second.
+    ordered = []
+    for geographic in (True, False):
+        by_venue = defaultdict(deque)
+        for row in sorted(selected, key=lambda row: recency.get(_review_key(row), -1)):
+            key = _review_key(row)
+            if key in stale and key not in picked and (key in geo_stale) == geographic:
+                by_venue[row[2]].append(row)
+        while by_venue:
+            for venue_id in sorted(by_venue, key=lambda venue_id:
+                    recency.get(_review_key(by_venue[venue_id][0]), -1)):
+                queue = by_venue[venue_id]
+                ordered.append(queue.popleft())
+                if not queue:
+                    del by_venue[venue_id]
+    for row in ordered:
         key = _review_key(row)
         if len(prioritized) >= budget:
             break
@@ -809,6 +825,10 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         "extractionRetryMemory": dict(list(retry_memory.items())[-MAX_REVIEW_MEMORY:]),
         "changedExtractorRetryPendingBefore": pending_retries,
         "changedExtractorPriorityChecks": len((prioritized - geo_prioritized) & checked_set),
+        "changedRetryPriorityDistinctVenues": len({
+            row[2] for row in examined if _review_key(row) in prioritized}),
+        "distinctVenuesExamined": len({row[2] for row in examined}),
+        "maxChecksPerVenue": max(Counter(row[2] for row in examined).values(), default=0),
         "venueGeoRetryMemory": dict(list(geo_memory.items())[-MAX_REVIEW_MEMORY:]),
         "changedVenueGeoRetryPendingBefore": len(geo_stale),
         "changedVenueGeoPriorityChecks": len(geo_prioritized & checked_set),
