@@ -87,3 +87,24 @@ class ExternalRasterTests(unittest.TestCase):
         from grossesondes_external_poster_review import exact_root_dates
         conflict = html.replace("</main>", "<p>12 septembre 2027</p></main>")
         self.assertFalse(exact_root_dates(page(conflict), row))
+
+    def test_unordered_identity_flags_never_grant_claims(self):
+        from grossesondes_external_poster_review import unordered_identity_flags
+        from grossesondes_official_poster_ocr import poster_review_claims
+        def word(text, x, y, confidence=99):
+            return {"text": text, "box": [x, y, 60, 18],
+                    "confidence": confidence, "review_only": True}
+        words = [word("Exemple", 0, 0), word("2027", 400, 200),
+                 word("2026", 400, 250, 45)]
+        flags = unordered_identity_flags(ROW, words)
+        self.assertTrue(flags["all_strong_brand_tokens_present"])
+        self.assertTrue(flags["strong_expected_year_token_present"])
+        self.assertTrue(flags["other_year_token_present"])
+        self.assertNotIn("claims", flags)
+        self.assertNotIn("Exemple", str(flags))
+        proof = poster_review_claims(ROW, {"status": "review_only",
+                                    "review_only": True, "words": words})
+        self.assertFalse(proof["publication_authorized"])
+        self.assertEqual(proof["claims"], {})
+        self.assertEqual(unordered_identity_flags(ROW, [{"text": "invalid"}]), {})
+        self.assertFalse(unordered_identity_flags(ROW, words[:1])["expected_year_token_present"])

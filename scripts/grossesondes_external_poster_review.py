@@ -26,7 +26,8 @@ from grossesondes_official_html_edition import (
 )
 from dns_pinned_https import DNSPinnedHTTPSConnection, OfficialHTTPStatusError, safe_public_url, fetch_public_html
 from grossesondes_official_poster_ocr import (
-    MAX_BYTES, MIME_FORMAT, recognize_poster, poster_review_claims,
+    MAX_BYTES, MIME_FORMAT, recognize_poster, poster_review_claims, _valid_cached_words,
+    MIN_REVIEW_CONFIDENCE,
 )
 
 MAX_HOSTS = 4
@@ -198,6 +199,30 @@ def titled_future_announcement(html, parsed, row):
     return False
 
 
+def unordered_identity_flags(row, words):
+    """Diagnostic tokens only; never join columns or grant edition proof."""
+    if not _valid_cached_words(words) or not words:
+        return {}
+    try:
+        year = str(date.fromisoformat(row["startDate"]).year)
+        name = fold(row["name"])
+    except (KeyError, ValueError, TypeError):
+        return {}
+    brand = set(re.sub(r"\b20[2-4]\d\b", "", name).split()) - {"festival", "fest"}
+    all_tokens = set(fold(" ".join(w["text"] for w in words)).split())
+    strong_tokens = set(fold(" ".join(w["text"] for w in words
+                                     if w["confidence"] >= MIN_REVIEW_CONFIDENCE)).split())
+    years = {token for token in all_tokens if re.fullmatch(r"20[2-4]\d", token)}
+    return {
+        "expected_year_token_present": year in years,
+        "other_year_token_present": bool(years - {year}),
+        "all_brand_tokens_present": bool(brand and brand <= all_tokens),
+        "all_strong_brand_tokens_present": bool(brand and brand <= strong_tokens),
+        "strong_expected_year_token_present": year in strong_tokens,
+        "cancellation_token_present": bool(CANCEL.search(calendar_fold(" ".join(w["text"] for w in words)))),
+    }
+
+
 def scan(catalogue, today, tick=0, slug=None, *, fetch=fetch_public_html,
          read=read_raster, recognize=recognize_poster):
     report = {"review_only": True, "publication_authorized": False,
@@ -281,7 +306,8 @@ def scan(catalogue, today, tick=0, slug=None, *, fetch=fetch_public_html,
                 result = poster_review_claims(row, {"status": "review_only",
                     "review_only": True, "words": words})
                 diagnostic.update(outcome=result["status"], qualification=result["diagnostics"],
-                                  claim_types=sorted(result["claims"]))
+                                  claim_types=sorted(result["claims"]),
+                                  unordered_identity=unordered_identity_flags(row, words))
             except OfficialHTTPStatusError as exc:
                 diagnostic["outcome"] = "RATE_LIMITED" if exc.status_code == 429 else "HTTP_REJECTED"
                 if exc.status_code == 429:
