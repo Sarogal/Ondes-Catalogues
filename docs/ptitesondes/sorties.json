@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-28T08:51:53+01:00",
+  "updated_at": "2026-11-28T11:55:02+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -22751,6 +22751,66 @@
       "geo_precision": "venue",
       "lat": 48.84875,
       "lng": 2.136784
+    },
+    {
+      "id": "openagenda-80640921-2026-12-21",
+      "title": "PIERRE ET LE LOUP",
+      "category": "conte-musical",
+      "category_label": "Conte musical",
+      "date_start": "2026-12-21",
+      "date_end": "2026-12-21",
+      "time": "10:30 ; 14:00 ; 16:30 ; 18:45",
+      "city": "Bordeaux",
+      "department": "Gironde",
+      "region": "Nouvelle-Aquitaine",
+      "venue": "Château Théâtre Descas",
+      "source_url": "https://openagenda.com/les-concerts-classiques/events/80640921_pierre-et-le-loup-6922306",
+      "source_label": "Les Concerts Classiques — Licence Ouverte 2.0 — données mises à jour le 25/11/2026",
+      "verified_at": "2026-11-28",
+      "geo_verified_at": "2026-11-28",
+      "geo_precision": "venue",
+      "lat": 44.831451,
+      "lng": -0.558555
+    },
+    {
+      "id": "openagenda-852522-2026-12-19",
+      "title": "Olalaland",
+      "category": "spectacle-jeunesse",
+      "category_label": "Spectacle jeune public",
+      "date_start": "2026-12-19",
+      "date_end": "2026-12-19",
+      "time": "18:00",
+      "city": "Bordeaux",
+      "department": "Gironde",
+      "region": "Nouvelle-Aquitaine",
+      "venue": "tnba - Théâtre national de Bordeaux Aquitaine",
+      "source_url": "https://openagenda.com/tnba-theatre-national-bordeaux-aquitaine/events/852522_olalaland-7623275",
+      "source_label": "tnba - Théâtre national Bordeaux Aquitaine — Licence Ouverte 2.0 — données mises à jour le 25/11/2026",
+      "verified_at": "2026-11-28",
+      "geo_verified_at": "2026-11-28",
+      "geo_precision": "venue",
+      "lat": 44.831396,
+      "lng": -0.561188
+    },
+    {
+      "id": "openagenda-81892931-2026-12-06",
+      "title": "LE ROI DES MAGICIENS",
+      "category": "conte-musical",
+      "category_label": "Conte musical",
+      "date_start": "2026-12-06",
+      "date_end": "2026-12-06",
+      "time": "10:30 ; 14:00 ; 16:30",
+      "city": "Bordeaux",
+      "department": "Gironde",
+      "region": "Nouvelle-Aquitaine",
+      "venue": "Château Théâtre Descas",
+      "source_url": "https://openagenda.com/les-concerts-classiques/events/81892931_le-roi-des-magiciens",
+      "source_label": "Les Concerts Classiques — Licence Ouverte 2.0 — données mises à jour le 25/11/2026",
+      "verified_at": "2026-11-28",
+      "geo_verified_at": "2026-11-28",
+      "geo_precision": "venue",
+      "lat": 44.831451,
+      "lng": -0.558555
     }
   ]
 }
