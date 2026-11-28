@@ -38,3 +38,32 @@ class ProgrammeSitemapTests(unittest.TestCase):
         self.assertEqual(calls, [SITE + "sitemap.xml"])
         self.assertEqual(discover_programme_urls("http://festival-exemple.fr/", fetch=fetch), [])
         self.assertEqual(len(calls), 1)
+
+
+    def test_index_child_rotation_is_bounded_and_stays_same_host(self):
+        def index(*urls):
+            return ('<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+                    + "".join("<sitemap><loc>" + escape(u) + "</loc></sitemap>" for u in urls)
+                    + "</sitemapindex>").encode("utf-8")
+        first, second = SITE + "pages.xml", SITE + "posts.xml"
+        root = SITE + "sitemap.xml"
+        data = index(first, second, root, "https://other.fr/child.xml",
+                     SITE + "a/../child.xml", SITE + "secret.xml?token=x",
+                     SITE + "%63hild.xml", SITE + "child.html")
+        pages = {root: data, first: sitemap(SITE + "en/lineup"),
+                 second: sitemap(SITE + "fr/programmation")}
+        calls = []
+        def fetch(url):
+            calls.append(url)
+            return pages[url]
+        self.assertEqual(discover_programme_urls(SITE, fetch=fetch, tick=0),
+                         [SITE + "en/lineup"])
+        self.assertEqual(calls, [root, first])
+        calls.clear()
+        self.assertEqual(discover_programme_urls(SITE, fetch=fetch, tick=1),
+                         [SITE + "fr/programmation"])
+        self.assertEqual(calls, [root, second])
+        calls.clear()
+        pages[first] = index(second)
+        self.assertEqual(discover_programme_urls(SITE, fetch=fetch, tick=0), [])
+        self.assertEqual(calls, [root, first])

@@ -24,14 +24,25 @@ def sitemap_url(site):
     return "https://" + urlsplit(site).hostname + "/sitemap.xml"
 
 
+def valid_xml_url(url):
+    if not isinstance(url, str) or safe_public_url(url) != url:
+        return False
+    path = urlsplit(url).path
+    return (len(path) <= 500 and "%" not in path
+            and all(part not in (".", "..") for part in path.split("/"))
+            and re.fullmatch(r"/[A-Za-z0-9_./-]+\.xml", path, re.I) is not None)
+
+
 def read_sitemap(url):
-    if not isinstance(url, str) or sitemap_url(url) != url:
-        raise ValueError("Invalid sitemap origin")
+    # The initial URL is fixed by sitemap_url; children may only originate
+    # in a bounded, same-host index parsed by discover_programme_urls.
+    if not valid_xml_url(url):
+        raise ValueError("Invalid sitemap URL")
     host = urlsplit(url).hostname
     conn = DNSPinnedHTTPSConnection(host, port=443, timeout=8,
                                     context=ssl.create_default_context())
     try:
-        conn.request("GET", "/sitemap.xml",
+        conn.request("GET", urlsplit(url).path,
                      headers={"User-Agent": "GrossesOndesSitemapResearch/1.0",
                               "Accept": "application/xml,text/xml",
                               "Accept-Encoding": "identity"})
@@ -47,18 +58,27 @@ def read_sitemap(url):
         conn.close()
 
 
-def programme_urls(site, data):
-    """Direct sitemap URL set only; no DTD, indexes, nested requests or redirects."""
-    if (sitemap_url(site) is None or not isinstance(data, bytes)
-            or not 0 < len(data) <= MAX_XML):
-        return []
+def xml_root(data):
+    """Reject oversized or non-UTF-8 XML, entities and DTDs before parsing."""
+    if not isinstance(data, bytes) or not 0 < len(data) <= MAX_XML:
+        return None
     try:
-        # UTF-8 only avoids alternative encodings concealing XML declarations.
         text = data.decode("utf-8", errors="strict")
         if re.search(r"<!\s*(?:DOCTYPE|ENTITY)", text, re.I) or "\x00" in text:
-            return []
+            return None
         root = ElementTree.fromstring(text)
-        if root.tag != NS + "urlset" or len(root) > MAX_LOCS:
+        return root if len(root) <= MAX_LOCS else None
+    except (ValueError, TypeError, UnicodeError, ElementTree.ParseError, RecursionError):
+        return None
+
+
+def programme_urls(site, data):
+    """Direct sitemap URL set only; an index is not a programme page."""
+    if sitemap_url(site) is None:
+        return []
+    try:
+        root = xml_root(data)
+        if root is None or root.tag != NS + "urlset":
             return []
         host = urlsplit(site).hostname
         selected = set()
@@ -83,12 +103,45 @@ def programme_urls(site, data):
         return []
 
 
-def discover_programme_urls(site, *, fetch=read_sitemap):
-    """One fixed HTTPS endpoint for a caller-validated official site."""
+def index_children(site, data):
+    """Same-host XML files explicitly nominated by the root index."""
+    if sitemap_url(site) is None:
+        return []
+    root = xml_root(data)
+    if root is None or root.tag != NS + "sitemapindex":
+        return []
+    host = urlsplit(site).hostname
+    selected = set()
+    for entry in root:
+        if entry.tag != NS + "sitemap":
+            continue
+        locs = entry.findall(NS + "loc")
+        if len(locs) != 1 or len(locs[0]) or not locs[0].text:
+            continue
+        url = locs[0].text.strip()
+        if (valid_xml_url(url) and urlsplit(url).hostname == host
+                and url != sitemap_url(site)):
+            selected.add(url)
+    return sorted(selected)
+
+
+def discover_programme_urls(site, *, fetch=read_sitemap, tick=0):
+    """At most two XML reads: one fixed root, one rotating indexed child.
+
+    No nested indexes, arbitrary candidate URL, cross-host redirects or
+    further request when the root/child cannot be fetched.
+    """
     url = sitemap_url(site)
-    if url is None:
+    if url is None or type(tick) is not int or tick < 0:
         return []
     try:
-        return programme_urls(site, fetch(url))
+        raw = fetch(url)
+        direct = programme_urls(site, raw)
+        if direct:
+            return direct
+        children = index_children(site, raw)
+        if not children:
+            return []
+        return programme_urls(site, fetch(children[tick % len(children)]))
     except (OSError, TimeoutError, ValueError, TypeError, UnicodeError):
         return []
