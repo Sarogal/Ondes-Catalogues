@@ -42,3 +42,9 @@ class ExternalRasterTests(unittest.TestCase):
         scan(CAT, "2026-11-28", fetch=lambda _: html.replace("août 2027", "août 2026"),
              read=read, recognize=Mock(return_value=[]))
         read.assert_not_called()
+        for wrong in (html.replace("13 au 15 août", "14 au 16 août"),
+                      html.replace("</main>", "<p>20 août 2027</p></main>")):
+            scan(CAT, "2026-11-28", fetch=lambda _: wrong,
+                 read=read, recognize=Mock(return_value=[]))
+            read.assert_not_called()
+

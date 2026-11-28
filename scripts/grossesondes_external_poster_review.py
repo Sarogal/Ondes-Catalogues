@@ -21,7 +21,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "festival-automatio
 from grossesondes_existing_official_updates import (
     signed_rotation, page, home_matches_edition, linked_pages, fold,
 )
-from grossesondes_official_html_edition import VisibleText
+from grossesondes_official_html_edition import (
+    VisibleText, explicit_ranges, dominant_visible_range, fold as calendar_fold,
+)
 from dns_pinned_https import DNSPinnedHTTPSConnection, OfficialHTTPStatusError, safe_public_url, fetch_public_html
 from grossesondes_official_poster_ocr import (
     MAX_BYTES, MIME_FORMAT, recognize_poster, poster_review_claims,
@@ -144,6 +146,21 @@ def read_raster(url):
         conn.close()
 
 
+def exact_root_dates(parsed, row):
+    """Require an actual visible current interval, not merely a year token."""
+    try:
+        start = date.fromisoformat(row["startDate"])
+        end = date.fromisoformat(row["endDate"])
+    except (ValueError, TypeError, KeyError):
+        return False
+    if start.year != end.year or end < start:
+        return False
+    blocks = [b for b in parsed.blocks if b["scope"] == "main"] or parsed.relevant()
+    ranges = {(first, last) for block in blocks
+              for _, _, first, last in explicit_ranges(calendar_fold(block["text"]), start.year)}
+    return dominant_visible_range(ranges) == (start, end)
+
+
 def scan(catalogue, today, tick=0, slug=None, *, fetch=fetch_public_html,
          read=read_raster, recognize=recognize_poster):
     report = {"review_only": True, "publication_authorized": False,
@@ -156,6 +173,7 @@ def scan(catalogue, today, tick=0, slug=None, *, fetch=fetch_public_html,
                     if any(r.get("slug") == slug for r in rows)]
         selected = selected[:1]
     deadline = monotonic() + MAX_SECONDS
+    limited_raster_hosts = set()
     for site, rows in selected:
         if monotonic() >= deadline:
             break
@@ -168,7 +186,8 @@ def scan(catalogue, today, tick=0, slug=None, *, fetch=fetch_public_html,
         eligible = [r for r in rows if not r.get("cancelled")
                     and r.get("status") not in ("Annulé", "Reporté")
                     and r.get("startDate") and r.get("endDate")
-                    and home_matches_edition(parsed, r, today)]
+                    and home_matches_edition(parsed, r, today)
+                    and exact_root_dates(parsed, r)]
         if not eligible:
             continue
         surfaces = [html]
@@ -196,6 +215,10 @@ def scan(catalogue, today, tick=0, slug=None, *, fetch=fetch_public_html,
                     diagnostic["outcome"] = "AMBIGUOUS"
                 continue
             url = urls[0]
+            raster_host = urlsplit(url).hostname
+            if raster_host in limited_raster_hosts:
+                diagnostic["outcome"] = "RATE_LIMITED_EARLIER"
+                continue
             report["images_read"] += 1
             try:
                 mime, body = read(url)
@@ -206,6 +229,8 @@ def scan(catalogue, today, tick=0, slug=None, *, fetch=fetch_public_html,
                                   claim_types=sorted(result["claims"]))
             except OfficialHTTPStatusError as exc:
                 diagnostic["outcome"] = "RATE_LIMITED" if exc.status_code == 429 else "HTTP_REJECTED"
+                if exc.status_code == 429:
+                    limited_raster_hosts.add(raster_host)
             except (OSError, ValueError, TypeError, UnicodeError, ImportError,
                     subprocess.SubprocessError, Warning):
                 diagnostic["outcome"] = "RASTER_OR_OCR_UNAVAILABLE"
