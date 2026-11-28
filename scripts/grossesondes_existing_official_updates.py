@@ -1967,7 +1967,7 @@ def apply_independently_verified_updates(
     poster_rate_limited_hosts = set()
     for site, rows in signed_rotation(
             published, today, limit, tick, browser_sites=browser_sites,
-            rotate_within_batch=poster_reader is not None):
+            rotate_within_batch=poster_reader is not None or sitemap_reader is not None):
         if site in browser_sites:
             report["browser_roots_checked"] += 1
         report["checked_official_hosts"] += 1
@@ -2079,7 +2079,7 @@ def apply_independently_verified_updates(
         sitemap_pages = []
         if (sitemap_reader is not None and raw_root_available and not selected_links
                 and site not in poster_rate_limited_hosts and sitemap_budget > 0
-                and any(row.get("bands") is None and not row.get("lineup")
+                and any("bands" in row and row["bands"] in (None, 0) and not row.get("lineup")
                         and row.get("startDate") and row.get("endDate") for row in rows)):
             from official_programme_sitemap import discover_programme_urls
             sitemap_budget -= 1
@@ -2183,7 +2183,8 @@ def apply_independently_verified_updates(
                 if grid_names:
                     claims.extend(grid_names)
                     sources.append(url)
-            if sitemap_pages and old.get("bands") is None and not old.get("lineup"):
+            if (sitemap_pages and "bands" in old and old["bands"] in (None, 0)
+                    and not old.get("lineup")):
                 # Sitemap-discovered pages may prove only an artist roster.
                 # Never let them change prices, dates, status or geo fields.
                 # A conflicting status or two different full grids vetoes
