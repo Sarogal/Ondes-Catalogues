@@ -228,6 +228,25 @@ PROFILE_HELD_STAGES = frozenset({
 })
 
 
+# Retry extraction failures once per changed reader revision, but never
+# bypass network cooldown or refresh already-read profiles early.
+READER_RETRY_STAGES = frozenset({
+    "structured_profile_rejected", "biography_link_rejected",
+    "biography_evidence_rejected", "direct_description_rejected",
+})
+READER_REVISION = hashlib.sha256(
+    b"".join(hashlib.sha256(Path(module.__file__).read_bytes()).digest()
+             for module in (bio, knowledge))
+    + hashlib.sha256(Path(__file__).read_bytes()).digest()
+).hexdigest()
+
+
+def _reader_retry_due(attempt):
+    return (attempt.get("status") == "held"
+            and attempt.get("heldStage") in READER_RETRY_STAGES
+            and attempt.get("readerRevision") != READER_REVISION)
+
+
 def _source_key(source):
     return hashlib.sha256(
         (source["identityKey"] + "|" + source["url"]).encode("utf-8")).hexdigest()[:24]
@@ -252,6 +271,10 @@ def _attempt_memory(prior, sources, facts, today):
                 if (row["status"] == "held" and isinstance(stage, str)
                         and stage in PROFILE_HELD_STAGES):
                     attempts[key]["heldStage"] = stage
+                    revision = row.get("readerRevision")
+                    if (isinstance(revision, str) and len(revision) == 64
+                            and all(c in "0123456789abcdef" for c in revision)):
+                        attempts[key]["readerRevision"] = revision
     elif saved is None:
         # Legacy migration: only a previously read exact profile can seed
         # scheduling. No genre, identity or authority is inferred from this.
@@ -281,7 +304,7 @@ def _due_sources(sources, attempts, today, slot, limit):
             continue
         day = dt.date.fromisoformat(attempt["checkedAt"])
         refresh = PROFILE_REFRESH_DAYS if attempt["status"] == "read" else PROFILE_RETRY_DAYS
-        if (today - day).days >= refresh:
+        if (today - day).days >= refresh or _reader_retry_due(attempt):
             due.append((day.toordinal(), source))
     # Never-visited sources first, then least recently attempted. Rotation
     # breaks ties without favoring specific artist names or official sites.
@@ -298,6 +321,9 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
     facts = _memory(prior)
     attempts = _attempt_memory(prior, sources, facts, today)
     selection, due_count = _due_sources(sources, attempts, today, slot, limit)
+    revision_retry_due = sum(_reader_retry_due(row) for row in attempts.values())
+    revision_retries = sum(_reader_retry_due(attempts.get(_source_key(s), {}))
+                           for s in selection)
     counters, cache, refreshed = Counter(), {}, 0
     held_stages = Counter()
     for source in selection:
@@ -366,6 +392,8 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
                 RecursionError):
             counters["profileHeld"] += 1
             attempts[fact_key]["heldStage"] = stage
+            if stage in READER_RETRY_STAGES:
+                attempts[fact_key]["readerRevision"] = READER_REVISION
             held_stages[stage] += 1
     return {
         "schema": SCHEMA,
@@ -377,6 +405,11 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
         "ambiguousArtistSourcesHeld": ambiguous,
         "sourcesChecked": len(selection),
         "dueArtistSources": due_count,
+        "readerRevision": READER_REVISION,
+        "readerRevisionRetryPendingBefore": revision_retry_due,
+        "readerRevisionRetries": revision_retries,
+        "readerRevisionRetryPendingAfter": sum(
+            _reader_retry_due(row) for row in attempts.values()),
         "profileSourcesInCooldown": len(sources) - due_count,
         "profileAttempts": dict(sorted(attempts.items())),
         "profilesRefreshed": refreshed,
