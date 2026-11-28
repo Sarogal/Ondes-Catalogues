@@ -274,16 +274,25 @@ def _section_pages(home, html, city, directory):
     parser.close()
     if len(parser.links) >= MAX_ANCHORS:
         return []
-    sections = set()
+    sections = {}
     for href, label in parser.links:
-        if not re.fullmatch(r"(?:culture(?: et (?:loisirs|patrimoine))?|bibliotheques?|mediatheques?|ludotheques?|equipements culturels|jeunesse|enfance(?: jeunesse)?|lecture publique)", norm_text(label)):
+        name = norm_text(label)
+        if re.fullmatch(r"(?:bibliotheques?|mediatheques?|ludotheques?|lecture publique|equipements culturels|(?:les |nos )?(?:bibliotheques|mediatheques|ludotheques))", name):
+            priority = 0
+        elif re.fullmatch(r"(?:culture(?: et (?:loisirs|patrimoine|sports?))?|vie culturelle|jeunesse|enfance(?: (?:et )?jeunesse)?|petite enfance|familles?|loisirs(?: et culture)?)", name):
+            priority = 1
+        elif re.fullmatch(r"(?:vie locale|vie pratique|vie quotidienne|vivre (?:ici|a la ville)|(?:les |vos |nos )?equipements(?: municipaux| publics)?|(?:les |vos |nos )?services municipaux)", name):
+            priority = 2
+        else:
             continue
         url = urljoin(home, href)
         p = urlsplit(url)
         if (p.path.strip("/") and not p.query and not p.fragment
                 and approved_municipal_page_host(url, city, directory)):
-            sections.add(url)
-    return sorted(sections)[:3]
+            sections[url] = min(priority, sections.get(url, priority))
+    # Prefer specific cultural services over broad municipal navigation.
+    # The existing three-page / two-hop budgets remain unchanged.
+    return sorted(sections, key=lambda url: (sections[url], url))[:3]
 
 
 def fetch_communes_by_name(city):
