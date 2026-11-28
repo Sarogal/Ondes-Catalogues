@@ -56,7 +56,11 @@ def read_private(token):
 
 def review_drafts(private, today, *, osm_fetch=fetch_named, page_read=read_unknown_https,
            directory_fetch=fetch_dila, admin_fetch=fetch_admin, ban_fetch=fetch_ign,
-           cultural_lookup=None):
+           cultural_lookup=None, code_directory_fetch=None):
+    # A cached name lookup must not disable the independent INSEE fallback.
+    # Offline injected readers remain network-free unless explicitly enabled.
+    if code_directory_fetch is None and directory_fetch is fetch_dila and page_read is read_unknown_https:
+        code_directory_fetch = lambda city, code: fetch_dila(city, insee=code)
     counts = Counter()
     drafts = []
     summary = {"private_candidates": 0, "rechecked": 0,
@@ -126,7 +130,8 @@ def review_drafts(private, today, *, osm_fetch=fetch_named, page_read=read_unkno
             directory = cache[city]
             if lead.get("ban_route"):
                 fresh = discover_official_ban(lead, directory_fetch=lambda _: directory,
-                    page_read=page_read, ban_fetch=ban_fetch, admin_fetch=admin_fetch)
+                    page_read=page_read, ban_fetch=ban_fetch, admin_fetch=admin_fetch,
+                    cultural_lookup=cultural_lookup, code_directory_fetch=code_directory_fetch)
                 if fresh is None:
                     counts["fresh_ban_evidence_unavailable"] += 1
                     continue

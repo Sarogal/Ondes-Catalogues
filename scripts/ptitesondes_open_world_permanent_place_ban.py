@@ -21,6 +21,8 @@ from ptitesondes_open_world_permanent_place_evidence import CLOSED, MAX_HTML
 # Public diagnostics contain only fixed stage names and numeric counters.
 BAN_DIAGNOSTIC_CODES = (
     "directory_unavailable", "directory_no_authenticated_host",
+    "directory_code_fallback_attempted", "directory_code_fallback_found",
+    "directory_code_fallback_unavailable", "directory_code_fallback_identity_unmatched",
     "hint_missing", "hint_not_authenticated", "hint_not_dedicated",
     "page_unavailable", "homepage_unavailable", "exact_link_missing",
     "official_identity_unmatched", "official_access_restricted",
@@ -274,7 +276,8 @@ def _section_pages(home, html, city, directory):
 
 
 def discover_official_ban(row, *, directory_fetch=None, page_read=None,
-                          ban_fetch=None, admin_fetch=None, cultural_lookup=None):
+                          ban_fetch=None, admin_fetch=None, cultural_lookup=None,
+                          code_directory_fetch=None):
     """Use an untrusted venue URL or exact municipal homepage link as a hint.
 
     Every page is authenticated by a fresh DILA result before network access.
@@ -285,8 +288,13 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
     from ptitesondes_unlisted_source_safe_recheck import read_unknown_https, read_municipal_https
     from ptitesondes_generic_venue_ign_corroboration import fetch_ign
     from ptitesondes_open_world_permanent_place_draft import fetch_admin
-    directory_fetch = directory_fetch or fetch_dila
     use_municipal_reader = page_read is None or page_read is read_unknown_https
+    if code_directory_fetch is None and directory_fetch is None and use_municipal_reader:
+        code_directory_fetch = lambda city, code: fetch_dila(city, insee=code)
+    directory_fetch = directory_fetch or fetch_dila
+    if cultural_lookup is None and use_municipal_reader:
+        from ptitesondes_national_cultural_directory_probe import exact_directory_record
+        cultural_lookup = exact_directory_record
     ban_fetch = ban_fetch or fetch_ign
     admin_fetch = admin_fetch or fetch_admin
     try:
@@ -296,6 +304,28 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
         except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
             return _note("directory_unavailable")
         hosts = municipal_site_hosts(city, directory)
+        record = None
+        lookup_attempted = False
+        if not hosts and code_directory_fetch is not None and cultural_lookup is not None:
+            from ptitesondes_cultural_directory_discovery import identity
+            _note("directory_code_fallback_attempted")
+            lookup_attempted = True
+            try:
+                record = cultural_lookup(city, venue)
+                pair = identity(record)
+                if pair is not None and tuple(map(norm_text, pair)) == (norm_text(city), norm_text(venue)):
+                    code = record["code_commune"]
+                    alternative = code_directory_fetch(city, code)
+                    bound_hosts = municipal_site_hosts(city, alternative, expected_insee=code)
+                    if bound_hosts and bound_hosts == municipal_site_hosts(city, alternative):
+                        directory, hosts = alternative, bound_hosts
+                        _note("directory_code_fallback_found")
+                    else:
+                        _note("directory_code_fallback_identity_unmatched")
+                else:
+                    _note("directory_code_fallback_identity_unmatched")
+            except (OSError, ValueError, TypeError, KeyError, OverflowError, UnicodeError):
+                _note("directory_code_fallback_unavailable")
         if not hosts:
             return _note("directory_no_authenticated_host")
         def read_page(url):
@@ -315,15 +345,13 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
         else:
             _note("hint_missing")
         # Only live production or an explicitly injected lookup may query
-        # the national directory. Offline callers stay network-free.
-        if cultural_lookup is None and use_municipal_reader:
-            from ptitesondes_national_cultural_directory_probe import exact_directory_record
-            cultural_lookup = exact_directory_record
+        # the national directory. Reuse this cycle's fresh code lookup.
         if not pages and cultural_lookup is not None:
             from ptitesondes_national_cultural_directory_probe import directory_website_hints
             _note("culture_directory_attempted")
             try:
-                record = cultural_lookup(city, venue)
+                if not lookup_attempted:
+                    record = cultural_lookup(city, venue)
                 if record is None:
                     _note("culture_directory_no_exact_match")
                 else:
