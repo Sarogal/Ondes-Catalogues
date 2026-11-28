@@ -106,6 +106,41 @@ def explain_structured_nonmatch(page, actual_url, candidate, source):
     return "structured_event_fields_unmatched"
 
 
+def _venue_key(candidate):
+    return (triage.words(candidate.get("venue")),
+            triage.words(candidate.get("city")),
+            str(candidate.get("department") or ""))
+
+
+def _choose_by_venue(rows, budget, today, scan_slot, limit):
+    """Round-robin venues and their own candidates, with no duplicate probes.
+
+    A fixed roster gets a turn in each source round, even if one venue has
+    hundreds of entries. A single venue retains ordinary candidate rotation.
+    This is scheduling only; it cannot authenticate a source.
+    """
+    if not rows or budget <= 0:
+        return []
+    groups = {}
+    for candidate in sorted(rows, key=lambda c: (
+            str(c.get("candidateId") or ""), str(c.get("sourceUrl") or ""))):
+        groups.setdefault(_venue_key(candidate), []).append(candidate)
+    queues = [groups[key] for key in sorted(groups)]
+    position = (today.toordinal() * 3 + scan_slot) * limit
+    selected, seen = [], set()
+    target = min(budget, len(rows))
+    while len(selected) < target:
+        round_number, source_index = divmod(position, len(queues))
+        queue = queues[source_index]
+        candidate = queue[round_number % len(queue)]
+        position += 1
+        if id(candidate) in seen:
+            continue
+        seen.add(id(candidate))
+        selected.append(candidate)
+    return selected
+
+
 def build(registry, sources, catalogue, approvals, today, *,
           fetch=discover.download, robots=discover.robots_allow, limit=8,
           scan_slot=0):
@@ -165,15 +200,7 @@ def build(registry, sources, catalogue, approvals, today, *,
             exploratory.append(candidate)
 
     def choose(rows, budget):
-        rows.sort(key=lambda c: (str(c.get("candidateId") or ""),
-                                 str(c.get("sourceUrl") or "")))
-        if not rows or budget <= 0:
-            return []
-        # Three daily slots cover different fixed-size cohorts, and all
-        # candidates eventually rotate in without removing stability checks.
-        offset = ((today.toordinal() * 3 + scan_slot) * limit) % len(rows)
-        return [rows[(offset + i) % len(rows)]
-                for i in range(min(budget, len(rows)))]
+        return _choose_by_venue(rows, budget, today, scan_slot, limit)
 
     # A candidate without a source mapping cannot be fetched by this
     # particular reviewer. Count it, but don't spend a slot on that known
@@ -278,6 +305,11 @@ def build(registry, sources, catalogue, approvals, today, *,
         "exploratoryEligible": len(exploratory),
         "exploratoryAttempted": len(selected_exploratory),
         "totalProbed": len(selected) + len(selected_exploratory),
+        "distinctMappedVenuesProbed": len({
+            _venue_key(c) for c in selected + selected_exploratory
+            if mapped[id(c)] is not None}),
+        "mappedExploratoryVenuesEligible": len({
+            _venue_key(c) for c in mapped_unknown}),
         "mappedGenreReviewEligible": len(mapped_tagged),
         "mappedExploratoryEligible": len(mapped_unknown),
         "unmappedEligible": len(eligible) + len(exploratory) - len(mapped_tagged) - len(mapped_unknown),
