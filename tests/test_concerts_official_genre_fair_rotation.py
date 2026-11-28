@@ -87,6 +87,40 @@ class FairGenreReviewSlots(unittest.TestCase):
         self.assertEqual(pipeline._individual_genre_leads(
             queue, ambiguous, TODAY, evidence), set())
 
+    def test_catalogue_event_clues_fill_only_unused_research_quota(self):
+        queue = [row("unknown", i) for i in range(40)]
+        for item in queue[-8:]:
+            item[3]["leadArtist"] = "Example Act"
+        event = {"artistIds": ["example-act"], "genres": ["Death Metal"],
+                 "status": "confirmed"}
+        catalogue = {**CATALOGUE, "artists": [
+            {"id": "example-act", "name": "Example Act", "aliases": []}],
+            "events": [event]}
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose",
+                               side_effect=ValueError("Independent proof missing")):
+            out, report = pipeline.build({}, catalogue, BEFORE, TODAY, limit=12)
+            self.assertEqual(report["catalogueGenreResearchLeadsEligible"], 8)
+            self.assertEqual(report["catalogueGenreResearchPriorityExamined"], 3)
+            self.assertEqual(report["individualGenreResearchPriorityExamined"], 0)
+            self.assertEqual(report["examined"], 12)
+            self.assertEqual(out, BEFORE)
+            self.assertFalse(report["publicationAllowed"])
+            self.assertFalse(report["privateApprovalApplied"])
+            _, second = pipeline.build({}, catalogue, BEFORE, TODAY,
+                                       limit=12, prior=report)
+            self.assertFalse({c["candidateId"] for c in report["candidateChecks"]}
+                             & {c["candidateId"] for c in second["candidateChecks"]})
+        for invalid in ({**event, "artistIds": ["example-act", "other"]},
+                        {**event, "genres": ["Hardcore Techno"]},
+                        {**event, "status": "cancelled"}):
+            self.assertEqual(pipeline._catalogue_genre_research_leads(
+                queue, {**catalogue, "events": [invalid]}), set())
+        ambiguous = {**catalogue, "artists": catalogue["artists"] + [
+            {"id": "other", "name": "Example Act", "aliases": []}]}
+        self.assertEqual(pipeline._catalogue_genre_research_leads(
+            queue, ambiguous), set())
+
     def test_tagged_official_bills_get_two_checks_without_starving_unknown(self):
         # Two of 12 probes favour real event-level genres, not specific bands,
         # rooms, URLs or known artists. Ten remain open to any other source.
