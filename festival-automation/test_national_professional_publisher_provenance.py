@@ -79,8 +79,8 @@ class ProfessionalPublisherTests(unittest.TestCase):
             venue.return_value = {"status": "OFFICIAL_DETAIL_PROOF_REVIEW_ONLY", "proofs": [PROOF]}
             self.assertEqual(prove(EVENT, TITLE, DAY, record_fetch=lambda _: {
                 "total_count": 1, "results": [dict(RECORD, location_website=SITE)]}), [PROOF])
-            self.assertEqual(venue.call_args.args[0]["professional_source_hints_review_only"]
-                             ["links"][-1]["url"], SITE)
+            self.assertIn({"field": "location_website", "url": SITE},
+                          venue.call_args.args[0]["professional_source_hints_review_only"]["links"])
 
     def test_publisher_requires_exact_reconstructed_proof(self):
         proposal = private_proposal(TITLE, SITE, DATES, DAY, event_ref=EVENT,
