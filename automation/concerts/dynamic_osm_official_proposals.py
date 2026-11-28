@@ -675,6 +675,39 @@ def _individual_genre_leads(rows, catalogue, today, report):
     return matched
 
 
+def _catalogue_genre_research_leads(rows, catalogue):
+    """Prior-event clues only, never individual artist genre evidence.
+
+    Restrict this weaker navigation hint to a published event with a single
+    identified performer. A concert's genre is not the performer's genre,
+    including when only one name is currently known.
+    """
+    aliases, collisions = artist_knowledge._aliases(catalogue)
+    hinted = set()
+    for event in catalogue.get("events", []):
+        if not isinstance(event, dict):
+            continue
+        ids, genres = event.get("artistIds"), event.get("genres")
+        if (not isinstance(ids, list) or len(ids) != 1
+                or not isinstance(ids[0], str)
+                or event.get("status") not in {"announced", "confirmed"}
+                or not isinstance(genres, list)
+                or not any(artist_knowledge._relevant_genre(g) for g in genres)):
+            continue
+        hinted.add(ids[0])
+    matched = set()
+    for row in rows:
+        candidate = row[3]
+        if candidate.get("reviewBucket") != "genre_unknown":
+            continue
+        names = [artist_knowledge.words(n)
+                 for n in artist_knowledge._named_bill(candidate)]
+        if (not any(n in collisions for n in names)
+                and any(aliases.get(n) in hinted for n in names)):
+            matched.add(_review_key(row))
+    return matched
+
+
 def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
           fetch=verified.safe_fetch, prior=None, max_seconds=MAX_REVIEW_SECONDS,
           artist_evidence=None):
@@ -695,8 +728,16 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
     genre_leads = _individual_genre_leads(selected, catalogue, today, artist_evidence)
     # Reserve at most four existing slots, and only for not-yet-reviewed
     # candidates. Keep lane shares and the extraction/geography retry rules.
+    catalogue_leads = _catalogue_genre_research_leads(selected, catalogue) - genre_leads
     preferred = sorted(genre_leads - set(recency))
-    priority_keys = set(preferred[:min(4, limit // 4)])
+    priority_budget = min(4, limit // 4)
+    priority_keys = set(preferred[:priority_budget])
+    # Spend only the unused individual-research quota on weaker historical
+    # clues. Keep fresh, unrelated candidates eligible and never grant genre
+    # evidence or approval from a previously published event.
+    catalogue_priority = set(sorted(catalogue_leads - set(recency))[
+        :priority_budget - len(priority_keys)])
+    priority_keys.update(catalogue_priority)
 
     def ranked(pool, start):
         if not pool:
