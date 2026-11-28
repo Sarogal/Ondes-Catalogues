@@ -199,6 +199,48 @@ class OfficialPlaceBANTests(unittest.TestCase):
             commune_fetch=lambda _: self.fail("must not override exact culture identity")))
         self.assertEqual(calls, [("code", "99999")])
 
+    def test_dila_name_transport_failure_still_requires_fresh_code_authority(self):
+        from ptitesondes_open_world_permanent_place_ban import ban_diagnostics
+        row = {"city": CITY, "venue": VENUE, "possible_website_unverified": PAGE}
+        record = {"commune": CITY, "nom_du_lieu": VENUE, "code_commune": "12345"}
+        calls = []
+        def down(_):
+            raise OSError("name query unavailable")
+        def by_code(city, code):
+            calls.append(("code", city, code))
+            return DIR
+        def read(url):
+            calls.append(("page", url))
+            return HTML
+        kwargs = dict(directory_fetch=down, code_directory_fetch=by_code,
+                      page_read=read, ban_fetch=lambda _: BAN,
+                      admin_fetch=lambda *_: ADMIN)
+        before = ban_diagnostics()
+        proof = discover_official_ban(row, **kwargs,
+            cultural_lookup=lambda *_: record,
+            commune_fetch=lambda _: self.fail("exact cultural code takes precedence"))
+        self.assertIsNotNone(proof)
+        self.assertFalse(proof["publication_ready"])
+        self.assertEqual(calls, [("code", CITY, "12345"), ("page", PAGE)])
+        calls.clear()
+        exact = {"nom": CITY, "code": "12345"}
+        proof = discover_official_ban(row, **kwargs,
+            cultural_lookup=lambda *_: None, commune_fetch=lambda _: [exact])
+        self.assertIsNotNone(proof)
+        self.assertEqual(calls, [("code", CITY, "12345"), ("page", PAGE)])
+        calls.clear()
+        self.assertIsNone(discover_official_ban(row, **kwargs,
+            cultural_lookup=lambda *_: None,
+            commune_fetch=lambda _: [exact, dict(exact, code="99999")]))
+        self.assertEqual(calls, [])
+        self.assertIsNone(discover_official_ban(row,
+            **dict(kwargs, code_directory_fetch=lambda *_: payload()),
+            cultural_lookup=lambda *_: record))
+        self.assertEqual(calls, [])
+        after = ban_diagnostics()
+        self.assertEqual(after["directory_unavailable"] -
+                         before.get("directory_unavailable", 0), 4)
+
     def test_geo_fallback_distinguishes_commune_and_dila_rejections(self):
         from ptitesondes_open_world_permanent_place_ban import ban_diagnostics
         row = {"city": CITY, "venue": VENUE, "possible_website_unverified": PAGE}
