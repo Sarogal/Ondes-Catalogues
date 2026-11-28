@@ -4,6 +4,12 @@ from ptitesondes_cultural_live_qualification import probe
 
 
 class CulturalLiveQualificationTests(unittest.TestCase):
+    def test_default_rehearsal_matches_both_production_routes(self):
+        import inspect
+        from ptitesondes_open_world_permanent_place_ban import discover_ban_routes
+        self.assertIs(inspect.signature(probe).parameters["qualify"].default,
+                      discover_ban_routes)
+
     def test_bounded_sample_redacts_facts_and_isolates_failures(self):
         rows = [{"city": "Private city", "venue": str(i)} for i in range(12)]
         def qualify(row):

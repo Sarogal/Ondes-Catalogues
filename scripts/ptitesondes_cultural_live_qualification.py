@@ -5,11 +5,11 @@ import json
 from ptitesondes_cultural_directory_discovery import scan
 from ptitesondes_unlisted_source_safe_recheck import read_failure_counts
 from ptitesondes_open_world_permanent_place_ban import (
-    discover_independent_cultural_ban, ban_diagnostics, build_ban_draft,
+    discover_ban_routes, ban_diagnostics, build_ban_draft,
 )
 
 
-def probe(*, discover=scan, qualify=discover_independent_cultural_ban,
+def probe(*, discover=scan, qualify=discover_ban_routes,
           build=build_ban_draft, today=None):
     today = today or date.today()
     found = discover()
