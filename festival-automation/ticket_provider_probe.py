@@ -212,7 +212,7 @@ def provider_edition_location(html, edition):
         return None
 
 
-def independently_linked_location(edition, today, *, fetch=fetch_public_html):
+def independently_linked_location(edition, today, *, fetch=fetch_public_html, diagnostic=None):
     """Reprove a vendor location from a signed edition, without trusting leads.
 
     Caller must supply an already published, signed edition. An exact
@@ -221,6 +221,9 @@ def independently_linked_location(edition, today, *, fetch=fetch_public_html):
     No private URL, guessed vendor path, profile search or saved HTML accepted.
     This contract is still review-only; it grants no publication authority.
     """
+    if diagnostic is None:
+        diagnostic = {}
+    diagnostic.update(outcome="INELIGIBLE", structured_links=0, dated_visible_links=0)
     if not isinstance(edition, dict):
         return None
     site = edition.get("officialSite")
@@ -231,6 +234,7 @@ def independently_linked_location(edition, today, *, fetch=fetch_public_html):
                 or not start or not end or not day <= start <= end
                 or edition.get("cancelled") is True):
             return None
+        diagnostic["outcome"] = "OFFICIAL_FETCH_OR_PARSE_FAILED"
         root = fetch(site)
         # Reject ambiguity rather than choosing one seller arbitrarily.
         links = structured_offer_links(root, site, edition,
@@ -238,14 +242,20 @@ def independently_linked_location(edition, today, *, fetch=fetch_public_html):
         visible = visible_year_ticket_links(root, site, edition,
                                             lambda url: safe_public_url(url) == url)
         targets = {link["ticket_url"] for link in links} | set(visible)
+        diagnostic.update(structured_links=len(links), dated_visible_links=len(visible))
         if len(targets) != 1:
+            diagnostic["outcome"] = "NO_EDITION_LINK" if not targets else "AMBIGUOUS_EDITION_LINK"
             return None
         target = next(iter(targets))
         if safe_public_url(target) != target:
             return None
-        location = provider_edition_location(fetch(target), edition)
+        diagnostic["outcome"] = "VENDOR_FETCH_FAILED"
+        vendor_html = fetch(target)
+        diagnostic["outcome"] = "VENDOR_EXACT_LOCATION_UNPROVEN"
+        location = provider_edition_location(vendor_html, edition)
         if location is None:
             return None
+        diagnostic["outcome"] = "EXACT_LOCATION_PROOF"
         return {"source_url": site, "ticket_url": target,
                 "edition_location_review_only": location,
                 "publication_authorized": False}
