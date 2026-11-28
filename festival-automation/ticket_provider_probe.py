@@ -10,7 +10,7 @@ import re
 from urllib.parse import urlsplit
 
 from official_ticket_links import provider_for_host
-from official_ticket_offer_links import structured_offer_links
+from official_ticket_offer_links import structured_offer_links, visible_year_ticket_links
 from dns_pinned_https import safe_public_url, fetch_public_html
 from structured_evidence import StructuredData, event_date, event_objects, root_name, normalize
 from ticket_status_watch import categories, schema_term, SENSITIVE
@@ -215,8 +215,9 @@ def provider_edition_location(html, edition):
 def independently_linked_location(edition, today, *, fetch=fetch_public_html):
     """Reprove a vendor location from a signed edition, without trusting leads.
 
-    Caller must supply an already published, signed edition. Only an exact
-    current Event.offers.url on its freshly fetched official page is eligible.
+    Caller must supply an already published, signed edition. An exact
+    current Event.offers.url or an explicit year-labelled ticket anchor with
+    the matching edition slug on its freshly fetched official page is eligible.
     No private URL, guessed vendor path, profile search or saved HTML accepted.
     This contract is still review-only; it grants no publication authority.
     """
@@ -234,9 +235,12 @@ def independently_linked_location(edition, today, *, fetch=fetch_public_html):
         # Reject ambiguity rather than choosing one seller arbitrarily.
         links = structured_offer_links(root, site, edition,
                                        lambda url: safe_public_url(url) == url, limit=2)
-        if len(links) != 1:
+        visible = visible_year_ticket_links(root, site, edition,
+                                            lambda url: safe_public_url(url) == url)
+        targets = {link["ticket_url"] for link in links} | set(visible)
+        if len(targets) != 1:
             return None
-        target = links[0]["ticket_url"]
+        target = next(iter(targets))
         if safe_public_url(target) != target:
             return None
         location = provider_edition_location(fetch(target), edition)

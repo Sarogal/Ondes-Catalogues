@@ -77,3 +77,51 @@ def structured_offer_links(html, organizer_url, edition, permitted_url, limit=6)
                 if len(result) >= limit:
                     return result
     return result
+
+
+def visible_year_ticket_links(html, organizer_url, edition, permitted_url):
+    """Explicit current-year ticket label and matching event slug, discovery only.
+
+    The vendor still has to independently prove the full signed date range
+    and event identity. Never accept a generic ticket button or hidden link.
+    """
+    import re
+    from source_qualification import Anchors
+    from structured_evidence import normalize, artist_key
+    if (not isinstance(html, str) or not 0 < len(html) <= 650_000
+            or not isinstance(edition, dict) or not permitted_url(organizer_url)):
+        return []
+    start = event_date(edition.get("startDate"))
+    end = event_date(edition.get("endDate"))
+    brand = artist_key(root_name(edition.get("name", "")))
+    if not start or not end or start.year != end.year or len(brand) < 5:
+        return []
+    class VisibleTickets(Anchors):
+        def handle_starttag(self, tag, attrs):
+            style = dict(attrs).get("style") or ""
+            if re.search(r"visibility\s*:\s*hidden", style, re.I):
+                attrs = list(attrs) + [("hidden", None)]
+            super().handle_starttag(tag, attrs)
+    parser = VisibleTickets()
+    parser.feed(html)
+    parser.close()
+    found = set()
+    for raw, label, _ in parser.anchors:
+        if not re.fullmatch(r"(?:billetterie|tickets|ticket office|billets)\s+" +
+                            str(start.year), normalize(label)):
+            continue
+        if not isinstance(raw, str) or not 0 < len(raw) <= 500:
+            continue
+        try:
+            url = urljoin(organizer_url, raw)
+            parts = urlsplit(url)
+            slug = parts.path.rstrip("/").rsplit("/", 1)[-1]
+            if (not provider_for_host(parts.hostname) or not permitted_url(url)
+                    or "%" in parts.path or ".." in parts.path.split("/")
+                    or not re.fullmatch(r"[A-Za-z0-9-]+", slug)
+                    or artist_key(slug) != brand + str(start.year)):
+                continue
+            found.add(url)
+        except (ValueError, TypeError, UnicodeError):
+            continue
+    return sorted(found)[:2]
