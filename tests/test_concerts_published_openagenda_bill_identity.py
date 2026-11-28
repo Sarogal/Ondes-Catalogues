@@ -50,6 +50,9 @@ class PublishedOpenAgendaBillRepair(unittest.TestCase):
 
     def test_exact_repairs_preflight_and_historical_new_site_replay(self):
         cases = (
+            (["Example Band", "guest - Place Libre, Tours"],
+             "Example Band + guest - Place Libre, Tours",
+             "Concert punk.", ["Example Band"]),
             (["Example Band", "GUESTS"], "Example Band + GUESTS",
              "Concert punk.", ["Example Band"]),
             (["Example Band", "guests : Other Band"],

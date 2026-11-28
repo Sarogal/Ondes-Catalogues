@@ -344,6 +344,28 @@ def _confirmed_promotional_artist(title, record, *, candidate=None):
     return None
 
 
+def unnamed_venue_suffix(name, venue):
+    """An exact unnamed support label followed by this event's place and city.
+
+    A venue/city suffix is metadata, not a band. Never remove a real name
+    containing 'guest', a named guest introduced by a colon, a mismatched
+    location, or a generic substring of a venue name.
+    """
+    if not isinstance(name, str) or not isinstance(venue, dict):
+        return False
+    match = re.fullmatch(r"(.{2,60}?)\s+[-–—]\s+(.{2,120}),\s*(.{2,100})", name.strip())
+    if not match or not bridge.is_unnamed_performer(match[1]):
+        return False
+    place = normalized(venue.get("name"))
+    city = normalized(venue.get("city"))
+    if not place or not city or normalized(match[3]) != city:
+        return False
+    names = {place}
+    if place.startswith(("la ", "le ", "les ", "l ")):
+        names.add(place.split(" ", 1)[1])
+    return normalized(match[2]) in names
+
+
 def _named_guest(name):
     """A colon after an exact support label explicitly introduces a named act."""
     if not isinstance(name, str):
@@ -428,7 +450,7 @@ def _generic_export_bill(record):
     return names
 
 
-def _export_bill(title, record):
+def _export_bill(title, record, venue=None):
     """Disambiguate a spaced pipe only from independent visible bill text.
 
     A pipe may belong to a real artist's stylized name. Require every
@@ -455,15 +477,16 @@ def _export_bill(title, record):
         if all(normalized(p) and re.search(r"(?<!\w)" + re.escape(normalized(p)) +
                                           r"(?!\w)", text) for p in parts):
             title = " + ".join(parts)
-    return _bill({"@type": "MusicEvent", "name": title})
+    return _bill({"@type": "MusicEvent", "name": title}, venue=venue)
 
 
-def _bill(event):
+def _bill(event, *, venue=None):
     title = event.get("name")
     if not isinstance(title, str) or not 3 <= len(title) <= 900:
         raise ValueError("OpenAgenda: missing named event title")
     named = [_named_guest(name) for name in _performer_names(event.get("performer"))
-             if not bridge.is_unnamed_performer(name)]
+             if not bridge.is_unnamed_performer(name)
+             and not unnamed_venue_suffix(name, venue)]
     # A first-party title explicitly listing GROUP + GROUP is itself a named
     # complete bill, even when schema.org performer lists only the headliner.
     # Never generalize one headliner's genre to the support act; event.genre
@@ -473,7 +496,8 @@ def _bill(event):
         if any(not 2 <= len(part.strip()) <= 120 for part in parts):
             raise ValueError("OpenAgenda: malformed named lineup")
         title_names = [_named_guest(part) for part in parts
-                       if not bridge.is_unnamed_performer(part)]
+                       if not bridge.is_unnamed_performer(part)
+                       and not unnamed_venue_suffix(part, venue)]
         known = {normalized(n) for n in title_names}
         if any(normalized(n) not in known for n in named):
             raise ValueError("OpenAgenda: structured performer contradicts title")
@@ -488,7 +512,8 @@ def _bill(event):
         names = [title]
     else:
         raise ValueError("OpenAgenda: no explicitly named performers")
-    names = [name for name in names if not bridge.is_unnamed_performer(name)]
+    names = [name for name in names if not bridge.is_unnamed_performer(name)
+             and not unnamed_venue_suffix(name, venue)]
     if (not names or len({normalized(s) for s in names}) != len(names)
             or any(not normalized(s) for s in names)):
         raise ValueError("OpenAgenda: duplicate or malformed performers")
@@ -774,7 +799,7 @@ def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
         genres = _described_official_genres(record)
     if not genres:
         # Use exactly the same named bill as the final identity verification.
-        candidates = _export_bill(title, record)
+        candidates = _export_bill(title, record, venue)
         names_for_genre = [promotional_artist_candidate(n) or n for n in candidates]
         genres = _long_description_genres(record, names_for_genre)
     if _electronic_hardcore_only(
@@ -786,7 +811,7 @@ def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
     # An explicit promotional suffix is not part of the group's identity.
     # If the original announcement cannot corroborate the cleaned name,
     # do not create a false artist from the commercial headline.
-    names = _export_bill(title, record)
+    names = _export_bill(title, record, venue)
     cleaned = []
     for name in names:
         candidate = (promotional_artist_candidate(name)
@@ -860,7 +885,7 @@ def verified_bill(html, url, when, venue):
             if not contract.relevant_genres(genre):
                 continue
         try:
-            names = _bill(row)
+            names = _bill(row, venue=venue)
         except ValueError:
             continue
         eligible.append((names, list(dict.fromkeys(genre))))
