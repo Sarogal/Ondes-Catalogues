@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - scripts/grossesondes_official_poster_rotation.py
+      - scripts/grossesondes_external_poster_review.py
+      - tests/test_grosses_external_poster_review.py
       - scripts/grossesondes_official_poster_ocr.py
       - tests/test_grosses_official_poster_ocr.py
       - tests/test_grosses_official_poster_rotation.py
@@ -72,6 +74,9 @@ jobs:
       - name: Read-only real poster regression (public catalogue)
         if: github.event_name == 'pull_request'
         run: python scripts/grossesondes_official_poster_rotation.py --catalogue docs/grossesondes/festivals.json --slug festival-666-2027 --browser
+      - name: Read-only external raster regression
+        if: github.event_name == 'pull_request'
+        run: python scripts/grossesondes_external_poster_review.py --catalogue docs/grossesondes/festivals.json --slug nuclear-fest-2027
       - name: Read-only public catalogue rotation
         run: |
           set -euo pipefail
@@ -85,3 +90,8 @@ jobs:
             args+=(--slug "$FESTIVAL_SLUG")
           fi
           python scripts/grossesondes_official_poster_rotation.py "${args[@]}" --browser
+
+      - name: External raster research (no publication or secrets)
+        run: |
+          python -m unittest discover -s tests -p test_grosses_external_poster_review.py -v
+          python scripts/grossesondes_external_poster_review.py --catalogue docs/grossesondes/festivals.json --tick "$GITHUB_RUN_NUMBER"
