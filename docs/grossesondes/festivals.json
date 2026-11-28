@@ -6494,16 +6494,16 @@
       "slug": "betizfest-2027",
       "startDate": "2027-04-16",
       "name": "BetiZFest 2027",
-      "lat": null,
-      "lon": null,
+      "lat": 50.1722,
+      "lon": 3.2413,
       "price": null,
       "lineup": [],
       "endDate": "2027-04-17",
       "sourceConfidence": "Domaine du festival + annonce officielle revérifiée",
-      "city": null,
+      "city": "Cambrai",
       "source": "https://betizfest.info/",
       "bands": 0,
-      "showOnMap": false,
+      "showOnMap": true,
       "dateRangeIsContinuous": false,
       "verificationStatus": "Site et édition officielle revérifiés",
       "department": null,
@@ -6511,7 +6511,21 @@
       "venue": null,
       "officialSite": "https://betizfest.info/",
       "notes": "Édition et dates revérifiées directement sur le site officiel du festival. Aucun recoupement extérieur des dates n'est requis. Adresse exacte et GPS à compléter.",
-      "status": "Annoncé"
+      "status": "Annoncé",
+      "geoCity": "Cambrai",
+      "geoPrecision": "commune",
+      "geoInsee": "59122",
+      "geoSource": "https://geo.api.gouv.fr/communes?nom=Cambrai&fields=nom%2Ccode%2CcodeDepartement%2Cdepartement%2Ccentre&format=geojson&geometry=centre&zone=metro%2Cdrom%2Ccom",
+      "geoVerification": {
+        "proofMode": "current-edition-commune-direct-official.v1",
+        "firstObserved": "2026-11-28",
+        "verifiedAt": "2026-11-28",
+        "officialSite": "https://betizfest.info/",
+        "markerMeaning": "centre_indicatif_de_commune"
+      },
+      "auditSources": [
+        "https://betizfest.info/"
+      ]
     }
   ]
 }
