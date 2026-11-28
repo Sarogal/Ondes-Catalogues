@@ -249,8 +249,25 @@ def build(registry, catalogue, before, today, *, slot=0,
             "private paired approval ledger or network budget invalid")
     available = eligible(registry, catalogue, today)
     memory = geo_producer.site_review_memory(prior, SCHEMA, available)
-    start = ((today - dt.date(2026, 11, 21)).days * 3 + slot) * limit
-    chosen = geo_producer.rank_site_reviews(available, start, memory)[:limit]
+    tick = (today - dt.date(2026, 11, 21)).days * 3 + slot
+    priority = [row for row in available if row[2]["reviewBucket"] == "genre_tag_review"]
+    unknown = [row for row in available if row[2]["reviewBucket"] != "genre_tag_review"]
+    # Existing budget only: favor event-scoped genre leads but reserve at
+    # least one unknown review when both cohorts exist. Neither grants trust.
+    if limit == 1 and priority and unknown:
+        quota = 0 if tick % 4 == 3 else 1
+    else:
+        quota = limit if not unknown else max(1, limit - max(1, limit // 4))
+    pcount = min(len(priority), quota)
+    ucount = min(len(unknown), limit - pcount)
+    chosen = geo_producer.rank_site_reviews(
+        priority, tick * max(1, pcount), memory)[:pcount]
+    chosen.extend(geo_producer.rank_site_reviews(
+        unknown, tick * max(1, ucount), memory)[:ucount])
+    if len(chosen) < min(limit, len(available)):
+        remaining = [row for row in available if row not in chosen]
+        chosen.extend(geo_producer.rank_site_reviews(
+            remaining, tick * limit, memory)[:limit - len(chosen)])
     output = copy.deepcopy(before)
     current = copy.deepcopy(catalogue)
     signed_ids = {x.get("event", {}).get("id")
@@ -259,7 +276,8 @@ def build(registry, catalogue, before, today, *, slot=0,
                     for x in output["venueApprovals"] if isinstance(x, dict)}
     chosen, retried = geo_producer.prioritize_previous_pair(
         chosen, available, prior, signed_ids, limit,
-        schema=SCHEMA, success_state="publisher_bound_event_site_pair")
+        schema=SCHEMA, success_state="publisher_bound_event_site_pair",
+        preserve_genre_cohort=True)
     states, reasons, checks = Counter(), Counter(), []
     geo_diagnostics = Counter()
     for day, url, candidate in chosen:
@@ -313,6 +331,9 @@ def build(registry, catalogue, before, today, *, slot=0,
     return output, {
         "schema": SCHEMA, "asOf": today.isoformat(), "scanSlot": slot,
         "eligibleUnknownSites": len(available), "examined": len(chosen),
+        "genreTaggedEligible": len(priority), "genreUnknownEligible": len(unknown),
+        "genreTaggedExamined": sum(row[2]["reviewBucket"] == "genre_tag_review" for row in chosen),
+        "genreUnknownExamined": sum(row[2]["reviewBucket"] != "genre_tag_review" for row in chosen),
         "immediatePairRetries": len(retried),
         "stateCounts": dict(sorted(states.items())),
         "candidateChecks": checks,
