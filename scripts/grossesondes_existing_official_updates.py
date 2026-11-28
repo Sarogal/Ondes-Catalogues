@@ -2075,9 +2075,14 @@ def apply_independently_verified_updates(
                 continue
         # A sitemap is discovery only. Fetch its programme pages independently
         # through the usual pinned HTTPS transport, not through private leads.
-        # Scope this fallback to missing rosters and linkless signed roots.
+        # An access, ticket or announcement link must not starve programme
+        # discovery. Preserve the same bounded budget and avoid a second
+        # search when a dedicated programme route is already selected.
+        from official_programme_sitemap import PROGRAMME
+        has_programme_route = any(PROGRAMME.search(urlsplit(link).path)
+                                  for link in selected_links)
         sitemap_pages = []
-        if (sitemap_reader is not None and raw_root_available and not selected_links
+        if (sitemap_reader is not None and raw_root_available and not has_programme_route
                 and site not in poster_rate_limited_hosts and sitemap_budget > 0
                 and any("bands" in row and row["bands"] in (None, 0) and not row.get("lineup")
                         and row.get("startDate") and row.get("endDate") for row in rows)):
