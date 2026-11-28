@@ -61,6 +61,37 @@ class CulturalAcceslibreProbeTests(unittest.TestCase):
                          "page_identity_unconfirmed")
         self.assertEqual(counts["structured_address_concordant_hint"], 1)
 
+    def test_three_way_explicit_point_rejects_conflicts_and_centres(self):
+        import json
+        from unittest.mock import patch
+        from ptitesondes_cultural_acceslibre_probe import structured_place_hint
+        lead = {"nom_du_lieu": "Ludothèque A", "commune": "Les Bois",
+                "code_commune": "01234", "code_postal": "01230",
+                "numero_et_libelle_voie": "Rue des Jeux",
+                "latitude": 45.1, "longitude": 3.1}
+        hit = {"name": "Ludothèque A", "city": "Les Bois", "code_insee": "01234",
+               "postcode": "01230", "number": "", "street": "Rue des Jeux",
+               "lat_hint": 45.10001, "lng_hint": 3.1}
+        node = {"@type": "Library", "name": "Ludothèque A",
+                "address": {"streetAddress": "Rue des Jeux", "postalCode": "01230",
+                            "addressLocality": "Les Bois"},
+                "geo": {"@type": "GeoCoordinates", "latitude": 45.10002, "longitude": 3.1}}
+        def check(value=node, access=hit):
+            return structured_place_hint(lead, '<script type="application/ld+json">' +
+                                         json.dumps(value) + '</script>', hit=access)
+        with patch("ptitesondes_cultural_acceslibre_probe.classify",
+                   return_value="distinct_directory_point_unverified"):
+            self.assertEqual(check(), "structured_geo_three_way_concordant_hint")
+            self.assertEqual(check(dict(node, geo={})), "structured_geo_missing")
+            self.assertEqual(check(dict(node, geo=dict(node["geo"], latitude=45.2))),
+                             "structured_geo_point_conflict")
+            self.assertEqual(check(access=dict(hit, number="12")),
+                             "structured_geo_directory_identity_conflict")
+            self.assertEqual(check([node, node]), "structured_identity_ambiguous")
+        with patch("ptitesondes_cultural_acceslibre_probe.classify",
+                   return_value="near_municipality_reference"):
+            self.assertEqual(check(), "structured_geo_invalid_point")
+
     def test_municipal_fallback_requires_exact_authority_and_page(self):
         from unittest.mock import patch
         from ptitesondes_cultural_acceslibre_probe import inspect_municipal
