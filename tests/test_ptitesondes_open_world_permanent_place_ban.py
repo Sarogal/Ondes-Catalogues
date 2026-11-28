@@ -297,6 +297,35 @@ class OfficialPlaceBANTests(unittest.TestCase):
         self.assertIsNotNone(proof)
         self.assertEqual(calls, [home, section, PAGE])
 
+    def test_generic_municipal_menu_variants_and_priority_are_bounded(self):
+        from ptitesondes_open_world_permanent_place_ban import _section_pages
+        home = "https://www.ville-les-bois.fr/"
+        links = ('<a href="/aaa">Vie locale</a><a href="/bbb">Vie pratique</a>'
+                 '<a href="/culture">Vie culturelle</a>'
+                 '<a href="/enfants">Enfance et jeunesse</a>'
+                 '<a href="/zzz">Nos médiathèques</a>'
+                 '<a href="https://foreign.example/culture">Culture</a>'
+                 '<a href="/hidden" hidden>Ludothèques</a>'
+                 '<a href="/query?q=1">Bibliothèques</a>')
+        self.assertEqual(_section_pages(home, links, CITY, DIR),
+                         [home + "zzz", home + "culture", home + "enfants"])
+        section, library = home + "vie-locale", home + "enfants"
+        pages = {home: '<a href="/vie-locale">Vie locale</a>',
+                 section: '<a href="/enfants">Enfance et jeunesse</a>',
+                 library: f'<a href="{PAGE}">{VENUE}</a>',
+                 PAGE: HTML}
+        calls = []
+        def read(url):
+            calls.append(url)
+            return pages[url]
+        kwargs = dict(directory_fetch=lambda _: DIR, page_read=read,
+                      ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN)
+        row = {"city": CITY, "venue": VENUE}
+        self.assertIsNotNone(discover_official_ban(row, **kwargs))
+        self.assertEqual(calls, [home, section, library, PAGE])
+        pages[PAGE] = HTML.replace(VENUE, "Autre lieu")
+        self.assertIsNone(discover_official_ban(row, **kwargs))
+
     def test_nested_municipal_sections_bounded_and_exact(self):
         home = "https://www.ville-les-bois.fr/"
         culture, library = home + "culture", home + "bibliotheques"
