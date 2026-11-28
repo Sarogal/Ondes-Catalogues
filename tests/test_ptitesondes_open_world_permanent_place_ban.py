@@ -91,6 +91,32 @@ class OfficialPlaceBANTests(unittest.TestCase):
         self.assertIsNone(discover_official_ban(row, directory_fetch=lambda _: DIR,
             page_read=page, ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN))
 
+    def test_production_dila_code_fallback_requires_fresh_identity_and_exact_page(self):
+        record = {"commune": CITY, "nom_du_lieu": VENUE, "code_commune": "12345",
+                  "site_internet_et_autres_liens": PAGE}
+        calls = []
+        def lookup(city, venue):
+            calls.append(("culture", city, venue))
+            return record
+        def by_code(city, code):
+            calls.append(("dila", city, code))
+            return DIR
+        def read(url):
+            calls.append(("page", url))
+            return HTML
+        kwargs = dict(directory_fetch=lambda _: payload(), cultural_lookup=lookup,
+                      code_directory_fetch=by_code, page_read=read,
+                      ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN)
+        row = {"city": CITY, "venue": VENUE}
+        proof = discover_official_ban(row, **kwargs)
+        self.assertIsNotNone(proof)
+        self.assertFalse(proof["publication_ready"])
+        self.assertEqual(calls, [("culture", CITY, VENUE), ("dila", CITY, "12345"), ("page", PAGE)])
+        for bad in (dict(record, code_commune="99999"), dict(record, nom_du_lieu="Autre lieu")):
+            calls.clear()
+            self.assertIsNone(discover_official_ban(row, **dict(kwargs, cultural_lookup=lambda *_: bad)))
+            self.assertFalse(any(x[0] == "page" for x in calls))
+
     def test_outage_does_not_stop_independent_ban_rotation(self):
         from datetime import date
         from ptitesondes_open_world_permanent_place_research import cycle
