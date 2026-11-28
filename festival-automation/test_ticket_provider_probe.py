@@ -91,6 +91,28 @@ class ProviderReviewTests(unittest.TestCase):
         self.assertIsNone(independently_linked_location(row, "2026-11-08", fetch=fetch))
         self.assertEqual(called, [])
 
+    def test_independent_location_diagnostics_do_not_expose_vendor_url(self):
+        row = edition()
+        site = row["officialSite"]
+        vendor = "https://www.helloasso.com/associations/club/evenements/unfest-3-2026"
+        root = '<a href="' + vendor + '">Billetterie 2026</a>'
+        for html, expected, count in (
+                ("<main></main>", "NO_EDITION_LINK", 0),
+                (root, "VENDOR_EXACT_LOCATION_UNPROVEN", 1),
+                (root + root.replace("www.helloasso.com", "www.billetweb.fr"),
+                 "AMBIGUOUS_EDITION_LINK", 2)):
+            diagnostic = {}
+            calls = []
+            def fetch(url):
+                calls.append(url)
+                return html if url == site else "<main>Unavailable</main>"
+            self.assertIsNone(independently_linked_location(
+                row, "2026-11-04", fetch=fetch, diagnostic=diagnostic))
+            self.assertEqual(diagnostic, {"outcome": expected,
+                "structured_links": 0, "dated_visible_links": count})
+            self.assertNotIn(vendor, str(diagnostic))
+            self.assertEqual(len(calls), 2 if count == 1 else 1)
+
     def test_year_labelled_visible_ticket_reproves_exact_location(self):
         row = edition()
         site = row["officialSite"]

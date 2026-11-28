@@ -2360,6 +2360,7 @@ def apply_independently_verified_updates(
                 fields.append("price")
                 sources.extend(poster_sources)
             commune_diagnostic = "not_eligible"
+            ticket_location_diagnostic = {"outcome": "NOT_ATTEMPTED"}
             municipal_diagnostic = {}
             # The signed current-edition title may explicitly name the town.
             # Publisher re-fetches the site itself, then independently resolves
@@ -2433,7 +2434,8 @@ def apply_independently_verified_updates(
                         report["rechecked_pages"] += 1
                         return fetch(url)
                     ticket_proof = independently_linked_location(
-                        old, today, fetch=read_ticket_location)
+                        old, today, fetch=read_ticket_location,
+                        diagnostic=ticket_location_diagnostic)
                     if ticket_proof:
                         location = ticket_proof["edition_location_review_only"]
                         postal = location["postalCode"]
@@ -2797,6 +2799,7 @@ def apply_independently_verified_updates(
                     "seasonal_ticket_tiers_found": len(seasonal_offers),
                     "seasonal_ticket_conflict": seasonal_conflict,
                     "seasonal_ticket_rendered_proof": rendered_ticket_offers,
+                    "ticket_location_diagnostic": ticket_location_diagnostic,
                     "commune_diagnostic": ("accepted" if "geoVerification" in fields
                                            else commune_diagnostic),
                     "municipal_venue_diagnostic": municipal_diagnostic.get("municipal_venue"),
