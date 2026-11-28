@@ -164,6 +164,10 @@ def direct_artist_description(html, name):
         rf"{re.escape(target)} (?:est|sont) (?:un |une |le |la )?"
         rf"(?:groupe|duo|trio|artiste|musicien) (?:de |du |d )?"
         rf"({genre_list})" + suffix,
+        # Explicit named performance style, not an event-wide tag or an
+        # association with another artist. The entire sentence must match.
+        rf"{re.escape(target)} (?:plays|play|performs|perform) ({genre_list})",
+        rf"{re.escape(target)} (?:joue|jouent|pratique|pratiquent) (?:du |de la |de l |de )?({genre_list})",
     )
     found = set()
     for paragraph in parser.paragraphs[:4]:
