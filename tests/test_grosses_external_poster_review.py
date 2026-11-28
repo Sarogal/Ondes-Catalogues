@@ -154,3 +154,29 @@ class ExternalRasterTests(unittest.TestCase):
             result = numeric_date_diagnostic(row, bad)
             self.assertTrue(result["numeric_date_conflict"])
             self.assertFalse(result["numeric_exact_date"])
+
+    def test_postal_location_hints_are_unique_and_never_publication_proof(self):
+        from grossesondes_external_poster_review import postal_location_hints, alternate_layout_diagnostic
+        def line(value, y=0, confidence=99):
+            words = []
+            x = 0
+            for token in value.split():
+                width = len(token) * 9
+                words.append({"text": token, "box": [x, y, width, 18],
+                              "confidence": confidence, "review_only": True})
+                x += width + 6
+            return words
+        good = line("34000 Montpellier")
+        self.assertEqual(postal_location_hints(good), [("34000", "montpellier")])
+        for bad in (line("34000 Montpellier", confidence=75),
+                    line("34000") + line("Montpellier", y=50),
+                    line("34000 Montpellier CEDEX"),
+                    good + line("30000 Nîmes", y=50),
+                    line("00000 Exemple"), line("34000 parking")):
+            self.assertEqual(postal_location_hints(bad), [])
+        result = alternate_layout_diagnostic(ROW, line("2027"), "image/png", b"fake",
+                                             Mock(return_value=good))
+        self.assertTrue(result["unique_postal_location_hint"])
+        self.assertFalse(result["publication_authorized"])
+        self.assertNotIn("Montpellier", str(result))
+        self.assertNotIn("34000", str(result))

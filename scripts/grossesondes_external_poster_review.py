@@ -279,6 +279,36 @@ def numeric_date_diagnostic(row, words):
     return flags
 
 
+def postal_location_hints(words):
+    """Find explicit postal-code/commune lines, never infer a festival venue.
+
+    These are untrusted search hints only. A sponsor address can look exactly
+    like a festival address. Do not emit coordinates or catalogue fields.
+    """
+    if not _valid_cached_words(words) or not words:
+        return []
+    lines = poster_word_lines(words)
+    if lines is None:
+        return []
+    hints = set()
+    for line in lines:
+        if not all(w["confidence"] >= 90 for w in line):
+            continue
+        raw = " ".join(w["text"] for w in line).strip()
+        m = re.fullmatch(r"(?:[Ll]ieu\s*:\s*)?([0-9]{5})\s+([A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ'’ -]{1,65})", raw)
+        if not m:
+            continue
+        postcode, city = m.groups()
+        city = city.strip(" -")
+        if (len(city) < 2 or len(city.split()) > 7
+                or not 1 <= int(postcode[:2]) <= 98
+                or re.search(r"\b(?:cedex|france|festival|sponsor|partenaire|billetterie|tickets?|parking|tarif|pass)\b", fold(city))):
+            continue
+        hints.add((postcode, fold(city)))
+    # Conflicting or multiple addresses are not a unique location hint.
+    return sorted(hints) if len(hints) == 1 else []
+
+
 def alternate_layout_diagnostic(row, original, mime, body, recognize):
     """Independent review only; never replace a rejected primary reading."""
     flags = unordered_identity_flags(row, original)
@@ -293,6 +323,7 @@ def alternate_layout_diagnostic(row, original, mime, body, recognize):
         return {"status": result["status"], "qualification": result["diagnostics"],
                 "unordered_identity": unordered_identity_flags(row, words),
                 "numeric_calendar": numeric_date_diagnostic(row, words),
+                "unique_postal_location_hint": len(postal_location_hints(words)) == 1,
                 "publication_authorized": False}
     except (OSError, ValueError, TypeError, UnicodeError, ImportError,
             subprocess.SubprocessError, Warning):
