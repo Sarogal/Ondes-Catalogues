@@ -41,6 +41,51 @@ class FairGenreReviewSlots(unittest.TestCase):
         self.assertEqual(diagnostics["publicationAllowed"], False)
         return diagnostics
 
+    def test_individual_genre_hints_prioritize_unseen_without_granting_approval(self):
+        queue = [row("unknown", i) for i in range(40)]
+        catalogue = {**CATALOGUE, "artists": [
+            {"id": "example-act", "name": "Example Act", "aliases": []}]}
+        fact = {
+            "schema": pipeline.artist_knowledge.SCHEMA,
+            "artistId": "example-act", "artistName": "Example Act",
+            "verifiedAt": TODAY.isoformat(), "scope": "individual_artist_not_event",
+            "evidenceKind": "first-party-artist-structured-profile",
+            "sourceUrl": "https://artist.example/bio/",
+            "genres": ["Death Metal"], "publicationAllowed": False,
+            "approvalsProposed": 0, "eventDateLocationAndLineupProved": False,
+        }
+        evidence = {"schema": "grossesondes.concert.artist-genre-source-preflight.v1",
+                    "publicationAllowed": False, "approvalsProposed": 0,
+                    "verifiedArtists": [fact]}
+        for item in queue[-8:]:
+            item[3]["leadArtist"] = "Example Act"
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose",
+                               side_effect=ValueError("Independent proof missing")):
+            out, first = pipeline.build({}, catalogue, BEFORE, TODAY,
+                                       limit=12, artist_evidence=evidence)
+            self.assertEqual(first["individualGenreResearchLeadsEligible"], 8)
+            self.assertEqual(first["individualGenreResearchPriorityExamined"], 3)
+            self.assertEqual(first["examined"], 12)
+            self.assertEqual(out, BEFORE)
+            self.assertFalse(first["publicationAllowed"])
+            _, second = pipeline.build({}, catalogue, BEFORE, TODAY,
+                                       limit=12, artist_evidence=evidence,
+                                       prior=first)
+            self.assertFalse({c["candidateId"] for c in first["candidateChecks"]}
+                             & {c["candidateId"] for c in second["candidateChecks"]})
+        for invalid in ({**fact, "artistId": "wrong"},
+                        {**fact, "verifiedAt": "2025-01-01"},
+                        {**fact, "genres": ["Hardcore Techno"]},
+                        {**fact, "publicationAllowed": True}):
+            self.assertEqual(pipeline._individual_genre_leads(
+                queue, catalogue, TODAY, {**evidence, "verifiedArtists": [invalid]}),
+                set())
+        ambiguous = {**catalogue, "artists": catalogue["artists"] + [
+            {"id": "other", "name": "Example Act", "aliases": []}]}
+        self.assertEqual(pipeline._individual_genre_leads(
+            queue, ambiguous, TODAY, evidence), set())
+
     def test_tagged_official_bills_get_two_checks_without_starving_unknown(self):
         # Two of 12 probes favour real event-level genres, not specific bands,
         # rooms, URLs or known artists. Ten remain open to any other source.
