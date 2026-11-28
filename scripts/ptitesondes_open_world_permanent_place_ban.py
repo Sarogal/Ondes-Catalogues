@@ -32,6 +32,7 @@ BAN_DIAGNOSTIC_CODES = (
     "ban_unavailable", "ban_exact_address_unmatched", "admin_unavailable",
     "admin_identity_unmatched", "historical_postcode_conflict", "proof_found",
     "section_discovery_attempted", "section_page_unavailable",
+    "nested_section_discovery_attempted", "nested_section_page_unavailable",
     "culture_directory_attempted", "culture_directory_unavailable",
     "culture_directory_no_exact_match", "culture_directory_hints_found",
     "culture_independent_attempted", "culture_independent_identity_unmatched",
@@ -387,17 +388,40 @@ def discover_official_ban(row, *, directory_fetch=None, page_read=None,
             # three generic same-authority sections, then require an exact
             # visible venue link. Multiple destinations remain ambiguous.
             matches = set()
-            for section in _section_pages(home, homepage, city, directory):
+            sections = _section_pages(home, homepage, city, directory)
+            seen = {home, *sections}
+            nested = set()
+            for section in sections:
                 _note("section_discovery_attempted")
                 try:
                     section, section_html = read_page(section)
+                    seen.add(section)
                     hit = exact_named_venue_page(venue, section, section_html,
                                                  city, directory)
+                    if not hit:
+                        nested.update(_section_pages(section, section_html, city, directory))
                 except (OSError, ValueError, TypeError, UnicodeError):
                     _note("section_page_unavailable")
                     continue
                 if hit:
                     matches.add(hit)
+            # A bounded extra hop accommodates Culture -> Bibliothèques ->
+            # exact venue. No arbitrary URLs, no recursion, no external hosts.
+            # Keep the existing exact page and fresh BAN proof requirements.
+            if not matches:
+                for section in sorted(nested - seen)[:3]:
+                    _note("nested_section_discovery_attempted")
+                    try:
+                        final, section_html = read_page(section)
+                        if final in seen:
+                            continue
+                        seen.add(final)
+                        hit = exact_named_venue_page(venue, final, section_html, city, directory)
+                    except (OSError, ValueError, TypeError, UnicodeError):
+                        _note("nested_section_page_unavailable")
+                        continue
+                    if hit:
+                        matches.add(hit)
             if len(matches) == 1:
                 url = next(iter(matches))
         if not url or url in pages:

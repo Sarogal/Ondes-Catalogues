@@ -235,6 +235,29 @@ class OfficialPlaceBANTests(unittest.TestCase):
         self.assertIsNotNone(proof)
         self.assertEqual(calls, [home, section, PAGE])
 
+    def test_nested_municipal_sections_bounded_and_exact(self):
+        home = "https://www.ville-les-bois.fr/"
+        culture, library = home + "culture", home + "bibliotheques"
+        calls = []
+        pages = {
+            home: '<a href="/culture">Culture</a>',
+            culture: '<a href="/bibliotheques">Bibliothèques</a><a href="/culture">Culture</a><a href="https://foreign.example/jeunesse">Jeunesse</a>',
+            library: f'<a href="{PAGE}">{VENUE}</a>',
+            PAGE: HTML,
+        }
+        def read(url):
+            calls.append(url)
+            return pages[url]
+        kwargs = dict(directory_fetch=lambda _: DIR, page_read=read,
+                      ban_fetch=lambda _: BAN, admin_fetch=lambda *_: ADMIN)
+        row = {"city": CITY, "venue": VENUE}
+        self.assertIsNotNone(discover_official_ban(row, **kwargs))
+        self.assertEqual(calls, [home, culture, library, PAGE])
+        calls.clear()
+        pages[library] += f'<a href="{home}autre-lieu">{VENUE}</a>'
+        self.assertIsNone(discover_official_ban(row, **kwargs))
+        self.assertEqual(calls, [home, culture, library])
+
     def test_diagnostics_distinguish_transport_identity_and_ban_failures(self):
         from ptitesondes_open_world_permanent_place_ban import ban_diagnostics
         from ptitesondes_open_world_permanent_place_research import public_diagnostic_lines
