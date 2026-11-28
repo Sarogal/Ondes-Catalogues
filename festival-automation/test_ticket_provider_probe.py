@@ -91,6 +91,41 @@ class ProviderReviewTests(unittest.TestCase):
         self.assertIsNone(independently_linked_location(row, "2026-11-08", fetch=fetch))
         self.assertEqual(called, [])
 
+    def test_year_labelled_visible_ticket_reproves_exact_location(self):
+        row = edition()
+        site = row["officialSite"]
+        vendor = "https://www.helloasso.com/associations/club/evenements/unfest-3-2026"
+        event = {"@type": "MusicEvent", "name": "UNFEST #3 2026",
+                 "startDate": row["startDate"], "endDate": row["endDate"],
+                 "location": {"@type": "Place", "name": "Salle des Arts",
+                    "address": {"@type": "PostalAddress", "addressCountry": "FR",
+                                "addressLocality": "Douai", "postalCode": "59500"}}}
+        detail = '<script type="application/ld+json">' + json.dumps(event) + '</script>'
+        root = '<a href="' + vendor + '">Billetterie 2026</a>'
+        calls = []
+        def fetch(url):
+            calls.append(url)
+            return root if url == site else detail
+        result = independently_linked_location(row, "2026-11-04", fetch=fetch)
+        self.assertEqual(calls, [site, vendor])
+        self.assertEqual(result["edition_location_review_only"]["city"], "Douai")
+        self.assertFalse(result["publication_authorized"])
+        for bad in (root.replace("Billetterie 2026", "Billetterie"),
+                    root.replace("Billetterie 2026", "Billetterie 2025"),
+                    root.replace("unfest-3-2026", "other-fest-2026"),
+                    '<div hidden>' + root + '</div>',
+                    '<div style="visibility:hidden">' + root + '</div>',
+                    root + root.replace("www.helloasso.com", "www.billetweb.fr")):
+            root = bad
+            calls.clear()
+            self.assertIsNone(independently_linked_location(row, "2026-11-04", fetch=fetch))
+            self.assertEqual(calls, [site])
+        root = '<a href="' + vendor + '">Billetterie 2026</a>'
+        detail = detail.replace(row["startDate"], "2025-11-06")
+        calls.clear()
+        self.assertIsNone(independently_linked_location(row, "2026-11-04", fetch=fetch))
+        self.assertEqual(calls, [site, vendor])
+
     def test_wrong_title_date_or_unstructured_sold_out_is_not_a_hint(self):
         for raw in (event_html(title="UNFEST #4"),
                     event_html(start="2025-11-06"),
