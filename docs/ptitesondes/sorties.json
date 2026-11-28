@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-28T01:14:40+01:00",
+  "updated_at": "2026-11-28T02:30:54+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -22631,6 +22631,26 @@
       "geo_precision": "venue",
       "lat": 45.883001,
       "lng": 4.802842
+    },
+    {
+      "id": "openagenda-49757491-2026-12-13",
+      "title": "Spectacle de Noël",
+      "category": "spectacle-jeunesse",
+      "category_label": "Spectacle jeune public",
+      "date_start": "2026-12-13",
+      "date_end": "2026-12-13",
+      "time": "16:00",
+      "city": "Saint-Germain-au-Mont-d'Or",
+      "department": "Métropole de Lyon",
+      "region": "Auvergne-Rhône-Alpes",
+      "venue": "Salle Georges Brassens,",
+      "source_url": "https://openagenda.com/saint-germain-au-mont-dor/events/49757491_spectacle-de-noel-9301200",
+      "source_label": "Saint-Germain-au-Mont-d'Or — Licence Ouverte 2.0 — données mises à jour le 26/11/2026",
+      "verified_at": "2026-11-28",
+      "geo_verified_at": "2026-11-28",
+      "geo_precision": "venue",
+      "lat": 45.885543,
+      "lng": 4.80188
     }
   ]
 }
