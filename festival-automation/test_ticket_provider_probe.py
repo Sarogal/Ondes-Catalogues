@@ -9,7 +9,7 @@ from urllib.parse import urlsplit
 sys.path.insert(0, str(Path(__file__).parent))
 from official_watch import run
 from ticket_provider_probe import (provider_snapshot, select_provider_checks,
-                                   provider_edition_location,
+                                   provider_edition_location, independently_linked_location,
                                    provider_conflict_reason)
 from ticket_candidates import withdraw_contradicted_ticket_proposals
 
@@ -58,6 +58,38 @@ class ProviderReviewTests(unittest.TestCase):
         self.assertIsNone(provider_edition_location(html(event), {**edition(), "city": "Lille"}))
         other = {**event, "location": {**event["location"], "name": "Autre salle"}}
         self.assertIsNone(provider_edition_location(html([event, other]), edition()))
+
+    def test_independent_location_refetch_requires_exact_unique_offer(self):
+        row = edition()
+        site = row["officialSite"]
+        vendor = "https://my.weezevent.com/unfest"
+        event = {"@type": "MusicEvent", "name": "UNFEST #3 2026",
+                 "startDate": row["startDate"], "endDate": row["endDate"]}
+        def html(obj):
+            return '<script type="application/ld+json">' + json.dumps(obj) + '</script>'
+        root = html({**event, "offers": {"url": vendor}})
+        detail = html({**event, "location": {"@type": "Place", "name": "Salle des Arts",
+                       "address": {"@type": "PostalAddress", "addressCountry": "FR",
+                                   "addressLocality": "Douai", "postalCode": "59500"}}})
+        called = []
+        def fetch(url):
+            called.append(url)
+            return root if url == site else detail
+        result = independently_linked_location(row, "2026-11-04", fetch=fetch)
+        self.assertEqual(called, [site, vendor])
+        self.assertFalse(result["publication_authorized"])
+        self.assertEqual(result["edition_location_review_only"]["city"], "Douai")
+        for bad_root in ('<a href="' + vendor + '">Billets</a>',
+                         html({**event, "startDate": "2025-11-06", "offers": {"url": vendor}}),
+                         html({**event, "offers": [{"url": vendor},
+                              {"url": "https://www.billetweb.fr/other"}]})):
+            root = bad_root
+            called.clear()
+            self.assertIsNone(independently_linked_location(row, "2026-11-04", fetch=fetch))
+            self.assertEqual(called, [site])
+        called.clear()
+        self.assertIsNone(independently_linked_location(row, "2026-11-08", fetch=fetch))
+        self.assertEqual(called, [])
 
     def test_wrong_title_date_or_unstructured_sold_out_is_not_a_hint(self):
         for raw in (event_html(title="UNFEST #4"),
