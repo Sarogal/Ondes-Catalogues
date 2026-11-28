@@ -1855,6 +1855,15 @@ class LinkedArtistGridTests(unittest.TestCase):
         self.assertIn(url, updated["auditSources"])
         self.assertTrue(_verified_official_update_delta(row, updated))
         self.assertEqual(report["sitemap_checks"][0]["rosters_qualified"], 1)
+        zero_row = dict(row, bands=0, lineup=[])
+        zero_doc = doc(zero_row)
+        out, report = apply_independently_verified_updates(zero_doc, zero_doc, DAY,
+            tick=0, fetch={site: root, url: grid}.__getitem__,
+            sitemap_reader=reader, commune_resolver=lambda *_: None)
+        self.assertEqual(out["festivals"][0]["bands"], 2)
+        self.assertEqual(out["festivals"][0]["lineup"], ["Alpha", "Beta"])
+        self.assertTrue(_verified_official_update_delta(zero_row, out["festivals"][0]))
+        self.assertEqual(report["sitemap_checks"][0]["rosters_qualified"], 1)
         for bad in (grid.replace("Festival Exemple 2027", "Festival Exemple 2026"),
                     grid.replace("Sunday 20 June", "Sunday 27 June")):
             out, report = apply_independently_verified_updates(original, original, DAY,

@@ -146,7 +146,7 @@ def prioritize_unavailable(published, history, today, slot, *,
     # Ordinary HTTP failures retain precedence and the same slot budget.
     incomplete = {row.get("officialSite") for row in published["festivals"]
                   if isinstance(row, dict) and "bands" in row
-                  and row.get("bands") is None and not row.get("lineup")}
+                  and row.get("bands") in (None, 0) and not row.get("lineup")}
     def probe(url):
         try:
             parsed = page(fetch(url))

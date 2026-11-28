@@ -115,6 +115,15 @@ class IsolatedBrowserCollectionTests(unittest.TestCase):
         self.assertEqual(targets[0], target)
         self.assertIn(OTHER, targets)
         self.assertLessEqual(len(targets), 8)
+        candidate["bands"] = 0
+        candidate["lineup"] = []
+        zero_targets, _, _ = prioritize_unavailable(
+            pub, hist, date.fromisoformat(DAY), 0, event_name="push", fetch=fetch)
+        self.assertEqual(zero_targets, targets)
+        candidate["lineup"] = ["Known Artist"]
+        known_targets, _, _ = prioritize_unavailable(
+            pub, hist, date.fromisoformat(DAY), 0, event_name="push", fetch=fetch)
+        self.assertEqual(known_targets, baseline)
 
     def test_no_https_failure_preserves_original_rotation(self):
         pub, hist = fixtures()
