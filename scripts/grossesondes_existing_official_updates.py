@@ -1945,7 +1945,7 @@ def independently_read_posters(site, row, html, rendered, reader, budget, *, lin
 def apply_independently_verified_updates(
         target, published, today, fetch=fetch_public_html, limit=MAX_HOSTS,
         tick=None, commune_resolver=verified_commune, browser_fetch=None,
-        browser_sites=(), poster_reader=None):
+        browser_sites=(), poster_reader=None, sitemap_reader=None):
     """Recheck signed artists/prices and exact first-party city proof.
 
     A commune marker is only an indicative administrative centre: no precise
@@ -1962,6 +1962,8 @@ def apply_independently_verified_updates(
     poster_budget = [MAX_PUBLISHER_POSTERS]
     ticket_location_budget = 2
     report["ticket_location_checks"] = 0
+    sitemap_budget = 2
+    report["sitemap_checks"] = []
     poster_rate_limited_hosts = set()
     for site, rows in signed_rotation(
             published, today, limit, tick, browser_sites=browser_sites,
@@ -2071,6 +2073,34 @@ def apply_independently_verified_updates(
             except (OSError, TimeoutError, ValueError, UnicodeError, TypeError) as exc:
                 linked_fetch_errors.append({"url": link, "error": type(exc).__name__})
                 continue
+        # A sitemap is discovery only. Fetch its programme pages independently
+        # through the usual pinned HTTPS transport, not through private leads.
+        # Scope this fallback to missing rosters and linkless signed roots.
+        sitemap_pages = []
+        if (sitemap_reader is not None and raw_root_available and not selected_links
+                and site not in poster_rate_limited_hosts and sitemap_budget > 0
+                and any(row.get("bands") is None and not row.get("lineup")
+                        and row.get("startDate") and row.get("endDate") for row in rows)):
+            from official_programme_sitemap import discover_programme_urls
+            sitemap_budget -= 1
+            urls = discover_programme_urls(site, fetch=sitemap_reader)
+            diagnostic = {"official_site": site, "programme_urls": len(urls),
+                          "pages_fetched": 0, "rosters_qualified": 0}
+            report["sitemap_checks"].append(diagnostic)
+            for url in urls:
+                try:
+                    html = fetch(url)
+                    parsed = page(html)
+                    sitemap_pages.append((url, html, parsed))
+                    diagnostic["pages_fetched"] += 1
+                    report["rechecked_pages"] += 1
+                except OfficialHTTPStatusError as exc:
+                    if exc.status_code == 429:
+                        poster_rate_limited_hosts.add(site)
+                        sitemap_pages.clear()
+                        break
+                except (OSError, TimeoutError, ValueError, UnicodeError, TypeError):
+                    continue
         for old in rows:
             slug = old["slug"]
             new = result["festivals"][positions[slug]]
@@ -2152,6 +2182,21 @@ def apply_independently_verified_updates(
                 if grid_names:
                     claims.extend(grid_names)
                     sources.append(url)
+            if sitemap_pages and old.get("bands") is None and not old.get("lineup"):
+                # Sitemap-discovered pages may prove only an artist roster.
+                # Never let them change prices, dates, status or geo fields.
+                # A conflicting status or two different full grids vetoes
+                # the fallback, rather than merging different programmes.
+                if not any(explicit_statuses(parsed.blocks, old)
+                           for _, _, parsed in sitemap_pages):
+                    grids = [(url, linked_artist_grid(url, html, old, today))
+                             for url, html, _ in sitemap_pages]
+                    grids = [(url, names) for url, names in grids if names]
+                    if grids and len({frozenset(key(n) for n in names)
+                                      for _, names in grids}) == 1:
+                        claims.extend(grids[0][1])
+                        sources.extend(url for url, _ in grids)
+                        diagnostic["rosters_qualified"] += 1
             # Separate complete, explicitly labelled price tiers from the
             # legacy one-price-per-duration parser. Do not reconcile conflicting
             # page snapshots or replace an unrelated existing price summary.

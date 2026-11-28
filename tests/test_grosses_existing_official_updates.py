@@ -1826,6 +1826,43 @@ if __name__ == "__main__":
 
 
 class LinkedArtistGridTests(unittest.TestCase):
+    def test_sitemap_fallback_publishes_only_exact_current_artist_grid(self):
+        site = "https://festival-exemple.fr/"
+        url = site + "en/lineup"
+        row = festival("festival-exemple-2027", site, dates=("2027-06-17", "2027-06-20"))
+        row.update(name="Festival Exemple", bands=None)
+        row.pop("lineup")
+        root = "<main><h1>Festival Exemple</h1></main>"
+        grid = ('<main><h1>Festival Exemple 2027</h1><h2>Line-Up</h2>'
+                '<div>Thursday 17 June Friday 18 June Saturday 19 June Sunday 20 June</div>'
+                '<a href="/artist/alpha">Alpha</a><a href="/artist/beta">Beta</a>'
+                '<p>Pass 4 jours 100 €</p></main>')
+        sitemap = ('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+                   '<url><loc>' + url + '</loc></url>'
+                   '<url><loc>https://other.fr/lineup</loc></url></urlset>').encode()
+        original = doc(row)
+        calls = []
+        def reader(address):
+            calls.append(address)
+            return sitemap
+        out, report = apply_independently_verified_updates(original, original, DAY,
+            tick=0, fetch={site: root, url: grid}.__getitem__,
+            sitemap_reader=reader, commune_resolver=lambda *_: None)
+        updated = out["festivals"][0]
+        self.assertEqual(calls, [site + "sitemap.xml"])
+        self.assertEqual(updated["lineup"], ["Alpha", "Beta"])
+        self.assertIsNone(updated["price"])
+        self.assertIn(url, updated["auditSources"])
+        self.assertTrue(_verified_official_update_delta(row, updated))
+        self.assertEqual(report["sitemap_checks"][0]["rosters_qualified"], 1)
+        for bad in (grid.replace("Festival Exemple 2027", "Festival Exemple 2026"),
+                    grid.replace("Sunday 20 June", "Sunday 27 June")):
+            out, report = apply_independently_verified_updates(original, original, DAY,
+                tick=0, fetch={site: root, url: bad}.__getitem__,
+                sitemap_reader=reader, commune_resolver=lambda *_: None)
+            self.assertIsNone(out["festivals"][0]["bands"])
+            self.assertEqual(report["sitemap_checks"][0]["rosters_qualified"], 0)
+
     def test_current_edition_artist_grid_without_fixed_roster_limit(self):
         from grossesondes_existing_official_updates import linked_artist_grid
         site = "https://festival-exemple.fr/"
